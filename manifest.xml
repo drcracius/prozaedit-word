@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xsi:type="TaskPaneApp">
+  <Id>d1829e3a-4931-4122-b911-37f22941aa99</Id>
+  <Version>2.0.0.0</Version>
+  <ProviderName>ProzaEdit Publishing Tools</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="ProzaEdit"/>
+  <Description DefaultValue="Professional Manuscript Editor &amp; High-Performance Prose Intelligence Suite"/>
+  <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://www.prozaedit.com/support"/>
+  <AppDomains>
+    <AppDomain>https://localhost:3000</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Document"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://localhost:3000/src/taskpane/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="ProzaEdit.GetStarted.Title"/>
+            <Description resid="ProzaEdit.GetStarted.Description"/>
+            <LearnMoreUrl resid="ProzaEdit.GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="ProzaEdit.Group">
+                <Label resid="ProzaEdit.GroupLabel"/>
+                <Icon>
+                  <bt:Image size="16" resid="ProzaEdit.Icon16"/>
+                  <bt:Image size="32" resid="ProzaEdit.Icon32"/>
+                  <bt:Image size="80" resid="ProzaEdit.Icon80"/>
+                </Icon>
+                <Control xsi:type="Button" id="ProzaEdit.OpenPane">
+                  <Label resid="ProzaEdit.ButtonLabel"/>
+                  <Supertip>
+                    <Title resid="ProzaEdit.ButtonLabel"/>
+                    <Description resid="ProzaEdit.ButtonTip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="ProzaEdit.Icon16"/>
+                    <bt:Image size="32" resid="ProzaEdit.Icon32"/>
+                    <bt:Image size="80" resid="ProzaEdit.Icon80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="ProzaEdit.TaskpaneUrl"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="ProzaEdit.Icon16" DefaultValue="https://localhost:3000/assets/icon-32.png"/>
+        <bt:Image id="ProzaEdit.Icon32" DefaultValue="https://localhost:3000/assets/icon-32.png"/>
+        <bt:Image id="ProzaEdit.Icon80" DefaultValue="https://localhost:3000/assets/icon-64.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="ProzaEdit.TaskpaneUrl" DefaultValue="https://localhost:3000/src/taskpane/taskpane.html"/>
+        <bt:Url id="ProzaEdit.GetStarted.LearnMoreUrl" DefaultValue="https://www.prozaedit.com/support"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="ProzaEdit.GroupLabel" DefaultValue="ProzaEdit"/>
+        <bt:String id="ProzaEdit.ButtonLabel" DefaultValue="ProzaEdit"/>
+        <bt:String id="ProzaEdit.GetStarted.Title" DefaultValue="ProzaEdit"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="ProzaEdit.ButtonTip" DefaultValue="Open the ProzaEdit manuscript editor task pane."/>
+        <bt:String id="ProzaEdit.GetStarted.Description" DefaultValue="Professional manuscript editing tools in Word."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

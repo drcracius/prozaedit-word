@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProzaEdit</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="taskpane.css" />
+  <link rel="icon" href="/assets/icon-32.png" type="image/png" />
+</head>
+<body>
+  <header class="pe-brand" aria-label="ProzaEdit">
+    <img class="pe-brand-wordmark" src="/assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
+  </header>
+  <ol class="workflow-steps" aria-label="Quick start">
+    <li class="workflow-step workflow-step-active" data-workflow-step="1"><span class="workflow-num">1</span> Target</li>
+    <li class="workflow-step" data-workflow-step="2"><span class="workflow-num">2</span> Checks</li>
+    <li class="workflow-step" data-workflow-step="3"><span class="workflow-num">3</span> Run audit</li>
+    <li class="workflow-step" data-workflow-step="4"><span class="workflow-num">4</span> Fix cards</li>
+  </ol>
+  <details class="help-box help-details">
+    <summary>Quick start &amp; editing stack</summary>
+    <p><strong>Local-first:</strong> audit, coach, paraphrase = <strong>0 API tokens</strong>. Partner tools in Word:</p>
+    <ul class="help-list">
+      <li><strong>F7 / Editor</strong> — spelling &amp; grammar (Checks → open Editor)</li>
+      <li><strong>Copilot</strong> — Audit → Copy for Copilot → paste in Word chat</li>
+      <li><strong>Word Macro Tools</strong> — FRedit-scale batch (not bundled; see docs\WORKFLOWS.md)</li>
+      <li><strong>PerfectIt</strong> — client house style if you own it (after ProzaEdit cards)</li>
+    </ul>
+    <p class="help-foot">Backups: Version History. Editorial checks are original JS — <em>docs\THIRD-PARTY-ATTRIBUTION.md</em>.</p>
+  </details>
+  <div class="pe-toolbar pe-toolbar-sticky" role="toolbar" aria-label="ProzaEdit actions">
+    <button type="button" id="btnUndo" class="btn-tool" disabled onclick="prozaEditUndo()" title="Undo last ProzaEdit replace (Ctrl+Shift+Z)">↶ Undo</button>
+    <button type="button" id="btnRedo" class="btn-tool" disabled onclick="prozaEditRedo()" title="Redo (Ctrl+Shift+Y)">↷ Redo</button>
+    <span id="peStatus" class="pe-status" aria-live="polite"></span>
+    <button type="button" class="btn-tool btn-tool-accent" onclick="runPrimaryAudit()" title="Run audit with current checks and scope">⚡ Run audit</button>
+  </div>
+  <div class="nav-tabs" role="tablist" aria-label="ProzaEdit sections">
+    <button type="button" class="tab-btn active" data-pe-tab="tab1" role="tab" aria-selected="true" onclick="showTab('tab1')">Target</button>
+    <button type="button" class="tab-btn" data-pe-tab="tab2" data-simple-hide role="tab" onclick="showTab('tab2')">Thesaurus</button>
+    <button type="button" class="tab-btn" data-pe-tab="tab3" role="tab" onclick="showTab('tab3')">Checks</button>
+    <button type="button" class="tab-btn" data-pe-tab="tab4" role="tab" onclick="showTab('tab4')">Audit</button>
+    <button type="button" class="tab-btn" data-pe-tab="tab5" role="tab" onclick="showTab('tab5')">Coach</button>
+    <button type="button" class="tab-btn" data-pe-tab="tab6" role="tab" onclick="showTab('tab6')">Rewrite</button>
+  </div>
+
+  <div id="tab1" class="tab-content active" role="tabpanel">
+    <h2 class="pe-section-title">Manuscript profile</h2>
+    <div class="form-group">
+      <label for="manuscriptType">Manuscript Type</label>
+      <select id="manuscriptType" onchange="adaptModules()">
+        <option value="Fiction (Thriller/Mystery/Crime)" selected>Fiction (Thriller / Mystery / Crime)</option>
+        <option value="Academic Paper / Journal">Academic Paper / Journal</option>
+        <option value="Business / Corporate Report">Business / Corporate Report</option>
+        <option value="Non-Fiction / Memoir">Non-Fiction / Memoir</option>
+        <option value="Technical / Journalism">Technical / Journalism</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="targetAudience">Target Reader / Education Level</label>
+      <select id="targetAudience">
+        <option value="Middle School">Middle School</option>
+        <option value="High School">High School</option>
+        <option value="Teenager">Teenager</option>
+        <option value="Young Adult">Young Adult</option>
+        <option value="College Student">College Student</option>
+        <option value="College Graduate">College Graduate</option>
+        <option value="Adult" selected>Adult</option>
+        <option value="Post Graduate">Post Graduate</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="settingAnchor">Setting Anchor (Dialect & Idioms)</label>
+      <input type="text" id="settingAnchor" value="Austin, Texas (Contemporary)">
+    </div>
+    <div class="form-group">
+      <label for="criticPersona">Critic Persona</label>
+      <select id="criticPersona">
+        <option value="Average Reader">Average Reader</option>
+        <option value="More Critical Reader">More Critical Reader</option>
+        <option value="NYT Best Seller Critic">NYT Best Seller Critic</option>
+        <option value="Very Harsh Senior Editor (9.0+ Target)" selected>Very Harsh Senior Editor (9.0+ Target)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="scope">Analysis Scope</label>
+      <select id="scope">
+        <option value="full">Full Manuscript</option>
+        <option value="selection" selected>Selected / Highlighted Text Only</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="language">Language Standard</label>
+      <select id="language">
+        <option value="en-US">US English (Default)</option>
+        <option value="en-GB">British English (UK)</option>
+      </select>
+    </div>
+    <h2 class="pe-section-title">Style &amp; language</h2>
+    <div class="form-group">
+      <label for="styleGuideRef">Preferred style guide</label>
+      <select id="styleGuideRef" onchange="toggleCustomStylePanel()">
+        <option value="auto">Auto (language + manuscript type)</option>
+        <option value="plain-us">U.S. Plain Language (CC0 / gov)</option>
+        <option value="strunk">Strunk Elements of Style 1920 (public domain)</option>
+        <option value="govuk">GOV.UK A–Z (OGL v2.0, en-GB)</option>
+        <option value="microsoft">Microsoft Writing Style Guide (CC BY 4.0)</option>
+        <option value="google-dev">Google Developer Style Guide (CC BY 4.0)</option>
+        <option value="redhat">Red Hat Technical Writing (CC BY-SA 4.0)</option>
+        <option value="custom-plus-auto">Custom house style + Auto packs</option>
+        <option value="custom">Custom house style only (your rules)</option>
+      </select>
+      <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Built-in guides use local heuristics only. See docs\STYLE-GUIDE-SOURCES.md.</p>
+    </div>
+    <div id="customStyleGuidePanel" class="form-group custom-style-panel hidden">
+      <label for="customStyleName">Custom guide name</label>
+      <input type="text" id="customStyleName" placeholder="e.g. My thriller house style" maxlength="80">
+      <label style="margin-top:8px;display:block;">Add rule (phrase to flag in audit)</label>
+      <input type="text" id="customStyleFind" placeholder="Find phrase, e.g. utilize" style="margin-bottom:4px;">
+      <input type="text" id="customStyleReplace" placeholder="Suggest replace with, e.g. use" style="margin-bottom:4px;">
+      <input type="text" id="customStyleHint" placeholder="Optional note for the card" style="margin-bottom:4px;">
+      <button type="button" class="btn-go" onclick="addCustomStyleRule()">Add rule</button>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+        <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('plain-starter')">Plain starter</button>
+        <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('uk-starter')">UK starter</button>
+        <button type="button" class="btn-secondary" onclick="copyCustomStyleRulesToClipboard()">Copy rules</button>
+      </div>
+      <div id="customStyleRulesList" class="dict-list" style="margin-top:6px;"></div>
+      <details class="help-box help-muted" style="margin-top:8px;">
+        <summary>Paste many rules at once</summary>
+        <p style="font-size:10px;margin:4px 0;">One per line: <code>find =&gt; replace</code> or <code>find =&gt; replace | note</code>. Lines starting with # are ignored.</p>
+        <textarea id="customStyleBulk" rows="5" style="width:100%;font-size:11px;" placeholder="utilize =&gt; use&#10;in order to =&gt; to | shorter"></textarea>
+        <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importCustomStyleBulk()">Import lines</button>
+      </details>
+    </div>
+    <h2 class="pe-section-title">Safety &amp; options</h2>
+    <div class="toggle-row"><span>Edits apply to selection only (recommended)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
+    <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
+    <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
+    <div class="toggle-row"><span>FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock"></div>
+    <div class="toggle-row"><span>Remind: use Word Version History before big applies</span><input type="checkbox" id="remindVersionHistory" checked></div>
+    <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="captureReferenceStyle()">Capture reference style from selection</button>
+    <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Compares dialogue % and FK to future audits (local).</p>
+    <h2 class="pe-section-title">Dictionary</h2>
+    <div class="form-group">
+      <label>Custom Dictionary (per document)</label>
+      <div style="display:flex;gap:4px;">
+        <input type="text" id="dictInput" placeholder="Name, place, jargon..." style="margin-bottom:0;flex:1;">
+        <button type="button" class="btn-go" onclick="addDictionaryWord()">Add</button>
+      </div>
+      <div id="dictList" class="dict-list"></div>
+    </div>
+    <button class="btn-secondary" onclick="saveConfiguration()">Save now</button>
+    <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Target fields auto-save when you change them.</p>
+  </div>
+
+  <div id="tab2" class="tab-content pe-advanced-tab">
+    <div class="help-box">Synonyms, antonyms, nuance. Click to replace in Word.</div>
+    <div class="form-group">
+      <label for="thesaurusInput">Word / Phrase Lookup</label>
+      <input type="text" id="thesaurusInput" placeholder="Enter word or select in Word...">
+      <button class="btn-main" style="margin-top:4px;" onclick="runThesaurusLookup()">Search</button>
+    </div>
+    <div id="thesaurusResults" class="results-panel">Search results will appear here...</div>
+  </div>
+
+  <div id="tab3" class="tab-content" role="tabpanel">
+    <div class="audit-run-hub">
+      <button class="btn-main btn-main-hub" id="btnRunAudit" onclick="runPrimaryAudit()">Run audit</button>
+      <label class="toggle-row compact"><span>Extended checks (fillers, duplicates, deeper editorial pass)</span><input type="checkbox" data-audit-extended="1" id="auditExtendedChecks"></label>
+      <p id="activeChecksHint" class="active-checks-hint">Turn on checks below, then Run audit.</p>
+    </div>
+    <div class="partner-tools" aria-label="Partner tools in Word">
+      <span class="partner-tools-label">After audit, use in Word</span>
+      <div class="partner-tools-row">
+        <button type="button" class="btn-partner" onclick="openWordProofing()">F7 / Editor</button>
+        <button type="button" class="btn-partner btn-partner-accent" onclick="copyAuditForCopilotFromAnywhere()">Copy for Copilot</button>
+        <button type="button" class="btn-partner" onclick="showTab('tab4')">Open Audit</button>
+      </div>
+      <p class="partner-tools-hint">WMT &amp; PerfectIt: see <strong>Quick start &amp; editing stack</strong> above or <code>docs\WORKFLOWS.md</code> in the project folder.</p>
+    </div>
+    <details class="help-box help-muted" style="margin:8px 0;">
+      <summary>Long manuscript tools (optional)</summary>
+      <p class="help-inline">Chapter heatmap needs <strong>Heading 1–3</strong> styles on chapter titles.</p>
+      <div class="form-group" style="border:none;padding:0;margin-top:6px;">
+        <label for="sectionParagraphCount">Section loop (paragraphs)</label>
+        <input type="number" id="sectionParagraphCount" min="5" max="150" value="40">
+        <button type="button" class="btn-secondary" onclick="selectNextSection()">Select next section</button>
+        <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="selectNextChapter()">Select next chapter (Heading)</button>
+        <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="selectNextSectionAndAudit()">Section + audit</button>
+        <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="selectNextChapterAndAudit()">Chapter + audit</button>
+        <label for="batchSectionCount" style="margin-top:8px;display:block;">Batch section audits</label>
+        <input type="number" id="batchSectionCount" min="1" max="8" value="3">
+        <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="runBatchSectionAudit()">Run batch</button>
+        <button type="button" class="btn-go" style="margin-top:4px;" onclick="cancelBatchAudit()">Cancel batch</button>
+        <button type="button" class="btn-secondary btn-api-opt" style="margin-top:8px;" onclick="runDeepAuditAI()">Optional: Deep Audit (+1 Gemini)</button>
+        <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="scanChapterHeatmap()">Build chapter heatmap (local)</button>
+      </div>
+    </details>
+    <h2 class="pe-section-title">What to check</h2>
+    <div class="form-group form-group-flush">
+      <div class="toggle-row"><span>Repetition &amp; redundancy (word-pair check)</span><input type="checkbox" id="chkRep" checked></div>
+      <div class="toggle-row"><span>Proper noun consistency</span><input type="checkbox" id="chkProp" checked></div>
+      <div class="toggle-row"><span>Proofreading &amp; language (US/UK + style guide packs)</span><input type="checkbox" id="chkSpell" checked></div>
+      <div class="toggle-row"><span>AI Detection (heuristic) + Anti-AI Voice</span><input type="checkbox" id="chkAI" checked></div>
+      <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">AI detection is heuristic only—not proof of AI or plagiarism.</p>
+    </div>
+    <h2 class="pe-section-title">Fiction modules</h2>
+    <div class="form-group form-group-flush">
+      <div class="toggle-row"><span>1. Plot & Chapter Structure</span><input type="checkbox" id="mPlot" checked></div>
+      <div class="toggle-row"><span>2. Characterization & Motivation</span><input type="checkbox" id="mMotivation" checked></div>
+      <div class="toggle-row"><span>3. Dialogue & Viewpoint (POV)</span><input type="checkbox" id="mDialogue" checked></div>
+      <div class="toggle-row"><span>4. Continuity & Chronology</span><input type="checkbox" id="mContinuity" checked></div>
+      <div class="toggle-row"><span>5. Plausibility & Evidence</span><input type="checkbox" id="mPlausibility" checked></div>
+      <div class="toggle-row"><span>6. Pacing & Readability</span><input type="checkbox" id="mPacing" checked></div>
+      <div class="toggle-row"><span>7. Spoiler Control</span><input type="checkbox" id="mSpoiler" checked></div>
+    </div>
+  </div>
+
+  <div id="tab4" class="tab-content" role="tabpanel">
+    <div class="audit-run-hub audit-run-hub-inline">
+      <button class="btn-main btn-main-hub" id="btnAuditPrimary" onclick="runPrimaryAudit()">Run audit</button>
+      <label class="toggle-row compact"><span>Extended checks</span><input type="checkbox" data-audit-extended="1" id="auditExtended"></label>
+      <button type="button" class="btn-linkish" onclick="showTab('tab3')">Configure checks →</button>
+    </div>
+    <p class="active-checks-hint"></p>
+    <div class="audit-pins">
+      <span class="audit-pins-label">Target (quick)</span>
+      <select id="pinManuscriptType" title="Manuscript type" aria-label="Manuscript type"></select>
+      <select id="pinScope" title="Analysis scope" aria-label="Analysis scope"></select>
+      <select id="pinCriticPersona" title="Critic persona" aria-label="Critic persona"></select>
+    </div>
+    <div id="trafficBar" class="traffic-bar hidden"></div>
+    <div id="miniScores" class="mini-scores hidden"></div>
+    <div id="summaryReport" class="summary-report">Highlight text in Word, then Run audit above.</div>
+    <div class="audit-toolbar">
+      <div class="filter-chips" role="group" aria-label="Filter findings">
+        <button type="button" class="chip chip-active" data-audit-filter="all" onclick="setAuditCardFilter('all')">All</button>
+        <button type="button" class="chip" data-audit-filter="confirmed" onclick="setAuditCardFilter('confirmed')">Critical</button>
+        <button type="button" class="chip" data-audit-filter="preference" onclick="setAuditCardFilter('preference')">Style</button>
+        <button type="button" class="chip" data-audit-filter="styleguide" onclick="setAuditCardFilter('styleguide')">Style guide</button>
+      </div>
+      <div class="filter-chips" role="group" aria-label="Sort findings">
+        <button type="button" class="chip chip-sort chip-active" data-audit-sort="priority" onclick="setAuditCardSort('priority')">Priority</button>
+        <button type="button" class="chip chip-sort" data-audit-sort="module" onclick="setAuditCardSort('module')">Module</button>
+      </div>
+      <button type="button" class="btn-go btn-copy-copilot btn-copilot-primary" onclick="copyAuditForCopilot()" title="Copy summary + findings — paste into Word Copilot chat">Copy for Copilot</button>
+    </div>
+    <details class="help-box help-muted audit-share">
+      <summary>Share report</summary>
+      <div class="audit-actions-row">
+        <button type="button" class="btn-secondary" onclick="copyFeedbackLetter()">Copy feedback letter</button>
+        <button type="button" class="btn-secondary" onclick="insertAuditReportInWord()">Insert report in Word</button>
+        <button type="button" class="btn-secondary" onclick="resetMutedRules()">Reset muted rules</button>
+      </div>
+    </details>
+    <div id="cardContainer"></div>
+  </div>
+
+  <div id="tab5" class="tab-content">
+    <div class="help-box help-muted">Local Coach uses curated rules (0 tokens). Word Copilot or Gemini only when you need generative prose.</div>
+    <div id="chatLog" class="chat-log">
+      <div class="chat-msg chat-ai"><strong>Local Coach:</strong> Ask about POV, pacing, dialogue, show/tell—no API key needed.</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input type="text" id="chatInput" placeholder="e.g. How do I fix POV slips?" style="flex:1;margin-bottom:0;">
+      <button id="micBtn" type="button" onclick="toggleVoiceDictation()" title="Dictate">🎤</button>
+    </div>
+    <div id="tokenEstimate" class="token-estimate">Local Coach: 0 tokens</div>
+    <div id="micStatus" class="mic-status"></div>
+    <div class="action-stack" style="margin-top:6px;">
+      <button class="btn-main" onclick="sendLocalCoachMessage()">Local Coach (free)</button>
+      <button type="button" class="btn-secondary" onclick="sendLocalCoachStarter('pacing')">Tip: Pacing</button>
+      <button type="button" class="btn-secondary" onclick="sendLocalCoachStarter('pov')">Tip: POV</button>
+      <details class="help-box help-muted" style="margin-top:6px;">
+        <summary>More prompts</summary>
+        <div class="action-stack" style="margin-top:6px;">
+          <button type="button" class="btn-secondary" onclick="sendLocalCoachStarter('plot')">Tip: Plot</button>
+          <button type="button" class="btn-secondary" onclick="sendLocalCoachStarter('export')">Tip: Export</button>
+        </div>
+      </details>
+    </div>
+    <details class="help-box help-muted pe-gemini-block" style="margin-top:8px;">
+      <summary>Optional Gemini API (uses tokens)</summary>
+      <div class="form-group" style="border:none;padding:0;margin-top:6px;">
+        <label for="apiKey">Gemini API Key</label>
+        <input type="password" id="apiKey" placeholder="Leave blank to stay local-only">
+        <div class="toggle-row"><span>Remember in this document</span><input type="checkbox" id="rememberApiKey"></div>
+        <div class="toggle-row"><span>Context: selection only</span><input type="checkbox" id="chatSelectionOnly" checked></div>
+        <button class="btn-secondary btn-api-opt" onclick="sendChatMessage()">Send via Gemini</button>
+      </div>
+    </details>
+  </div>
+
+  <div id="tab6" class="tab-content">
+    <div class="help-box">Rule-based paraphrase runs in the browser (0 tokens). Highlight text in Word first.</div>
+    <div class="form-group">
+      <label for="rewriteMode">Paraphrase mode</label>
+      <select id="rewriteMode">
+        <option value="fluency">Fluency (tighten)</option>
+        <option value="formal">Formal (register)</option>
+        <option value="creative">Creative (light touch)</option>
+        <option value="academic">Academic (hedge trim)</option>
+      </select>
+    </div>
+    <div id="rewritePreview" class="results-panel">Preview appears here...</div>
+    <div id="rewriteTokenEstimate" class="token-estimate">Local paraphrase: 0 tokens</div>
+    <div class="action-stack">
+      <button class="btn-main" onclick="runLocalRewrite()">Local paraphrase (free)</button>
+      <button class="btn-secondary" onclick="applyRewritePreview()">Apply preview to selection</button>
+    </div>
+    <details class="help-box help-muted pe-gemini-block" style="margin-top:8px;">
+      <summary>Optional Gemini rewrite (uses tokens)</summary>
+      <button class="btn-secondary btn-api-opt" style="margin-top:6px;" onclick="runSmartRewrite()">Rewrite via Gemini</button>
+    </details>
+  </div>
+
+  <script src="lib/settings-store.js"></script>
+  <script src="lib/text-metrics.js"></script>
+  <script src="lib/proper-noun-analyse.js"></script>
+  <script src="lib/editor-heuristics.js"></script>
+  <script src="lib/custom-style-guide.js"></script>
+  <script src="lib/style-guide-rules.js"></script>
+  <script src="lib/audit-engine.js"></script>
+  <script src="lib/doc-analytics.js"></script>
+  <script src="lib/chapter-heatmap.js"></script>
+  <script src="lib/manuscript-overview.js"></script>
+  <script src="lib/local-rewrite.js"></script>
+  <script src="lib/local-coach.js"></script>
+  <script src="lib/gemini-client.js"></script>
+  <script src="lib/edit-history.js"></script>
+  <script src="taskpane.js"></script>
+</body>
+</html>
