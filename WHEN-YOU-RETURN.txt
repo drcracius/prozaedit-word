@@ -1,0 +1,14 @@
+ProzaEdit beta — you are on Step 6 (about 5 minutes)
+
+Open this file for full steps:
+  docs\WHEN-YOU-RETURN.md
+
+Quick version:
+  1. Word -> Insert -> Add-ins -> remove old localhost ProzaEdit (if any)
+  2. Upload My Add-in -> pick manifest.hosted.xml in THIS folder
+  3. Home -> ProzaEdit
+
+Download manifest from GitHub (any PC):
+  https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml
+
+No need to run Start ProzaEdit.bat for daily use.
