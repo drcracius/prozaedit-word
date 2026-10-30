@@ -1,0 +1,18 @@
+PROZAEDIT — STOP USING BAT FILES (beta on the internet)
+
+Read this guide (step-by-step, includes GitHub for beginners):
+
+  docs\BETA-SETUP-GITHUB.md
+
+Quick map:
+  1. Free GitHub account → upload assets + src + manifest.xml
+  2. GitHub Settings → Pages → turn on (free HTTPS site)
+  3. Create-Hosted-Manifest.bat → paste your github.io URL
+  4. Word: upload manifest.hosted.xml OR Microsoft 365 admin (if you have admin.microsoft.com)
+  5. Send manifest.hosted.xml + docs\BETA-TESTERS-INSTALL.txt to close testers
+
+Home M365 Premium (consumer email): admin.microsoft.com will NOT work — that is normal.
+Use manifest.hosted.xml upload (Part 5B in the guide), not admin deploy.
+Friends: same — one-time upload (BETA-TESTERS-INSTALL.txt).
+
+Localhost + Start ProzaEdit.bat = only when YOU are changing code.

@@ -1,0 +1,22 @@
+PROZAEDIT — BETA TESTER (one-time install)
+
+You received manifest.hosted.xml from the ProzaEdit author.
+
+REQUIREMENTS
+  - Microsoft Word (desktop or word.office.com)
+  - Internet while using ProzaEdit
+
+STEPS
+  1. Save manifest.hosted.xml somewhere easy (Downloads is fine).
+  2. Open Word (word.office.com is often easiest).
+  3. Home → Add-ins → More settings / Get Add-ins
+  4. Upload My Add-in → select manifest.hosted.xml
+  5. Home → ProzaEdit to open the editor
+
+DAILY USE
+  Open Word → Home → ProzaEdit
+  (No extra apps or bat files from the author.)
+
+If Upload is missing on desktop Word, use https://office.com in a browser for step 2–4.
+
+Questions: contact the person who sent you this file.

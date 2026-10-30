@@ -1,0 +1,5 @@
+node_modules/
+.prozaedit-setup-ok
+*.log
+.env
+.env.*

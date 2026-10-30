@@ -47,8 +47,8 @@ Desktop Word errors like **“add-in no longer available”** or **Visual Studio
 | **2** — Create repo | **Done** | [github.com/drcracius/prozaedit-word](https://github.com/drcracius/prozaedit-word) |
 | **3** — Upload files | **Done** | `assets/`, `src/taskpane/` (incl. `lib/`), root `manifest.xml`; **no** `node_modules` |
 | **4** — GitHub Pages | **Done** | Branch **`main`**, folder **`/ (root)`**; repo is **public** (needed for free Pages) |
-| **5** — Hosted manifest | **Next** | Run `Create-Hosted-Manifest.bat` with base URL below |
-| **6** — Install in Word | **Pending** | Upload **`manifest.hosted.xml`** (consumer path; not admin center) |
+| **5** — Hosted manifest | **Done** | `manifest.hosted.xml` on PC + GitHub (v2.0.0.1) |
+| **6** — Install in Word | **Next (you)** | Upload **`manifest.hosted.xml`** — see `docs/WHEN-YOU-RETURN.md` |
 | **7** — Share with testers | **Pending** | Send `manifest.hosted.xml` + `docs/BETA-TESTERS-INSTALL.txt` |
 | **8** — Updates | **Pending** | Re-upload changed files on GitHub; Word picks up after manifest/version refresh as needed |
 
@@ -129,9 +129,9 @@ prozaedit-word/
 
 ---
 
-## Known minor issue (optional fix later)
+## Asset paths (fixed)
 
-`taskpane.html` references **`/assets/...`** (site-root paths). On GitHub Pages under **`/prozaedit-word/`**, icons/wordmark may load from the wrong URL; the task pane can still work. Fix: use relative paths (e.g. `../../assets/...`) and re-upload to GitHub.
+`taskpane.html` now uses **`../../assets/...`** so icons and wordmark load correctly on GitHub Pages.
 
 ---
 
