@@ -35,7 +35,7 @@
     <ul class="help-list pe-session-tips-list">
       <li><strong>Target</strong> — set scope and manuscript type, then <strong>Checks</strong> — turn modules on → <strong>Run audit</strong> → fix cards on <strong>Audit</strong>.</li>
       <li>Fiction-only modules and <strong>Timeline scan</strong> appear when manuscript type is Fiction.</li>
-      <li><strong>Simple mode</strong> (Target) hides Thesaurus and optional Gemini blocks; other toggles are under toolbar <strong>Settings</strong>.</li>
+      <li><strong>Simple mode</strong> (Settings → Safety) hides Thesaurus and optional Gemini blocks; other persistent prefs are under toolbar <strong>Settings</strong>.</li>
       <li>After GitHub updates, close and reopen the pane; re-upload <code>manifest.hosted.xml</code> only when the manifest version bumps.</li>
     </ul>
     <button type="button" class="btn-secondary pe-session-tips-dismiss" onclick="dismissSessionTips()" data-pe-tip="btn-session-tips-got-it">Got it</button>
@@ -74,7 +74,8 @@
   </div>
 
   <div id="tab1" class="tab-content active" role="tabpanel">
-    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Target</strong> is daily profile, scope, and style. Open toolbar <strong>Settings</strong> for safety toggles, dictionary, citation tools, and bulk style import. Changes auto-save or use <strong>Save now</strong>. On Word web, drag the pane divider for width — see Help → Platforms.</p>
+    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Target</strong> is daily profile, scope, and style. Open toolbar <strong>Settings</strong> for safety toggles, dictionary, citation tools, and custom style rules. Changes auto-save or use <strong>Save now</strong>. On Word web, drag the pane divider for width — see Help → Platforms.</p>
+    <p class="pe-target-scope-hint help-muted" style="font-size:10px;margin:0 0 8px;">Profile &amp; scope — advanced options in <strong>Settings</strong> (toolbar)</p>
     <details class="pe-target-section" open>
       <summary class="pe-section-title pe-section-summary">Manuscript profile</summary>
     <div class="form-group">
@@ -180,19 +181,8 @@
       </select>
       <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Built-in guides use local heuristics only. Sources: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/STYLE-GUIDE-SOURCES.md" target="_blank" rel="noopener">STYLE-GUIDE-SOURCES.md</a> · <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a>.</p>
     </div>
-    <div id="customStyleGuidePanel" class="form-group custom-style-panel hidden">
-      <label for="customStyleName">Custom guide name</label>
-      <input type="text" id="customStyleName" placeholder="e.g. My thriller house style" maxlength="80">
-      <label style="margin-top:8px;display:block;">Add rule (phrase to flag in audit)</label>
-      <input type="text" id="customStyleFind" placeholder="Find phrase, e.g. utilize" style="margin-bottom:4px;">
-      <input type="text" id="customStyleReplace" placeholder="Suggest replace with, e.g. use" style="margin-bottom:4px;">
-      <input type="text" id="customStyleHint" placeholder="Optional note for the card" style="margin-bottom:4px;">
-      <button type="button" class="btn-go" onclick="addCustomStyleRule()">Add rule</button>
-      <div id="customStyleRulesList" class="dict-list" style="margin-top:6px;"></div>
-      <p class="help-inline" style="font-size:10px;margin:6px 0 0;">Presets, copy rules, and bulk import: toolbar <strong>Settings</strong>.</p>
-    </div>
-    <h2 class="pe-section-title">Quick options</h2>
-    <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
+    <p id="targetCustomRulesSummary" class="pe-target-custom-rules-line help-muted hidden" style="font-size:10px;margin:4px 0 0;">Custom rules: <span id="targetCustomRulesCount">0</span> — <button type="button" class="btn-linkish" onclick="openSettingsModal('custom-style')">manage in Settings</button></p>
+    <p class="pe-target-simple-mode-line help-muted" style="font-size:10px;margin:8px 0 0;">Simple mode: <strong id="targetSimpleModeLabel">Off</strong> — <button type="button" class="btn-linkish" onclick="openSettingsModal('safety')">change in Settings</button></p>
     <button type="button" id="btnSaveTarget" class="btn-secondary" onclick="saveConfiguration()">Save now</button>
     <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Target fields auto-save when you change them. Advanced options in <strong>Settings</strong>.</p>
   </div>
@@ -328,13 +318,8 @@
       </div>
       <button type="button" class="btn-go btn-copy-copilot btn-copilot-primary" onclick="copyAuditForCopilot()" title="Copy summary + findings — paste into Word Copilot chat">Copy for Copilot</button>
       <button type="button" class="btn-secondary" onclick="clearAuditReport()" title="Clear cards and summary for a fresh audit">Clear report</button>
-      <label class="report-density-label" for="reportDensity">Report depth</label>
-      <select id="reportDensity" title="Light = fewer cards and shorter summary; Dense = maximum detail">
-        <option value="light">Light</option>
-        <option value="balanced" selected>Balanced</option>
-        <option value="dense">Dense</option>
-      </select>
     </div>
+    <p id="auditReportDepthHint" class="audit-report-depth-hint help-muted" style="font-size:10px;margin:4px 0 8px;" aria-live="polite">Report depth: Balanced (change in Settings)</p>
     <details class="help-box help-muted audit-share">
       <summary>Share report</summary>
       <div class="audit-actions-row">
@@ -399,7 +384,7 @@
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
       <p><strong>Analysis scope (Target):</strong> Highlighted selection; <strong>Page range</strong> (From/To pages, ~2,800 chars each); Selected chapters (Heading 1–3 checklist); or Full manuscript.</p>
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
-      <p><strong>Settings (toolbar gear):</strong> Safety toggles (confirm before apply, hover tips, FK lock, continuity slider), per-document dictionary, capture reference style, citation scan shortcut, Gemini session ceiling (when Simple mode is off), and custom-style bulk import. <strong>Target</strong> keeps manuscript profile, analysis scope, preferred style guide, quick custom rules, and Simple mode.</p>
+      <p><strong>Settings (toolbar gear):</strong> Simple mode, safety toggles (confirm before apply, hover tips, FK lock, continuity slider), audit defaults (report depth, default filter, extended checks), privacy &amp; diagnostics, per-document dictionary, capture reference style, citation scan shortcut, Gemini session ceiling (when Simple mode is off), and custom style rules (add/edit/bulk import). <strong>Target</strong> keeps manuscript profile, analysis scope, and preferred style guide.</p>
       <p><strong>Look &amp; navigation:</strong> Single light theme (indigo actions, green accents for active steps and OK hints). Settings and Rewrite (from an audit card) offer <strong>Back</strong> when you need to return without hunting tabs.</p>
       <p><strong>Hover tips:</strong> Settings → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
       <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” in Settings for speed.</p>
@@ -434,21 +419,8 @@
     </div>
     <h2 class="pe-section-title">Diagnostics &amp; privacy</h2>
     <div class="help-box">
-      <p>Optional anonymous crash reports help fix bugs. <strong>Off by default.</strong> We never send your document text, selection, or API keys — only build version, error type, and a trimmed stack trace.</p>
-      <div class="toggle-row">
-        <span>Send anonymous crash reports</span>
-        <input type="checkbox" id="peDiagnosticsOptIn" aria-describedby="peDiagnosticsPrivacy">
-      </div>
-      <p id="peDiagnosticsPrivacy" class="help-muted" style="font-size:11px;margin:6px 0;">When enabled and the owner has configured ingest, crashes and unhandled errors may be sent automatically. Otherwise reports copy redacted JSON to your clipboard.</p>
-      <label for="peDiagnosticsNote">Optional note (what you were doing, not manuscript text)</label>
-      <input type="text" id="peDiagnosticsNote" maxlength="500" placeholder="e.g. Run audit on full manuscript" aria-label="Diagnostics note">
-      <button type="button" class="btn-secondary" style="margin-top:8px;" onclick="reportProzaEditProblem()">Report a problem</button>
-      <p id="peDiagnosticsGithubFallback" class="help-muted" style="font-size:11px;margin-top:6px;" hidden>
-        Automated send is not configured on this build.
-        <a href="https://github.com/drcracius/prozaedit-word/issues/new/choose" target="_blank" rel="noopener">Report on GitHub</a>
-        (paste redacted JSON from the button above).
-      </p>
-      <p class="help-muted" style="font-size:11px;margin-top:6px;">Full details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
+      <p>Optional anonymous crash reports and manual problem reports live in toolbar <strong>Settings → Privacy &amp; diagnostics</strong> (<strong>Off by default</strong>). We never send manuscript text, selection, or API keys. Full details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
+      <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="openSettingsModal('privacy')">Open Settings → Privacy</button>
     </div>
     <h2 class="pe-section-title">Platforms</h2>
     <div class="help-box">
@@ -511,58 +483,119 @@
         <button type="button" id="btn-settings-close" class="btn-linkish pe-settings-close" data-pe-settings-close aria-label="Close settings">Close</button>
       </header>
       <div class="pe-settings-body">
-        <h3 class="pe-section-title">Safety &amp; options</h3>
-        <div class="toggle-row"><span>Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
-        <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
-        <div class="toggle-row"><span>Show hover tips (ProzaEdit bubbles on key controls)</span><input type="checkbox" id="showHoverTips" checked></div>
-        <div class="toggle-row"><span>FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock"></div>
-        <div class="toggle-row"><span>Remind: use Word Version History before big applies</span><input type="checkbox" id="remindVersionHistory" checked></div>
-        <div class="form-group" style="margin-top:8px;">
-          <label for="continuityWarnLevel">Continuity warnings before Apply (1=quiet, 5=detailed)</label>
-          <input type="range" id="continuityWarnLevel" min="1" max="5" value="3" style="width:100%;">
-          <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Uses a local manuscript index (no AI). Dismissed warnings are remembered on this PC.</p>
-        </div>
-        <div class="toggle-row"><span>Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" checked></div>
-        <details class="help-box help-muted" data-simple-hide style="margin-top:8px;">
-          <summary>Optional Gemini session token ceiling</summary>
-          <p style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Off by default (same as v2). When on, blocks Gemini Coach, Deep Audit, and rewrite after an estimated session budget.</p>
-          <div class="toggle-row"><span>Enforce session token ceiling</span><input type="checkbox" id="aiEnforceSessionCeiling"></div>
-          <div class="form-group" style="margin-top:6px;">
-            <label for="aiMaxSessionTokens">Max estimated tokens per browser session</label>
-            <input type="number" id="aiMaxSessionTokens" min="1000" max="500000" step="1000" value="50000">
+        <details class="pe-settings-group" id="pe-settings-group-safety" open>
+          <summary>Safety</summary>
+          <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
+          <div class="toggle-row"><span>Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
+          <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
+          <div class="toggle-row"><span>Show hover tips (ProzaEdit bubbles on key controls)</span><input type="checkbox" id="showHoverTips" checked></div>
+          <div class="toggle-row"><span>FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock"></div>
+          <div class="toggle-row"><span>Remind: use Word Version History before big applies</span><input type="checkbox" id="remindVersionHistory" checked></div>
+          <div class="form-group" style="margin-top:8px;">
+            <label for="continuityWarnLevel">Continuity warnings before Apply (1=quiet, 5=detailed)</label>
+            <input type="range" id="continuityWarnLevel" min="1" max="5" value="3" style="width:100%;">
+            <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Uses a local manuscript index (no AI). Dismissed warnings are remembered on this PC.</p>
           </div>
-          <button type="button" class="btn-secondary" onclick="resetAiSessionTokens()">Reset session token counter</button>
+          <div class="toggle-row"><span>Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" checked></div>
+          <details class="help-box help-muted" data-simple-hide style="margin-top:8px;">
+            <summary>Optional Gemini session token ceiling</summary>
+            <p style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Off by default (same as v2). When on, blocks Gemini Coach, Deep Audit, and rewrite after an estimated session budget.</p>
+            <div class="toggle-row"><span>Enforce session token ceiling</span><input type="checkbox" id="aiEnforceSessionCeiling"></div>
+            <div class="form-group" style="margin-top:6px;">
+              <label for="aiMaxSessionTokens">Max estimated tokens per browser session</label>
+              <input type="number" id="aiMaxSessionTokens" min="1000" max="500000" step="1000" value="50000">
+            </div>
+            <button type="button" class="btn-secondary" onclick="resetAiSessionTokens()">Reset session token counter</button>
+          </details>
         </details>
-        <h3 class="pe-section-title" style="margin-top:12px;">Reference &amp; citations</h3>
-        <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="captureReferenceStyle()">Capture reference style from selection</button>
-        <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Compares dialogue % and FK to future audits (local).</p>
-        <button type="button" class="btn-secondary pe-citation-target-btn" id="btnVerifyCitationsTarget" style="margin-top:6px;width:100%;" onclick="runCitationScanFromTarget()" data-pe-tip="btn-verify-citations" hidden>Verify citations (local scan)</button>
-        <p id="citationTargetHint" class="help-inline pe-citation-target-hint" style="font-size:10px;margin:4px 0 0;" hidden>Pattern assist only — enable on Checks, then scan scoped text. Not Bluebook/APA certification.</p>
-        <h3 class="pe-section-title" style="margin-top:12px;">Dictionary</h3>
-        <div class="form-group">
-          <label for="dictInput">Custom Dictionary (per document)</label>
-          <div style="display:flex;gap:4px;">
-            <input type="text" id="dictInput" placeholder="Name, place, jargon..." style="margin-bottom:0;flex:1;">
-            <button type="button" class="btn-go" onclick="addDictionaryWord()">Add</button>
+        <details class="pe-settings-group" id="pe-settings-group-audit">
+          <summary>Audit &amp; reports</summary>
+          <div class="form-group" style="margin-top:6px;">
+            <label for="reportDensity">Report depth</label>
+            <select id="reportDensity" title="Light = fewer cards and shorter summary; Dense = maximum detail">
+              <option value="light">Light</option>
+              <option value="balanced" selected>Balanced</option>
+              <option value="dense">Dense</option>
+            </select>
+            <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Controls card cap and overview detail on the Audit tab.</p>
           </div>
-          <div id="dictList" class="dict-list"></div>
-        </div>
-        <h3 class="pe-section-title" style="margin-top:12px;">Custom style guide (advanced)</h3>
-        <p class="help-inline" style="font-size:10px;margin:0 0 6px;">Preferred guide and quick <strong>Add rule</strong> stay on Target. Use this section for presets and bulk import.</p>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
-          <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('plain-starter')">Plain starter</button>
-          <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('uk-starter')">UK starter</button>
-          <button type="button" class="btn-secondary" onclick="copyCustomStyleRulesToClipboard()">Copy rules</button>
-        </div>
-        <details class="help-box help-muted" style="margin-top:8px;">
-          <summary>Paste many rules at once</summary>
-          <p style="font-size:10px;margin:4px 0;">One per line: <code>find =&gt; replace</code> or <code>find =&gt; replace | note</code>. Lines starting with # are ignored.</p>
-          <textarea id="customStyleBulk" rows="5" style="width:100%;font-size:11px;" placeholder="utilize =&gt; use&#10;in order to =&gt; to | shorter"></textarea>
-          <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importCustomStyleBulk()">Import lines</button>
+          <div class="form-group">
+            <label for="settingsDefaultAuditFilter">Default audit filter</label>
+            <select id="settingsDefaultAuditFilter" title="Starting filter when you open Audit; Simple mode may override to Critical on load">
+              <option value="all">All</option>
+              <option value="confirmed">Critical</option>
+              <option value="preference">Style</option>
+              <option value="styleguide">Style guide</option>
+            </select>
+            <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Session chips on Audit still change the live filter. With Simple mode on and no saved filter, Critical is used.</p>
+          </div>
+          <div class="toggle-row"><span>Extended checks (fillers, duplicates, deeper editorial pass)</span><input type="checkbox" data-audit-extended="1" id="auditExtendedSettings"></div>
+        </details>
+        <details class="pe-settings-group" id="pe-settings-group-privacy">
+          <summary>Privacy &amp; diagnostics</summary>
+          <p class="help-inline" style="font-size:10px;margin:6px 0;">Optional anonymous crash reports help fix bugs. <strong>Off by default.</strong> We never send document text, selection, or API keys.</p>
+          <div class="toggle-row">
+            <span>Send anonymous crash reports</span>
+            <input type="checkbox" id="peDiagnosticsOptIn" aria-describedby="peDiagnosticsPrivacy">
+          </div>
+          <p id="peDiagnosticsPrivacy" class="help-muted" style="font-size:11px;margin:6px 0;">When enabled and the owner has configured ingest, crashes and unhandled errors may be sent automatically. Otherwise reports copy redacted JSON to your clipboard.</p>
+          <label for="peDiagnosticsNote">Optional note (what you were doing, not manuscript text)</label>
+          <input type="text" id="peDiagnosticsNote" maxlength="500" placeholder="e.g. Run audit on full manuscript" aria-label="Diagnostics note">
+          <button type="button" class="btn-secondary" style="margin-top:8px;" onclick="reportProzaEditProblem()">Report a problem</button>
+          <p id="peDiagnosticsGithubFallback" class="help-muted" style="font-size:11px;margin-top:6px;" hidden>
+            Automated send is not configured on this build.
+            <a href="https://github.com/drcracius/prozaedit-word/issues/new/choose" target="_blank" rel="noopener">Report on GitHub</a>
+            (paste redacted JSON from the button above).
+          </p>
+          <p class="help-muted" style="font-size:11px;margin-top:6px;"><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
+        </details>
+        <details class="pe-settings-group" id="pe-settings-group-reference">
+          <summary>Reference &amp; citations</summary>
+          <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="captureReferenceStyle()">Capture reference style from selection</button>
+          <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Compares dialogue % and FK to future audits (local).</p>
+          <button type="button" class="btn-secondary pe-citation-target-btn" id="btnVerifyCitationsTarget" style="margin-top:6px;width:100%;" onclick="runCitationScanFromTarget()" data-pe-tip="btn-verify-citations" hidden>Verify citations (local scan)</button>
+          <p id="citationTargetHint" class="help-inline pe-citation-target-hint" style="font-size:10px;margin:4px 0 0;" hidden>Pattern assist only — enable on Checks, then scan scoped text. Not Bluebook/APA certification.</p>
+        </details>
+        <details class="pe-settings-group" id="pe-settings-group-dictionary">
+          <summary>Dictionary</summary>
+          <div class="form-group" style="margin-top:6px;">
+            <label for="dictInput">Custom Dictionary (per document)</label>
+            <div style="display:flex;gap:4px;">
+              <input type="text" id="dictInput" placeholder="Name, place, jargon..." style="margin-bottom:0;flex:1;">
+              <button type="button" class="btn-go" onclick="addDictionaryWord()">Add</button>
+            </div>
+            <div id="dictList" class="dict-list"></div>
+          </div>
+        </details>
+        <details class="pe-settings-group" id="pe-settings-group-custom-style">
+          <summary>Custom style</summary>
+          <div id="customStyleGuidePanel" class="form-group custom-style-panel hidden" style="margin-top:6px;">
+            <label for="customStyleName">Custom guide name</label>
+            <input type="text" id="customStyleName" placeholder="e.g. My thriller house style" maxlength="80">
+            <label style="margin-top:8px;display:block;">Add rule (phrase to flag in audit)</label>
+            <input type="text" id="customStyleFind" placeholder="Find phrase, e.g. utilize" style="margin-bottom:4px;">
+            <input type="text" id="customStyleReplace" placeholder="Suggest replace with, e.g. use" style="margin-bottom:4px;">
+            <input type="text" id="customStyleHint" placeholder="Optional note for the card" style="margin-bottom:4px;">
+            <button type="button" class="btn-go" onclick="addCustomStyleRule()">Add rule</button>
+            <div id="customStyleRulesList" class="dict-list" style="margin-top:6px;"></div>
+          </div>
+          <p class="help-inline" style="font-size:10px;margin:6px 0;">Choose <strong>Custom</strong> or <strong>Custom + Auto</strong> on Target to edit rules. Presets and bulk import below.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+            <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('plain-starter')">Plain starter</button>
+            <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('uk-starter')">UK starter</button>
+            <button type="button" class="btn-secondary" onclick="copyCustomStyleRulesToClipboard()">Copy rules</button>
+          </div>
+          <details class="help-box help-muted" style="margin-top:8px;">
+            <summary>Paste many rules at once</summary>
+            <p style="font-size:10px;margin:4px 0;">One per line: <code>find =&gt; replace</code> or <code>find =&gt; replace | note</code>. Lines starting with # are ignored.</p>
+            <textarea id="customStyleBulk" rows="5" style="width:100%;font-size:11px;" placeholder="utilize =&gt; use&#10;in order to =&gt; to | shorter"></textarea>
+            <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importCustomStyleBulk()">Import lines</button>
+          </details>
         </details>
       </div>
       <footer class="pe-settings-footer">
         <button type="button" class="btn-secondary" data-pe-settings-close>Close</button>
+        <button type="button" class="btn-main" id="btn-settings-save-close" onclick="saveSettingsAndClose()">Save &amp; close</button>
       </footer>
     </div>
   </div>

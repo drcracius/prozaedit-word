@@ -20,7 +20,7 @@ When ingest is not configured, Help also shows **Report on GitHub** → [new iss
 
 ## User steps
 
-1. Open **Help** → **Diagnostics & privacy**.
+1. Open toolbar **Settings** → **Privacy & diagnostics** (Help tab links there).
 2. Turn on **Send anonymous crash reports** if you want automatic crash/unhandled reports (when ingest is configured).
 3. Use **Report a problem** to send or copy a report; optional note describes what you were doing (not what you wrote).
 4. If automated send is unavailable, use **Report on GitHub** and paste the redacted JSON into the issue form.

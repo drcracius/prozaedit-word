@@ -417,7 +417,22 @@ function decorateSettingsBackIcon() {
   if (icon) back.insertAdjacentHTML("afterbegin", icon);
 }
 
-function openSettingsModal() {
+const PE_SETTINGS_GROUP_IDS = {
+  safety: "pe-settings-group-safety",
+  audit: "pe-settings-group-audit",
+  privacy: "pe-settings-group-privacy",
+  reference: "pe-settings-group-reference",
+  dictionary: "pe-settings-group-dictionary",
+  "custom-style": "pe-settings-group-custom-style",
+};
+
+function expandSettingsGroup(key) {
+  const id = PE_SETTINGS_GROUP_IDS[key];
+  const el = id ? getEl(id) : null;
+  if (el && el.tagName === "DETAILS") el.open = true;
+}
+
+function openSettingsModal(focusGroup) {
   const modal = getEl("pe-settings-modal");
   if (!modal) return;
   decorateSettingsBackIcon();
@@ -425,7 +440,20 @@ function openSettingsModal() {
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
   document.body.classList.add("pe-settings-open");
+  const customGroup = getEl("pe-settings-group-custom-style");
+  if (customGroup && !focusGroup) {
+    const n = ProzaEdit.Settings.getCustomStyleGuide().rules?.length || 0;
+    if (n > 0 || isCustomStyleGuideMode()) customGroup.open = true;
+  }
+  if (focusGroup) expandSettingsGroup(focusGroup);
   getEl("btn-settings-back")?.focus();
+}
+
+function saveSettingsAndClose() {
+  persistSettings(false).then((ok) => {
+    if (ok) showPeStatus("Settings saved.", "ok");
+    closeSettingsModal();
+  });
 }
 
 function closeSettingsModal() {
@@ -476,6 +504,8 @@ Office.onReady((info) => {
     syncShaperSliderLabels();
     applyHoverTips();
     updateActiveChecksHint();
+    updateAuditReportDepthHint();
+    syncSettingsDefaultAuditFilterSelect();
     try {
       skipFullScanConfirm = sessionStorage.getItem("PROZAEDIT_FULL_OK") === "1";
     } catch (_) {}
@@ -713,6 +743,7 @@ function applyUiConfig(p) {
     auditCardFilter = "confirmed";
     updateAuditFilterChips();
   }
+  syncSettingsDefaultAuditFilterSelect();
   if (p.auditCardSort && ["priority", "module"].includes(p.auditCardSort)) {
     auditCardSort = p.auditCardSort;
     updateAuditSortChips();
@@ -737,6 +768,8 @@ function applyUiConfig(p) {
   syncExtendedAuditToggles();
   syncScopePanels();
   applySimpleMode();
+  updateAuditReportDepthHint();
+  toggleCustomStylePanel();
   updateActiveChecksHint();
 }
 
@@ -796,7 +829,10 @@ function isAuditExtended() {
 }
 
 function syncExtendedAuditToggles() {
-  const on = isChecked("auditExtended", isChecked("auditExtendedChecks", false));
+  const on = isChecked(
+    "auditExtended",
+    isChecked("auditExtendedChecks", isChecked("auditExtendedSettings", false))
+  );
   document.querySelectorAll('input[data-audit-extended="1"]').forEach((el) => {
     el.checked = !!on;
   });
@@ -856,6 +892,8 @@ function setupAutoSaveHandlers() {
       else updateActiveChecksHint();
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
       if (el.id === "showHoverTips") applyHoverTips();
+      if (el.id === "reportDensity") updateAuditReportDepthHint();
+      if (el.id === "settingsDefaultAuditFilter") applyDefaultAuditFilterFromSettings();
       schedulePersistSettings();
     });
   };
@@ -885,6 +923,7 @@ function setupAutoSaveHandlers() {
     "chkCitationReconcile",
     "aiEnforceSessionCeiling",
     "aiMaxSessionTokens",
+    "settingsDefaultAuditFilter",
   ].forEach((id) => bind(getEl(id)));
   MODULE_IDS.forEach((id) => bind(getEl(id)));
   document.querySelectorAll('input[data-audit-extended="1"]').forEach((el) => {
@@ -957,9 +996,8 @@ function runPrimaryAudit() {
   if (ref === "custom") {
     const n = ProzaEdit.Settings.getCustomStyleGuide().rules?.length || 0;
     if (!n) {
-      showPeStatus("No custom rules yet — add on Target tab or choose Custom + Auto.", "warn");
-      showTab("tab1");
-      toggleCustomStylePanel();
+      showPeStatus("No custom rules yet — add in Settings → Custom style or choose Custom + Auto.", "warn");
+      openSettingsModal("custom-style");
       return;
     }
   }
@@ -976,7 +1014,42 @@ function buildManuscriptProfile() {
 }
 
 function applySimpleMode() {
-  document.body.classList.toggle("pe-simple-mode", isChecked("simpleMode", false));
+  const on = isChecked("simpleMode", false);
+  document.body.classList.toggle("pe-simple-mode", on);
+  const label = getEl("targetSimpleModeLabel");
+  if (label) label.textContent = on ? "On" : "Off";
+}
+
+function updateCustomRulesSummary() {
+  const n = ProzaEdit.Settings.getCustomStyleGuide().rules?.length || 0;
+  const countEl = getEl("targetCustomRulesCount");
+  if (countEl) countEl.textContent = String(n);
+}
+
+const REPORT_DENSITY_LABELS = { light: "Light", balanced: "Balanced", dense: "Dense" };
+
+function updateAuditReportDepthHint() {
+  const hint = getEl("auditReportDepthHint");
+  if (!hint) return;
+  const raw = getEl("reportDensity")?.value || "balanced";
+  const label = REPORT_DENSITY_LABELS[raw] || "Balanced";
+  hint.innerHTML = `Report depth: <strong>${label}</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
+}
+
+function syncSettingsDefaultAuditFilterSelect() {
+  const sel = getEl("settingsDefaultAuditFilter");
+  if (!sel || !["all", "confirmed", "preference", "styleguide"].includes(auditCardFilter)) return;
+  sel.value = auditCardFilter;
+}
+
+function applyDefaultAuditFilterFromSettings() {
+  const sel = getEl("settingsDefaultAuditFilter");
+  if (!sel) return;
+  const mode = sel.value;
+  if (!["all", "confirmed", "preference", "styleguide"].includes(mode)) return;
+  auditCardFilter = mode;
+  updateAuditFilterChips();
+  applyAuditCardFilter();
 }
 
 function applySimpleModeAuditFilterDefault() {
@@ -1339,6 +1412,9 @@ function toggleCustomStylePanel() {
   const panel = getEl("customStyleGuidePanel");
   const on = isCustomStyleGuideMode();
   if (panel) panel.classList.toggle("hidden", !on);
+  const summary = getEl("targetCustomRulesSummary");
+  if (summary) summary.classList.toggle("hidden", !on);
+  updateCustomRulesSummary();
   updateActiveChecksHint();
 }
 
@@ -1347,6 +1423,7 @@ function loadCustomStyleUi() {
   const nameEl = getEl("customStyleName");
   if (nameEl) nameEl.value = data.name || "My house style";
   renderCustomStyleRulesList();
+  updateCustomRulesSummary();
   const nameInput = getEl("customStyleName");
   if (nameInput && !nameInput.dataset.bound) {
     nameInput.dataset.bound = "1";
@@ -1372,6 +1449,7 @@ function renderCustomStyleRulesList() {
   el.querySelectorAll("[data-custom-rule]").forEach((tag) => {
     tag.addEventListener("click", () => removeCustomStyleRule(tag.dataset.customRule));
   });
+  updateCustomRulesSummary();
 }
 
 async function saveCustomStyleFromUi() {
@@ -1651,6 +1729,7 @@ function setAuditCardFilter(mode) {
   auditCardFilter = mode;
   updateAuditFilterChips();
   applyAuditCardFilter();
+  syncSettingsDefaultAuditFilterSelect();
   persistSettings(false);
 }
 

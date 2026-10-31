@@ -33,7 +33,7 @@ The task pane uses seven tabs plus a sticky toolbar and a four-step workflow str
 
 ### Target (tab 1)
 
-**Purpose:** Daily manuscript profile, analysis scope, and style basis. Toolbar **Settings** (gear) holds safety toggles, dictionary, citation/reference tools, Gemini session ceiling, and custom-style bulk import.
+**Purpose:** Daily manuscript profile, analysis scope, and preferred style guide. Toolbar **Settings** (gear) holds persistent prefs: Simple mode, safety toggles, audit defaults, privacy/diagnostics, dictionary, citation/reference tools, custom style rules, and Gemini session ceiling.
 
 **Manuscript profile (inputs → affects audit/coach context):**
 
@@ -59,22 +59,17 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 
 - **Language:** `en-US` or `en-GB` (dialect flags, `-ise`/`-ize` checks for GB).
 - **Preferred style guide:** Auto, Plain US, Strunk 1920, GOV.UK, Microsoft, Google Dev, Red Hat, Custom only, or Custom + Auto. Built-in packs are **local heuristics** keyed to public sources—not pasted guide text.
-- **Custom house style (Target):** Named guide; quick **Add rule** rows when Custom or Custom + Auto is selected. Presets, copy rules, and bulk import live in **Settings**.
-- **Simple mode (Target):** Hides Thesaurus tab and optional Gemini blocks (`pe-simple-mode` CSS).
+- **Custom house style:** On Target, pick **Custom** or **Custom + Auto** and see a one-line rule count with a link to **Settings → Custom style** (add/edit rules, presets, bulk import).
+- **Simple mode (read-only on Target):** One line shows On/Off with a link to **Settings → Safety**; hides Thesaurus tab and optional Gemini blocks (`pe-simple-mode` CSS).
 
-**Settings modal (toolbar gear):**
+**Settings modal (toolbar gear):** Collapsible groups — **Safety** (open), **Audit & reports**, **Privacy & diagnostics**, **Reference & citations**, **Dictionary**, **Custom style** (opens automatically when you already have rules). Footer **Save & close** persists and dismisses (same as auto-save on change).
 
-- **Edits apply to selection only:** Affects thesaurus and rewrite **Apply**; audit **Apply fix** always searches the **document body** (first match).
-- **Confirm before Apply / replace**
-- **FK lock:** Extra cards when Flesch–Kincaid grade is outside target band for chosen audience.
-- **Remind Version History** before large applies.
-- **Continuity warnings (1–5):** Local index warns before replace when target appears often or looks like a name (see §4).
-- **Fiction scope reminder:** Warns in audit summary when fiction modules run on partial scope.
-- **Show hover tips:** ProzaEdit guidance bubbles on key controls (default **on**); off restores native browser `title` attributes (`tooltip-registry.js`).
-- **Optional Gemini session token ceiling** (hidden in Simple mode).
-- **Verify citations (local scan):** Shortcut to Checks citation scan when manuscript type is Academic, Business, or Technical/Journalism and citation opt-in is enabled.
-- **Capture reference style from selection:** Stores FK grade and dialogue % for delta lines in later audits.
-- **Dictionary:** Per-document list of names/jargon; proper-noun checker skips dictionary terms.
+- **Safety:** Simple mode; edits apply to selection only (thesaurus/rewrite; audit Apply fix always searches document); confirm before Apply; hover tips; FK lock; Version History reminder; continuity warnings (1–5); fiction scope reminder; optional Gemini session token ceiling (hidden in Simple mode).
+- **Audit & reports:** Report depth (Light / Balanced / Dense); default audit filter (All / Critical / Style / Style guide — Simple mode may override to Critical on load when no saved filter); default **Extended checks** (synced with Checks/Audit run toggles).
+- **Privacy & diagnostics:** Opt-in anonymous crash reports; manual **Report a problem** (redacted JSON); GitHub fallback link when ingest is not configured.
+- **Reference & citations:** Capture reference style from selection; **Verify citations** shortcut when manuscript type and Checks opt-in allow it.
+- **Dictionary:** Per-document names/jargon; proper-noun checker skips dictionary terms.
+- **Custom style:** Named guide, add-rule fields, rules list, presets, copy rules, bulk import.
 
 **Save now** on Target persists; most fields **auto-save** on change.
 
@@ -158,7 +153,7 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 - **Mini scores (Balanced/Dense):** Correctness, Clarity, Engagement heuristics.
 - **Summary report:** Word count, Flesch metrics, critical vs style counts, profile text, optional “vs last run”, reference-style delta, fiction partial-scope warning, **Manuscript overview** panel (PMAT-style local stats), optional **chapter heatmap** if built on Checks.
 
-**Card filters:** All, Critical (`confirmed`), Style (`preference`), Style guide. **Sort:** Priority or Module. **Report depth:** Light (fewer cards, minimal overview), Balanced, Dense (more cards, rhythm chart in overview).
+**Card filters:** All, Critical (`confirmed`), Style (`preference`), Style guide (session chips; default saved in **Settings → Audit & reports**). **Sort:** Priority or Module. **Report depth:** read-only hint on Audit; change in **Settings → Audit & reports** (Light / Balanced / Dense).
 
 **Per-card actions:**
 

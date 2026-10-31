@@ -29,7 +29,7 @@ There is **no supported Office JavaScript API** to programmatically set, maximiz
 ## Practical tips for authors
 
 1. On **Word on the web**, drag the pane divider until ProzaEdit is comfortable (~350px+ if your monitor allows).
-2. Use **Simple mode** (Target) to hide Thesaurus and optional API blocks in a thin pane.
+2. Use **Simple mode** (**Settings → Safety**) to hide Thesaurus and optional API blocks in a thin pane.
 3. Use **Selected chapters** scope instead of full manuscript when fiction/plot checks need a smaller read.
 4. Re-upload `manifest.hosted.xml` only when the manifest **version** bumps — UI/CSS updates load from GitHub Pages without a manifest change.
 

@@ -340,10 +340,15 @@ body.pe-narrow-pane .btn-tool-icon-label {
   margin-left: 6px;
   color: var(--text-muted);
 }
-.audit-toolbar #reportDensity {
+.pe-settings-group #reportDensity {
   font-size: 11px;
-  max-width: 100px;
-  margin-left: 4px;
+  width: 100%;
+  max-width: 220px;
+}
+
+.audit-report-depth-hint .btn-linkish {
+  font-size: inherit;
+  vertical-align: baseline;
 }
 .update-status {
   font-size: 11px;
@@ -1028,6 +1033,44 @@ body.pe-narrow-pane .btn-tool-icon-label {
   background: var(--bg);
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
+}
+
+.pe-settings-group {
+  margin: 0 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 8px 8px;
+  background: var(--bg);
+}
+
+.pe-settings-group > summary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  padding: 8px 4px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pe-settings-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pe-settings-group > summary::before {
+  content: "▸ ";
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.pe-settings-group[open] > summary::before {
+  content: "▾ ";
+}
+
+.pe-target-simple-mode-line .btn-linkish,
+.pe-target-custom-rules-line .btn-linkish {
+  font-size: inherit;
+  vertical-align: baseline;
 }
 
 body.pe-settings-open {
