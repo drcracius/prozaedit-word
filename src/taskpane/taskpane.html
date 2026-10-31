@@ -250,6 +250,22 @@
       <div class="toggle-row"><span>6. Pacing & Readability</span><input type="checkbox" id="mPacing" checked></div>
       <div class="toggle-row"><span>7. Spoiler Control</span><input type="checkbox" id="mSpoiler" checked></div>
     </div>
+    <details class="help-box help-muted pe-chrono-block" id="peChronoPanel" open>
+      <summary>Timeline scan (beta)</summary>
+      <p class="help-inline" style="margin:4px 0 8px;font-size:10px;">Heuristic temporal anchors on the current Target scope — not a continuity bible. Run audit separately; this scan is explicit.</p>
+      <div class="form-group form-group-flush">
+        <label for="selChronoDepth">Chronology depth</label>
+        <select id="selChronoDepth" class="pe-select" data-pe-tip="sel-chronology-depth">
+          <option value="macro">Chapter (macro)</option>
+          <option value="meso" selected>Scene + anchors (meso)</option>
+          <option value="micro">All anchors (micro)</option>
+        </select>
+        <div class="toggle-row" style="margin-top:8px;"><span>Spoiler guard v1 (heuristic; opt-in — may false-flag dialogue)</span><input type="checkbox" id="chkChronoSpoilerGuard"></div>
+        <button type="button" class="btn-secondary" id="btnScanTimeline" style="margin-top:8px;width:100%;" onclick="runTimelineScan()" data-pe-tip="btn-scan-chronology">Scan timeline</button>
+      </div>
+      <div id="chronoScanStatus" class="help-inline" style="margin-top:6px;font-size:10px;"></div>
+      <div id="chronoTimelineList" class="chrono-timeline-wrap" aria-live="polite"></div>
+    </details>
   </div>
 
   <div id="tab4" class="tab-content" role="tabpanel">
@@ -432,6 +448,7 @@
   <script src="lib/scope-reader.js"></script>
   <script src="lib/continuity-guard.js"></script>
   <script src="lib/word-safe-navigator.js"></script>
+  <script src="lib/chronology-engine.js"></script>
   <script src="lib/tooltip-registry.js"></script>
   <script src="lib/local-rewrite.js"></script>
   <script src="lib/lexical-shaper.js"></script>

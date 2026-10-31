@@ -41,6 +41,7 @@ let lastFeedbackLetter = "";
 let lastDocStats = null;
 let lastMiniScores = null;
 let heatmapBusy = false;
+let chronologyBusy = false;
 let persistDebounceTimer = null;
 let skipFullScanConfirm = false;
 let msIndexCache = null;
@@ -377,6 +378,13 @@ function adaptModules() {
     const el = document.getElementById(id);
     if (el) el.disabled = !fiction;
   });
+  const chronoPanel = getEl("peChronoPanel");
+  if (chronoPanel) {
+    chronoPanel.hidden = !fiction;
+    chronoPanel.toggleAttribute("disabled-section", !fiction);
+  }
+  const chronoSpoiler = getEl("chkChronoSpoilerGuard");
+  if (chronoSpoiler) chronoSpoiler.disabled = !fiction;
   updateActiveChecksHint();
   schedulePersistSettings();
 }
@@ -415,6 +423,8 @@ function collectUiConfig() {
     scopeChapterTo: getEl("scopeChapterTo")?.value || "1",
     auditExtended: isAuditExtended(),
     reportDensity: getEl("reportDensity")?.value || "balanced",
+    chronoDepth: getEl("selChronoDepth")?.value || "meso",
+    chronoSpoilerGuard: isChecked("chkChronoSpoilerGuard", false),
     modules: {},
   };
   MODULE_IDS.forEach((id) => {
@@ -472,6 +482,8 @@ function applyUiConfig(p) {
   if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
   setC("auditExtended", p.auditExtended);
   if (p.reportDensity) setV("reportDensity", p.reportDensity);
+  if (p.chronoDepth) setV("selChronoDepth", p.chronoDepth);
+  setC("chkChronoSpoilerGuard", !!p.chronoSpoilerGuard);
   syncExtendedAuditToggles();
   syncScopePanels();
   applySimpleMode();
@@ -605,6 +617,8 @@ function setupAutoSaveHandlers() {
     "scopePageTo",
     "sectionParagraphCount",
     "reportDensity",
+    "selChronoDepth",
+    "chkChronoSpoilerGuard",
   ].forEach((id) => bind(getEl(id)));
   MODULE_IDS.forEach((id) => bind(getEl(id)));
   document.querySelectorAll('input[data-audit-extended="1"]').forEach((el) => {
@@ -2045,8 +2059,99 @@ async function runBatchSectionAudit() {
   if (!batchCancel) showPeStatus("Batch complete.", "ok");
 }
 
+function buildChronologyContext() {
+  return {
+    chronoDepth: getEl("selChronoDepth")?.value || "meso",
+    chronoSpoilerGuard: isChecked("chkChronoSpoilerGuard", false),
+    manuscriptType: getEl("manuscriptType")?.value || "",
+    mutedRules: ProzaEdit.Settings.getMutedRules(),
+    reportDensity: getEl("reportDensity")?.value || "balanced",
+  };
+}
+
+function chronoGotoText(ev) {
+  const raw = (ev.label && String(ev.label).length <= 255 ? ev.label : ev.excerpt || "").trim();
+  return raw && !raw.startsWith("(") ? raw : "";
+}
+
+function renderChronologyTimeline(events) {
+  const box = getEl("chronoTimelineList");
+  if (!box) return;
+  if (!events?.length) {
+    box.innerHTML = "<p class=\"help-inline\">No timeline anchors in this scope.</p>";
+    return;
+  }
+  const rows = events.slice(0, 120).filter((ev) => chronoGotoText(ev));
+  let html = `<p class="help-inline">${events.length} anchor(s) in document order.</p><ul class="chrono-timeline-list">`;
+  rows.forEach((ev) => {
+    const label = escapeHtml(String(ev.label || ev.type).substring(0, 72));
+    const para = ev.paraIndex != null ? ev.paraIndex + 1 : "?";
+    html += `<li><span class="chrono-idx">¶${para}</span><span class="chrono-label">${label}</span>`;
+    html += `<button type="button" class="btn-go btn-go-compact">Go to</button></li>`;
+  });
+  html += "</ul>";
+  box.innerHTML = html;
+  box.querySelectorAll(".btn-go-compact").forEach((btn, i) => {
+    const text = chronoGotoText(rows[i]);
+    if (text) btn.onclick = () => goToIssue(text);
+  });
+}
+
+async function runTimelineScan() {
+  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy) return;
+  const fiction = (getEl("manuscriptType")?.value || "").includes("Fiction");
+  if (!fiction) {
+    alert("Timeline scan is for fiction manuscripts. Set Manuscript type to Fiction on Target.");
+    return;
+  }
+  chronologyBusy = true;
+  const btn = getEl("btnScanTimeline");
+  const statusEl = getEl("chronoScanStatus");
+  if (btn) btn.disabled = true;
+  const btnLabel = btn?.textContent || "Scan timeline";
+  if (btn) btn.textContent = "Scanning…";
+  showPeStatus("Timeline scan (local)…");
+  try {
+    const ready = await prepareScopeForAudit();
+    if (!ready) return;
+    const result = await wordRun("chrono", async (ctx) => {
+      const opts = getScopeOptions();
+      if (opts.mode === "chapter" || opts.mode === "chapter-range") {
+        opts.chapters = scopeChapterListCache;
+      }
+      const paragraphs = await ProzaEdit.ScopeReader.readParagraphsInScope(ctx, opts);
+      return ProzaEdit.ChronologyEngine.analyze(paragraphs, buildChronologyContext());
+    });
+    renderChronologyTimeline(result.timeline);
+    if (statusEl) {
+      let msg = `${result.timeline.length} event(s), ${result.findings.length} finding(s).`;
+      if (result.truncated) msg += " List truncated at cap.";
+      statusEl.textContent = msg;
+    }
+    if (result.findings.length) {
+      currentAuditSuggestions = ProzaEdit.ChronologyEngine.mergeFindings(currentAuditSuggestions, result.findings);
+      applyAuditCardFilter();
+      showPeStatus(`${result.findings.length} timeline finding(s) added to Audit cards.`, "ok");
+    } else {
+      showPeStatus("Timeline scan complete.", "ok");
+    }
+    if (ProzaEdit.TooltipRegistry?.refreshTooltips) {
+      ProzaEdit.TooltipRegistry.refreshTooltips(isChecked("showHoverTips", true));
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = "";
+    alert(e.message);
+  } finally {
+    chronologyBusy = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btnLabel;
+    }
+  }
+}
+
 async function scanChapterHeatmap() {
-  if (auditBusy || deepBusy || heatmapBusy) return;
+  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy) return;
   heatmapBusy = true;
   setModuleButtonsDisabled(true);
   showPeStatus("Building chapter heatmap…");

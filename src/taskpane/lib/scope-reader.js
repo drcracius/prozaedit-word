@@ -127,4 +127,108 @@ ProzaEdit.ScopeReader = {
     }
     throw new Error("Unknown scope mode.");
   },
+
+  /** Paragraph objects for chronology walk (15k cap; indices are body paragraph indexes). */
+  async readParagraphsInScope(context, opts) {
+    opts = opts || {};
+    const mode = opts.mode || "selection";
+    const paras = context.document.body.paragraphs;
+    paras.load("items");
+    await context.sync();
+    const total = paras.items.length;
+    if (total > 15000) throw new Error("Too many paragraphs for timeline scan (15,000 cap).");
+
+    let start = 0;
+    let end = total - 1;
+
+    if (mode === "full") {
+      start = 0;
+      end = total - 1;
+    } else if (mode === "chapter") {
+      const list = opts.chapters || (await this.listChapters(context));
+      const n = parseInt(opts.chapterSingle, 10) || 1;
+      const ch = list.find((c) => c.index === n);
+      if (!ch) throw new Error(`Chapter ${n} not found. Use Heading 1–3 on chapter titles.`);
+      start = ch.startPara;
+      end = ch.endPara;
+    } else if (mode === "chapter-range") {
+      const list = opts.chapters || (await this.listChapters(context));
+      const a = Math.min(parseInt(opts.chapterFrom, 10) || 1, parseInt(opts.chapterTo, 10) || 1);
+      const b = Math.max(parseInt(opts.chapterFrom, 10) || 1, parseInt(opts.chapterTo, 10) || 1);
+      const startCh = list.find((c) => c.index === a);
+      const endCh = list.find((c) => c.index === b);
+      if (!startCh || !endCh) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
+      start = startCh.startPara;
+      end = endCh.endPara;
+    } else if (mode === "pages") {
+      const from = Math.max(1, parseInt(opts.pageFrom, 10) || 1);
+      const to = Math.max(from, parseInt(opts.pageTo, 10) || from);
+      const startChar = (from - 1) * this.CHARS_PER_PAGE;
+      const endChar = to * this.CHARS_PER_PAGE;
+      let charPos = 0;
+      let foundStart = false;
+      for (let i = 0; i < total; i++) paras.items[i].load("text");
+      await context.sync();
+      for (let i = 0; i < total; i++) {
+        const t = paras.items[i].text || "";
+        const chunkLen = t.length + 1;
+        const paraStart = charPos;
+        const paraEnd = charPos + chunkLen;
+        if (paraEnd > startChar && paraStart < endChar) {
+          if (!foundStart) {
+            start = i;
+            foundStart = true;
+          }
+          end = i;
+        }
+        charPos = paraEnd;
+        if (charPos >= endChar) break;
+      }
+      if (!foundStart) throw new Error(`No paragraphs in approximate pages ${from}–${to}.`);
+    } else if (mode === "selection") {
+      const sel = context.document.getSelection();
+      sel.load("text");
+      await context.sync();
+      if (!(sel.text || "").trim()) throw new Error("Highlight text in Word, or choose page/chapter/full scope.");
+      const selParas = sel.paragraphs;
+      selParas.load("items");
+      await context.sync();
+      if (!selParas.items.length) {
+        return (sel.text || "")
+          .split(/\r?\n/)
+          .map((line, i) => ({ index: i, text: line, headingLevel: 0 }))
+          .filter((p) => p.text.trim());
+      }
+      for (let i = 0; i < selParas.items.length; i++) selParas.items[i].load("text");
+      await context.sync();
+      const firstT = (selParas.items[0].text || "").trim();
+      const lastT = (selParas.items[selParas.items.length - 1].text || "").trim();
+      for (let i = 0; i < total; i++) paras.items[i].load("text");
+      await context.sync();
+      start = -1;
+      end = -1;
+      for (let i = 0; i < total; i++) {
+        const t = (paras.items[i].text || "").trim();
+        if (start < 0 && t === firstT) start = i;
+        if (t === lastT) end = i;
+      }
+      if (start < 0) start = 0;
+      if (end < start) end = Math.min(start + selParas.items.length - 1, total - 1);
+    }
+
+    for (let i = start; i <= end; i++) paras.items[i].load(["text", "styleBuiltIn"]);
+    await context.sync();
+
+    const out = [];
+    for (let i = start; i <= end; i++) {
+      const p = paras.items[i];
+      const s = p.styleBuiltIn;
+      let headingLevel = 0;
+      if (s === Word.Style.heading1) headingLevel = 1;
+      else if (s === Word.Style.heading2) headingLevel = 2;
+      else if (s === Word.Style.heading3) headingLevel = 3;
+      out.push({ index: i, text: p.text || "", headingLevel });
+    }
+    return out;
+  },
 };

@@ -20,6 +20,10 @@
       "Lower = lighter creative trim; higher = academic hedge trim. Uses local rewrite passes only (not vivid-verb map yet).",
     "slider-density":
       "Lower = prune decorative intensifiers; higher = leave modifiers. Neutral (3) skips extra pruning.",
+    "btn-scan-chronology":
+      "Walks scoped paragraphs for temporal anchors (later that night, flashback phrases, years). Findings merge into Audit when present.",
+    "sel-chronology-depth":
+      "Macro: chapter headings only. Meso: scene breaks + time phrases. Micro: every anchor in each paragraph.",
   };
 
   let enabled = false;

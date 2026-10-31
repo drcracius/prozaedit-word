@@ -68,7 +68,7 @@
 | 1 — Navigator extract | **Complete** | `91ecf56` | `word-safe-navigator.js`; no manifest bump |
 | 2 — UX polish (tooltips + tokens) | **Complete** | `adba593` | `tooltip-registry.js`, Show hover tips, indigo/card tokens |
 | 3 — Banks + shaper v1 | **Complete** | `83e88f0` | `lexical-banks.js`, `lexical-shaper.js`, Rewrite Advanced panel; no manifest bump |
-| 4 — Chronology v1 | Not started | — | Checks sub-panel first (D3) |
+| 4 — Chronology v1 | **Complete** | `40891b2` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
 | 5 — Citations v1 | Not started | — | Opt-in; no tab until validated (D6) |
 | 6 — Install + docs hygiene | Not started | — | PE-2, WORKFLOWS.md, scripts |
 | 7+ — Optional (CI, quota, Zipf, IA merge) | Not started | — | Default-off toggles |
@@ -81,11 +81,11 @@
 
 Seven tabs + workflow strip unchanged. Phase 2 adds hover-tip registry and Editorial Studio **token** pass (not full dark mode).
 
-### 4.2 `src/taskpane/lib/` inventory (post–Phase 3)
+### 4.2 `src/taskpane/lib/` inventory (post–Phase 4)
 
-**21 modules:** post–Phase 2 set plus **`lexical-banks.js`** and **`lexical-shaper.js`**.
+**22 modules:** post–Phase 3 set plus **`chronology-engine.js`**.
 
-**Still absent vs vNext spec:** `chronology-engine.js`, `citation-engine.js`, `report-docx-export.js`, `ai-quota-manager.js`.
+**Still absent vs vNext spec:** `citation-engine.js`, `report-docx-export.js`, `ai-quota-manager.js`.
 
 ### 4.3 Known gaps (unchanged)
 
@@ -176,9 +176,9 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 ---
 
-## Phase 4 — Narrative & chronology engine (additive)
+## Phase 4 — Narrative & chronology engine (additive) ✅ COMPLETE
 
-*(Same as v1 — Checks sub-panel first per D3.)*
+**Delivered:** `lib/chronology-engine.js` (paragraph-index walk, temporal regex + phrases, spoiler guard v1 opt-in); Checks **Timeline scan** sub-panel with Go to via `WordSafeNavigator`; findings merge additively into Audit cards (mute + report-density caps). `mContinuity` / `mSpoiler` in `audit-engine.js` unchanged.
 
 ---
 
