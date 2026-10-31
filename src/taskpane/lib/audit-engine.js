@@ -143,7 +143,8 @@ ProzaEdit.Audit = {
       }
     }
 
-    const deduped = this._dedupe(suggestions).slice(0, 60);
+    const maxCards = ProzaEdit.ReportDensity?.maxCards?.(ctx.reportDensity) || 60;
+    const deduped = this._dedupe(suggestions).slice(0, maxCards);
     const persona = this.PERSONA_WEIGHTS[ctx.criticPersona] || this.PERSONA_WEIGHTS["Average Reader"];
     const criticalCount = deduped.filter((s) => s.type === "confirmed").length;
     const prefCount = deduped.filter((s) => s.type === "preference").length;

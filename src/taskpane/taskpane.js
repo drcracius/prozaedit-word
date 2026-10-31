@@ -1,6 +1,9 @@
 /**
  * ProzaEdit Word Task Pane v3.0.0 (Phases 1–4 integrated)
  */
+const PROZAEDIT_BUILD_VERSION = "2.0.0.5";
+const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
+const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const GUARDRAILS = `OPERATIONAL MANDATES:
 Zero plagiarism; original suggestions only.
 Ban AI tropes: delve, tapestry, testament, beacon, nestled, moreover, furthermore, "it is important to note".
@@ -188,6 +191,10 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
 }
 
 function refreshScopeCharPreview() {
+  if (auditBusy) {
+    showPeStatus("Wait for audit to finish.", "warn");
+    return Promise.resolve();
+  }
   const mode = getScopeMode();
   if (mode === "chapter" || mode === "chapter-range") {
     if (!scopeChapterListCache.length) {
@@ -310,6 +317,12 @@ Office.onReady((info) => {
     }
     showAuditEmptyIfNeeded();
     setTimeout(() => scheduleManuscriptIndexBuild(false), 2500);
+    try {
+      if (sessionStorage.getItem("PROZAEDIT_UPDATE_CHECK") !== PROZAEDIT_BUILD_VERSION) {
+        sessionStorage.setItem("PROZAEDIT_UPDATE_CHECK", PROZAEDIT_BUILD_VERSION);
+        setTimeout(() => checkForUpdates(false), 4000);
+      }
+    } catch (_) {}
   } catch (e) {
     console.error(e);
     alert("ProzaEdit failed to initialize. Reload the task pane.");
@@ -397,6 +410,7 @@ function collectUiConfig() {
     scopeChapterFrom: getEl("scopeChapterFrom")?.value || "1",
     scopeChapterTo: getEl("scopeChapterTo")?.value || "1",
     auditExtended: isAuditExtended(),
+    reportDensity: getEl("reportDensity")?.value || "balanced",
     modules: {},
   };
   MODULE_IDS.forEach((id) => {
@@ -452,6 +466,7 @@ function applyUiConfig(p) {
   if (p.scopePageFrom) setV("scopePageFrom", p.scopePageFrom);
   if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
   setC("auditExtended", p.auditExtended);
+  if (p.reportDensity) setV("reportDensity", p.reportDensity);
   syncExtendedAuditToggles();
   syncScopePanels();
   applySimpleMode();
@@ -582,6 +597,7 @@ function setupAutoSaveHandlers() {
     "scopePageFrom",
     "scopePageTo",
     "sectionParagraphCount",
+    "reportDensity",
   ].forEach((id) => bind(getEl(id)));
   MODULE_IDS.forEach((id) => bind(getEl(id)));
   document.querySelectorAll('input[data-audit-extended="1"]').forEach((el) => {
@@ -698,7 +714,12 @@ function buildAuditContext(options) {
     mPlausibility: isModuleEnabled("mPlausibility"),
     mPacing: isModuleEnabled("mPacing"),
     mSpoiler: isModuleEnabled("mSpoiler"),
+    reportDensity: getEl("reportDensity")?.value || "balanced",
   };
+}
+
+function getReportDensity() {
+  return ProzaEdit.ReportDensity?.normalize?.(getEl("reportDensity")?.value) || "balanced";
 }
 
 function wordRun(label, fn) {
@@ -742,10 +763,14 @@ function updateUndoRedoUi() {
 async function swapTextInScope(fromText, toText, options) {
   return wordRun("pe-swap", async (ctx) => {
     const items = await searchInScope(ctx, fromText, options);
-    if (!items.length) throw new Error("Text not found—document may have changed.");
-    items[0].select();
+    if (!items.length) {
+      throw new Error("Text not found—document may have changed. Use Go to, then Apply again.");
+    }
+    const hit = items[0];
+    hit.load("text");
     await ctx.sync();
-    items[0].insertText(toText, Word.InsertLocation.replace);
+    if (!hit.text) throw new Error("Match lost after sync—try Go to first.");
+    hit.insertText(String(toText), Word.InsertLocation.replace);
     await ctx.sync();
   });
 }
@@ -1493,10 +1518,13 @@ function finalizeAudit(result, label) {
   }
   const traffic = result.traffic || ProzaEdit.Metrics.trafficLight(score);
   renderTraffic(traffic, score);
-  if (ProzaEdit.DocAnalytics?.computeMiniScores) {
+  if (getReportDensity() !== "light" && ProzaEdit.DocAnalytics?.computeMiniScores) {
     lastMiniScores = ProzaEdit.DocAnalytics.computeMiniScores(suggestions, metrics, lastAuditExcerpt);
     renderMiniScores(lastMiniScores);
-  } else lastMiniScores = null;
+  } else {
+    lastMiniScores = null;
+    getEl("miniScores")?.classList.add("hidden");
+  }
   let compareLine = "";
   try {
     const prevRaw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.LAST_AUDIT_STATS);
@@ -1807,10 +1835,64 @@ function goToIssue(target) {
 }
 
 function applyFix(cardId, target, replacement) {
+  if (!target || String(replacement || "").startsWith("(")) {
+    showPeStatus("This card has no automatic replacement.", "warn");
+    return;
+  }
   applyDocumentEdit(target, replacement, "Audit fix", { forceDocument: true }).then((ok) => {
     if (!ok) return;
     removeAuditCard(cardId);
+    scheduleManuscriptIndexBuild(true);
   });
+}
+
+function parseManifestVersion(xml) {
+  const m = String(xml || "").match(/<Version>([^<]+)<\/Version>/i);
+  return m ? m[1].trim() : "";
+}
+
+function compareVersion(a, b) {
+  const pa = String(a || "0").split(".").map((n) => parseInt(n, 10) || 0);
+  const pb = String(b || "0").split(".").map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < 4; i++) {
+    const da = pa[i] || 0;
+    const db = pb[i] || 0;
+    if (da > db) return 1;
+    if (da < db) return -1;
+  }
+  return 0;
+}
+
+async function checkForUpdates(manual) {
+  const statusEl = getEl("updateStatus");
+  const setStatus = (msg, warn) => {
+    if (statusEl) statusEl.textContent = msg;
+    if (manual) showPeStatus(msg, warn ? "warn" : "ok");
+  };
+  setStatus("Checking GitHub…");
+  try {
+    const res = await fetch(`${PROZAEDIT_MANIFEST_URL}?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error("Could not reach GitHub.");
+    const xml = await res.text();
+    const remote = parseManifestVersion(xml);
+    if (!remote) throw new Error("Manifest version not found online.");
+    const cmp = compareVersion(remote, PROZAEDIT_BUILD_VERSION);
+    if (cmp > 0) {
+      setStatus(
+        `Update available: manifest ${remote} (you have UI ${PROZAEDIT_BUILD_VERSION}). Close this pane and reopen ProzaEdit; re-upload manifest if Word asks.`,
+        true
+      );
+      if (manual && confirm("Reload the task pane now to pull the latest UI from GitHub?")) {
+        location.reload();
+      }
+    } else if (cmp === 0) {
+      setStatus(`Up to date (manifest ${remote}). UI loads from ${PROZAEDIT_UI_URL}`);
+    } else {
+      setStatus(`Online manifest ${remote}; this pane reports ${PROZAEDIT_BUILD_VERSION}. Reload if behavior seems stale.`);
+    }
+  } catch (e) {
+    setStatus(e.message || "Update check failed.", true);
+  }
 }
 
 function formatCoachHtml(text) {

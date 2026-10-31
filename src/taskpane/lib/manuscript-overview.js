@@ -129,7 +129,12 @@ ProzaEdit.ManuscriptOverview = {
 
   buildHtml(text, ctx, meta, extras) {
     extras = extras || {};
+    const mode = ProzaEdit.ReportDensity?.overviewMode?.(ctx.reportDensity) || "standard";
     const metrics = meta.metrics || ProzaEdit.Metrics.analyze(text || "");
+    if (mode === "minimal") {
+      const dialoguePct = this.dialogueRatioPercent(text);
+      return `<details class="overview-panel"><summary>Summary (light report)</summary><p>Words ${metrics.wordCount} · FK ~${metrics.fleschKincaidGrade} · Dialogue ~${dialoguePct}% · Critical ${meta.criticalCount || 0} · Style ${meta.prefCount || 0}</p></details>`;
+    }
     const dialoguePct = this.dialogueRatioPercent(text);
     const narrativePct = Math.round((100 - dialoguePct) * 10) / 10;
     const motifs = this.topMotifs(text, 6);
@@ -180,7 +185,7 @@ ProzaEdit.ManuscriptOverview = {
     html += `<li>🔴 Critical flags: ${meta.criticalCount || 0} · 🟡 Style: ${meta.prefCount || 0} · Score: ${meta.score ?? "—"}/10</li>`;
     html += `</ul>`;
 
-    if (ProzaEdit.DocAnalytics?.sentenceWordCounts) {
+    if (mode === "full" && ProzaEdit.DocAnalytics?.sentenceWordCounts) {
       const lengths = ProzaEdit.DocAnalytics.sentenceWordCounts(text);
       html += `<h4>Sentence rhythm (local)</h4>`;
       html += ProzaEdit.DocAnalytics.rhythmChartHtml(lengths, 24);

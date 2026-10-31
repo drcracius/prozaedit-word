@@ -113,6 +113,22 @@ body {
   display: none;
 }
 
+.audit-toolbar .report-density-label {
+  font-size: 10px;
+  margin-left: 6px;
+  color: var(--text-muted);
+}
+.audit-toolbar #reportDensity {
+  font-size: 11px;
+  max-width: 100px;
+  margin-left: 4px;
+}
+.update-status {
+  font-size: 11px;
+  margin-top: 8px;
+  color: var(--text-muted);
+}
+
 .pe-section-title {
   font-size: 10px;
   font-weight: 700;
