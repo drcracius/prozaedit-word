@@ -31,10 +31,10 @@
     <p class="help-foot">Backups: Version History. Editorial checks are original JS — <em>docs\THIRD-PARTY-ATTRIBUTION.md</em>.</p>
   </details>
   <div class="pe-toolbar pe-toolbar-sticky" role="toolbar" aria-label="ProzaEdit actions">
-    <button type="button" id="btnUndo" class="btn-tool" disabled onclick="prozaEditUndo()" title="Undo last ProzaEdit replace (Ctrl+Shift+Z)">↶ Undo</button>
-    <button type="button" id="btnRedo" class="btn-tool" disabled onclick="prozaEditRedo()" title="Redo (Ctrl+Shift+Y)">↷ Redo</button>
+    <button type="button" id="btnUndo" class="btn-tool" disabled onclick="prozaEditUndo()" title="Undo last ProzaEdit replace (Ctrl+Shift+Z)" data-pe-tip="btn-undo">↶ Undo</button>
+    <button type="button" id="btnRedo" class="btn-tool" disabled onclick="prozaEditRedo()" title="Redo (Ctrl+Shift+Y)" data-pe-tip="btn-redo">↷ Redo</button>
     <span id="peStatus" class="pe-status" aria-live="polite"></span>
-    <button type="button" class="btn-tool btn-tool-accent" onclick="runPrimaryAudit()" title="Run audit with current checks and scope">⚡ Run audit</button>
+    <button type="button" class="btn-tool btn-tool-accent" onclick="runPrimaryAudit()" title="Run audit with current checks and scope" data-pe-tip="btn-run-audit">⚡ Run audit</button>
   </div>
   <div class="nav-tabs" role="tablist" aria-label="ProzaEdit sections">
     <button type="button" class="tab-btn active" data-pe-tab="tab1" role="tab" aria-selected="true" onclick="showTab('tab1')">Target</button>
@@ -86,7 +86,7 @@
     </div>
     <div class="form-group">
       <label for="scope">Analysis scope</label>
-      <select id="scope">
+      <select id="scope" data-pe-tip="sel-manuscript-scope" title="Which text is read for audit (selection, pages, chapters, or full manuscript)">
         <option value="selection" selected>Highlighted / selected text</option>
         <option value="pages">Page range (approximate)</option>
         <option value="chapter">Single chapter (Heading 1–3)</option>
@@ -164,6 +164,7 @@
     <h2 class="pe-section-title">Safety &amp; options</h2>
     <div class="toggle-row"><span>Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
     <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
+    <div class="toggle-row"><span>Show hover tips (ProzaEdit bubbles on key controls)</span><input type="checkbox" id="showHoverTips" checked></div>
     <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
     <div class="toggle-row"><span>FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock"></div>
     <div class="toggle-row"><span>Remind: use Word Version History before big applies</span><input type="checkbox" id="remindVersionHistory" checked></div>
@@ -200,7 +201,7 @@
 
   <div id="tab3" class="tab-content" role="tabpanel">
     <div class="audit-run-hub">
-      <button class="btn-main btn-main-hub" id="btnRunAudit" onclick="runPrimaryAudit()">Run audit</button>
+      <button class="btn-main btn-main-hub" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" title="Run audit with current checks and scope">Run audit</button>
       <label class="toggle-row compact"><span>Extended checks (fillers, duplicates, deeper editorial pass)</span><input type="checkbox" data-audit-extended="1" id="auditExtendedChecks"></label>
       <p id="activeChecksHint" class="active-checks-hint">Turn on checks below, then Run audit.</p>
     </div>
@@ -233,7 +234,7 @@
     </details>
     <h2 class="pe-section-title">What to check</h2>
     <div class="form-group form-group-flush">
-      <div class="toggle-row"><span>Repetition &amp; redundancy (word-pair check)</span><input type="checkbox" id="chkRep" checked></div>
+      <div class="toggle-row" data-pe-tip="chk-repetition"><span>Repetition &amp; redundancy (word-pair check)</span><input type="checkbox" id="chkRep" checked></div>
       <div class="toggle-row"><span>Proper noun consistency (name variants; may false-flag — use Mute/Dict)</span><input type="checkbox" id="chkProp" checked></div>
       <div class="toggle-row"><span>Proofreading &amp; language (US/UK + style guide packs)</span><input type="checkbox" id="chkSpell" checked></div>
       <div class="toggle-row"><span>AI Detection (heuristic) + Anti-AI Voice</span><input type="checkbox" id="chkAI" checked></div>
@@ -253,7 +254,7 @@
 
   <div id="tab4" class="tab-content" role="tabpanel">
     <div class="audit-run-hub audit-run-hub-inline">
-      <button class="btn-main btn-main-hub" id="btnAuditPrimary" onclick="runPrimaryAudit()">Run audit</button>
+      <button class="btn-main btn-main-hub" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" title="Run audit with current checks and scope">Run audit</button>
       <label class="toggle-row compact"><span>Extended checks</span><input type="checkbox" data-audit-extended="1" id="auditExtended"></label>
       <button type="button" class="btn-linkish" onclick="showTab('tab3')">Configure checks →</button>
     </div>
@@ -341,6 +342,7 @@
     <div class="help-box">
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
+      <p><strong>Hover tips:</strong> Target → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
       <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” on Target for speed.</p>
       <p><strong>Mute / Dismiss:</strong> Saved on this PC for the same wording across documents (browser storage). Dict adds words to skip for proper nouns.</p>
       <p><strong>Full manuscript:</strong> Target → Full Manuscript, or use Section + audit on Checks for long docs.</p>
@@ -413,6 +415,7 @@
   <script src="lib/scope-reader.js"></script>
   <script src="lib/continuity-guard.js"></script>
   <script src="lib/word-safe-navigator.js"></script>
+  <script src="lib/tooltip-registry.js"></script>
   <script src="lib/local-rewrite.js"></script>
   <script src="lib/local-coach.js"></script>
   <script src="lib/gemini-client.js"></script>

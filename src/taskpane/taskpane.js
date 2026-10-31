@@ -304,6 +304,7 @@ Office.onReady((info) => {
     updateAuditFilterChips();
     updateAuditSortChips();
     applySimpleMode();
+    applyHoverTips();
     updateActiveChecksHint();
     try {
       skipFullScanConfirm = sessionStorage.getItem("PROZAEDIT_FULL_OK") === "1";
@@ -401,6 +402,7 @@ function collectUiConfig() {
     auditCardFilter: auditCardFilter,
     auditCardSort: auditCardSort,
     simpleMode: isChecked("simpleMode", false),
+    showHoverTips: isChecked("showHoverTips", true),
     fkLock: isChecked("fkLock", false),
     remindVersionHistory: isChecked("remindVersionHistory", true),
     fictionScopeReminder: isChecked("fictionScopeReminder", true),
@@ -460,6 +462,7 @@ function applyUiConfig(p) {
     updateAuditSortChips();
   }
   setC("simpleMode", p.simpleMode);
+  setC("showHoverTips", p.showHoverTips !== false);
   setC("fkLock", p.fkLock);
   setC("remindVersionHistory", p.remindVersionHistory);
   setC("fictionScopeReminder", p.fictionScopeReminder !== false);
@@ -578,6 +581,7 @@ function setupAutoSaveHandlers() {
       if (el.id === "manuscriptType") adaptModules();
       if (el.id === "scope") updateActiveChecksHint();
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
+      if (el.id === "showHoverTips") applyHoverTips();
       schedulePersistSettings();
     });
   };
@@ -594,6 +598,7 @@ function setupAutoSaveHandlers() {
     "fkLock",
     "remindVersionHistory",
     "fictionScopeReminder",
+    "showHoverTips",
     "continuityWarnLevel",
     "scopePageFrom",
     "scopePageTo",
@@ -685,6 +690,13 @@ function buildManuscriptProfile() {
 
 function applySimpleMode() {
   document.body.classList.toggle("pe-simple-mode", isChecked("simpleMode", false));
+}
+
+function applyHoverTips() {
+  const on = isChecked("showHoverTips", true);
+  if (ProzaEdit.TooltipRegistry?.initTooltips) {
+    ProzaEdit.TooltipRegistry.initTooltips(on);
+  }
 }
 
 function buildAuditContext(options) {
@@ -1805,8 +1817,8 @@ function renderAuditCards(list) {
       <p class="card-replacement">"${escapeHtml(item.replacementText)}"</p>
       <div class="card-actions">
         <div class="card-actions-primary">
-          <button type="button" class="btn-go" data-a="goto">Go to</button>
-          ${canApply ? '<button type="button" class="btn-apply" data-a="apply">Apply fix</button>' : ""}
+          <button type="button" class="btn-go" data-a="goto" data-pe-tip="btn-card-goto" title="Select first match in Word">Go to</button>
+          ${canApply ? '<button type="button" class="btn-apply" data-a="apply" data-pe-tip="btn-card-apply" title="Replace first document match">Apply fix</button>' : ""}
           <button type="button" class="btn-go" data-a="localtip">Local tip</button>
         </div>
         <div class="card-actions-secondary">
@@ -1827,6 +1839,9 @@ function renderAuditCards(list) {
     div.querySelector('[data-a="dismiss"]').onclick = () => dismissCard(item);
     box.appendChild(div);
   });
+  if (ProzaEdit.TooltipRegistry?.refreshTooltips) {
+    ProzaEdit.TooltipRegistry.refreshTooltips(isChecked("showHoverTips", true));
+  }
 }
 
 async function muteRule(item) {
