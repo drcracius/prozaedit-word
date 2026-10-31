@@ -22,7 +22,7 @@ const MODULE_IDS = ["chkRep", "chkProp", "chkSpell", "chkAI", "mPlot", "mMotivat
 const FICTION_MODULE_IDS = ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"];
 
 function isFictionManuscriptType(type) {
-  return String(type || getEl("manuscriptType")?.value || "").includes("Fiction");
+  return String(type != null ? type : getEl("manuscriptType")?.value || "").includes("Fiction");
 }
 const TAB_IDS = ["tab1", "tab2", "tab3", "tab4", "tab5", "tab6", "tab7"];
 
@@ -581,43 +581,38 @@ function setAuditExtended(on) {
   schedulePersistSettings();
 }
 
+function shortManuscriptTypeLabel(type) {
+  const t = String(type || "");
+  if (t.includes("Fiction")) return "Fiction";
+  if (t.includes("Academic")) return "Academic";
+  if (t.includes("Business")) return "Business";
+  if (t.includes("Memoir")) return "Memoir";
+  if (t.includes("Technical")) return "Technical";
+  return t.split("/")[0].trim() || "Manuscript";
+}
+
 function updateActiveChecksHint() {
   const nodes = document.querySelectorAll(".active-checks-hint");
   if (!nodes.length) return;
   const ctx = buildAuditContext();
+  const typeLabel = shortManuscriptTypeLabel(ctx.manuscriptType);
   const parts = [];
   if (ctx.chkRep) parts.push("repetition");
   if (ctx.chkProp) parts.push("names");
   if (ctx.chkSpell) parts.push("proofing + style");
   if (ctx.chkAI) parts.push("AI-voice");
   if (ctx.fkLock) parts.push("FK lock");
-  const fiction = String(ctx.manuscriptType || "").includes("Fiction");
+  const fiction = isFictionManuscriptType(ctx.manuscriptType);
   if (fiction) {
     const mods = FICTION_MODULE_IDS.filter((id) => isModuleEnabled(id));
-    if (mods.length && mods.length < 7) parts.push(`${mods.length}/7 fiction`);
-    else if (mods.length === 7) parts.push("fiction×7");
+    if (mods.length === 7) parts.push("fiction×7");
+    else if (mods.length) parts.push(`fiction ${mods.length}/7`);
   }
-  const ext = isAuditExtended() ? " · extended" : "";
-  const sm = getScopeMode();
-  const scope =
-    sm === "full"
-      ? "full doc"
-      : sm === "pages"
-        ? "pages"
-        : sm === "chapter"
-          ? "chapter"
-          : sm === "chapter-range"
-            ? "ch. range"
-            : "selection";
-  const sg = getEl("styleGuideRef")?.value || "auto";
-  let sgLabel = sg;
-  if (sg === "custom" || sg === "custom-plus-auto") {
-    const n = ProzaEdit.Settings.getCustomStyleGuide().name;
-    sgLabel = sg === "custom-plus-auto" ? `custom+auto${n ? `: ${n}` : ""}` : n ? `custom: ${n}` : "custom";
-  }
-  const msg = parts.length
-    ? `Active: ${parts.join(", ")} · ${scope} · style: ${sgLabel}${ext}`
-    : `No checks enabled — turn on toggles below · ${scope} · style: ${sgLabel}${ext}`;
+  const citeEligible = ProzaEdit.CitationEngine?.isEligibleManuscript?.(ctx.manuscriptType || "");
+  if (citeEligible && isChecked("chkCitationScan", false)) parts.push("citation scan");
+  const ext = isAuditExtended() ? ", extended" : "";
+  const checks = parts.length ? parts.join(", ") : "none — enable toggles below";
+  const msg = `${typeLabel}: ${checks}${ext}. Then Run audit.`;
   nodes.forEach((el) => {
     el.textContent = msg;
   });
@@ -629,8 +624,8 @@ function setupAutoSaveHandlers() {
     el.dataset.peAutosave = "1";
     el.addEventListener("change", () => {
       if (el.id === "manuscriptType") adaptModules();
-      if (el.id === "chkCitationScan") adaptModules();
-      if (el.id === "scope") updateActiveChecksHint();
+      else if (el.id === "chkCitationScan") adaptModules();
+      else updateActiveChecksHint();
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
       if (el.id === "showHoverTips") applyHoverTips();
       schedulePersistSettings();
@@ -669,6 +664,7 @@ function setupAutoSaveHandlers() {
     el.dataset.peAutosave = "1";
     el.addEventListener("change", () => {
       syncExtendedAuditToggles();
+      updateActiveChecksHint();
       schedulePersistSettings();
     });
   });

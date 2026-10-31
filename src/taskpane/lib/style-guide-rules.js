@@ -1,6 +1,6 @@
 /**
  * Style-guide rule packs — original ProzaEdit heuristics keyed to licensed/public sources.
- * See STYLE-GUIDE-SOURCES.md (Plain Language CC0, Strunk 1920 PD, GOV.UK OGL, MS/Google CC BY 4.0).
+ * See docs/STYLE-GUIDE-SOURCES.md (Plain Language CC0, Strunk 1920 PD, GOV.UK OGL, MS/Google CC BY 4.0).
  * No guide text is copied into this file.
  */
 window.ProzaEdit = window.ProzaEdit || {};
