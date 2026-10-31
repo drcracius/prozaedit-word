@@ -1,0 +1,58 @@
+name: ProzaEdit diagnostic report
+description: Manual anonymous problem report when automated ingest is unavailable
+title: "[PE user] Diagnostic report"
+labels:
+  - diagnostic-report
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Privacy:** Do not paste manuscript text, API keys, or full document content.
+        Paste the **redacted JSON** from Help → Report a problem (clipboard), or describe the error only.
+
+  - type: input
+    id: build_version
+    attributes:
+      label: Build version
+      description: From Help → Check for updates or task pane footer (e.g. 2.0.0.15)
+      placeholder: "2.0.0.15"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Word platform
+      options:
+        - Word on the web (browser)
+        - Word desktop (Windows)
+        - Word desktop (Mac)
+        - Word iPad / mobile
+        - Other / unsure
+    validations:
+      required: true
+
+  - type: textarea
+    id: redacted_json
+    attributes:
+      label: Redacted report JSON (optional)
+      description: Paste clipboard output from Help → Report a problem if available
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: user_note
+    attributes:
+      label: What you were doing (not manuscript text)
+      description: e.g. Run audit on full manuscript, Rewrite tab error
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (optional)
+      placeholder: "1. Open Checks tab …"
+    validations:
+      required: false

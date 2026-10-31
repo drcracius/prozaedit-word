@@ -1,0 +1,66 @@
+name: Deploy diagnostics ingest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        id: secrets
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_DIAG: ${{ secrets.DIAGNOSTICS_GITHUB_TOKEN }}
+        run: |
+          missing=""
+          [[ -z "$CF_TOKEN" ]] && missing="$missing CLOUDFLARE_API_TOKEN"
+          [[ -z "$CF_ACCOUNT" ]] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          [[ -z "$GH_DIAG" ]] && missing="$missing DIAGNOSTICS_GITHUB_TOKEN"
+          if [[ -n "$missing" ]]; then
+            echo "::error::Missing repo secrets:$missing"
+            exit 1
+          fi
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare wrangler.toml
+        working-directory: tools/diagnostics-ingest
+        run: cp wrangler.toml.template wrangler.toml
+
+      - name: Deploy Cloudflare Worker
+        id: deploy
+        working-directory: tools/diagnostics-ingest
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_TOKEN: ${{ secrets.DIAGNOSTICS_GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: drcracius/prozaedit-word
+        run: |
+          chmod +x deploy.sh
+          set -o pipefail
+          ./deploy.sh | tee deploy.log
+          WORKER_URL="$(grep -Eo 'https://[a-zA-Z0-9._-]+\.workers\.dev' deploy.log | tail -1 || true)"
+          echo "worker_url=$WORKER_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Job summary
+        if: always() && steps.deploy.outputs.worker_url != ''
+        run: |
+          {
+            echo "## Diagnostics ingest deployed"
+            echo ""
+            echo "**Worker URL:** \`${{ steps.deploy.outputs.worker_url }}\`"
+            echo ""
+            echo "Post-deploy (owner):"
+            echo "1. Set \`DIAGNOSTICS_INGEST_URL\` in \`src/taskpane/lib/diagnostics-config.js\`"
+            echo "2. Add Worker host to \`manifest.hosted.xml\` \`<AppDomains>\`"
+            echo "3. Bump manifest and \`PROZAEDIT_BUILD_VERSION\` to **2.0.0.16** and push"
+            echo ""
+            echo "See [docs/DIAGNOSTICS.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md)."
+          } >> "$GITHUB_STEP_SUMMARY"

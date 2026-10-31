@@ -468,6 +468,11 @@
       <label for="peDiagnosticsNote">Optional note (what you were doing, not manuscript text)</label>
       <input type="text" id="peDiagnosticsNote" maxlength="500" placeholder="e.g. Run audit on full manuscript" aria-label="Diagnostics note">
       <button type="button" class="btn-secondary" style="margin-top:8px;" onclick="reportProzaEditProblem()">Report a problem</button>
+      <p id="peDiagnosticsGithubFallback" class="help-muted" style="font-size:11px;margin-top:6px;" hidden>
+        Automated send is not configured on this build.
+        <a href="https://github.com/drcracius/prozaedit-word/issues/new/choose" target="_blank" rel="noopener">Report on GitHub</a>
+        (paste redacted JSON from the button above).
+      </p>
       <p class="help-muted" style="font-size:11px;margin-top:6px;">Full details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
     </div>
     <h2 class="pe-section-title">Platforms</h2>

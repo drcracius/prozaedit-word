@@ -1,0 +1,12 @@
+# Copy to wrangler.toml for local deploy, or use deploy.sh / GitHub Actions workflow.
+name = "prozaedit-diagnostics-ingest"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Non-secret vars (override in Cloudflare dashboard if needed)
+[vars]
+GITHUB_REPO = "drcracius/prozaedit-word"
+GITHUB_LABELS = "auto-report"
+
+# Secret (never commit): set via deploy.sh, wrangler secret put, or CI
+# GITHUB_TOKEN — GitHub PAT with Issues: write on the repo

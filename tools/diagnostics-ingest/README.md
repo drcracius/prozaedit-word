@@ -2,30 +2,51 @@
 
 Minimal Cloudflare Worker that accepts **anonymous** JSON crash reports from the task pane and opens a GitHub issue for owner review. The client never receives or sends `GITHUB_TOKEN`.
 
+**GitHub-native fallback (no Worker):** testers use Help → **Report on GitHub** or the [diagnostic issue form](https://github.com/drcracius/prozaedit-word/issues/new/choose?template=prozaedit-diagnostic-report.yml) with clipboard JSON from **Report a problem**.
+
 ## Privacy
 
 The task pane redacts payloads before send. This worker should only receive fields such as `kind`, `version`, `message`, `stack`, `context`, `userNote`, `ts`, `ua`, and Office platform hints — **not** manuscript text or API keys. Do not log full request bodies in production.
 
-## Deploy (owner)
+## Environment (owner)
 
-1. Install [Wrangler](https://developers.cloudflare.com/workers/wrangler/) and log in.
-2. From this directory:
+| Variable | Where | Purpose |
+|----------|--------|---------|
+| `GITHUB_TOKEN` | Worker secret (local `deploy.sh` or CI `DIAGNOSTICS_GITHUB_TOKEN`) | PAT with **Issues: write** on the repo |
+| `GITHUB_REPOSITORY` | `deploy.sh` / CI | Default `drcracius/prozaedit-word` (maps to worker var `GITHUB_REPO`) |
+| `CLOUDFLARE_API_TOKEN` | CI or local | Cloudflare Workers deploy |
+| `CLOUDFLARE_ACCOUNT_ID` | CI or local | Cloudflare account |
 
-   ```bash
-   npx wrangler deploy
-   ```
+Never commit tokens or the live Worker URL in the client repo.
 
-3. Set Worker secrets / vars (Cloudflare dashboard or CLI):
+## Deploy — one command (local)
 
-   | Name | Purpose |
-   |------|---------|
-   | `GITHUB_TOKEN` | Fine-grained or classic token with **Issues: write** on the repo |
-   | `GITHUB_REPO` | e.g. `drcracius/prozaedit-word` |
-   | `GITHUB_LABELS` | Optional; default `auto-report` |
+From this directory:
 
-4. Copy the deployed Worker URL (HTTPS).
-5. In the repo, set `DIAGNOSTICS_INGEST_URL` in `src/taskpane/lib/diagnostics-config.js` to that URL.
-6. Add the Worker host to `manifest.hosted.xml` under `<AppDomains>`, bump `<Version>` and `PROZAEDIT_BUILD_VERSION` together, and ask testers to re-upload the manifest once.
+```bash
+export GITHUB_TOKEN="ghp_…"   # Issues: write
+export GITHUB_REPOSITORY=drcracius/prozaedit-word
+# optional if not logged in via wrangler login:
+# export CLOUDFLARE_API_TOKEN=…
+# export CLOUDFLARE_ACCOUNT_ID=…
+
+chmod +x deploy.sh
+./deploy.sh
+```
+
+`deploy.sh` copies `wrangler.toml.template` → `wrangler.toml` if needed, sets the `GITHUB_TOKEN` secret, and runs `wrangler deploy`.
+
+## Deploy — GitHub Actions (recommended)
+
+1. Add repo secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DIAGNOSTICS_GITHUB_TOKEN` (Issues: write PAT).
+2. **Actions** → **Deploy diagnostics ingest** → **Run workflow**.
+3. Copy the **Worker URL** from the job summary.
+
+## Post-deploy (repo)
+
+1. Set `DIAGNOSTICS_INGEST_URL` in `src/taskpane/lib/diagnostics-config.js` to the Worker HTTPS URL.
+2. Add the Worker origin to `manifest.hosted.xml` `<AppDomains>`.
+3. Bump `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `taskpane.js` to **2.0.0.16** together; testers re-upload the manifest once.
 
 See [docs/DIAGNOSTICS.md](../../docs/DIAGNOSTICS.md) for client opt-in and testing.
 
@@ -39,6 +60,7 @@ Success: `202` with `{ "ok": true, "issue": "<url>" }`.
 ## Local dev
 
 ```bash
+cp wrangler.toml.template wrangler.toml
 npx wrangler dev
 ```
 

@@ -1,7 +1,7 @@
 # Approved Project roadmap vs vNext north star
 
 **Audience:** D Cracius and Project coordinators  
-**Updated:** 2026-10-31 (PE-32 approved-scope closure)  
+**Updated:** 2026-10-31 (PE-33 repo closure)  
 **Production baseline:** hosted build **2.0.0.15** ([source-of-truth](./source-of-truth.md))
 
 ---
@@ -11,9 +11,10 @@
 | Metric | Value | Meaning |
 |--------|------:|---------|
 | **vNext master spec alignment** | **~42%** | Progress against the [Next-Gen Master Specification](./prozaedit-nextgen-master-specification.md) north star — different IA (Narrative/Citations tabs, Checks merged into Audit), Zipf shaper v2, dark mode, DAG chronology UI, full quota modal, §11 HTML cutover, Office.js-in-CI, etc. See [spec review](./prozaedit-nextgen-spec-review.md). |
-| **Chat-approved Project roadmap** | **~97%** | Phases 1–7 (approved slice), UX-1–UX-4, diagnostics **client**, PE-30 rating + CI/doc hygiene — **excluding** explicitly deferred vNext items and **excluding** owner-only validation/deploy steps from the denominator. |
+| **Chat-approved Project roadmap (repo)** | **100%** | All chat-approved work that can land in **repo/docs/CI** without owner PC or Cloudflare credentials — including PE-2 **verify script**, diagnostics **deploy workflow**, and GitHub issue template. |
+| **Chat-approved Project roadmap (live product)** | **~97%** | Same roadmap until owner completes the two **Owner closes last mile** steps below (Windows PE-2 proof + live ingest URL + manifest 2.0.0.16). |
 
-**One-line:** vNext **42%** is “how much of the long-range Editorial Studio spec is shipped”; **~97%** is “how much of the chat-approved beta roadmap is done in repo/docs.”
+**One-line:** vNext **42%** is the long-range spec; **repo-side approved roadmap is 100%**; live beta still waits on owner validation/deploy.
 
 ---
 
@@ -29,7 +30,8 @@ Primary execution doc: [prozaedit-implementation-plan-audited.md](./prozaedit-im
 | **Phase 4** | Chronology scan v1 | **Done** | `76adf92` |
 | **Phase 5** | Citation scan v1 | **Done** | `8f12b94` |
 | **Phase 6** | Install scripts + docs hygiene | **Done** | `3065334` |
-| **Phase 6** | PE-2 Shared Folder proof on Windows | **Owner-only** | [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md) — D on PC |
+| **Phase 6** | PE-2 verify script + checklist | **Done (repo)** | `Verify-ProzaEdit-Install.ps1` + [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md) |
+| **Phase 6** | PE-2 Shared Folder proof on Windows | **Owner-only** | Run verify + manual Word steps on D’s PC |
 | **Phase 7a** | AI quota lite (default off) | **Done** | `ai-quota-manager.js` |
 | **Phase 7b** | Version-sync CI + pure JS unit tests | **Done** | PE-30 + PE-32: `.github/workflows/version-sync.yml`, `npm test` |
 | **Phase 7c** | Report export module | **Done** | `report-docx-export.js` |
@@ -42,16 +44,27 @@ Primary execution doc: [prozaedit-implementation-plan-audited.md](./prozaedit-im
 | **UX-3** | Tip dedupe, secondary icons | **Done** | UX-9 plan |
 | **UX-4** | Measure + score update | **Done** | UX-9 plan |
 | **PE-28** | Diagnostics client (opt-in, redaction) | **Done** | [DIAGNOSTICS.md](./DIAGNOSTICS.md) |
-| **PE-28** | Hosted diagnostics **ingest** deploy | **Owner-only** | `tools/diagnostics-ingest/` scaffold; URL empty by default |
+| **PE-28** | Diagnostics ingest automation (repo) | **Done** | `deploy.sh`, workflow, issue template; URL empty in client |
+| **PE-28** | Hosted diagnostics **ingest live** | **Owner-only** | Run deploy workflow; set URL + AppDomain + **2.0.0.16** |
 | **PE-30** | Shipped rating + version-sync CI on `main` | **Done** | [prozaedit-audit-rating-current.md](./prozaedit-audit-rating-current.md) |
-| **PE-32** | Features §8 sync, spec review baseline, README roadmap, fiction gating `<details>` | **Done** | This task |
+| **PE-32** | Features §8 sync, spec review baseline, README roadmap, fiction gating `<details>` | **Done** | PE-32 |
+| **PE-33** | Diagnostics deploy automation and issue template | **Done** | This pass |
 
-### Approved completion math
+### Repo completion math
 
-- **In scope & closable in repo:** 22 line items above (Phases 1–6 except PE-2, 7a–7c, UX-1–4, diagnostics client, PE-30, PE-32 doc/code slice).
-- **Done:** 20 (all except the two **Owner-only** rows).
-- **Explicitly deferred (excluded from denominator):** 7d–7g (4 items) — not counted as “missing approved work.”
-- **Approved roadmap completion:** **20 ÷ 22 ≈ 97%** (remaining 3% = PE-2 Windows validation + diagnostics ingest deploy).
+- **Closable in repo without owner secrets/PC:** all rows above except the two **Owner-only** lines.
+- **Done in repo:** **100%** of that set (PE-33 + PE-2 verify script included).
+
+---
+
+## Owner closes last mile
+
+| Step | Action |
+|------|--------|
+| **PE-2** | On Windows: `Verify-ProzaEdit-Install.bat` → clear WEF cache → SHARED FOLDER smoke test per [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md); log pass/fail in Project notes. |
+| **Diagnostics ingest** | Add Cloudflare + GitHub secrets → run **Deploy diagnostics ingest** workflow → set `DIAGNOSTICS_INGEST_URL`, manifest `<AppDomains>`, bump **2.0.0.16** per [DIAGNOSTICS.md](./DIAGNOSTICS.md). |
+
+Until both complete, **live product** approved roadmap remains **~97%** (same two gaps as before, now with automation ready).
 
 ---
 
@@ -61,7 +74,7 @@ Do **not** implement without a new chat-approved plan:
 
 - Tab merge, Narrative/Citations top-level tabs, §11 HTML cutover  
 - Dark mode system, Zipf shaper v2, full quota modal UX  
-- Manifest bump unless AppDomain or registration requires it  
+- Manifest bump unless AppDomain or registration requires it (diagnostics post-deploy is the documented exception → **2.0.0.16**)
 
 ---
 

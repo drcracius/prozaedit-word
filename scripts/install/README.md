@@ -30,6 +30,14 @@ Or:
 Fix-ProzaEdit-SharedFolder.bat
 ```
 
+Read-only PE-2 verification (manifest + TrustedCatalog registry, no changes):
+
+```text
+Verify-ProzaEdit-Install.bat
+```
+
+See `docs/pe-2-shared-folder-checklist.md` → **Automated verify**.
+
 ---
 
 ## Defaults

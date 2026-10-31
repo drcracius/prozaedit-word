@@ -69,6 +69,26 @@
 
 ---
 
+## Automated verify
+
+Read-only PowerShell checks (manifest path, **Version 2.0.0.15**, `SupportUrl` / icon URLs / `SourceLocation`, TrustedCatalog registry). Does not change files or registry.
+
+From repo root on Windows:
+
+```text
+Verify-ProzaEdit-Install.bat
+```
+
+Or:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\install\Verify-ProzaEdit-Install.ps1"
+```
+
+Expect `[PASS]` lines for each automated item; fix failures before manual Word steps above.
+
+---
+
 ## Troubleshooting
 
 | Symptom | What to try |

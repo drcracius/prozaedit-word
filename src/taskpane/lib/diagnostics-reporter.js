@@ -281,6 +281,12 @@
         toggle.addEventListener("change", () => setOptIn(toggle.checked));
       }
     }
+    const ghFallback = global.document?.getElementById?.("peDiagnosticsGithubFallback");
+    const ghUrl = cfg().DIAGNOSTICS_GITHUB_ISSUES_URL;
+    if (ghFallback) {
+      const show = !cfg().ingestEnabled?.() && typeof ghUrl === "string" && ghUrl.length > 0;
+      ghFallback.hidden = !show;
+    }
   }
 
   ns.Diagnostics = {
