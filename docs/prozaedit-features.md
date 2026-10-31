@@ -4,7 +4,7 @@
 **Code baseline:** GitHub `main` as of hosted build **2.0.0.14** (`manifest.hosted.xml` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js`).  
 **Live UI:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html  
 
-This document describes what the add-in **actually does today** in the repository. It does not claim features that are only mentioned in help copy but missing from the repo (for example `docs/WORKFLOWS.md` and `docs/STYLE-GUIDE-SOURCES.md` are referenced in the task pane but are not shipped on `main`).
+This document describes what the add-in **actually does today** in the repository. Help links point to `docs/WORKFLOWS.md` and `docs/THIRD-PARTY-ATTRIBUTION.md` on GitHub `main`.
 
 ---
 
@@ -69,6 +69,8 @@ The task pane uses seven tabs plus a sticky toolbar and a four-step workflow str
 - **Remind Version History** before large applies.
 - **Continuity warnings (1–5):** Local index warns before replace when target appears often or looks like a name (see §4).
 - **Fiction scope reminder:** Warns in audit summary when fiction modules run on partial scope.
+- **Show hover tips:** ProzaEdit guidance bubbles on key controls (default **on**); off restores native browser `title` attributes (`tooltip-registry.js`).
+- **Verify citations (local scan):** Shortcut to Checks citation scan when manuscript type is Academic, Business, or Technical/Journalism and citation opt-in is enabled.
 - **Capture reference style from selection:** Stores FK grade and dialogue % for delta lines in later audits.
 
 **Dictionary:** Per-document list of names/jargon; proper-noun checker skips dictionary terms. **Save now** persists; most Target fields **auto-save** on change.
@@ -125,7 +127,19 @@ The task pane uses seven tabs plus a sticky toolbar and a four-step workflow str
 6. Pacing & Readability  
 7. Spoiler Control  
 
-**Outputs:** Config only until **Run audit**; then see Audit tab.
+**Timeline scan (beta)** — fiction only; opt-in sub-panel:
+
+- **Spoiler guard (beta):** Cross-check temporal reveals vs chapter scope (heuristic; may false-positive).
+- **Scan timeline:** Paragraph-index walk; ordered anchors with **Go to** via `WordSafeNavigator`.
+- Findings merge additively into audit cards when you open Audit; does not replace **Continuity & Chronology** module cards from the main audit pass.
+
+**Citation verify (beta)** — Academic, Business, Technical/Journalism only (hidden for fiction):
+
+- Opt-in **Enable citation pattern scan**; style pack Auto / APA-ish / CMOS-ish / Bluebook-lite.
+- Optional lightweight **References** section match; explicit **Verify citations** button only (no network).
+- **Target → Verify citations** mirrors Checks when eligible.
+
+**Outputs:** Config only until **Run audit** or an explicit timeline/citation scan; then see Audit tab.
 
 ---
 
@@ -187,7 +201,8 @@ The task pane uses seven tabs plus a sticky toolbar and a four-step workflow str
 **Local paraphrase (0 tokens):**
 
 - Requires **highlighted selection** (max ~3,500 chars).
-- Modes: Fluency, Formal, Creative, Academic — rule-based transforms (wordiness lists, pleonasms, contractions, register shifts).
+- Modes: Fluency, Formal, Creative, Academic — rule-based transforms (wordiness lists, pleonasms, contractions, register shifts). Shared lists live in `lexical-banks.js`.
+- **Advanced lexical shaper** (collapsible, hidden in Simple mode): Complexity / Intensity / Density sliders (1–5). Calibration stacks **only when the panel is open**; collapsed shaper leaves legacy four modes unchanged.
 - **Preview** then **Apply preview to selection** replaces selection text (respects selection-only toggle for search scope).
 
 **Optional Gemini rewrite:** Same selection limits; uses `buildRewritePrompt` and guardrails.
@@ -198,7 +213,7 @@ The task pane uses seven tabs plus a sticky toolbar and a four-step workflow str
 
 ### Help (tab 7)
 
-In-pane quick reference: daily use, Apply fix behavior, mute/dismiss storage, full-manuscript tips, **manifest.hosted.xml** link, Word on the web upload steps, update behavior (push to GitHub vs re-upload manifest), **Check for updates** (compares UI version to raw GitHub manifest), platform notes (web vs desktop Upload), paraphrase attribution.
+In-pane quick reference: daily use, Apply fix behavior, mute/dismiss storage, full-manuscript tips, **manifest.hosted.xml** link, Word on the web upload steps, update behavior (push to GitHub vs re-upload manifest), **Check for updates** (compares UI version to raw GitHub manifest), platform notes (web vs desktop Upload), paraphrase attribution, links to **WORKFLOWS.md** and **THIRD-PARTY-ATTRIBUTION.md** on GitHub.
 
 ---
 
@@ -374,10 +389,11 @@ Word’s own **Undo** still applies to inserts; ProzaEdit undo is a separate sta
 - Works: Word on the web in supported browsers (Windows, macOS, iPad, Android) when signed in.
 - Limited: Desktop upload UI; mobile Word without web upload path.
 
-**Repo gaps relevant to users**
+**Install helpers on `main`**
 
-- Root `.bat` installers and `Create-Hosted-Manifest.bat` are **not** on GitHub `main`; manifest is prebuilt as `manifest.hosted.xml`.
-- `_archive/local-dev/` documents localhost dev only.
+- **`Install-ProzaEdit-Desktop-GitHub.bat`** — downloads [hosted manifest](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) to `Documents\ProzaEdit\catalog\` and prints upload steps.
+- **`Fix-ProzaEdit-SharedFolder.bat`** — refresh manifest + optional local TrustedCatalog (desktop Shared Folder tab; validate on your PC, PE-2).
+- **`Create-Hosted-Manifest.bat`** and localhost dev server remain under `_archive/local-dev/` only.
 
 **PC-only nuance:** Continuity dismissals and global mutes are **per browser profile on that machine**, not synced across devices. Document dictionary and config travel with the `.docx`.
 
@@ -410,6 +426,7 @@ Load order is fixed in `taskpane.html`; `taskpane.js` orchestrates UI and Word c
 | `settings-store.js` | Document settings keys, dictionary, mute/dismiss merge with localStorage, custom style persistence |
 | `text-metrics.js` | Syllables, Flesch Reading Ease / FK grade, audience bands, traffic light helper |
 | `proper-noun-analyse.js` | Capitalized token extraction and variant pairing |
+| `lexical-banks.js` | Shared pleonasm, anti-AI, wordiness, and filler lists for audit + rewrite + shaper |
 | `editor-heuristics.js` | a/an, duplicates, quotes, compounds, extended checks, formal tallies |
 | `custom-style-guide.js` | Rule normalize, bulk parse, presets |
 | `style-guide-rules.js` | Auto guide resolution and phrase packs + custom rule application |
@@ -418,12 +435,19 @@ Load order is fixed in `taskpane.html`; `taskpane.js` orchestrates UI and Word c
 | `chapter-heatmap.js` | Heading-based chapter word counts and HTML bar chart |
 | `manuscript-overview.js` | PMAT-style HTML summary and feedback letter builder |
 | `report-density.js` | Light / balanced / dense card and overview limits |
-| `scope-reader.js` | Scope measurement and chapter listing |
+| `scope-reader.js` | Scope measurement, chapter listing, paragraph snapshots for engines |
 | `continuity-guard.js` | Manuscript index and pre-apply warnings |
-| `local-rewrite.js` | Rule-based paraphrase modes |
+| `word-safe-navigator.js` | Search string sanitize (255 cap), scoped search, Go to selection |
+| `chronology-engine.js` | Timeline scan v1 — temporal anchors, spoiler guard opt-in, audit card merge |
+| `citation-engine.js` | Citation pattern assist v1 — APA/CMOS-ish/Bluebook-lite heuristics, bibliography match |
+| `tooltip-registry.js` | Central `data-pe-tip` hover bubbles + Target toggle integration |
+| `local-rewrite.js` | Rule-based paraphrase modes (consumes `lexical-banks.js`) |
+| `lexical-shaper.js` | Three-axis shaper v1 — stacks local-rewrite passes when panel open |
 | `local-coach.js` | Curated coaching responses |
 | `gemini-client.js` | Gemini HTTP client and rewrite prompt builder |
 | `edit-history.js` | Session undo/redo stack for ProzaEdit replacements |
+
+**Module count:** **23** files under `src/taskpane/lib/` (load order fixed in `taskpane.html`).
 
 **Version discipline:** Bump `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` together when users must re-register the add-in; UI-only pushes need only GitHub Pages refresh.
 
@@ -433,7 +457,8 @@ Load order is fixed in `taskpane.html`; `taskpane.js` orchestrates UI and Word c
 
 ## Related project docs
 
-- Install: `docs/BETA-TESTERS-INSTALL.txt`, `docs/BETA-SETUP-GITHUB.md`, `docs/WHEN-YOU-RETURN.md`
+- Install: `docs/BETA-TESTERS-INSTALL.txt`, `docs/BETA-SETUP-GITHUB.md`, `docs/WHEN-YOU-RETURN.md`, `scripts/install/README.md`
+- Workflows & attribution: `docs/WORKFLOWS.md`, `docs/THIRD-PARTY-ATTRIBUTION.md`
 - Engineering map: [prozaedit-codebase-overview.md](/cursor/stores/self/docs/prozaedit-codebase-overview.md)
 - Source of truth: [source-of-truth.md](/cursor/stores/self/docs/source-of-truth.md)
 

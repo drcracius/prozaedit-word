@@ -49,9 +49,15 @@ Send them:
 - **Hosted beta:** `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` must match (currently **2.0.0.14**).
 - **Local dev:** `manifest.xml` remains **2.0.0.0** for localhost sideload only; bump it only when you change dev manifest metadata, not for GitHub Pages UI pushes.
 
-## Install helpers not in GitHub tree
+## Install helpers on GitHub
 
-Root `.bat` files (`Create-Hosted-Manifest.bat`, `Install-In-Word.bat`, etc.) and `scripts/install/` from PC handoff are **not** shipped on `main`. Download [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) from GitHub; see `_archive/local-dev/` README stubs for archived local-dev tooling.
+| Helper | Purpose |
+|--------|---------|
+| **`Install-ProzaEdit-Desktop-GitHub.bat`** | Download [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) to `Documents\ProzaEdit\catalog\` + upload instructions |
+| **`Fix-ProzaEdit-SharedFolder.bat`** | Re-download manifest + register local TrustedCatalog (desktop Shared Folder — **PE-2**, test on your PC) |
+| **`scripts/install/README.md`** | PowerShell parameters, cache paths, LAN share **examples only** (e.g. OTHP15) |
+
+Localhost dev bats remain in `_archive/local-dev/` only.
 
 ---
 

@@ -70,7 +70,7 @@
 | 3 — Banks + shaper v1 | **Complete** | `83e88f0` | `lexical-banks.js`, `lexical-shaper.js`, Rewrite Advanced panel; no manifest bump |
 | 4 — Chronology v1 | **Complete** | `76adf92` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
 | 5 — Citations v1 | **Complete** | `8f12b94` | `citation-engine.js`, Checks sub-panel + Target verify; no manifest bump |
-| 6 — Install + docs hygiene | Not started | — | PE-2, WORKFLOWS.md, scripts |
+| 6 — Install + docs hygiene | **Complete** | *(pending push)* | WORKFLOWS.md, THIRD-PARTY-ATTRIBUTION.md, GitHub install scripts; PE-2 manual on D PC |
 | 7+ — Optional (CI, quota, Zipf, IA merge) | Not started | — | Default-off toggles |
 
 ---
@@ -194,9 +194,18 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 ---
 
-## Phase 6 — Install/catalog restoration & docs hygiene
+## Phase 6 — Install/catalog restoration & docs hygiene ✅ COMPLETE
 
-*(Same as v1; early win: fix Help links and sync features §8 module list under D8.)*
+**Delivered:**
+
+1. **`docs/WORKFLOWS.md`**, **`docs/THIRD-PARTY-ATTRIBUTION.md`** — concise, accurate; Help tab links to GitHub blob URLs.
+2. **`docs/prozaedit-features.md`** — 23-module lib table; Phase 3–5 (shaper, timeline, citations, hover tips).
+3. **`scripts/install/Install-ProzaEdit-GitHub.ps1`**, root **`Install-ProzaEdit-Desktop-GitHub.bat`**, **`Fix-ProzaEdit-SharedFolder.bat`** — raw manifest default; local catalog folder; optional TrustedCatalog; SMB/OTHP15 documented as example only in `scripts/install/README.md`.
+4. **`docs/WHEN-YOU-RETURN.md`** — install helper table updated.
+
+**Acceptance:** No 404 for shipped help docs on GitHub; features §8 matches `taskpane.html` load order; no manifest bump.
+
+**PE-2 (manual, D on Windows):** Run `Fix-ProzaEdit-SharedFolder.bat` or web upload; confirm Shared Folder or upload path; log result in Project notes.
 
 ---
 
@@ -284,4 +293,4 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 ---
 
-*Primary roadmap aligned to GitHub `main` through Phase 2. Update Phase execution tracker when manifest baseline advances beyond 2.0.0.14.*
+*Primary roadmap aligned to GitHub `main` through Phase 6 (manifest baseline **2.0.0.14**).*
