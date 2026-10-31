@@ -929,9 +929,23 @@ body.pe-narrow-pane .btn-tool-icon-label {
   pointer-events: none;
 }
 
+.pe-workflow-status-line {
+  font-size: 10px;
+  margin: 0 0 6px;
+  padding: 4px 6px;
+  line-height: 1.35;
+  border-bottom: 1px solid var(--border-muted, #e8eaed);
+  background: var(--surface-subtle, #f8f9fa);
+}
+
 .pe-session-tips {
   margin: 0 0 8px;
   border-color: var(--pe-primary-indigo, var(--primary));
+}
+
+.pe-settings-reset {
+  width: 100%;
+  font-size: 10px;
 }
 
 .pe-session-tips-list {

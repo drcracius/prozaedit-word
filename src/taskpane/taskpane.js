@@ -93,11 +93,14 @@ function setupSafeHandlers() {
     scope.addEventListener("change", () => {
       syncScopePanels();
       updateActiveChecksHint();
+      updateWorkflowStatusLine();
       if (scope.value === "full") {
         alert("Full manuscript scans can be slow on long docs. For plot/character checks, prefer full or wide chapter range when possible.");
       }
       if (scope.value === "selected-chapters" || scope.value === "chapter" || scope.value === "chapter-range") {
         refreshChapterScopeLists();
+      } else {
+        refreshScopeCharPreview();
       }
       schedulePersistSettings();
     });
@@ -276,6 +279,39 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
   el.textContent = over
     ? `${label}: ~${fmt} characters — over limit (${lim}). Narrow scope or use section loop.`
     : `${label}: ~${fmt} characters (limit ${lim}).`;
+  lastScopePreviewSummary =
+    charCount > 0
+      ? over
+        ? `~${fmt} chars (over ${lim} limit)`
+        : `~${fmt} chars (limit ${lim})`
+      : "";
+  updateWorkflowStatusLine();
+}
+
+function getScopeModeLabel(mode) {
+  const m = mode || getScopeMode();
+  if (m === "selection") return "Highlighted selection";
+  if (m === "pages") {
+    const from = getEl("scopePageFrom")?.value || "1";
+    const to = getEl("scopePageTo")?.value || "5";
+    return `Pages ${from}–${to} (approx.)`;
+  }
+  if (m === "selected-chapters" || m === "chapter" || m === "chapter-range") {
+    const n = getSelectedChapterIndicesFromUi().length;
+    if (m === "selected-chapters" && n) return `${n} chapter(s) selected`;
+    return "Selected chapters";
+  }
+  if (m === "full") return "Full manuscript";
+  return m;
+}
+
+function updateWorkflowStatusLine() {
+  const line = getEl("peWorkflowStatusLine");
+  if (!line) return;
+  const mode = getScopeMode();
+  const scopePart = getScopeModeLabel(mode);
+  const charPart = lastScopePreviewSummary || "use Refresh count on Target for character estimate";
+  line.textContent = `Scope: ${scopePart} — ${charPart}`;
 }
 
 function refreshScopeCharPreview() {
@@ -372,6 +408,14 @@ function isChecked(id, defaultVal) {
 
 let settingsModalReturnFocus = null;
 let rewriteFromAuditSession = false;
+let lastScopePreviewSummary = "";
+
+const AUDIT_FILTER_LABELS = {
+  all: "All",
+  confirmed: "Critical",
+  preference: "Style",
+  styleguide: "Style guide",
+};
 
 function setupSettingsModal() {
   const modal = getEl("pe-settings-modal");
@@ -388,6 +432,11 @@ function setupSettingsModal() {
   });
   modal.querySelectorAll("[data-pe-settings-close]").forEach((el) => {
     el.addEventListener("click", () => closeSettingsModal());
+  });
+  modal.querySelectorAll("[data-pe-settings-reset]").forEach((btn) => {
+    if (btn.dataset.resetBound) return;
+    btn.dataset.resetBound = "1";
+    btn.addEventListener("click", () => resetSettingsGroup(btn.dataset.peSettingsReset));
   });
 }
 
@@ -427,7 +476,8 @@ const PE_SETTINGS_GROUP_IDS = {
 };
 
 function expandSettingsGroup(key) {
-  const id = PE_SETTINGS_GROUP_IDS[key];
+  const norm = ProzaEdit.UiPrefs?.normalizeSettingsSection?.(key) || key;
+  const id = PE_SETTINGS_GROUP_IDS[norm];
   const el = id ? getEl(id) : null;
   if (el && el.tagName === "DETAILS") el.open = true;
 }
@@ -440,12 +490,18 @@ function openSettingsModal(focusGroup) {
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
   document.body.classList.add("pe-settings-open");
+  const norm = focusGroup ? ProzaEdit.UiPrefs?.normalizeSettingsSection?.(focusGroup) : null;
   const customGroup = getEl("pe-settings-group-custom-style");
-  if (customGroup && !focusGroup) {
+  if (customGroup && !norm) {
     const n = ProzaEdit.Settings.getCustomStyleGuide().rules?.length || 0;
     if (n > 0 || isCustomStyleGuideMode()) customGroup.open = true;
   }
-  if (focusGroup) expandSettingsGroup(focusGroup);
+  if (norm) expandSettingsGroup(norm);
+  try {
+    const hash = ProzaEdit.UiPrefs?.settingsHashForSection?.(norm || focusGroup);
+    if (hash) history.replaceState(null, "", hash);
+  } catch (_) {}
+  syncSessionTipsPermanentCheckbox();
   getEl("btn-settings-back")?.focus();
 }
 
@@ -462,6 +518,9 @@ function closeSettingsModal() {
   modal.classList.add("hidden");
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("pe-settings-open");
+  try {
+    if (location.hash.startsWith("#pe-settings-")) history.replaceState(null, "", location.pathname + location.search);
+  } catch (_) {}
   const ret = settingsModalReturnFocus;
   settingsModalReturnFocus = null;
   if (ret && typeof ret.focus === "function") ret.focus();
@@ -495,7 +554,7 @@ Office.onReady((info) => {
     setupAutoSaveHandlers();
     setupSettingsModal();
     bindWorkflowStepper();
-    updateWorkflowStepper("tab1");
+    restoreLastActiveTab();
     updateUndoRedoUi();
     updateAuditFilterChips();
     updateAuditSortChips();
@@ -505,6 +564,7 @@ Office.onReady((info) => {
     applyHoverTips();
     updateActiveChecksHint();
     updateAuditReportDepthHint();
+    updateAuditDefaultFilterHint();
     syncSettingsDefaultAuditFilterSelect();
     try {
       skipFullScanConfirm = sessionStorage.getItem("PROZAEDIT_FULL_OK") === "1";
@@ -520,6 +580,10 @@ Office.onReady((info) => {
     }
     showAuditEmptyIfNeeded();
     initSessionTips();
+    setupSessionTipsPermanentSetting();
+    setupSettingsKeyboardShortcut();
+    tryOpenSettingsFromLocationHash();
+    updateWorkflowStatusLine();
     setupNarrowPaneClass();
     ProzaEdit.Diagnostics?.bindGlobalHandlers?.();
     ProzaEdit.Diagnostics?.initDiagnosticsUi?.();
@@ -586,7 +650,12 @@ function backToAuditFromRewrite() {
 }
 
 function showTab(tabId) {
-  if (!TAB_IDS.includes(tabId)) return;
+  const valid = ProzaEdit.UiPrefs?.validateLastActiveTab?.(tabId, {
+    tabIds: TAB_IDS,
+    simpleMode: isChecked("simpleMode", false),
+  });
+  if (!valid) return;
+  tabId = valid;
   TAB_IDS.forEach((id) => {
     document.getElementById(id)?.classList.toggle("active", id === tabId);
   });
@@ -596,6 +665,7 @@ function showTab(tabId) {
     btn.setAttribute("aria-selected", on ? "true" : "false");
   });
   updateWorkflowStepper(tabId);
+  schedulePersistLastActiveTab(tabId);
   if (tabId === "tab4") {
     syncAuditPinsFromMain();
     restoreCachedAuditIfEmpty();
@@ -690,6 +760,7 @@ function collectUiConfig() {
     citationReconcileBiblio: isChecked("chkCitationReconcile", true),
     aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", false),
     aiMaxSessionTokens: getEl("aiMaxSessionTokens")?.value || "50000",
+    lastActiveTab: getCurrentActiveTabId(),
     modules: {},
   };
   MODULE_IDS.forEach((id) => {
@@ -771,6 +842,49 @@ function applyUiConfig(p) {
   updateAuditReportDepthHint();
   toggleCustomStylePanel();
   updateActiveChecksHint();
+  updateAuditDefaultFilterHint();
+  if (p.lastActiveTab) pendingLastActiveTab = p.lastActiveTab;
+}
+
+let pendingLastActiveTab = null;
+let lastTabPersistTimer = null;
+
+function getCurrentActiveTabId() {
+  return TAB_IDS.find((id) => document.getElementById(id)?.classList.contains("active")) || "tab1";
+}
+
+function schedulePersistLastActiveTab(tabId) {
+  if (lastTabPersistTimer) clearTimeout(lastTabPersistTimer);
+  lastTabPersistTimer = setTimeout(() => {
+    lastTabPersistTimer = null;
+    const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
+    let cfg = {};
+    try {
+      cfg = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : {};
+    } catch (_) {
+      cfg = collectUiConfig();
+    }
+    cfg.lastActiveTab = tabId;
+    ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CONFIG, JSON.stringify(cfg));
+  }, 200);
+}
+
+function restoreLastActiveTab() {
+  const fromPending = pendingLastActiveTab;
+  pendingLastActiveTab = null;
+  let tab = fromPending;
+  if (!tab) {
+    try {
+      const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
+      const p = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
+      tab = p?.lastActiveTab;
+    } catch (_) {}
+  }
+  const valid = ProzaEdit.UiPrefs?.validateLastActiveTab?.(tab, {
+    tabIds: TAB_IDS,
+    simpleMode: isChecked("simpleMode", false),
+  });
+  showTab(valid || "tab1");
 }
 
 function loadSavedSettings() {
@@ -893,7 +1007,10 @@ function setupAutoSaveHandlers() {
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
       if (el.id === "showHoverTips") applyHoverTips();
       if (el.id === "reportDensity") updateAuditReportDepthHint();
-      if (el.id === "settingsDefaultAuditFilter") applyDefaultAuditFilterFromSettings();
+      if (el.id === "settingsDefaultAuditFilter") {
+        applyDefaultAuditFilterFromSettings();
+        updateAuditDefaultFilterHint();
+      }
       schedulePersistSettings();
     });
   };
@@ -997,7 +1114,7 @@ function runPrimaryAudit() {
     const n = ProzaEdit.Settings.getCustomStyleGuide().rules?.length || 0;
     if (!n) {
       showPeStatus("No custom rules yet — add in Settings → Custom style or choose Custom + Auto.", "warn");
-      openSettingsModal("custom-style");
+      openSettingsModal("style");
       return;
     }
   }
@@ -1018,6 +1135,7 @@ function applySimpleMode() {
   document.body.classList.toggle("pe-simple-mode", on);
   const label = getEl("targetSimpleModeLabel");
   if (label) label.textContent = on ? "On" : "Off";
+  if (on && getCurrentActiveTabId() === "tab2") showTab("tab1");
 }
 
 function updateCustomRulesSummary() {
@@ -1036,10 +1154,24 @@ function updateAuditReportDepthHint() {
   hint.innerHTML = `Report depth: <strong>${label}</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
 }
 
+function getDefaultAuditFilterLabel() {
+  const sel = getEl("settingsDefaultAuditFilter");
+  const mode = sel?.value || "all";
+  return AUDIT_FILTER_LABELS[mode] || "All";
+}
+
+function updateAuditDefaultFilterHint() {
+  const hint = getEl("auditDefaultFilterHint");
+  if (!hint) return;
+  const label = getDefaultAuditFilterLabel();
+  hint.innerHTML = `Default filter: <strong>${label}</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
+}
+
 function syncSettingsDefaultAuditFilterSelect() {
   const sel = getEl("settingsDefaultAuditFilter");
   if (!sel || !["all", "confirmed", "preference", "styleguide"].includes(auditCardFilter)) return;
   sel.value = auditCardFilter;
+  updateAuditDefaultFilterHint();
 }
 
 function applyDefaultAuditFilterFromSettings() {
@@ -1080,7 +1212,43 @@ function getManuscriptTypeAwareHint() {
 
 const PE_SESSION_TIPS_KEY = "pe-session-tips-dismissed";
 
+function isSessionTipsPermanentlyHidden() {
+  try {
+    if (localStorage.getItem(PE_SESSION_TIPS_KEY) === "1") return true;
+  } catch (_) {}
+  return false;
+}
+
+function setSessionTipsPermanentlyHidden(on) {
+  try {
+    if (on) localStorage.setItem(PE_SESSION_TIPS_KEY, "1");
+    else localStorage.removeItem(PE_SESSION_TIPS_KEY);
+  } catch (_) {}
+  if (on) {
+    const el = getEl("peSessionTips");
+    if (el) el.classList.add("hidden");
+  }
+}
+
+function syncSessionTipsPermanentCheckbox() {
+  const cb = getEl("peSessionTipsHidePermanent");
+  if (!cb) return;
+  cb.checked = isSessionTipsPermanentlyHidden();
+}
+
+function setupSessionTipsPermanentSetting() {
+  const cb = getEl("peSessionTipsHidePermanent");
+  if (!cb || cb.dataset.bound) return;
+  cb.dataset.bound = "1";
+  syncSessionTipsPermanentCheckbox();
+  cb.addEventListener("change", () => {
+    setSessionTipsPermanentlyHidden(cb.checked);
+    showPeStatus(cb.checked ? "Session tips hidden permanently." : "Session tips will show in new sessions.", "ok");
+  });
+}
+
 function initSessionTips() {
+  if (isSessionTipsPermanentlyHidden()) return;
   try {
     if (sessionStorage.getItem(PE_SESSION_TIPS_KEY) === "1") return;
   } catch (_) {}
@@ -1098,6 +1266,90 @@ function dismissSessionTips() {
   try {
     sessionStorage.setItem(PE_SESSION_TIPS_KEY, "1");
   } catch (_) {}
+}
+
+function setupSettingsKeyboardShortcut() {
+  if (document.body.dataset.peSettingsShortcut) return;
+  document.body.dataset.peSettingsShortcut = "1";
+  const handler = (e) => {
+    const modal = getEl("pe-settings-modal");
+    const inInput =
+      e.target &&
+      (e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.tagName === "SELECT" ||
+        e.target.isContentEditable);
+    if (inInput && !e.altKey) return;
+    const ctrlShiftComma = e.ctrlKey && e.shiftKey && !e.altKey && e.key === ",";
+    const altShiftS = e.altKey && e.shiftKey && !e.ctrlKey && (e.key === "S" || e.key === "s");
+    if (!ctrlShiftComma && !altShiftS) return;
+    e.preventDefault();
+    if (modal && !modal.classList.contains("hidden")) closeSettingsModal();
+    else openSettingsModal();
+  };
+  window.addEventListener("keydown", handler);
+}
+
+function tryOpenSettingsFromLocationHash() {
+  try {
+    const section = ProzaEdit.UiPrefs?.parseSettingsHash?.(location.hash);
+    if (section) openSettingsModal(section);
+  } catch (_) {}
+}
+
+function resetSettingsGroup(groupKey) {
+  const norm = ProzaEdit.UiPrefs?.normalizeSettingsSection?.(groupKey) || groupKey;
+  const labels = {
+    safety: "Safety",
+    audit: "Audit & reports",
+    privacy: "Privacy & diagnostics",
+    dictionary: "Dictionary",
+    "custom-style": "Custom style",
+  };
+  const label = labels[norm] || norm;
+  if (norm === "reference") {
+    showPeStatus("Reference capture has no defaults — use Capture when needed.", "warn");
+    return;
+  }
+  if (!confirm(`Reset ${label} to shipped defaults for this document?\n\nOther settings groups are unchanged.`)) return;
+  const patch = ProzaEdit.UiPrefs?.getDefaultsPatchForGroup?.(norm);
+  if (!patch) return;
+  if (norm === "privacy") {
+    ProzaEdit.Diagnostics?.setOptIn?.(false);
+    const opt = getEl("peDiagnosticsOptIn");
+    if (opt) opt.checked = false;
+    const note = getEl("peDiagnosticsNote");
+    if (note) note.value = "";
+    showPeStatus(`${label} reset.`, "ok");
+    return;
+  }
+  if (norm === "dictionary") {
+    ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.DICTIONARY, "[]").then((ok) => {
+      renderDictionaryList();
+      showPeStatus(ok ? "Dictionary cleared." : "Could not clear dictionary.", ok ? "ok" : "warn");
+    });
+    return;
+  }
+  if (norm === "custom-style") {
+    const empty = ProzaEdit.CustomStyleGuide?.normalize?.({ name: "My house style", rules: [] }) || {
+      name: "My house style",
+      rules: [],
+    };
+    ProzaEdit.Settings.setCustomStyleGuide(empty).then((ok) => {
+      loadCustomStyleUi();
+      updateCustomRulesSummary();
+      showPeStatus(ok ? "Custom style rules cleared." : "Could not reset custom style.", ok ? "ok" : "warn");
+    });
+    return;
+  }
+  applyUiConfig({ ...collectUiConfig(), ...patch });
+  if (norm === "audit") {
+    setAuditExtended(!!patch.auditExtended);
+    applyDefaultAuditFilterFromSettings();
+  }
+  if (norm === "safety") applySimpleMode();
+  persistSettings(false);
+  showPeStatus(`${label} reset to defaults.`, "ok");
 }
 
 function applyHoverTips() {
@@ -1730,6 +1982,7 @@ function setAuditCardFilter(mode) {
   updateAuditFilterChips();
   applyAuditCardFilter();
   syncSettingsDefaultAuditFilterSelect();
+  updateAuditDefaultFilterHint();
   persistSettings(false);
 }
 

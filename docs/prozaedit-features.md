@@ -62,10 +62,10 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 - **Custom house style:** On Target, pick **Custom** or **Custom + Auto** and see a one-line rule count with a link to **Settings → Custom style** (add/edit rules, presets, bulk import).
 - **Simple mode (read-only on Target):** One line shows On/Off with a link to **Settings → Safety**; hides Thesaurus tab and optional Gemini blocks (`pe-simple-mode` CSS).
 
-**Settings modal (toolbar gear):** Collapsible groups — **Safety** (open), **Audit & reports**, **Privacy & diagnostics**, **Reference & citations**, **Dictionary**, **Custom style** (opens automatically when you already have rules). Footer **Save & close** persists and dismisses (same as auto-save on change).
+**Settings modal (toolbar gear):** Collapsible groups — **Safety** (open), **Audit & reports**, **Privacy & diagnostics**, **Reference & citations**, **Dictionary**, **Custom style** (opens automatically when you already have rules). Footer **Save & close** persists and dismisses (same as auto-save on change). Each group (except Reference) has **Reset … to defaults** with confirm. **Keyboard:** `Ctrl+Shift+,` or `Alt+Shift+S` opens Settings when the pane is focused (does not override Word while typing in inputs). **Deep links:** `openSettingsModal('safety'|'audit'|'privacy'|'reference'|'dictionary'|'style')` and URL hash `#pe-settings-{section}` (e.g. `#pe-settings-privacy`).
 
-- **Safety:** Simple mode; edits apply to selection only (thesaurus/rewrite; audit Apply fix always searches document); confirm before Apply; hover tips; FK lock; Version History reminder; continuity warnings (1–5); fiction scope reminder; optional Gemini session token ceiling (hidden in Simple mode).
-- **Audit & reports:** Report depth (Light / Balanced / Dense); default audit filter (All / Critical / Style / Style guide — Simple mode may override to Critical on load when no saved filter); default **Extended checks** (synced with Checks/Audit run toggles).
+- **Safety:** Simple mode; edits apply to selection only (thesaurus/rewrite; audit Apply fix always searches document); confirm before Apply; hover tips; FK lock; Version History reminder; continuity warnings (1–5); fiction scope reminder; **hide new-session tips permanently**; optional Gemini session token ceiling (hidden in Simple mode).
+- **Audit & reports:** Report depth (Light / Balanced / Dense); default audit filter (All / Critical / Style / Style guide — Simple mode may override to Critical on load when no saved filter); default **Extended checks** (synced with Checks/Audit run toggles). Audit tab shows read-only hints tied to these Settings values.
 - **Privacy & diagnostics:** Opt-in anonymous crash reports; manual **Report a problem** (redacted JSON); GitHub fallback link when ingest is not configured.
 - **Reference & citations:** Capture reference style from selection; **Verify citations** shortcut when manuscript type and Checks opt-in allow it.
 - **Dictionary:** Per-document names/jargon; proper-noun checker skips dictionary terms.
@@ -153,7 +153,7 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 - **Mini scores (Balanced/Dense):** Correctness, Clarity, Engagement heuristics.
 - **Summary report:** Word count, Flesch metrics, critical vs style counts, profile text, optional “vs last run”, reference-style delta, fiction partial-scope warning, **Manuscript overview** panel (PMAT-style local stats), optional **chapter heatmap** if built on Checks.
 
-**Card filters:** All, Critical (`confirmed`), Style (`preference`), Style guide (session chips; default saved in **Settings → Audit & reports**). **Sort:** Priority or Module. **Report depth:** read-only hint on Audit; change in **Settings → Audit & reports** (Light / Balanced / Dense).
+**Card filters:** All, Critical (`confirmed`), Style (`preference`), Style guide (session chips; default saved in **Settings → Audit & reports**). **Sort:** Priority or Module. **Report depth** and **default filter:** read-only hints on Audit (single source: Settings selects); change in **Settings → Audit & reports**.
 
 **Per-card actions:**
 
@@ -229,7 +229,7 @@ In-pane quick reference: daily use, Apply fix behavior, mute/dismiss storage, fu
 
 | Storage | What |
 |---------|------|
-| `Office.context.document.settings` | Full UI config (`PROZAEDIT_CONFIG`), dictionary, muted rules (document), last audit cache, section/chapter loop indices, chapter heatmap JSON, reference style, custom style guide, continuity index snapshot, optional API key when “remember” is on |
+| `Office.context.document.settings` | Full UI config (`PROZAEDIT_CONFIG`, includes `lastActiveTab`), dictionary, muted rules (document), last audit cache, section/chapter loop indices, chapter heatmap JSON, reference style, custom style guide, continuity index snapshot, optional API key when “remember” is on |
 | `localStorage` (browser on this PC) | Global muted rule IDs, globally dismissed target strings, continuity warning dismissals |
 
 Target fields debounce-save (~350 ms). **Save now** forces config write.

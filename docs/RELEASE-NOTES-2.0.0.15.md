@@ -48,6 +48,21 @@ These updates ship via **GitHub Pages** only — **no re-upload** of `manifest.h
 
 Details: [prozaedit-ux-9-implementation-plan.md](prozaedit-ux-9-implementation-plan.md) · Score: [prozaedit-ux-rating-and-recommendations.md](prozaedit-ux-rating-and-recommendations.md).
 
+## UX pack 2 (PE-39, no manifest bump)
+
+Ships via **GitHub Pages** only — same **2.0.0.15** manifest/UI version.
+
+| Item | Notes |
+|------|--------|
+| Last tab | Saved in `PROZAEDIT_CONFIG.lastActiveTab` |
+| Scope status line | Under toolbar; updates with scope + Refresh count |
+| Settings | Group reset buttons, `style`/`privacy` deep links, `#pe-settings-*` hash, keyboard shortcuts |
+| Session tips | Permanent hide in Settings → Safety |
+| Audit hints | Report depth + default filter synced from Settings |
+| QA | [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md) · [FULL-TEST-CHECKLIST-WORD-WEB.md](FULL-TEST-CHECKLIST-WORD-WEB.md) |
+
+Snippet: [RELEASE-NOTES-UX-PACK-2.md](RELEASE-NOTES-UX-PACK-2.md).
+
 ---
 
 *ProzaEdit Word hosted beta — https://github.com/drcracius/prozaedit-word*
