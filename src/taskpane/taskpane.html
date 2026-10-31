@@ -30,6 +30,16 @@
     </ul>
     <p class="help-foot">Backups: Version History. Editorial checks are original JS — <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a>.</p>
   </details>
+  <div id="peSessionTips" class="pe-session-tips help-box hidden" role="region" aria-label="First session tips">
+    <p class="pe-session-tips-lead"><strong>New this session?</strong> Quick workflow:</p>
+    <ul class="help-list pe-session-tips-list">
+      <li><strong>Target</strong> — set scope and manuscript type, then <strong>Checks</strong> — turn modules on → <strong>Run audit</strong> → fix cards on <strong>Audit</strong>.</li>
+      <li>Fiction-only modules and <strong>Timeline scan</strong> appear when manuscript type is Fiction.</li>
+      <li><strong>Simple mode</strong> (Target) hides Thesaurus and optional Gemini blocks.</li>
+      <li>After GitHub updates, close and reopen the pane; re-upload <code>manifest.hosted.xml</code> only when the manifest version bumps.</li>
+    </ul>
+    <button type="button" class="btn-secondary pe-session-tips-dismiss" onclick="dismissSessionTips()" data-pe-tip="btn-session-tips-got-it">Got it</button>
+  </div>
   <div class="pe-toolbar pe-toolbar-sticky" role="toolbar" aria-label="ProzaEdit actions">
     <button type="button" id="btnUndo" class="btn-tool" disabled onclick="prozaEditUndo()" title="Undo last ProzaEdit replace (Ctrl+Shift+Z)" data-pe-tip="btn-undo">↶ Undo</button>
     <button type="button" id="btnRedo" class="btn-tool" disabled onclick="prozaEditRedo()" title="Redo (Ctrl+Shift+Y)" data-pe-tip="btn-redo">↷ Redo</button>
@@ -138,7 +148,7 @@
         <option value="custom-plus-auto">Custom house style + Auto packs</option>
         <option value="custom">Custom house style only (your rules)</option>
       </select>
-      <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Built-in guides use local heuristics only. See docs\STYLE-GUIDE-SOURCES.md.</p>
+      <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Built-in guides use local heuristics only. Sources: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a>.</p>
     </div>
     <div id="customStyleGuidePanel" class="form-group custom-style-panel hidden">
       <label for="customStyleName">Custom guide name</label>
@@ -388,6 +398,11 @@
     <div class="help-box">
       <p>Phases 2–7: hover tips, Rewrite lexical shaper, Checks timeline &amp; citation scans, GitHub install scripts, audit report export, optional Gemini session quota (off by default). After updating, re-upload <code>manifest.hosted.xml</code> once — see <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-2.0.0.15.md" target="_blank" rel="noopener">release notes</a>.</p>
     </div>
+    <h2 class="pe-section-title">Quick start (2 min)</h2>
+    <div class="help-box">
+      <p>Short walkthrough on GitHub (install, Target → Checks → Audit, Simple mode, updates):</p>
+      <p><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/QUICK-START.md" target="_blank" rel="noopener">QUICK-START.md</a></p>
+    </div>
     <h2 class="pe-section-title">ProzaEdit Help</h2>
     <div class="help-box">
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
@@ -396,6 +411,7 @@
       <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” on Target for speed.</p>
       <p><strong>Mute / Dismiss:</strong> Saved on this PC for the same wording across documents (browser storage). Dict adds words to skip for proper nouns.</p>
       <p><strong>Full manuscript:</strong> Target → Full Manuscript, or use Section + audit on Checks for long docs.</p>
+      <p><strong>More:</strong> <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORKFLOWS.md" target="_blank" rel="noopener">WORKFLOWS.md</a> (editing stack) · <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a></p>
     </div>
     <h2 class="pe-section-title">Another computer</h2>
     <div class="help-box">

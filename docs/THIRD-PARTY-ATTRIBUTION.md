@@ -40,4 +40,4 @@ ProzaEdit Word’s **audit, coach, rewrite, chronology, and citation logic** are
 
 ---
 
-*Aligned with hosted build **2.0.0.14** and in-pane Help attribution.*
+*Aligned with hosted build **2.0.0.15** and in-pane Help attribution.*

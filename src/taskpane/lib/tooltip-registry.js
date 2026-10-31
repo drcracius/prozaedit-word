@@ -30,6 +30,8 @@
       "Same as Checks → Verify citations. Requires opt-in on Checks. Pattern assist only — not stylebook certification.",
     "sel-citation-style":
       "Which heuristic pack leads the scan. Auto picks APA for academic, Bluebook-lite for business, CMOS-ish for technical/journalism.",
+    "btn-session-tips-got-it":
+      "Hide these session tips until you open ProzaEdit again in a new browser session. Help tab has the full Quick start guide.",
   };
 
   let enabled = false;

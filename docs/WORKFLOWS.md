@@ -1,6 +1,6 @@
 # ProzaEdit — Recommended editing workflows
 
-**Audience:** Authors using ProzaEdit Word (hosted beta **2.0.0.14**).  
+**Audience:** Authors using ProzaEdit Word (hosted beta **2.0.0.15**).  
 **Live add-in:** [GitHub Pages task pane](https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html)
 
 This document matches the in-pane **Quick start & editing stack** help. ProzaEdit is **local-first** for audit, coach, and rule-based rewrite; partner tools run inside or beside Word.

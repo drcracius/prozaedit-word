@@ -663,9 +663,30 @@ body {
   flex-shrink: 0;
 }
 
-.pe-chrono-block[disabled-section] {
+.pe-chrono-block[disabled-section],
+.pe-citation-block[disabled-section] {
   opacity: 0.55;
   pointer-events: none;
+}
+
+.pe-session-tips {
+  margin: 0 0 8px;
+  border-color: var(--pe-primary-indigo, var(--primary));
+}
+
+.pe-session-tips-list {
+  margin: 6px 0 8px;
+  padding-left: 18px;
+  font-size: 11px;
+}
+
+.pe-session-tips-lead {
+  margin: 0 0 4px;
+  font-size: 11px;
+}
+
+.pe-session-tips-dismiss {
+  width: 100%;
 }
 
 .pe-simple-mode [data-simple-hide] {

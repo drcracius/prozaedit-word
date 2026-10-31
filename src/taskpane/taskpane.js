@@ -321,6 +321,7 @@ Office.onReady((info) => {
       });
     }
     showAuditEmptyIfNeeded();
+    initSessionTips();
     setTimeout(() => scheduleManuscriptIndexBuild(false), 2500);
     try {
       if (sessionStorage.getItem("PROZAEDIT_UPDATE_CHECK") !== PROZAEDIT_BUILD_VERSION) {
@@ -736,6 +737,28 @@ function buildManuscriptProfile() {
 
 function applySimpleMode() {
   document.body.classList.toggle("pe-simple-mode", isChecked("simpleMode", false));
+}
+
+const PE_SESSION_TIPS_KEY = "pe-session-tips-dismissed";
+
+function initSessionTips() {
+  try {
+    if (sessionStorage.getItem(PE_SESSION_TIPS_KEY) === "1") return;
+  } catch (_) {}
+  const el = getEl("peSessionTips");
+  if (!el) return;
+  el.classList.remove("hidden");
+  if (ProzaEdit.TooltipRegistry?.refreshTooltips) {
+    ProzaEdit.TooltipRegistry.refreshTooltips(isChecked("showHoverTips", true));
+  }
+}
+
+function dismissSessionTips() {
+  const el = getEl("peSessionTips");
+  if (el) el.classList.add("hidden");
+  try {
+    sessionStorage.setItem(PE_SESSION_TIPS_KEY, "1");
+  } catch (_) {}
 }
 
 function applyHoverTips() {
