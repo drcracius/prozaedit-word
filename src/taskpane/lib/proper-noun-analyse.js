@@ -2,6 +2,13 @@
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.ProperNoun = {
+  /** Short/common words — similar to PerfectIt “Never Find” for false positives (states vs States, as vs As). */
+  STOPWORDS: new Set(
+    "as at an in on or to he she it we they but then when what who how why if so no yes up out all any can could would should may might must will did does do has have had was were been being are is am be by for of the the and nor not yet still also just even only very much more most such than that this these those with from into onto upon over under after before about between through during without within".split(
+      " "
+    )
+  ),
+
   levenshtein(a, b) {
     const m = a.length;
     const n = b.length;
@@ -26,8 +33,11 @@ ProzaEdit.ProperNoun = {
       if (token.length < 2 || token.length > 40) continue;
       const lower = token.toLowerCase();
       if (dictionaryLower.has(lower)) continue;
-      const skip = ["The", "He", "She", "They", "It", "We", "I", "But", "And", "Then", "When", "What", "Chapter"];
-      if (skip.includes(token.split(" ")[0])) continue;
+      const first = token.split(" ")[0];
+      const skip = ["The", "He", "She", "They", "It", "We", "I", "But", "And", "Then", "When", "What", "Chapter", "His", "Her", "Their", "Our", "Your"];
+      if (skip.includes(first)) continue;
+      if (first.length < 4 && !token.includes(" ")) continue;
+      if (this.STOPWORDS.has(first.toLowerCase())) continue;
       counts.set(token, (counts.get(token) || 0) + 1);
     }
     return counts;
@@ -46,8 +56,15 @@ ProzaEdit.ProperNoun = {
         const b = forms[j];
         const key = [a.toLowerCase(), b.toLowerCase()].sort().join("|");
         if (used.has(key)) continue;
-        const dist = this.levenshtein(a.toLowerCase(), b.toLowerCase());
-        if (dist > 0 && dist <= 2 && a[0] === b[0]) {
+        const aLow = a.toLowerCase();
+        const bLow = b.toLowerCase();
+        if (this.STOPWORDS.has(aLow) || this.STOPWORDS.has(bLow)) continue;
+        if (a.includes(" ") || b.includes(" ")) {
+          /* multi-word names OK */
+        } else if (a.length < 5 || b.length < 5) continue;
+        const dist = this.levenshtein(aLow, bLow);
+        const minCount = Math.min(counts.get(a) || 0, counts.get(b) || 0);
+        if (dist > 0 && dist <= 2 && a[0] === b[0] && Math.abs(a.length - b.length) <= 2 && minCount >= 2) {
           used.add(key);
           const canonical = counts.get(a) >= counts.get(b) ? a : b;
           const variant = canonical === a ? b : a;

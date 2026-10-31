@@ -5,6 +5,8 @@ ProzaEdit.Settings = {
   KEYS: {
     CONFIG: "PROZAEDIT_CONFIG",
     MUTED: "PROZAEDIT_MUTED_RULES",
+    GLOBAL_MUTED: "PROZAEDIT_GLOBAL_MUTED_RULES",
+    GLOBAL_DISMISSED: "PROZAEDIT_GLOBAL_DISMISSED_TARGETS",
     DICTIONARY: "PROZAEDIT_DICTIONARY",
     LAST_AUDIT: "PROZAEDIT_LAST_AUDIT",
     SECTION_IDX: "PROZAEDIT_SECTION_IDX",
@@ -38,22 +40,83 @@ ProzaEdit.Settings = {
     });
   },
 
-  getMutedRules() {
-    const raw = this.get(this.KEYS.MUTED, "[]");
-    const arr = this._parse(raw, []);
-    if (!Array.isArray(arr)) return [];
-    return arr.filter((x) => typeof x === "string" && x.length <= 200).slice(0, 500);
+  _readGlobalJson(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      const arr = this._parse(raw, []);
+      return Array.isArray(arr) ? arr.filter((x) => typeof x === "string" && x.length <= 200).slice(0, 800) : [];
+    } catch (_) {
+      return [];
+    }
   },
 
-  async muteRule(ruleId) {
+  _writeGlobalJson(key, arr) {
+    try {
+      localStorage.setItem(key, JSON.stringify(arr.slice(0, 800)));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  },
+
+  normalizeTargetKey(text) {
+    return String(text || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .substring(0, 120);
+  },
+
+  getGlobalMutedRules() {
+    return this._readGlobalJson(this.KEYS.GLOBAL_MUTED);
+  },
+
+  getGlobalDismissedTargets() {
+    return this._readGlobalJson(this.KEYS.GLOBAL_DISMISSED);
+  },
+
+  getMutedRules() {
+    const raw = this.get(this.KEYS.MUTED, "[]");
+    const doc = this._parse(raw, []);
+    const docArr = Array.isArray(doc) ? doc : [];
+    const merged = new Set([...docArr, ...this.getGlobalMutedRules()]);
+    return [...merged].filter((x) => typeof x === "string" && x.length <= 200).slice(0, 800);
+  },
+
+  isTargetDismissedGlobally(targetText) {
+    const key = this.normalizeTargetKey(targetText);
+    if (!key || key.startsWith("(")) return false;
+    return this.getGlobalDismissedTargets().includes(key);
+  },
+
+  async muteRule(ruleId, options) {
+    options = options || {};
     if (!ruleId) return;
-    const set = new Set(this.getMutedRules());
-    set.add(ruleId);
-    await this.setAsync(this.KEYS.MUTED, JSON.stringify([...set]));
+    const global = options.global !== false;
+    const setDoc = new Set(this._parse(this.get(this.KEYS.MUTED, "[]"), []));
+    setDoc.add(ruleId);
+    await this.setAsync(this.KEYS.MUTED, JSON.stringify([...setDoc]));
+    if (global) {
+      const g = new Set(this.getGlobalMutedRules());
+      g.add(ruleId);
+      this._writeGlobalJson(this.KEYS.GLOBAL_MUTED, [...g]);
+    }
+  },
+
+  async dismissTarget(targetText) {
+    const key = this.normalizeTargetKey(targetText);
+    if (!key || key.startsWith("(")) return;
+    const g = new Set(this.getGlobalDismissedTargets());
+    g.add(key);
+    this._writeGlobalJson(this.KEYS.GLOBAL_DISMISSED, [...g]);
   },
 
   async resetMutedRules() {
     await this.setAsync(this.KEYS.MUTED, JSON.stringify([]));
+    try {
+      localStorage.removeItem(this.KEYS.GLOBAL_MUTED);
+      localStorage.removeItem(this.KEYS.GLOBAL_DISMISSED);
+    } catch (_) {}
   },
 
   getDictionary() {

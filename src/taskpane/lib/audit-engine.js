@@ -63,28 +63,34 @@ ProzaEdit.Audit = {
         item.ruleId = `auto:${String(item.module || "rule").slice(0, 40)}:${String(item.targetText).slice(0, 40)}`.toLowerCase();
       }
       if (muted.has(item.ruleId)) return;
+      if (ProzaEdit.Settings?.isTargetDismissedGlobally?.(item.targetText)) return;
       suggestions.push({ ...item, id: item.id || `sug_${idSeq++}` });
     };
+
+    const fiction = String(ctx.manuscriptType || "").includes("Fiction");
+    const anyFiction =
+      fiction &&
+      (ctx.mPlot || ctx.mMotivation || ctx.mDialogue || ctx.mContinuity || ctx.mPlausibility || ctx.mPacing || ctx.mSpoiler);
+    const anyCore = ctx.chkRep || ctx.chkProp || ctx.chkSpell || ctx.chkAI || ctx.extendedLocal || anyFiction;
+    if (!anyCore && !ctx.fkLock) {
+      return {
+        suggestions: [],
+        metrics: ProzaEdit.Metrics.analyze(text),
+        score: 10,
+        traffic: ProzaEdit.Metrics.trafficLight(10),
+        criticalCount: 0,
+        prefCount: 0,
+      };
+    }
 
     if (ctx.chkRep) this._repetition(text, lower, push);
     if (ctx.chkProp) {
       ProzaEdit.ProperNoun.findInconsistencies(text, ctx.dictionary).forEach(push);
-      if (text.includes("Bircfield") && text.includes("Birchfield")) {
-        push({
-          ruleId: "prop:bircfield",
-          module: "Proper noun consistency",
-          type: "confirmed",
-          explanation: 'Variant "Bircfield" vs "Birchfield".',
-          targetText: "Bircfield",
-          replacementText: "Birchfield",
-        });
-      }
     }
     if (ctx.chkSpell) this._proofing(text, lower, push, ctx.language);
     if (ctx.chkAI) this._aiVoice(text, lower, push);
     if (ctx.chkAIDetection) this._aiDetectionHeuristic(text, lower, push);
 
-    const fiction = String(ctx.manuscriptType || "").includes("Fiction");
     if (fiction) {
       if (ctx.mPlot) this._plot(text, lower, push, ctx);
       if (ctx.mMotivation) this._motivation(text, lower, push);
@@ -95,18 +101,22 @@ ProzaEdit.Audit = {
       if (ctx.mSpoiler) this._spoiler(text, lower, push);
     }
 
-    this._manuscriptRules(text, lower, push, ctx);
-    if (ProzaEdit.EditorHeuristics?.runStandardChecks) {
-      ProzaEdit.EditorHeuristics.runStandardChecks(text, push, ctx);
+    if (ctx.chkSpell) {
+      this._manuscriptRules(text, lower, push, ctx);
+      if (ProzaEdit.StyleGuideRules?.apply) {
+        ProzaEdit.StyleGuideRules.apply(text, lower, push, ctx);
+      }
+      if (ctx.language === "en-GB") this._gbIseIze(text, lower, push);
     }
-    if (ProzaEdit.StyleGuideRules?.apply) {
-      ProzaEdit.StyleGuideRules.apply(text, lower, push, ctx);
+    if (ctx.chkRep || ctx.chkSpell) {
+      if (ProzaEdit.EditorHeuristics?.runStandardChecks) {
+        ProzaEdit.EditorHeuristics.runStandardChecks(text, push, ctx);
+      }
     }
     if (ctx.extendedLocal) this._extendedLocalPass(text, lower, push);
-    this._rhythmMonotony(text, push);
+    if (ctx.mPacing || ctx.chkRep) this._rhythmMonotony(text, push);
     if (ctx.fkLock) this._fkLockFlag(text, push, ctx);
-    if (ctx.language === "en-GB") this._gbIseIze(text, lower, push);
-    this._sensoryWeakSpot(text, push);
+    if (ctx.mPacing) this._sensoryWeakSpot(text, push);
 
     const metrics = ProzaEdit.Metrics.analyze(text);
     const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);

@@ -12,9 +12,10 @@ const MAX_DEEP = 6000;
 const MAX_AUDIT_CACHE_CHARS = 120000;
 const MAX_PARAS = 15000;
 const MAX_LOCAL_AUDIT_CHARS = 150000;
+const MAX_LOCAL_AUDIT_FULL = 450000;
 
 const MODULE_IDS = ["chkRep", "chkProp", "chkSpell", "chkAI", "mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"];
-const TAB_IDS = ["tab1", "tab2", "tab3", "tab4", "tab5", "tab6"];
+const TAB_IDS = ["tab1", "tab2", "tab3", "tab4", "tab5", "tab6", "tab7"];
 
 let recognition = null;
 let isRecording = false;
@@ -520,16 +521,18 @@ function updateUndoRedoUi() {
   if (r) r.disabled = historyBusy || !hist.canRedo();
 }
 
-async function swapTextInScope(fromText, toText) {
+async function swapTextInScope(fromText, toText, options) {
   return wordRun("pe-swap", async (ctx) => {
-    const items = await searchInScope(ctx, fromText);
+    const items = await searchInScope(ctx, fromText, options);
     if (!items.length) throw new Error("Text not found—document may have changed.");
+    items[0].select();
+    await ctx.sync();
     items[0].insertText(toText, Word.InsertLocation.replace);
     await ctx.sync();
   });
 }
 
-function applyDocumentEdit(beforeText, afterText, label) {
+function applyDocumentEdit(beforeText, afterText, label, options) {
   const before = String(beforeText || "");
   const after = String(afterText || "");
   if (!before || before === after) return Promise.resolve(false);
@@ -538,7 +541,8 @@ function applyDocumentEdit(beforeText, afterText, label) {
     showPeStatus("Tip: File → Version History before large edits.", "ok");
   }
   if (!confirmBeforeApply(`Replace "${before}" with "${after}"?`)) return Promise.resolve(false);
-  return swapTextInScope(before, after)
+  const searchOpts = options && options.forceDocument ? { forceDocument: true } : {};
+  return swapTextInScope(before, after, searchOpts)
     .then(() => {
       ProzaEdit.EditHistory.record(before, after, label);
       updateUndoRedoUi();
@@ -605,10 +609,11 @@ function setupUndoRedoShortcuts() {
   });
 }
 
-async function searchInScope(context, target) {
+async function searchInScope(context, target, options) {
+  options = options || {};
   const q = sanitizeSearch(target);
   if (!q) return [];
-  if (useSelectionEdits()) {
+  if (useSelectionEdits() && !options.forceDocument) {
     const sel = context.document.getSelection();
     sel.load("text");
     await context.sync();
@@ -1414,8 +1419,9 @@ function runAuditInternalCore(opts) {
     }
     let text = await readScopeText(ctx);
     let truncated = false;
-    if (text.length > MAX_LOCAL_AUDIT_CHARS) {
-      text = text.substring(0, MAX_LOCAL_AUDIT_CHARS);
+    const cap = getEl("scope")?.value === "full" ? MAX_LOCAL_AUDIT_FULL : MAX_LOCAL_AUDIT_CHARS;
+    if (text.length > cap) {
+      text = text.substring(0, cap);
       truncated = true;
     }
     await new Promise((r) => setTimeout(r, 0));
@@ -1501,12 +1507,7 @@ function renderAuditCards(list) {
     div.querySelector('[data-a="dict"]').onclick = () => addDictionaryWordFromCard(item.targetText);
     if (showHouse) div.querySelector('[data-a="house"]').onclick = () => addCustomStyleFromCard(item);
     div.querySelector('[data-a="mute"]').onclick = () => muteRule(item);
-    div.querySelector('[data-a="dismiss"]').onclick = () => {
-      currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id !== id);
-      updateAuditFilterChips();
-      document.getElementById(`card_${id}`)?.remove();
-      if (!box.querySelector(".card")) applyAuditCardFilter();
-    };
+    div.querySelector('[data-a="dismiss"]').onclick = () => dismissCard(item);
     box.appendChild(div);
   });
 }
@@ -1514,10 +1515,40 @@ function renderAuditCards(list) {
 async function muteRule(item) {
   if (!item.ruleId) return;
   await ProzaEdit.Settings.muteRule(item.ruleId);
-  currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id !== item.id);
+  if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
+  removeAuditCard(item.id);
+  showPeStatus("Muted on this PC for future audits.", "ok");
+}
+
+async function dismissCard(item) {
+  if (item.ruleId) await ProzaEdit.Settings.muteRule(item.ruleId);
+  if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
+  removeAuditCard(item.id);
+}
+
+function removeAuditCard(id) {
+  currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id !== id);
   updateAuditFilterChips();
-  document.getElementById(`card_${item.id}`)?.remove();
+  document.getElementById(`card_${id}`)?.remove();
   applyAuditCardFilter();
+}
+
+function clearAuditReport() {
+  currentAuditSuggestions = [];
+  lastAuditExcerpt = "";
+  lastAuditMeta = {};
+  lastFeedbackLetter = "";
+  auditCardFilter = "all";
+  updateAuditFilterChips();
+  const box = getEl("cardContainer");
+  const sum = getEl("summaryReport");
+  if (box) box.innerHTML = "";
+  if (sum) sum.innerHTML = "Audit cleared. Run audit again for a fresh pass.";
+  getEl("trafficBar")?.classList.add("hidden");
+  getEl("miniScores")?.classList.add("hidden");
+  ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.LAST_AUDIT, "");
+  showAuditEmptyIfNeeded();
+  showPeStatus("Audit report cleared.", "ok");
 }
 
 function goToIssue(target) {
@@ -1538,12 +1569,9 @@ function goToIssue(target) {
 }
 
 function applyFix(cardId, target, replacement) {
-  applyDocumentEdit(target, replacement, "Audit fix").then((ok) => {
+  applyDocumentEdit(target, replacement, "Audit fix", { forceDocument: true }).then((ok) => {
     if (!ok) return;
-    currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id !== cardId);
-    updateAuditFilterChips();
-    document.getElementById(`card_${cardId}`)?.remove();
-    applyAuditCardFilter();
+    removeAuditCard(cardId);
   });
 }
 

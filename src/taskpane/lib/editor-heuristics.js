@@ -279,7 +279,7 @@ ProzaEdit.EditorHeuristics = {
     if (!text || text.length < 80) return;
     this.scanDuplicateSentences(text, push, 3);
     this.scanRepeatedOpenings(text, push, 3);
-    this.scanMidCapitalInconsistency(text, push, 3);
-    this.scanFormalMix(text, text.toLowerCase(), push, ctx.manuscriptType);
+    if (ctx.chkProp !== false) this.scanMidCapitalInconsistency(text, push, 3);
+    if (ctx.chkSpell !== false) this.scanFormalMix(text, text.toLowerCase(), push, ctx.manuscriptType);
   },
 };

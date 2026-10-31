@@ -43,6 +43,7 @@
     <button type="button" class="tab-btn" data-pe-tab="tab4" role="tab" onclick="showTab('tab4')">Audit</button>
     <button type="button" class="tab-btn" data-pe-tab="tab5" role="tab" onclick="showTab('tab5')">Coach</button>
     <button type="button" class="tab-btn" data-pe-tab="tab6" role="tab" onclick="showTab('tab6')">Rewrite</button>
+    <button type="button" class="tab-btn" data-pe-tab="tab7" role="tab" onclick="showTab('tab7')">Help</button>
   </div>
 
   <div id="tab1" class="tab-content active" role="tabpanel">
@@ -135,7 +136,7 @@
       </details>
     </div>
     <h2 class="pe-section-title">Safety &amp; options</h2>
-    <div class="toggle-row"><span>Edits apply to selection only (recommended)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
+    <div class="toggle-row"><span>Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
     <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
     <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
     <div class="toggle-row"><span>FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock"></div>
@@ -246,6 +247,7 @@
         <button type="button" class="chip chip-sort" data-audit-sort="module" onclick="setAuditCardSort('module')">Module</button>
       </div>
       <button type="button" class="btn-go btn-copy-copilot btn-copilot-primary" onclick="copyAuditForCopilot()" title="Copy summary + findings — paste into Word Copilot chat">Copy for Copilot</button>
+      <button type="button" class="btn-secondary" onclick="clearAuditReport()" title="Clear cards and summary for a fresh audit">Clear report</button>
     </div>
     <details class="help-box help-muted audit-share">
       <summary>Share report</summary>
@@ -291,6 +293,32 @@
         <button class="btn-secondary btn-api-opt" onclick="sendChatMessage()">Send via Gemini</button>
       </div>
     </details>
+  </div>
+
+  <div id="tab7" class="tab-content" role="tabpanel">
+    <h2 class="pe-section-title">ProzaEdit Help</h2>
+    <div class="help-box">
+      <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
+      <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
+      <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” on Target for speed.</p>
+      <p><strong>Mute / Dismiss:</strong> Saved on this PC for the same wording across documents (browser storage). Dict adds words to skip for proper nouns.</p>
+      <p><strong>Full manuscript:</strong> Target → Full Manuscript, or use Section + audit on Checks for long docs.</p>
+    </div>
+    <h2 class="pe-section-title">Another computer</h2>
+    <div class="help-box">
+      <p>Download and upload once in Word:</p>
+      <p><a href="https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml" target="_blank" rel="noopener">manifest.hosted.xml</a></p>
+      <p>Word → Insert → Add-ins → Upload My Add-in (web Word at office.com if desktop has no Upload).</p>
+    </div>
+    <h2 class="pe-section-title">Update the add-in after code changes</h2>
+    <div class="help-box">
+      <p>Push files to GitHub (src/assets). Hosted manifest loads the latest UI on next open (may take 1–2 minutes). Bump manifest version if Word caches hard.</p>
+      <p><strong>Live dev:</strong> use archived <code>_archive/local-dev</code> on your PC with Start ProzaEdit.bat — not for normal writing.</p>
+    </div>
+    <h2 class="pe-section-title">Paraphrase (Rewrite tab)</h2>
+    <div class="help-box">
+      <p>Rule-based tightening (Strunk-style wordiness lists, contractions, pleonasms). Original ProzaEdit code — not QuillBot or any third-party paraphrase API.</p>
+    </div>
   </div>
 
   <div id="tab6" class="tab-content">
