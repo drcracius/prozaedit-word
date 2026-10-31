@@ -1,7 +1,7 @@
 # ProzaEdit Word — Feature Reference
 
 **Audience:** D Cracius, beta testers, and developers working on the add-in.  
-**Code baseline:** GitHub `main` as of hosted build **2.0.0.14** (`manifest.hosted.xml` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js`).  
+**Code baseline:** GitHub `main` as of hosted build **2.0.0.15** (`manifest.hosted.xml` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js`).  
 **Live UI:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html  
 
 This document describes what the add-in **actually does today** in the repository. Help links point to `docs/WORKFLOWS.md` and `docs/THIRD-PARTY-ATTRIBUTION.md` on GitHub `main`.
@@ -463,9 +463,11 @@ Load order is fixed in `taskpane.html`; `taskpane.js` orchestrates UI and Word c
 
 - Install: `docs/BETA-TESTERS-INSTALL.txt`, `docs/BETA-SETUP-GITHUB.md`, `docs/WHEN-YOU-RETURN.md`, `scripts/install/README.md`
 - Workflows & attribution: `docs/WORKFLOWS.md`, `docs/THIRD-PARTY-ATTRIBUTION.md`
+- Release notes: [RELEASE-NOTES-2.0.0.15.md](RELEASE-NOTES-2.0.0.15.md)
+- Roadmap: [prozaedit-implementation-plan-audited.md](prozaedit-implementation-plan-audited.md)
 - Engineering map: [prozaedit-codebase-overview.md](/cursor/stores/self/docs/prozaedit-codebase-overview.md)
 - Source of truth: [source-of-truth.md](/cursor/stores/self/docs/source-of-truth.md)
 
 ---
 
-*Feature reference aligned to repository `main` and task pane build 2.0.0.14.*
+*Feature reference aligned to repository `main` and task pane build 2.0.0.15.*

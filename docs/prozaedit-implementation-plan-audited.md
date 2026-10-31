@@ -3,8 +3,8 @@
 **Audience:** D Cracius (author, primary tester, PC + iPad workflows)  
 **Authored:** 2026-10-31 (audit + Phase 2 delivery)  
 **Supersedes as primary roadmap:** [prozaedit-multi-phase-plan.md](/cursor/stores/self/docs/prozaedit-multi-phase-plan.md) (v1 retained as historical)  
-**Production baseline:** hosted build **2.0.0.14** ([source-of-truth](/cursor/stores/self/docs/source-of-truth.md))  
-**North star:** [Next-Gen Master Specification](/cursor/stores/self/docs/prozaedit-nextgen-master-specification.md) (vNext architecture, post-2.0.0.14)  
+**Production baseline:** hosted build **2.0.0.15** ([source-of-truth](/cursor/stores/self/docs/source-of-truth.md))  
+**North star:** [Next-Gen Master Specification](prozaedit-nextgen-master-specification.md) (vNext architecture, post-2.0.0.15)  
 **As-built acceptance:** [Feature Reference](/cursor/stores/self/docs/prozaedit-features.md)  
 **Gap analysis:** [Spec Review](/cursor/stores/self/docs/prozaedit-nextgen-spec-review.md)  
 **Code map:** [Codebase Overview](/cursor/stores/self/docs/prozaedit-codebase-overview.md)
@@ -13,7 +13,7 @@
 
 ## 1. Executive summary
 
-**Where we are:** ProzaEdit Word is a **hosted beta** Office add-in (GitHub Pages + one-time `manifest.hosted.xml` upload). Core product is **local-first** audit, coach, and rewrite with optional Gemini. Shipped registration version **2.0.0.14** with manifest and `PROZAEDIT_BUILD_VERSION` aligned. **Phase 1** (`word-safe-navigator.js`, commit `91ecf56`) is complete. **Phase 2** delivers centralized hover tips (`tooltip-registry.js`), Target toggle **Show hover tips** (default **on**, decision D4), migrated high-traffic controls, viewport-safe `.pe-tooltip-bubble` styles, and incremental Editorial Studio tokens (indigo primary + card surface) without tab renames or §11 HTML cutover.
+**Where we are:** ProzaEdit Word is a **hosted beta** Office add-in (GitHub Pages + one-time `manifest.hosted.xml` upload). Core product is **local-first** audit, coach, and rewrite with optional Gemini. **Release 2.0.0.15** aligns `manifest.hosted.xml` and `PROZAEDIT_BUILD_VERSION` after Phases **2–7** (tooltips, shaper, timeline, citations, install/docs, report export, optional AI quota). **Phase 1** (`word-safe-navigator.js`, commit `91ecf56`) remains the foundation extract.
 
 **North star:** The vNext spec describes **Editorial Studio** UX, modular engines (chronology, citations, lexical shaper, tooltips, quota-aware Gemini), and additive surfaces (**Narrative**, **Citations**) without replacing the v2 workflow strip or dropping **Checks**, **Thesaurus**, or batch/heatmap tooling.
 
@@ -77,9 +77,9 @@
 
 ## 4. Current state snapshot
 
-### 4.1 Shipped capabilities (2.0.0.14 + Phase 2 UI)
+### 4.1 Shipped capabilities (2.0.0.15)
 
-Seven tabs + workflow strip unchanged. Phase 2 adds hover-tip registry and Editorial Studio **token** pass (not full dark mode).
+Seven tabs + workflow strip unchanged. **2.0.0.15** registers Phases 2–7: hover tips, lexical shaper, timeline/citation scans, install scripts + help docs on GitHub, report export module, optional Gemini session quota (default off).
 
 ### 4.2 `src/taskpane/lib/` inventory (post–Phase 7c)
 
@@ -299,7 +299,8 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 |----------|------|
 | Source of truth | [/cursor/stores/self/docs/source-of-truth.md](/cursor/stores/self/docs/source-of-truth.md) |
 | Historical v1 plan | [/cursor/stores/self/docs/prozaedit-multi-phase-plan.md](/cursor/stores/self/docs/prozaedit-multi-phase-plan.md) |
-| Features (2.0.0.14) | [/cursor/stores/self/docs/prozaedit-features.md](/cursor/stores/self/docs/prozaedit-features.md) |
+| Features (2.0.0.15) | [prozaedit-features.md](prozaedit-features.md) |
+| Release notes | [RELEASE-NOTES-2.0.0.15.md](RELEASE-NOTES-2.0.0.15.md) |
 | Codebase overview | [/cursor/stores/self/docs/prozaedit-codebase-overview.md](/cursor/stores/self/docs/prozaedit-codebase-overview.md) |
 | vNext master spec | [/cursor/stores/self/docs/prozaedit-nextgen-master-specification.md](/cursor/stores/self/docs/prozaedit-nextgen-master-specification.md) |
 | Spec review & §5 phasing | [/cursor/stores/self/docs/prozaedit-nextgen-spec-review.md](/cursor/stores/self/docs/prozaedit-nextgen-spec-review.md) |
@@ -307,4 +308,4 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 ---
 
-*Primary roadmap aligned to GitHub `main` through Phase 7c partial (manifest baseline **2.0.0.14**).*
+*Primary roadmap aligned to GitHub `main` through Phase 7c partial (manifest baseline **2.0.0.15**).*

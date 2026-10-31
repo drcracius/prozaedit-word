@@ -1,8 +1,8 @@
 /**
- * ProzaEdit Word Task Pane (Phases 1–4 integrated).
+ * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.14";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.15";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const GUARDRAILS = `OPERATIONAL MANDATES:

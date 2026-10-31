@@ -46,7 +46,7 @@ Send them:
 
 ## Version alignment (authoritative)
 
-- **Hosted beta:** `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` must match (currently **2.0.0.14**).
+- **Hosted beta:** `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` must match (currently **2.0.0.15**).
 - **Local dev:** `manifest.xml` remains **2.0.0.0** for localhost sideload only; bump it only when you change dev manifest metadata, not for GitHub Pages UI pushes.
 
 ## Install helpers on GitHub
