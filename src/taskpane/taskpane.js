@@ -19,6 +19,11 @@ const MAX_LOCAL_AUDIT_CHARS = 150000;
 const MAX_LOCAL_AUDIT_FULL = 450000;
 
 const MODULE_IDS = ["chkRep", "chkProp", "chkSpell", "chkAI", "mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"];
+const FICTION_MODULE_IDS = ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"];
+
+function isFictionManuscriptType(type) {
+  return String(type || getEl("manuscriptType")?.value || "").includes("Fiction");
+}
 const TAB_IDS = ["tab1", "tab2", "tab3", "tab4", "tab5", "tab6", "tab7"];
 
 let recognition = null;
@@ -250,9 +255,7 @@ function getManuscriptIndex() {
 }
 
 function fictionModulesActive() {
-  return ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"].some((id) =>
-    isModuleEnabled(id)
-  );
+  return FICTION_MODULE_IDS.some((id) => isModuleEnabled(id));
 }
 
 function scopeCoversFullManuscript() {
@@ -375,10 +378,12 @@ function bindWorkflowStepper() {
 }
 
 function adaptModules() {
-  const fiction = (getEl("manuscriptType")?.value || "").includes("Fiction");
-  ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"].forEach((id) => {
+  const fiction = isFictionManuscriptType();
+  FICTION_MODULE_IDS.forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.disabled = !fiction;
+    if (!el) return;
+    el.disabled = !fiction;
+    if (!fiction) el.checked = false;
   });
   const chronoPanel = getEl("peChronoPanel");
   if (chronoPanel) {
@@ -450,7 +455,8 @@ function collectUiConfig() {
   };
   MODULE_IDS.forEach((id) => {
     const el = document.getElementById(id);
-    if (el) cfg.modules[id] = !!el.checked;
+    if (!el) return;
+    cfg.modules[id] = FICTION_MODULE_IDS.includes(id) ? isModuleEnabled(id) : !!el.checked;
   });
   if (cfg.rememberApiKey) {
     cfg.apiKey = getEl("apiKey")?.value.trim() || "";
@@ -580,9 +586,7 @@ function updateActiveChecksHint() {
   if (ctx.fkLock) parts.push("FK lock");
   const fiction = String(ctx.manuscriptType || "").includes("Fiction");
   if (fiction) {
-    const mods = ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"].filter((id) =>
-      isModuleEnabled(id)
-    );
+    const mods = FICTION_MODULE_IDS.filter((id) => isModuleEnabled(id));
     if (mods.length && mods.length < 7) parts.push(`${mods.length}/7 fiction`);
     else if (mods.length === 7) parts.push("fiction×7");
   }
@@ -771,6 +775,8 @@ function applyHoverTips() {
 function buildAuditContext(options) {
   options = options || {};
   const scopeVal = getEl("scope")?.value || "selection";
+  const fiction = isFictionManuscriptType();
+  const fictionOn = (id) => fiction && isModuleEnabled(id);
   return {
     extendedLocal: !!options.extendedLocal,
     fkLock: isChecked("fkLock", false),
@@ -789,13 +795,13 @@ function buildAuditContext(options) {
     chkSpell: isChecked("chkSpell", true),
     chkAI: isChecked("chkAI", true),
     chkAIDetection: isChecked("chkAI", true),
-    mPlot: isModuleEnabled("mPlot"),
-    mMotivation: isModuleEnabled("mMotivation"),
-    mDialogue: isModuleEnabled("mDialogue"),
-    mContinuity: isModuleEnabled("mContinuity"),
-    mPlausibility: isModuleEnabled("mPlausibility"),
-    mPacing: isModuleEnabled("mPacing"),
-    mSpoiler: isModuleEnabled("mSpoiler"),
+    mPlot: fictionOn("mPlot"),
+    mMotivation: fictionOn("mMotivation"),
+    mDialogue: fictionOn("mDialogue"),
+    mContinuity: fictionOn("mContinuity"),
+    mPlausibility: fictionOn("mPlausibility"),
+    mPacing: fictionOn("mPacing"),
+    mSpoiler: fictionOn("mSpoiler"),
     reportDensity: getEl("reportDensity")?.value || "balanced",
   };
 }
@@ -833,6 +839,7 @@ function showPeStatus(message, kind) {
 function updateUndoRedoUi() {
   const u = getEl("btnUndo");
   const r = getEl("btnRedo");
+  const last = getEl("btnGoLastEdit");
   const hist = ProzaEdit.EditHistory;
   if (u) {
     u.disabled = historyBusy || !hist.canUndo();
@@ -840,6 +847,22 @@ function updateUndoRedoUi() {
     u.title = peek ? `Undo: ${peek.label} (Ctrl+Shift+Z)` : "Nothing to undo";
   }
   if (r) r.disabled = historyBusy || !hist.canRedo();
+  const nav = hist.getLastNavigate?.();
+  if (last) {
+    last.disabled = historyBusy || !nav?.target;
+    last.title = nav?.target
+      ? `Go to last edit: ${nav.label || "edit"} — “${String(nav.target).slice(0, 48)}…”`
+      : "Jump to where you last applied a ProzaEdit change";
+  }
+}
+
+function goToLastEdit() {
+  const nav = ProzaEdit.EditHistory.getLastNavigate?.();
+  if (!nav?.target || String(nav.target).startsWith("(")) {
+    showPeStatus("No ProzaEdit edit location saved yet.", "warn");
+    return;
+  }
+  goToIssue(nav.target);
 }
 
 async function swapTextInScope(fromText, toText, options) {

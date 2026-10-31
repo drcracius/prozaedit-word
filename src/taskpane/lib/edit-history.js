@@ -5,14 +5,21 @@ ProzaEdit.EditHistory = {
   MAX: 40,
   _undo: [],
   _redo: [],
+  _lastNavigate: null,
 
   record(before, after, label) {
     const b = String(before || "");
     const a = String(after || "");
     if (!b || b === a) return;
-    this._undo.push({ before: b, after: a, label: String(label || "Edit").slice(0, 80) });
+    const entry = { before: b, after: a, label: String(label || "Edit").slice(0, 80) };
+    this._undo.push(entry);
     if (this._undo.length > this.MAX) this._undo.shift();
     this._redo = [];
+    this._lastNavigate = { target: b, label: entry.label };
+  },
+
+  getLastNavigate() {
+    return this._lastNavigate;
   },
 
   canUndo() {

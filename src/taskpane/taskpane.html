@@ -43,6 +43,10 @@
   <div class="pe-toolbar pe-toolbar-sticky" role="toolbar" aria-label="ProzaEdit actions">
     <button type="button" id="btnUndo" class="btn-tool" disabled onclick="prozaEditUndo()" title="Undo last ProzaEdit replace (Ctrl+Shift+Z)" data-pe-tip="btn-undo">↶ Undo</button>
     <button type="button" id="btnRedo" class="btn-tool" disabled onclick="prozaEditRedo()" title="Redo (Ctrl+Shift+Y)" data-pe-tip="btn-redo">↷ Redo</button>
+    <button type="button" id="btnGoLastEdit" class="btn-tool btn-tool-icon" disabled onclick="goToLastEdit()" title="Jump to last applied edit" aria-label="Go to last edit" data-pe-tip="btn-go-last-edit">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <span class="btn-tool-icon-label">Last edit</span>
+    </button>
     <span id="peStatus" class="pe-status" aria-live="polite"></span>
     <button type="button" class="btn-tool btn-tool-accent" onclick="runPrimaryAudit()" title="Run audit with current checks and scope" data-pe-tip="btn-run-audit">⚡ Run audit</button>
   </div>
@@ -67,6 +71,7 @@
         <option value="Non-Fiction / Memoir">Non-Fiction / Memoir</option>
         <option value="Technical / Journalism">Technical / Journalism</option>
       </select>
+      <p class="help-inline">Plot, character, and spoiler checks run only for <strong>Fiction</strong> types with those modules enabled; Academic and Business audits skip them.</p>
     </div>
     <div class="form-group">
       <label for="targetAudience">Target Reader / Education Level</label>
@@ -271,6 +276,7 @@
       <div class="toggle-row"><span>5. Plausibility & Evidence</span><input type="checkbox" id="mPlausibility" checked></div>
       <div class="toggle-row"><span>6. Pacing & Readability</span><input type="checkbox" id="mPacing" checked></div>
       <div class="toggle-row"><span>7. Spoiler Control</span><input type="checkbox" id="mSpoiler" checked></div>
+      <p class="help-inline">Disabled fiction toggles are not run by the audit engine (not just greyed out).</p>
     </div>
     <details class="help-box help-muted pe-citation-block" id="peCitationPanel" open>
       <summary>Citation verify (beta)</summary>
@@ -409,7 +415,10 @@
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
       <p><strong>Hover tips:</strong> Target → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
       <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” on Target for speed.</p>
-      <p><strong>Mute / Dismiss:</strong> Saved on this PC for the same wording across documents (browser storage). Dict adds words to skip for proper nouns.</p>
+      <p><strong>Go to last edit:</strong> Sticky toolbar pin jumps to the text you last replaced (audit apply, thesaurus, or rewrite).</p>
+      <p><strong>Thesaurus:</strong> Pick a synonym → replaces the looked-up word in scope (respects selection-only on Target unless audit-style apply).</p>
+      <p><strong>Rewrite:</strong> Local paraphrase preview → <em>Apply preview to selection</em> writes into Word; use Undo or Last edit if you need to find the change.</p>
+      <p><strong>Mute / Dismiss:</strong> Mute hides the rule id; Dismiss also silences that exact wording. Both persist in browser storage on this PC. Dict adds proper nouns to skip name checks.</p>
       <p><strong>Full manuscript:</strong> Target → Full Manuscript, or use Section + audit on Checks for long docs.</p>
       <p><strong>More:</strong> <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORKFLOWS.md" target="_blank" rel="noopener">WORKFLOWS.md</a> (editing stack) · <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a></p>
     </div>

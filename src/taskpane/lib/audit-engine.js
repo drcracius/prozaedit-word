@@ -19,9 +19,24 @@ ProzaEdit.Audit = {
     return mutedSet.has(ruleId);
   },
 
+  _stripIneligibleFictionFlags(ctx) {
+    const fiction = String(ctx.manuscriptType || "").includes("Fiction");
+    if (fiction) return ctx;
+    return {
+      ...ctx,
+      mPlot: false,
+      mMotivation: false,
+      mDialogue: false,
+      mContinuity: false,
+      mPlausibility: false,
+      mPacing: false,
+      mSpoiler: false,
+    };
+  },
+
   run(text, ctx) {
     text = String(text || "");
-    ctx = ctx || {};
+    ctx = this._stripIneligibleFictionFlags(ctx || {});
     const suggestions = [];
     let idSeq = 0;
     const muted = new Set(ctx.mutedRules || []);
@@ -83,14 +98,14 @@ ProzaEdit.Audit = {
         ProzaEdit.EditorHeuristics.runStandardChecks(text, push, ctx);
       }
     }
-    if (ctx.extendedLocal) this._extendedLocalPass(text, lower, push);
-    if (ctx.mPacing || ctx.chkRep) this._rhythmMonotony(text, push);
+    if (ctx.extendedLocal) this._extendedLocalPass(text, lower, push, ctx);
+    if ((fiction && ctx.mPacing) || ctx.chkRep) this._rhythmMonotony(text, push);
     if (ctx.fkLock) this._fkLockFlag(text, push, ctx);
-    if (ctx.mPacing) this._sensoryWeakSpot(text, push);
+    if (fiction && ctx.mPacing) this._sensoryWeakSpot(text, push);
 
     const metrics = ProzaEdit.Metrics.analyze(text);
     const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);
-    if (ctx.mPacing || ctx.chkSpell) {
+    if ((fiction && ctx.mPacing) || ctx.chkSpell) {
       if (metrics.fleschKincaidGrade < gMin - 2) {
         push({
           ruleId: "read:too_simple",
@@ -502,7 +517,8 @@ ProzaEdit.Audit = {
     }
   },
 
-  _extendedLocalPass(text, lower, push) {
+  _extendedLocalPass(text, lower, push, ctx) {
+    ctx = ctx || {};
     (ProzaEdit.LexicalBanks?.EXTENDED_FILLERS || []).forEach(([word, hint]) => {
       if (new RegExp(`\\b${word}\\b`, "i").test(text)) {
         push({

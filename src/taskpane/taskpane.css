@@ -288,6 +288,21 @@ body {
   background: var(--primary-hover);
 }
 
+.btn-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.btn-tool-icon svg {
+  flex-shrink: 0;
+}
+
+.btn-tool-icon-label {
+  font-size: 10px;
+}
+
 .audit-run-hub {
   margin-bottom: 10px;
   padding: 8px;
