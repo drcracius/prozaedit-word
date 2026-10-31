@@ -1,95 +1,87 @@
 # ProzaEdit Word — UX rating and recommendations
 
 **Build reviewed:** 2.0.0.15 hosted task pane (7-tab IA, simple mode, sticky workflow toolbar).  
-**Date:** 2026-10-31
+**Date:** 2026-10-31 · **UX-4 measurement:** 2026-10-31
 
 ---
 
-## Overall score: **7 / 10** → **7.5 after UX-1** → **~8.5 after UX-3** (2026-10-31)
+## Overall score: **7 / 10** → **7.5 (UX-1)** → **~8.5 shipped (UX-1–UX-3)**
 
-UX-1 added Fluent-style toolbar and card icons, Simple mode → Critical audit default, workflow strip contrast, audit-card Rewrite bridge, and non-fiction summary hints. UX-2 closed Help/doc P1 gaps. UX-3 centralizes hover copy in `tooltip-registry.js` (short native titles when tips are off), removes duplicate `title`/`data-pe-tip` on the sticky toolbar and card primaries, and adds bell-off / eye-off icons on Mute/Dismiss. See [prozaedit-ux-9-implementation-plan.md](./prozaedit-ux-9-implementation-plan.md).
+| Milestone | Score | Evidence |
+|-----------|-------|----------|
+| Baseline (pre–UX pack) | **7.0** | Sound Target → Checks → Audit → Fix loop; dense text UI; seven tabs |
+| After UX-1 | **7.5** | `pe-icons.js` + toolbar/card icon+label rows; Simple → Critical default; workflow strip `.pe-workflow-step.active`; `sendIssueToRewrite()`; `getManuscriptTypeAwareHint()` in summary/empty |
+| After UX-2 | **~8.0** | Help/Target doc links verified; Checks active-checks hint; STYLE-GUIDE reference doc |
+| After UX-3 (current) | **~8.5** | `NATIVE_TITLE_REGISTRY` + deduped tips; Mute/Dismiss icons; no SR regression on primary actions (text + `aria-label` retained) |
 
-ProzaEdit fits the Word task-pane constraint well: a clear Target → Checks → Audit → Fix loop, local-first audits (no API required), and a sticky action strip (Undo, Run audit) that stays visible while scrolling. Simple mode hides power features without forking the product. Tooltips via `data-pe-tip` help dense Controls copy without permanent clutter.
+**Why not 9.0 yet:** No structured beta cohort feedback on mis-clicks, time-to-first-fix, or Simple-mode comprehension; tab count and fiction/citation gating unchanged by design; pane width still limits layout. Closing the gap is **measurement + small polish**, not new IA.
 
-Points held back: seven top-level tabs still compete for attention; many controls use long text labels instead of scannable icons; fiction vs academic gating is easy to misunderstand until users read Checks; and Word’s narrow pane limits multi-column layouts. None of these are fatal—they are typical Office add-in tradeoffs.
+Implementation log: [prozaedit-ux-9-implementation-plan.md](./prozaedit-ux-9-implementation-plan.md). Release snippet: [RELEASE-NOTES-2.0.0.15.md](./RELEASE-NOTES-2.0.0.15.md#ux-pack-refresh-ux-1--ux-3-no-manifest-bump).
+
+ProzaEdit fits the Word task-pane constraint well: local-first audits, sticky Undo/Run audit, and confirm-before-apply trust paths. Simple mode hides power features without forking the product.
 
 ---
 
 ## What works
 
-- **Workflow stepper** (Target → Checks → Run audit → Fix cards) orients new users.
-- **Audit cards** separate primary actions (Go to, Apply) from secondary (Mute, Dismiss, Dict).
+- **Workflow stepper** (Target → Checks → Run audit → Fix cards) orients new users; active step matches primary Run audit accent (UX-1).
+- **Audit cards** — icon+label primaries (Go to, Apply, Rewrite) and icon+label secondaries (Mute, Dismiss) (UX-1, UX-3).
 - **Confirm-before-apply** and continuity guard reduce accidental document damage.
-- **Help tab** consolidates install/update paths; session status line gives lightweight feedback.
+- **Help tab** + UX-2 doc hygiene; session status line gives lightweight feedback.
+- **Tooltip model** — one long-copy source; short native titles when hover tips are off (UX-3).
 
 ---
 
-## Improve without overwhelming users
+## Path to **9.0** (post–UX-4)
 
-1. **Progressive disclosure** — Keep Target + Audit as defaults; tuck batch section loop, deep Gemini audit, and custom style editor one level deeper (already partly done with `<details>` on Checks).
-2. **Manuscript-type clarity** — One line on Target (shipped) plus active-checks hint on Checks so users see what will actually run.
-3. **Filter chips on Audit** — Promote “Critical only” as a first-class chip for long reports (already present; consider defaulting to Critical for simple mode).
-4. **Empty states** — When Academic runs with all fiction modules off, celebrate “non-fiction profile” in summary copy instead of silent omission.
+**Required:** Collect **beta feedback** on the UX pack (see questions below). Adjust only where data shows friction.
 
----
+**Optional minor polish** (each ≤ small effort, no manifest):
 
-## Icon strategy (recommendations only)
+| Item | Rationale |
+|------|-----------|
+| Chip/filter affordance | If users miss Critical default, add one-line Audit header when Simple is on |
+| Card vertical rhythm | +2px gap between primary and secondary rows if beta reports mis-taps (CSS only) |
+| Run audit icon | Unify emoji vs SVG on Run audit if testers want visual consistency |
+| Fiction gating callout | Single Checks `<details>` line if academic users skip eligibility copy |
+| Shaper slider persistence | P2 — only if beta asks to keep shaper values across sessions |
 
-Use **16px**, single-weight stroke icons, inline SVG (no external font dependencies in the iframe):
+**Beta feedback prompts (UX-4):**
 
-| Source | License / fit |
-|--------|----------------|
-| [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) | Microsoft OSS; matches Office |
-| [Tabler Icons](https://tabler.io/icons) | MIT; clean ribbon-like strokes |
-| [Phosphor](https://phosphoricons.com/) | MIT; consistent weights |
+1. After enabling **Simple mode**, did you notice Audit defaulting to **Critical**? Was that helpful?
+2. Can you find **Go to**, **Apply**, **Rewrite**, **Mute**, and **Dismiss** on a card without reading every word?
+3. With **Show hover tips** off, are native browser titles enough on toolbar actions?
+4. Any accidental clicks on Mute/Dismiss after UX-3 icons?
+5. Time from opening the pane to first successful **Apply fix** vs before update (subjective OK).
 
-**Map icons to high-traffic actions:**
-
-| Action | Suggested icon metaphor | Priority |
-|--------|-------------------------|----------|
-| Run audit | Lightning / play | Already emoji on button; could unify to SVG |
-| Go to (card) | Crosshair / locate | High |
-| Apply fix | Checkmark / replace | High |
-| Undo / Redo | Curved arrows | Medium (text labels OK today) |
-| Go to last edit | Map pin | **Shipped** (toolbar) |
-| Rewrite (card) | Pencil / paraphrase | **Shipped** (audit primary row) |
-| Mute / Dismiss | Bell-off / eye-off | **Shipped** (secondary row, UX-3) |
-
-**Label clutter:** Prefer icon + 1–2 word labels on the sticky toolbar; keep full sentences in Help or tooltips only.
-
-**Workflow strip:** Slightly increase contrast on the active workflow step and tie its color to the primary Run audit button so “step 3” feels like the main CTA moment.
+**What NOT to do** (unchanged): no tab merge, no dark-mode swap, no auto-apply, no hiding Checks gating.
 
 ---
 
-## Shipped in this pass (optional icons)
+## Shipped UX pack (ranks 1–7)
 
-- Sticky toolbar **Last edit** — map-pin SVG + short label; navigates via `WordSafeNavigator` to the last successful Apply/replace snippet tracked in `edit-history.js`.
-- Audit card **Rewrite** — selects finding text in Word, opens Rewrite tab, clears stale preview; user runs Local paraphrase and applies manually (0 tokens).
+| Rank | Initiative | Status |
+|------|------------|--------|
+| 1 | Icon toolbar pass (Fluent 16px) | **Shipped** (UX-1) |
+| 2 | Simple mode → Critical filter | **Shipped** (UX-1) |
+| 3 | Workflow strip polish | **Shipped** (UX-1) |
+| 4 | Rewrite one-click (audit cards) | **Shipped** (UX-1) |
+| 5 | Onboarding / session tips | **Done** (2.0.0.15) |
+| 6 | Type-aware empty states | **Shipped** (UX-1) |
+| 7 | Reduce duplicate labels + Mute/Dismiss icons | **Shipped** (UX-3) |
 
 ---
 
-## Path to 9.0
+## Icon reference (shipped)
 
-Goal: raise perceived polish and speed **without** collapsing the 7-tab IA or shipping a dark-mode rewrite. Each item is incremental; ship one at a time and measure confusion (support questions, mis-clicks) before the next.
+16px inline SVG via `lib/pe-icons.js` (Fluent-style stroke). High-traffic mapping:
 
-| Rank | Initiative | Impact | Risk | Effort | Notes |
-|------|------------|--------|------|--------|-------|
-| 1 | **Icon toolbar pass (Fluent 16px)** | High — sticky strip + card Go to/Apply read faster | Low–medium — must keep text labels + `aria-label` | Medium | Inline SVG on Run audit, Undo/Redo, Go to/Apply on cards; match Office stroke weight |
-| 2 | **Simple mode defaults (Critical filter)** | High — shorter Audit lists for casual users | Low — reversible via chip | Small | On `pe-simple-mode`, default audit chip to Critical; power users tap All |
-| 3 | **Workflow strip polish** | Medium — clearer “Run audit” moment | Low | Small | Stronger active-step contrast; align accent with primary Run audit button |
-| 4 | **Rewrite one-click (audit cards)** | Medium — bridges Fix → paraphrase without Gemini | Low — no auto-apply | **Shipped** | `sendIssueToRewrite()` + Help line; shaper stays hidden in Simple mode |
-| 5 | **Onboarding / session tips** | Medium — first-run orientation | Low | **Done** | Dismissible session tips + Help Quick start (2.0.0.15) |
-| 6 | **Type-aware empty states** | Medium — Academic/non-fiction feels intentional | Low | Small | Summary copy when fiction modules disabled; Audit empty nudge by manuscript type |
-| 7 | **Reduce duplicate labels** | Low–medium — less vertical scroll | Low | **Shipped** (UX-3) | `NATIVE_TITLE_REGISTRY` + registry-only long tips; Mute/Dismiss icons |
-
-### What NOT to do (keeps risk bounded)
-
-- **Do not** merge tabs 7 → 4 without a major version and retraining — authors rely on muscle memory for Target / Checks / Audit.
-- **Do not** ship **dark mode** as a big-bang theme swap — Office host chrome stays light; a half-themed pane reads broken.
-- **Do not** auto-apply rewrites or audit fixes to “save clicks” — confirm paths are the trust anchor.
-- **Do not** hide Checks fiction/citation gating behind a single “Advanced” tab — eligibility must stay visible where scans run.
-
-**How 7 → 9 is achievable:** Keep the same mental model (Target → Checks → Audit → Fix). Layer **scannability** (icons), **defaults** (Simple + Critical), **bridges** (Rewrite card), and **copy** (empty states). Reserve manifest/version bumps for ribbon or permission changes only.
+| Action | Status |
+|--------|--------|
+| Run audit, Undo, Redo, Last edit (toolbar) | Shipped |
+| Go to, Apply, Rewrite (card primary) | Shipped |
+| Mute, Dismiss (card secondary) | Shipped (UX-3) |
+| Tab labels (text only) | Intentionally unchanged |
 
 ---
 
@@ -103,4 +95,4 @@ Goal: raise perceived polish and speed **without** collapsing the 7-tab IA or sh
 
 ## Summary
 
-ProzaEdit is **usable and trustworthy** for its core loop; the next UX wins are **disclosure**, **icon consistency on the toolbar**, and **type-aware messaging**—not more tabs.
+ProzaEdit is **polished and trustworthy** for its core loop at **~8.5/10** after the UX-1–UX-3 pack. **9.0** depends on beta validation and optional micro-polish—not new tabs or manifest churn.

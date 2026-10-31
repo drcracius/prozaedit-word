@@ -34,6 +34,20 @@ After that, day-to-day use is still **Home → ProzaEdit**; UI updates load from
 3. Rewrite → open **Advanced lexical shaper** (if not in Simple mode) → local paraphrase on a highlight.
 4. Help → **Check for updates** → should report manifest **2.0.0.15**.
 
+## UX pack refresh (UX-1 → UX-3, no manifest bump)
+
+These updates ship via **GitHub Pages** only — **no re-upload** of `manifest.hosted.xml` until the next ribbon or permission change.
+
+| Phase | What changed |
+|-------|----------------|
+| **UX-1** | Fluent-style **16px icons** on sticky toolbar (Undo, Redo, Last edit, Run audit) and audit card primaries (Go to, Apply, Rewrite); **Simple mode** defaults Audit filter to **Critical**; workflow step 3 aligned with primary Run audit styling; **Rewrite** on cards selects text and opens Rewrite tab; **non-fiction** summary hints by manuscript type |
+| **UX-2** | Help/doc **P1** fixes (`STYLE-GUIDE-SOURCES.md`, valid Target links); **active-checks hint** on Checks; stale **2.0.0.14** strings updated in WORKFLOWS / THIRD-PARTY |
+| **UX-3** | **Canonical tooltips** — long copy in `tooltip-registry.js`, short native titles when hover tips are off; no duplicate `title` + `data-pe-tip` on toolbar/card primaries; **Mute / Dismiss** secondary-row icons |
+
+**Quick UX smoke (~3 min):** Toggle **Simple mode** on Target → Audit chip **Critical** → run audit → card **Rewrite** → Undo. Toggle **Show hover tips** off/on; confirm toolbar buttons still have readable labels.
+
+Details: [prozaedit-ux-9-implementation-plan.md](prozaedit-ux-9-implementation-plan.md) · Score: [prozaedit-ux-rating-and-recommendations.md](prozaedit-ux-rating-and-recommendations.md).
+
 ---
 
 *ProzaEdit Word hosted beta — https://github.com/drcracius/prozaedit-word*

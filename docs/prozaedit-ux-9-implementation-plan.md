@@ -153,9 +153,18 @@ ProzaEdit’s core loop (Target → Checks → Audit → Fix) is sound. The path
 
 **Goals:** Validate 7.5 → 8+ with beta feedback; minor contrast/spacing tweaks.
 
-**Deliverables:** Release note snippet; update UX rating doc score with evidence.
+**Deliverables:**
 
-**Status:** Not started.
+- Release note snippet in [RELEASE-NOTES-2.0.0.15.md](./RELEASE-NOTES-2.0.0.15.md) (UX pack table + smoke test)
+- [prozaedit-ux-rating-and-recommendations.md](./prozaedit-ux-rating-and-recommendations.md) — evidence table (~8.5 shipped), beta prompts, optional polish list for 9.0
+
+**Acceptance criteria:**
+
+- [x] UX-1–UX-3 summarized for beta testers without manifest bump language
+- [x] Score trajectory documented with code-level evidence
+- [x] Path to 9.0 = feedback + optional CSS/copy tweaks only
+
+**Status:** Complete — see tracker below.
 
 ---
 
@@ -166,7 +175,7 @@ ProzaEdit’s core loop (Target → Checks → Audit → Fix) is sound. The path
 | UX-1 | Icons, Simple→Critical, workflow strip, Rewrite card, type copy | No | **Complete** | `0402b52` |
 | UX-2 | Help/doc P1 fixes, active-checks hint | No | **Complete** | `7362740` |
 | UX-3 | Label dedupe, secondary icons | No | **Complete** | `2b4b630` |
-| UX-4 | Feedback / score update | No | Optional | — |
+| UX-4 | Feedback / score update | No | **Complete** | `bbbd077` |
 
 ---
 
