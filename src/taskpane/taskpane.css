@@ -610,6 +610,32 @@ body {
   display: none !important;
 }
 
+.pe-simple-mode .pe-shaper-block {
+  display: none !important;
+}
+
+.pe-shaper-slider-row {
+  margin: 8px 0;
+}
+
+.pe-shaper-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pe-shaper-val {
+  color: var(--pe-primary-indigo, var(--primary));
+  font-weight: 700;
+}
+
+.pe-slider {
+  width: 100%;
+  accent-color: var(--pe-primary-indigo, var(--primary));
+}
+
 .chip-sort {
   font-size: 9px;
   padding: 3px 6px;

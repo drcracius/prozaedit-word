@@ -304,6 +304,7 @@ Office.onReady((info) => {
     updateAuditFilterChips();
     updateAuditSortChips();
     applySimpleMode();
+    syncShaperSliderLabels();
     applyHoverTips();
     updateActiveChecksHint();
     try {
@@ -2351,6 +2352,18 @@ function trimChatLog(log) {
   }
 }
 
+function syncShaperSliderLabels() {
+  [
+    ["slider-shaper-complexity", "label-shaper-complexity"],
+    ["slider-shaper-intensity", "label-shaper-intensity"],
+    ["slider-shaper-density", "label-shaper-density"],
+  ].forEach(([sid, lid]) => {
+    const s = getEl(sid);
+    const l = getEl(lid);
+    if (s && l) l.textContent = s.value;
+  });
+}
+
 /* Rewrite tab */
 async function runLocalRewrite() {
   if (rewriteBusy) return;
@@ -2374,7 +2387,15 @@ async function runLocalRewrite() {
       return t;
     });
     lastRewriteOriginal = excerpt;
-    lastRewritePreview = ProzaEdit.LocalRewrite.run(mode, excerpt);
+    if (ProzaEdit.LexicalShaper?.isShaperPanelActive?.()) {
+      lastRewritePreview = ProzaEdit.LexicalShaper.shape(
+        excerpt,
+        mode,
+        ProzaEdit.LexicalShaper.readSettingsFromDom()
+      );
+    } else {
+      lastRewritePreview = ProzaEdit.LocalRewrite.run(mode, excerpt);
+    }
     if (preview) preview.innerText = lastRewritePreview || excerpt;
     const est = getEl("rewriteTokenEstimate");
     if (est) est.textContent = "Local paraphrase: 0 tokens";

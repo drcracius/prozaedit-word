@@ -1,36 +1,6 @@
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.Audit = {
-  PLEONASMS: [
-    ["unexpected surprise", "surprise"],
-    ["end result", "result"],
-    ["close proximity", "proximity"],
-    ["final outcome", "outcome"],
-    ["absolutely essential", "essential"],
-    ["past history", "history"],
-    ["future plans", "plans"],
-    ["completely eliminate", "eliminate"],
-    ["repeat again", "repeat"],
-    ["each and every", "each"],
-    ["exact same", "same"],
-    ["free gift", "gift"],
-    ["honest truth", "truth"],
-    ["null and void", "void"],
-    ["true facts", "facts"],
-    ["whether or not", "whether"],
-  ],
-
-  AI_PHRASES: [
-    "delve", "tapestry", "testament", "beacon", "nestled", "realm", "moreover", "furthermore",
-    "it is important to note", "in today's world", "ever-evolving", "underscores", "pivotal",
-    "robust", "multifaceted", "game-changer", "holistic", "paradigm", "synergy", "leverage",
-  ],
-
-  SPOILER_PHRASES: [
-    "little did he know", "little did she know", "unbeknownst", "would soon learn",
-    "would later discover", "unknown to him", "unknown to her", "what they didn't know",
-  ],
-
   PERSONA_WEIGHTS: {
     "Average Reader": { c: 0.35, p: 0.08 },
     "More Critical Reader": { c: 0.4, p: 0.1 },
@@ -171,7 +141,7 @@ ProzaEdit.Audit = {
   },
 
   _repetition(text, lower, push) {
-    this.PLEONASMS.forEach(([target, replacement]) => {
+    (ProzaEdit.LexicalBanks?.PLEONASMS || []).forEach(([target, replacement]) => {
       if (lower.includes(target)) {
         push({
           ruleId: `rep:pleo:${target}`,
@@ -246,7 +216,7 @@ ProzaEdit.Audit = {
 
   _aiVoice(text, lower, push) {
     let hits = 0;
-    this.AI_PHRASES.forEach((phrase) => {
+    (ProzaEdit.LexicalBanks?.AI_PHRASES || []).forEach((phrase) => {
       if (hits >= 15) return;
       if (this.includesWord(text, lower, phrase)) {
         hits++;
@@ -280,7 +250,8 @@ ProzaEdit.Audit = {
       });
     }
     const commaDensity = (text.match(/,/g) || []).length / Math.max(1, text.split(/\s+/).length);
-    if (commaDensity > 0.12 && this.AI_PHRASES.some((p) => lower.includes(p.trim()))) {
+    const aiPhrases = ProzaEdit.LexicalBanks?.AI_PHRASES || [];
+    if (commaDensity > 0.12 && aiPhrases.some((p) => lower.includes(p.trim()))) {
       push({
         ruleId: "ai:detect:pattern_bundle",
         module: "AI Detection (heuristic)",
@@ -449,7 +420,7 @@ ProzaEdit.Audit = {
   },
 
   _spoiler(text, lower, push) {
-    this.SPOILER_PHRASES.forEach((phrase) => {
+    (ProzaEdit.LexicalBanks?.SPOILER_PHRASES || []).forEach((phrase) => {
       if (lower.includes(phrase)) {
         push({
           ruleId: `spoiler:${phrase}`,
@@ -532,15 +503,7 @@ ProzaEdit.Audit = {
   },
 
   _extendedLocalPass(text, lower, push) {
-    const fillers = [
-      ["actually", "(cut filler)"],
-      ["basically", "(cut filler)"],
-      ["literally", "(cut unless literal)"],
-      ["just", "(cut if redundant)"],
-      ["really", "(cut if redundant)"],
-      ["very", "(cut or pick stronger word)"],
-    ];
-    fillers.forEach(([word, hint]) => {
+    (ProzaEdit.LexicalBanks?.EXTENDED_FILLERS || []).forEach(([word, hint]) => {
       if (new RegExp(`\\b${word}\\b`, "i").test(text)) {
         push({
           ruleId: `ext:filler:${word}`,
@@ -666,3 +629,9 @@ ProzaEdit.Audit = {
     }
   },
 };
+
+Object.defineProperties(ProzaEdit.Audit, {
+  PLEONASMS: { get() { return ProzaEdit.LexicalBanks.PLEONASMS; }, enumerable: true },
+  AI_PHRASES: { get() { return ProzaEdit.LexicalBanks.AI_PHRASES; }, enumerable: true },
+  SPOILER_PHRASES: { get() { return ProzaEdit.LexicalBanks.SPOILER_PHRASES; }, enumerable: true },
+});

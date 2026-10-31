@@ -395,6 +395,22 @@
       <button class="btn-main" onclick="runLocalRewrite()">Local paraphrase (free)</button>
       <button class="btn-secondary" onclick="applyRewritePreview()">Apply preview to selection</button>
     </div>
+    <details id="pe-shaper-panel" class="help-box help-muted pe-shaper-block" data-simple-hide style="margin-top:8px;">
+      <summary>Advanced lexical shaper</summary>
+      <p class="help-muted" style="margin:6px 0 8px;font-size:10px;">Optional calibration on top of the paraphrase mode above. Open this panel to apply; collapsed = mode only (Phase 3 — local pipelines, not full Zipf).</p>
+      <div class="pe-shaper-slider-row">
+        <label class="pe-shaper-label" for="slider-shaper-complexity">Complexity <span id="label-shaper-complexity" class="pe-shaper-val">3</span></label>
+        <input type="range" min="1" max="5" value="3" class="pe-slider" id="slider-shaper-complexity" data-pe-tip="slider-complexity" oninput="syncShaperSliderLabels()">
+      </div>
+      <div class="pe-shaper-slider-row">
+        <label class="pe-shaper-label" for="slider-shaper-intensity">Intensity <span id="label-shaper-intensity" class="pe-shaper-val">4</span></label>
+        <input type="range" min="1" max="5" value="4" class="pe-slider" id="slider-shaper-intensity" data-pe-tip="slider-intensity" oninput="syncShaperSliderLabels()">
+      </div>
+      <div class="pe-shaper-slider-row">
+        <label class="pe-shaper-label" for="slider-shaper-density">Density <span id="label-shaper-density" class="pe-shaper-val">2</span></label>
+        <input type="range" min="1" max="5" value="2" class="pe-slider" id="slider-shaper-density" data-pe-tip="slider-density" oninput="syncShaperSliderLabels()">
+      </div>
+    </details>
     <details class="help-box help-muted pe-gemini-block" style="margin-top:8px;">
       <summary>Optional Gemini rewrite (uses tokens)</summary>
       <button class="btn-secondary btn-api-opt" style="margin-top:6px;" onclick="runSmartRewrite()">Rewrite via Gemini</button>
@@ -404,6 +420,7 @@
   <script src="lib/settings-store.js"></script>
   <script src="lib/text-metrics.js"></script>
   <script src="lib/proper-noun-analyse.js"></script>
+  <script src="lib/lexical-banks.js"></script>
   <script src="lib/editor-heuristics.js"></script>
   <script src="lib/custom-style-guide.js"></script>
   <script src="lib/style-guide-rules.js"></script>
@@ -417,6 +434,7 @@
   <script src="lib/word-safe-navigator.js"></script>
   <script src="lib/tooltip-registry.js"></script>
   <script src="lib/local-rewrite.js"></script>
+  <script src="lib/lexical-shaper.js"></script>
   <script src="lib/local-coach.js"></script>
   <script src="lib/gemini-client.js"></script>
   <script src="lib/edit-history.js"></script>

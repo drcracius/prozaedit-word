@@ -2,59 +2,17 @@
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.LocalRewrite = {
-  CONTRACTIONS: {
-    "don't": "do not",
-    "doesn't": "does not",
-    "didn't": "did not",
-    "can't": "cannot",
-    "won't": "will not",
-    "wouldn't": "would not",
-    "shouldn't": "should not",
-    "couldn't": "could not",
-    "isn't": "is not",
-    "aren't": "are not",
-    "wasn't": "was not",
-    "weren't": "were not",
-    "it's": "it is",
-    "that's": "that is",
-    "there's": "there is",
-    "here's": "here is",
-    "i'm": "I am",
-    "you're": "you are",
-    "we're": "we are",
-    "they're": "they are",
-    "i've": "I have",
-    "you've": "you have",
-    "we've": "we have",
-    "they've": "they have",
-    "i'll": "I will",
-    "you'll": "you will",
-    "he'll": "he will",
-    "she'll": "she will",
-    "we'll": "we will",
-    "they'll": "they will",
+  get CONTRACTIONS() {
+    return ProzaEdit.LexicalBanks?.CONTRACTIONS || {};
   },
 
-  WORDINESS: [
-    ["in order to", "to"],
-    ["due to the fact that", "because"],
-    ["at this point in time", "now"],
-    ["in the event that", "if"],
-    ["a number of", "several"],
-    ["prior to", "before"],
-    ["subsequent to", "after"],
-    ["with regard to", "about"],
-    ["in spite of the fact that", "although"],
-    ["for the purpose of", "to"],
-  ],
+  get WORDINESS() {
+    return ProzaEdit.LexicalBanks?.WORDINESS || [];
+  },
 
-  INFORMAL_TO_FORMAL: [
-    ["get", "obtain"],
-    ["got", "obtained"],
-    ["a lot of", "many"],
-    ["kind of", "somewhat"],
-    ["sort of", "somewhat"],
-  ],
+  get INFORMAL_TO_FORMAL() {
+    return ProzaEdit.LexicalBanks?.INFORMAL_TO_FORMAL || [];
+  },
 
   _normalize(text) {
     return String(text || "")
@@ -72,7 +30,7 @@ ProzaEdit.LocalRewrite = {
 
   _applyPleonasms(text) {
     let t = text;
-    const list = ProzaEdit.Audit?.PLEONASMS || [];
+    const list = ProzaEdit.LexicalBanks?.PLEONASMS || ProzaEdit.Audit?.PLEONASMS || [];
     list.forEach(([target, replacement]) => {
       t = this._replaceAllInsensitive(t, target, replacement);
     });

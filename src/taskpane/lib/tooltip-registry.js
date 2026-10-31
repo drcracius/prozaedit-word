@@ -14,6 +14,12 @@
     "btn-card-goto": "Select the first body match for this finding in Word (sanitized search, first hit).",
     "btn-card-apply":
       "Replace the first document match with the suggested text. Respects Confirm before Apply and continuity warnings on Target.",
+    "slider-complexity":
+      "Lower = extra tightening pass; higher = formal register stack. Neutral (3) adds nothing beyond your paraphrase mode.",
+    "slider-intensity":
+      "Lower = lighter creative trim; higher = academic hedge trim. Uses local rewrite passes only (not vivid-verb map yet).",
+    "slider-density":
+      "Lower = prune decorative intensifiers; higher = leave modifiers. Neutral (3) skips extra pruning.",
   };
 
   let enabled = false;
