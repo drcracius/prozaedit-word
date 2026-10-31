@@ -1,6 +1,6 @@
 # ProzaEdit Word — UX rating and recommendations
 
-**Build reviewed:** 2.0.0.14 hosted task pane (7-tab IA, simple mode, sticky workflow toolbar).  
+**Build reviewed:** 2.0.0.15 hosted task pane (7-tab IA, simple mode, sticky workflow toolbar).  
 **Date:** 2026-10-31
 
 ---
