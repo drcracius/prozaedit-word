@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xsi:type="TaskPaneApp">
   <Id>d1829e3a-4931-4122-b911-37f22941aa99</Id>
-  <Version>2.0.0.6</Version>
+  <Version>2.0.0.14</Version>
   <ProviderName>ProzaEdit Publishing Tools</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="ProzaEdit"/>
   <Description DefaultValue="Professional Manuscript Editor &amp; High-Performance Prose Intelligence Suite"/>
-  <IconUrl DefaultValue="https://drcracius.github.io/prozaedit-word/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://drcracius.github.io/prozaedit-word/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://www.prozaedit.com/support"/>
+  <IconUrl DefaultValue="https://raw.githubusercontent.com/drcracius/prozaedit-word/main/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/drcracius/prozaedit-word/main/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://github.com/drcracius/prozaedit-word"/>
   <AppDomains>
     <AppDomain>https://drcracius.github.io/prozaedit-word</AppDomain>
+    <AppDomain>https://raw.githubusercontent.com</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Document"/>
@@ -60,13 +61,13 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="ProzaEdit.Icon16" DefaultValue="https://drcracius.github.io/prozaedit-word/assets/icon-32.png"/>
-        <bt:Image id="ProzaEdit.Icon32" DefaultValue="https://drcracius.github.io/prozaedit-word/assets/icon-32.png"/>
-        <bt:Image id="ProzaEdit.Icon80" DefaultValue="https://drcracius.github.io/prozaedit-word/assets/icon-64.png"/>
+        <bt:Image id="ProzaEdit.Icon16" DefaultValue="https://raw.githubusercontent.com/drcracius/prozaedit-word/main/assets/icon-32.png"/>
+        <bt:Image id="ProzaEdit.Icon32" DefaultValue="https://raw.githubusercontent.com/drcracius/prozaedit-word/main/assets/icon-32.png"/>
+        <bt:Image id="ProzaEdit.Icon80" DefaultValue="https://raw.githubusercontent.com/drcracius/prozaedit-word/main/assets/icon-64.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="ProzaEdit.TaskpaneUrl" DefaultValue="https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html"/>
-        <bt:Url id="ProzaEdit.GetStarted.LearnMoreUrl" DefaultValue="https://www.prozaedit.com/support"/>
+        <bt:Url id="ProzaEdit.GetStarted.LearnMoreUrl" DefaultValue="https://github.com/drcracius/prozaedit-word"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="ProzaEdit.GroupLabel" DefaultValue="ProzaEdit"/>
