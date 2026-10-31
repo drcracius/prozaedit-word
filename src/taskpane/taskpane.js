@@ -443,6 +443,8 @@ function collectUiConfig() {
     citationScan: isChecked("chkCitationScan", false),
     citationStyle: getEl("selCitationStyle")?.value || "auto",
     citationReconcileBiblio: isChecked("chkCitationReconcile", true),
+    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", false),
+    aiMaxSessionTokens: getEl("aiMaxSessionTokens")?.value || "50000",
     modules: {},
   };
   MODULE_IDS.forEach((id) => {
@@ -505,6 +507,8 @@ function applyUiConfig(p) {
   setC("chkCitationScan", !!p.citationScan);
   if (p.citationStyle) setV("selCitationStyle", p.citationStyle);
   setC("chkCitationReconcile", p.citationReconcileBiblio !== false);
+  setC("aiEnforceSessionCeiling", !!p.aiEnforceSessionCeiling);
+  if (p.aiMaxSessionTokens != null) setV("aiMaxSessionTokens", p.aiMaxSessionTokens);
   syncExtendedAuditToggles();
   syncScopePanels();
   applySimpleMode();
@@ -644,6 +648,8 @@ function setupAutoSaveHandlers() {
     "chkCitationScan",
     "selCitationStyle",
     "chkCitationReconcile",
+    "aiEnforceSessionCeiling",
+    "aiMaxSessionTokens",
   ].forEach((id) => bind(getEl(id)));
   MODULE_IDS.forEach((id) => bind(getEl(id)));
   document.querySelectorAll('input[data-audit-extended="1"]').forEach((el) => {
@@ -1466,98 +1472,60 @@ async function copyFeedbackLetter() {
   }
 }
 
+function auditReportInput() {
+  return {
+    suggestions: currentAuditSuggestions,
+    excerpt: lastAuditExcerpt,
+    feedbackLetter: lastFeedbackLetter,
+    meta: lastAuditMeta,
+    buildContext: buildAuditContext,
+  };
+}
+
+function auditReportUiHooks() {
+  return { showPeStatus, alert, confirm, wordRun };
+}
+
 function buildAuditReportPlainText() {
-  if (!currentAuditSuggestions.length && !lastAuditExcerpt) return "";
-  const ctx = buildAuditContext();
-  const header = `ProzaEdit audit report · ${new Date().toLocaleString()}\n${"=".repeat(48)}\n\n`;
-  const body =
-    lastFeedbackLetter ||
-    (ProzaEdit.ManuscriptOverview?.buildFeedbackLetter
-      ? ProzaEdit.ManuscriptOverview.buildFeedbackLetter(lastAuditExcerpt, ctx, lastAuditMeta, currentAuditSuggestions)
-      : "");
-  return (header + (body || "")).replace(/\r/g, "").substring(0, 480000);
+  return ProzaEdit.ReportDocxExport.buildAuditReportPlainText(auditReportInput());
 }
 
 function insertAuditReportInWord() {
-  const text = buildAuditReportPlainText();
-  if (!text) {
-    showPeStatus("Run an audit first.", "warn");
-    return;
-  }
-  if (!confirm("Insert a plain-text audit report at the end of this document?")) return;
-  wordRun("insert-report", async (context) => {
-    const end = context.document.body.getRange("End");
-    end.insertText("\n\n" + text, Word.InsertLocation.before);
-    await context.sync();
-  })
-    .then(() => showPeStatus("Report inserted at document end.", "ok"))
-    .catch((e) => alert(e.message));
+  ProzaEdit.ReportDocxExport.insertAuditReportInWord(buildAuditReportPlainText(), auditReportUiHooks());
 }
 
 function downloadAuditReportFile(ext) {
-  const text = buildAuditReportPlainText();
-  if (!text) {
-    showPeStatus("Run an audit first.", "warn");
-    return;
-  }
-  try {
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ProzaEdit-audit-${new Date().toISOString().slice(0, 10)}.${ext || "txt"}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showPeStatus("Report downloaded — open in Word and Save As .docx or PDF if needed.", "ok");
-  } catch (e) {
-    alert(e.message || "Download failed.");
-  }
+  ProzaEdit.ReportDocxExport.downloadAuditReportFile(ext, buildAuditReportPlainText(), auditReportUiHooks());
 }
 
 async function exportAuditReportNewWordDoc() {
-  const text = buildAuditReportPlainText();
-  if (!text) {
-    showPeStatus("Run an audit first.", "warn");
-    return;
-  }
-  try {
-    await wordRun("export-new-doc", async (context) => {
-      if (!context.application?.createDocument) {
-        throw new Error("UNSUPPORTED");
-      }
-      const newDoc = context.application.createDocument();
-      newDoc.body.insertText(text, Word.InsertLocation.start);
-      await context.sync();
-      newDoc.open();
-      await context.sync();
-    });
-    showPeStatus("Report opened in a new Word document. Use File → Save As (.docx).", "ok");
-  } catch (e) {
-    if (String(e.message).includes("UNSUPPORTED")) {
-      downloadAuditReportFile("txt");
-      showPeStatus("This Word host cannot create a new doc — downloaded .txt instead.", "warn");
-      return;
-    }
-    alert(e.message);
-  }
+  await ProzaEdit.ReportDocxExport.exportComprehensiveWordReport(buildAuditReportPlainText(), auditReportUiHooks());
 }
 
 function exportAuditReportPdfGuide() {
-  const text = buildAuditReportPlainText();
-  if (!text) {
-    showPeStatus("Run an audit first.", "warn");
-    return;
-  }
-  exportAuditReportNewWordDoc().then(() => {
-    alert(
-      "PDF export (Microsoft Word):\n\n" +
-        "• Word on the web: File → Export → Download as PDF\n" +
-        "• Word desktop: File → Save As → PDF\n\n" +
-        "The report should be in the new document that just opened. If not, use Download .txt and open that file in Word first."
-    );
+  ProzaEdit.ReportDocxExport.exportAuditReportPdfGuide(buildAuditReportPlainText(), auditReportUiHooks());
+}
+
+function readAiQuotaLimitsFromDom() {
+  return ProzaEdit.AIQuotaManager.readLimitsFromConfig({
+    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", false),
+    aiMaxSessionTokens: getEl("aiMaxSessionTokens")?.value,
   });
+}
+
+function resetAiSessionTokens() {
+  ProzaEdit.AIQuotaManager.resetSessionTokens();
+  showPeStatus("Gemini session token counter reset (this browser tab).", "ok");
+}
+
+async function geminiGenerateWithQuota(prompt, generationConfig, outputReserve) {
+  const reserve = outputReserve != null ? outputReserve : generationConfig?.maxOutputTokens || 1024;
+  const estimated = ProzaEdit.AIQuotaManager.estimateTokens(prompt) + reserve;
+  const gate = ProzaEdit.AIQuotaManager.canExecute(estimated, readAiQuotaLimitsFromDom());
+  if (!gate.ok) throw new Error(gate.message || "Session token ceiling reached.");
+  const reply = await ProzaEdit.Gemini.generate(getApiKey(), prompt, generationConfig);
+  ProzaEdit.AIQuotaManager.recordUsage(estimated);
+  return reply;
 }
 
 async function copyAuditForCopilotFromAnywhere() {
@@ -2482,7 +2450,7 @@ async function runDeepAuditAI() {
     `${GUARDRAILS}\n${buildManuscriptProfile()}\nReturn ONLY JSON array (max 6):\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":"","ruleId":""}]\n\nEXCERPT:\n${excerpt}`;
 
   try {
-    const reply = await ProzaEdit.Gemini.generate(key, prompt, { maxOutputTokens: 1200, temperature: 0.3 });
+    const reply = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1200, temperature: 0.3 });
     let ai = [];
     try {
       const start = reply.indexOf("[");
@@ -2565,7 +2533,7 @@ async function sendChatMessage() {
   try {
     const ctx = await wordRun("chat-ctx", readChatContext);
     const text = `${GUARDRAILS}\n${buildManuscriptProfile()}\n\nContext:\n${ctx}\n\nQuestion:\n${prompt}`;
-    const reply = await ProzaEdit.Gemini.generate(key, text, { maxOutputTokens: 1024, temperature: 0.5 });
+    const reply = await geminiGenerateWithQuota(text, { maxOutputTokens: 1024, temperature: 0.5 });
     log.innerHTML += `<div class="chat-msg chat-ai">${escapeHtml(reply)}</div>`;
   } catch (e) {
     const msg = e.name === "AbortError" ? "Gemini request timed out." : e.message;
@@ -2675,7 +2643,7 @@ async function runSmartRewrite() {
     });
     document.getElementById("rewriteTokenEstimate").textContent = `Est. tokens: ~${ProzaEdit.Gemini.estimateTokens(excerpt) + 200}`;
     const prompt = ProzaEdit.Gemini.buildRewritePrompt(mode, excerpt, buildManuscriptProfile(), GUARDRAILS);
-    lastRewritePreview = await ProzaEdit.Gemini.generate(key, prompt, { maxOutputTokens: 1024, temperature: 0.55 });
+    lastRewritePreview = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1024, temperature: 0.55 });
     preview.innerText = lastRewritePreview;
   } catch (e) {
     const msg = e.name === "AbortError" ? "Gemini request timed out." : e.message;

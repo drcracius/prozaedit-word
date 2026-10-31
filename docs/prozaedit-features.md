@@ -415,6 +415,8 @@ Word’s own **Undo** still applies to inserts; ProzaEdit undo is a separate sta
 
 **API key storage:** Optional; only saved in document settings when “Remember in this document” is checked. Otherwise key is session-only in the password field until you send.
 
+**Optional token ceiling (Target):** Off by default. When enabled, estimated input+output tokens per browser session are capped before Gemini Coach, Deep Audit, or Gemini rewrite runs.
+
 ---
 
 ## 8. Developer map (`src/taskpane/lib/*.js`)
@@ -445,9 +447,11 @@ Load order is fixed in `taskpane.html`; `taskpane.js` orchestrates UI and Word c
 | `lexical-shaper.js` | Three-axis shaper v1 — stacks local-rewrite passes when panel open |
 | `local-coach.js` | Curated coaching responses |
 | `gemini-client.js` | Gemini HTTP client and rewrite prompt builder |
+| `ai-quota-manager.js` | Optional session token estimate ceiling for Gemini (default off) |
+| `report-docx-export.js` | Audit report plain-text build, `.txt` download, `createDocument` export + fallback |
 | `edit-history.js` | Session undo/redo stack for ProzaEdit replacements |
 
-**Module count:** **23** files under `src/taskpane/lib/` (load order fixed in `taskpane.html`).
+**Module count:** **25** files under `src/taskpane/lib/` (load order fixed in `taskpane.html`).
 
 **Version discipline:** Bump `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` together when users must re-register the add-in; UI-only pushes need only GitHub Pages refresh.
 

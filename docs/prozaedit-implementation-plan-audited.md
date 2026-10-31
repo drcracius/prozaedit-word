@@ -71,7 +71,7 @@
 | 4 — Chronology v1 | **Complete** | `76adf92` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
 | 5 — Citations v1 | **Complete** | `8f12b94` | `citation-engine.js`, Checks sub-panel + Target verify; no manifest bump |
 | 6 — Install + docs hygiene | **Complete** | `3065334` | WORKFLOWS.md, THIRD-PARTY-ATTRIBUTION.md, GitHub install scripts; PE-2 manual on D PC |
-| 7+ — Optional (CI, quota, Zipf, IA merge) | Not started | — | Default-off toggles |
+| 7+ — Optional (CI, quota, Zipf, IA merge) | **Partial** | `b9c232f` | **7c** report extract + **7a-lite** quota (default off); **7b/7d–7g** deferred |
 
 ---
 
@@ -81,11 +81,11 @@
 
 Seven tabs + workflow strip unchanged. Phase 2 adds hover-tip registry and Editorial Studio **token** pass (not full dark mode).
 
-### 4.2 `src/taskpane/lib/` inventory (post–Phase 5)
+### 4.2 `src/taskpane/lib/` inventory (post–Phase 7c)
 
-**23 modules:** post–Phase 4 set plus **`citation-engine.js`**.
+**25 modules:** Phase 5 set plus **`report-docx-export.js`**, **`ai-quota-manager.js`** (session ceiling lite, default off).
 
-**Still absent vs vNext spec:** `report-docx-export.js`, `ai-quota-manager.js`.
+**Still deferred vs vNext spec:** structured styled `.docx` report sections (Zipf shaper v2, full quota modal, CI).
 
 ### 4.3 Known gaps (unchanged)
 
@@ -211,7 +211,21 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 ## Phase 7+ — Optional hardening & vNext completion
 
-*(Same workstreams 7a–7g as v1; `report-docx-export.js` under 7c.)*
+**Goals:** Long-horizon vNext items without blocking beta ([multi-phase plan §Phase 7+](/cursor/stores/self/docs/prozaedit-multi-phase-plan.md)).
+
+| Workstream | Status | Notes |
+|------------|--------|-------|
+| **7a — AI quota** | **Lite delivered** | `ai-quota-manager.js`; Target optional session ceiling; **enforce default off** |
+| **7b — CI** | Deferred | No `package.json` / lint / pure-function tests in this pass |
+| **7c — Report module** | **Complete** | `report-docx-export.js`; plain-text + `createDocument` + `.txt` fallback unchanged |
+| **7d — Zipf shaper v2** | Deferred | Phase 3 local shaper retained |
+| **7e — IA consolidation** | Deferred | D1: keep Checks separate |
+| **7f — Dark mode** | Deferred | Token pass only (Phase 2) |
+| **7g — Header metrics** | Deferred | — |
+
+**Acceptance (this slice):** Phase 0 smoke; report export paths behave as before; quota off → no Gemini gate change; quota on → blocks over-budget Gemini with reset on Target.
+
+**Manifest / version:** No bump (UI-only module load + settings).
 
 ---
 
@@ -293,4 +307,4 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 ---
 
-*Primary roadmap aligned to GitHub `main` through Phase 6 (manifest baseline **2.0.0.14**).*
+*Primary roadmap aligned to GitHub `main` through Phase 7c partial (manifest baseline **2.0.0.14**).*
