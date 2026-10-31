@@ -19,7 +19,9 @@ Typography: **12px** body (`line-height` ~1.45), **13px semibold** section title
 
 ## Navigation
 
-- **Settings:** Back (same as Close) + Escape; **Save & close** persists then dismisses.
+- **Settings:** Back (same as Close) + Escape; **Save & close** persists then dismisses; **Ctrl+Shift+,** / **Alt+Shift+S**; deep links + `#pe-settings-{section}` hash.
+- **Last tab:** persisted in `PROZAEDIT_CONFIG.lastActiveTab` per document.
+- **Scope status line:** one row under sticky toolbar (scope label + char preview summary).
 - **Rewrite from audit card:** session “Back to Audit” until dismissed.
 
 ## Settings modal inventory (PE-38)
@@ -28,12 +30,12 @@ Collapsible `<details class="pe-settings-group">`:
 
 | Group | Contents | Default open |
 | --- | --- | --- |
-| **Safety** | Simple mode, selection-only edits, confirm Apply, hover tips, FK lock, Version History reminder, continuity slider, fiction scope reminder, Gemini session ceiling | yes |
-| **Audit & reports** | Report depth, default audit filter, extended checks default | no |
-| **Privacy & diagnostics** | Crash opt-in, problem report note + button, GitHub fallback | no |
+| **Safety** | Simple mode, selection-only edits, confirm Apply, hover tips, FK lock, Version History reminder, continuity slider, fiction scope reminder, hide session tips permanently, Gemini session ceiling; **Reset Safety to defaults** | yes |
+| **Audit & reports** | Report depth, default audit filter, extended checks default; **Reset Audit & reports**; Audit tab hints read Settings selects | no |
+| **Privacy & diagnostics** | Crash opt-in, problem report note + button, GitHub fallback; **Reset Privacy** | no |
 | **Reference & citations** | Capture reference style, verify citations shortcut | no |
-| **Dictionary** | Per-document word list | no |
-| **Custom style** | Custom panel (name, rules, bulk import, presets) | when rules exist or custom guide selected |
+| **Dictionary** | Per-document word list; **Clear dictionary** | no |
+| **Custom style** | Custom panel (name, rules, bulk import, presets); **Reset custom style rules** | when rules exist or custom guide selected |
 
 **Target** keeps profile, scope, style guide `<select>`, Simple mode summary line, custom rules count line. **Help → Diagnostics** points to Settings → Privacy.
 
