@@ -1,0 +1,15 @@
+name: Version sync
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify-version-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify manifest and task pane version
+        run: bash scripts/verify-version-sync.sh

@@ -1,35 +1,55 @@
 # ProzaEdit Word — As-shipped audit & rating (current)
 
-**Date:** 2026-10-31  
+**Date:** 2026-10-31 (PE-30 reconciliation)  
 **Build on `main`:** **2.0.0.15** (`manifest.hosted.xml` + `PROZAEDIT_BUILD_VERSION`)  
-**Scope:** Post UX-1–UX-4 polish, plus anonymous diagnostics (client shipped; ingest URL empty by default).
+**Scope:** Post UX-1–UX-4 polish, anonymous diagnostics client (ingest URL empty by default), minimal GitHub Actions version-sync CI.
 
 ---
 
-## Executive scores (1–10)
+## Shipped product score: **8.5 / 10**
 
-| Dimension | Score | Notes |
-|-----------|------:|-------|
-| **UX** | **8.3** | Aligns with [UX rating ~8.5](./prozaedit-ux-rating-and-recommendations.md) after UX-1–UX-3; small deduction for seven-tab density and fiction/citation discoverability unchanged by design. Diagnostics Help block adds clarity without IA churn. |
-| **Reliability / stability** | **6.8** | Core local audit/coach/rewrite paths are exercised on web Word; full-manuscript and section loops hit truncation and Word API timing/search limits. No automated CI smoke; crash telemetry depends on owner deploy + user opt-in. |
-| **Feature completeness vs vNext spec** | **42%** (~**4.2** / 10 if scored) | Phases 1–7 delivered tooltips, shaper v1, timeline/citation **scans**, report export extract, quota lite. vNext still lacks Editorial Studio IA, full citation engine, DAG chronology UI, Zipf shaper, enforced quota UX, CI, catalog install. See [spec review](./prozaedit-nextgen-spec-review.md) (updated on main for 2.0.0.15 modules). |
-| **Maintainability** | **6.5** | **27** `lib/*.js` modules with clear boundaries; **`taskpane.js` remains a large orchestrator** (~2.8k lines). Version/manifest discipline in Project store `source-of-truth.md`. |
-| **Security / privacy** | **7.8** | Local-first default; API keys document-scoped with explicit remember warning; new diagnostics **opt-in off**, redaction pipeline, no client token. Gemini still user-supplied key — trust model is author-owned. |
+This is the **author-facing beta** score for what testers run today (hosted **2.0.0.15** + UX pack + diagnostics client). Compare it to the UX doc trajectory **7.0 → ~8.5** ([UX rating](./prozaedit-ux-rating-and-recommendations.md)) — **not** a regression from an older blended index.
 
-### Overall weighted score: **6.7 / 10**
+**Separate metric (never mixed into the headline):** **vNext roadmap alignment: ~4.2 / 10 (42%)** — progress against the [master spec](./prozaedit-nextgen-master-specification.md) / [spec review](./prozaedit-nextgen-spec-review.md) north star (Editorial Studio IA, full citation engine, DAG UI, Zipf shaper, enforced quota UX, catalog install proof, Office.js CI, etc.).
 
-Weights used: UX 15%, reliability 25%, vNext feature score 20%, maintainability 20%, security/privacy 20%.  
-This is **product readiness against the vNext north star**, not a score of the local-first editing loop alone. For day-to-day editing UX alone, treat UX **~8.5** as the headline (see linked UX doc).
+---
+
+## Shipped-product weighted index
+
+Weights apply **only** to the shipped beta (features doc + hosted add-in scope). vNext gap is tracked separately above.
+
+| Dimension | Weight | Score | Notes |
+|-----------|-------:|------:|-------|
+| **UX** | 28% | **8.5** | UX-1–UX-3 pack; aligns with [UX rating ~8.5](./prozaedit-ux-rating-and-recommendations.md). Seven-tab density and fiction/citation discoverability unchanged by design. |
+| **Shipped feature set completeness** | 28% | **8.5** | Local-first audit/coach/rewrite, shaper v1, timeline/citation **scans**, report export, quota lite, tooltips, install scripts — vs [features doc](./prozaedit-features.md) beta scope, **not** full vNext spec. |
+| **Reliability / stability** | 18% | **8.0** | Core paths stable on web Word; Word API / truncation limits remain. **CI** now gates manifest ↔ UI version sync on every `main` PR/push (`.github/workflows/version-sync.yml`). |
+| **Security / privacy** | 13% | **8.0** | Local-first default; document-scoped API keys; diagnostics **opt-in off**, redaction pipeline, no client token (see [DIAGNOSTICS.md](./DIAGNOSTICS.md)). |
+| **Maintainability** | 13% | **8.0** | **27** `lib/*.js` modules; version discipline in [WHEN-YOU-RETURN.md](./WHEN-YOU-RETURN.md); **`taskpane.js` still a large orchestrator** (~2.8k lines). CI reduces silent version drift. |
+
+**Weighted shipped index:** **~8.5 / 10** (rounded; arithmetic **~8.46** on table above).
+
+---
+
+## Path to **8.8–9.0** (shipped product)
+
+| Lever | Priority |
+|-------|----------|
+| **Beta UX-4 feedback** — run prompts in [UX rating](./prozaedit-ux-rating-and-recommendations.md); polish only where data shows friction | P0 |
+| **Deploy diagnostics ingest** — worker in `tools/diagnostics-ingest/`, set `DIAGNOSTICS_INGEST_URL`, manifest AppDomain + version bump when ready ([DIAGNOSTICS.md](./DIAGNOSTICS.md)) | P1 |
+| **PE-2 install proof** — Shared Folder on Windows after cache clear ([checklist](./pe-2-shared-folder-checklist.md)) | P0 |
+| Optional micro-polish from UX doc (≤ small effort each, no manifest) | P2 |
+| Expand CI later (pure-function tests for banks/shaper/chronology per Phase 7 roadmap) | P2 |
 
 ---
 
 ## Strengths
 
 - **Local-first workflow** — audit, coach, paraphrase at 0 tokens; sticky Run audit / Undo / Last edit.
-- **UX pack (2.0.0.15)** — icons, Simple → Critical filter, workflow strip, session tips, tooltip registry ([UX rating](./prozaedit-ux-rating-and-recommendations.md)).
+- **UX pack (2.0.0.15)** — icons, Simple → Critical filter, workflow strip, session tips, tooltip registry.
 - **Modular engines on v2 IA** — navigator extract, chronology/citation scans, shaper panel, report export, optional quota (off by default).
 - **Safety** — confirm-before-apply, continuity guard, search sanitization, scope caps.
-- **Diagnostics (new)** — privacy-preserving reporter + optional worker template; default does not phone home.
+- **Diagnostics (client)** — privacy-preserving reporter + optional worker template; default does not phone home.
+- **Version-sync CI** — `scripts/verify-version-sync.sh` on GitHub Actions.
 
 ---
 
@@ -41,8 +61,8 @@ This is **product readiness against the vNext north star**, not a score of the l
 | Fiction gating confusion | Medium | Academic users may enable fiction modules before reading inline copy; timeline scan only for Fiction type. |
 | Truncation / performance | Medium | Full manuscript audits cap chars; `sys_trunc` card easy to miss. |
 | Install / PE-2 Shared Folder | Medium | Catalog sideload unproven on owner PC; web Upload path documented but brittle on desktop. |
-| No CI | Medium | Regressions caught only by manual smoke (Project deep audit report / features checklist). |
-| vNext expectation drift | Medium | Master spec IA ≠ shipped tabs; phased plan mitigates if kept as north star only. |
+| No Office.js in CI | Medium | Regressions in `Word.run` still manual; CI covers version strings only. |
+| vNext expectation drift | Medium | Master spec IA ≠ shipped tabs; keep phased plan as north star only (see **4.2/10** alignment). |
 | Diagnostics ingest | Low (until deploy) | Empty `DIAGNOSTICS_INGEST_URL` — automatic send path inactive until owner deploys worker + manifest AppDomain bump. |
 
 ---
@@ -51,19 +71,24 @@ This is **product readiness against the vNext north star**, not a score of the l
 
 | Priority | Item |
 |----------|------|
-| **P0** | **PE-2** — Confirm Shared Folder install on Windows after cache clear ([checklist](./pe-2-shared-folder-checklist.md)). |
-| **P0** | **Beta UX-4 feedback** — Run prompts in [UX rating](./prozaedit-ux-rating-and-recommendations.md); adjust only where data shows friction. |
-| **P1** | **Deploy diagnostics ingest** — Worker in `tools/diagnostics-ingest/`, set `DIAGNOSTICS_INGEST_URL`, manifest AppDomain + version bump ([DIAGNOSTICS.md](./DIAGNOSTICS.md)). |
-| **P1** | **Minimal CI smoke** — Static manifest/version sync check + optional Office add-in validation (roadmap Phase 7). |
-| **P1** | **Sync stale docs** — Spec review appendix inventory vs 27 modules; features §8 lib table. |
+| **P0** | **PE-2** — Confirm Shared Folder install on Windows ([checklist](./pe-2-shared-folder-checklist.md)). |
+| **P0** | **Beta UX-4 feedback** — [UX rating](./prozaedit-ux-rating-and-recommendations.md). |
+| **P1** | **Deploy diagnostics ingest** — [DIAGNOSTICS.md](./DIAGNOSTICS.md). |
+| **P1** | **Sync stale docs** — Spec review appendix vs 27 modules; features §8 lib table. |
 | **P2** | Shaper slider persistence across sessions (if beta asks). |
 | **P2** | Zipf shaper v2, full quota modal, narrative tab / DAG timeline (vNext phases). |
 
 ---
 
-## Cross-links (do not duplicate)
+## Cross-links
 
-- **UX depth & path to 9.0:** [prozaedit-ux-rating-and-recommendations.md](./prozaedit-ux-rating-and-recommendations.md) (~**8.5** shipped UX milestone).
+- **UX depth & path to 9.0:** [prozaedit-ux-rating-and-recommendations.md](./prozaedit-ux-rating-and-recommendations.md) (~**8.5** UX milestone).
 - **Implementation tracker:** [prozaedit-implementation-plan-audited.md](./prozaedit-implementation-plan-audited.md).
-- **Wiring / regression surface:** Project store deep audit report (`prozaedit-deep-audit-report.md`).
+- **Wiring / regression surface:** [prozaedit-deep-audit-report.md](./prozaedit-deep-audit-report.md).
 - **Diagnostics:** [DIAGNOSTICS.md](./DIAGNOSTICS.md).
+
+---
+
+### Footnote: legacy blended index
+
+**Overall weighted score: 6.7 / 10** *(retired headline)* — legacy blended index that weighted **vNext feature completeness (~4.2)** into the same number as shipped UX. Misleading for beta users comparing to the UX **7 → 8.5** arc. Use **Shipped product score: 8.5** and **vNext roadmap alignment: ~4.2/10** as separate metrics.

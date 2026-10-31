@@ -95,4 +95,4 @@ ProzaEdit fits the Word task-pane constraint well: local-first audits, sticky Un
 
 ## Summary
 
-ProzaEdit is **polished and trustworthy** for its core loop at **~8.5/10** after the UX-1–UX-3 pack. **9.0** depends on beta validation and optional micro-polish—not new tabs or manifest churn.
+ProzaEdit is **polished and trustworthy** for its core loop at **~8.5/10** after the UX-1–UX-3 pack. For **whole shipped product** (reliability, security, beta feature scope—not UX alone), use the audit headline **8.5/10** in [prozaedit-audit-rating-current.md](./prozaedit-audit-rating-current.md). **9.0** depends on beta validation and optional micro-polish—not new tabs or manifest churn.
