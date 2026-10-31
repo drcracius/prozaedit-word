@@ -763,7 +763,10 @@ function updateUndoRedoUi() {
 
 async function swapTextInScope(fromText, toText, options) {
   return wordRun("pe-swap", async (ctx) => {
-    const items = await searchInScope(ctx, fromText, options);
+    const items = await ProzaEdit.WordSafeNavigator.searchInScope(ctx, fromText, {
+      ...options,
+      selectionOnly: useSelectionEdits(),
+    });
     if (!items.length) {
       throw new Error("Text not found—document may have changed. Use Go to, then Apply again.");
     }
@@ -864,26 +867,6 @@ function setupUndoRedoShortcuts() {
   });
 }
 
-async function searchInScope(context, target, options) {
-  options = options || {};
-  const q = sanitizeSearch(target);
-  if (!q) return [];
-  if (useSelectionEdits() && !options.forceDocument) {
-    const sel = context.document.getSelection();
-    sel.load("text");
-    await context.sync();
-    if (!sel.text?.trim()) throw new Error("Select text in Word (selection-only edits on).");
-    const r = sel.search(q, { matchCase: false });
-    r.load("items");
-    await context.sync();
-    return r.items;
-  }
-  const r = context.document.body.search(q, { matchCase: false });
-  r.load("items");
-  await context.sync();
-  return r.items;
-}
-
 async function readScopeText(context) {
   const mode = getScopeMode();
   const opts = getScopeOptions();
@@ -914,14 +897,6 @@ async function readChatContext(context) {
   body.load("text");
   await context.sync();
   return (body.text || "").substring(0, MAX_CHAT);
-}
-
-function sanitizeSearch(t) {
-  return String(t)
-    .replace(/[\r\n\u000b\u000c\u2028\u2029]/g, " ")
-    .replace(/[\^?$*[\]{}<>@#]/g, "")
-    .trim()
-    .substring(0, 255);
 }
 
 function escapeHtml(s) {
@@ -1899,14 +1874,7 @@ function goToIssue(target) {
     return;
   }
   wordRun("goto", async (ctx) => {
-    const q = sanitizeSearch(target);
-    if (!q) throw new Error("Cannot locate.");
-    const r = ctx.document.body.search(q, { matchCase: false });
-    r.load("items");
-    await ctx.sync();
-    if (!r.items.length) throw new Error("Not found.");
-    r.items[0].select();
-    await ctx.sync();
+    await ProzaEdit.WordSafeNavigator.selectFirstInBody(ctx, target);
   }).catch((e) => alert(e.message));
 }
 
