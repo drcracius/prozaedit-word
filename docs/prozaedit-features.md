@@ -33,7 +33,7 @@ The task pane uses seven tabs plus a sticky toolbar and a four-step workflow str
 
 ### Target (tab 1)
 
-**Purpose:** Manuscript profile, analysis scope, style basis, safety toggles, and per-document dictionary.
+**Purpose:** Daily manuscript profile, analysis scope, and style basis. Toolbar **Settings** (gear) holds safety toggles, dictionary, citation/reference tools, Gemini session ceiling, and custom-style bulk import.
 
 **Manuscript profile (inputs → affects audit/coach context):**
 
@@ -59,22 +59,24 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 
 - **Language:** `en-US` or `en-GB` (dialect flags, `-ise`/`-ize` checks for GB).
 - **Preferred style guide:** Auto, Plain US, Strunk 1920, GOV.UK, Microsoft, Google Dev, Red Hat, Custom only, or Custom + Auto. Built-in packs are **local heuristics** keyed to public sources—not pasted guide text.
-- **Custom house style:** Named guide; rules are `find → replace` with optional note; bulk import; presets “plain starter” and “UK starter”; copy rules to clipboard. Custom rules apply when mode is Custom or Custom + Auto.
+- **Custom house style (Target):** Named guide; quick **Add rule** rows when Custom or Custom + Auto is selected. Presets, copy rules, and bulk import live in **Settings**.
+- **Simple mode (Target):** Hides Thesaurus tab and optional Gemini blocks (`pe-simple-mode` CSS).
 
-**Safety & options:**
+**Settings modal (toolbar gear):**
 
 - **Edits apply to selection only:** Affects thesaurus and rewrite **Apply**; audit **Apply fix** always searches the **document body** (first match).
 - **Confirm before Apply / replace**
-- **Simple mode:** Hides Thesaurus tab and optional Gemini blocks (`pe-simple-mode` CSS).
 - **FK lock:** Extra cards when Flesch–Kincaid grade is outside target band for chosen audience.
 - **Remind Version History** before large applies.
 - **Continuity warnings (1–5):** Local index warns before replace when target appears often or looks like a name (see §4).
 - **Fiction scope reminder:** Warns in audit summary when fiction modules run on partial scope.
 - **Show hover tips:** ProzaEdit guidance bubbles on key controls (default **on**); off restores native browser `title` attributes (`tooltip-registry.js`).
+- **Optional Gemini session token ceiling** (hidden in Simple mode).
 - **Verify citations (local scan):** Shortcut to Checks citation scan when manuscript type is Academic, Business, or Technical/Journalism and citation opt-in is enabled.
 - **Capture reference style from selection:** Stores FK grade and dialogue % for delta lines in later audits.
+- **Dictionary:** Per-document list of names/jargon; proper-noun checker skips dictionary terms.
 
-**Dictionary:** Per-document list of names/jargon; proper-noun checker skips dictionary terms. **Save now** persists; most Target fields **auto-save** on change.
+**Save now** on Target persists; most fields **auto-save** on change.
 
 **Outputs:** Settings stored in the `.docx` via `Office.context.document.settings`. No direct document mutation from Target alone except dictionary persistence.
 

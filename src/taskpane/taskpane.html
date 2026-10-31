@@ -35,7 +35,7 @@
     <ul class="help-list pe-session-tips-list">
       <li><strong>Target</strong> — set scope and manuscript type, then <strong>Checks</strong> — turn modules on → <strong>Run audit</strong> → fix cards on <strong>Audit</strong>.</li>
       <li>Fiction-only modules and <strong>Timeline scan</strong> appear when manuscript type is Fiction.</li>
-      <li><strong>Simple mode</strong> (Target) hides Thesaurus and optional Gemini blocks.</li>
+      <li><strong>Simple mode</strong> (Target) hides Thesaurus and optional Gemini blocks; other toggles are under toolbar <strong>Settings</strong>.</li>
       <li>After GitHub updates, close and reopen the pane; re-upload <code>manifest.hosted.xml</code> only when the manifest version bumps.</li>
     </ul>
     <button type="button" class="btn-secondary pe-session-tips-dismiss" onclick="dismissSessionTips()" data-pe-tip="btn-session-tips-got-it">Got it</button>
@@ -54,6 +54,10 @@
       <span class="btn-tool-icon-label">Last edit</span>
     </button>
     <span id="peStatus" class="pe-status" aria-live="polite"></span>
+    <button type="button" id="btn-settings-open" class="btn-tool btn-tool-icon" onclick="openSettingsModal()" aria-label="Open settings" aria-haspopup="dialog" data-pe-tip="btn-settings">
+      <svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="btn-tool-icon-label">Settings</span>
+    </button>
     <button type="button" class="btn-tool btn-tool-accent btn-tool-icon" onclick="runPrimaryAudit()" aria-label="Run audit" data-pe-tip="btn-run-audit">
       <svg class="pe-icon pe-icon-on-accent" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       <span class="btn-tool-icon-label">Run audit</span>
@@ -70,7 +74,7 @@
   </div>
 
   <div id="tab1" class="tab-content active" role="tabpanel">
-    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Settings &amp; profile live here</strong> (no gear icon). All settings on this tab are editable; changes auto-save or use <strong>Save now</strong>. On Word web, drag the pane divider for width — see Help → Platforms.</p>
+    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Target</strong> is daily profile, scope, and style. Open toolbar <strong>Settings</strong> for safety toggles, dictionary, citation tools, and bulk style import. Changes auto-save or use <strong>Save now</strong>. On Word web, drag the pane divider for width — see Help → Platforms.</p>
     <details class="pe-target-section" open>
       <summary class="pe-section-title pe-section-summary">Manuscript profile</summary>
     <div class="form-group">
@@ -184,59 +188,13 @@
       <input type="text" id="customStyleReplace" placeholder="Suggest replace with, e.g. use" style="margin-bottom:4px;">
       <input type="text" id="customStyleHint" placeholder="Optional note for the card" style="margin-bottom:4px;">
       <button type="button" class="btn-go" onclick="addCustomStyleRule()">Add rule</button>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
-        <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('plain-starter')">Plain starter</button>
-        <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('uk-starter')">UK starter</button>
-        <button type="button" class="btn-secondary" onclick="copyCustomStyleRulesToClipboard()">Copy rules</button>
-      </div>
       <div id="customStyleRulesList" class="dict-list" style="margin-top:6px;"></div>
-      <details class="help-box help-muted" style="margin-top:8px;">
-        <summary>Paste many rules at once</summary>
-        <p style="font-size:10px;margin:4px 0;">One per line: <code>find =&gt; replace</code> or <code>find =&gt; replace | note</code>. Lines starting with # are ignored.</p>
-        <textarea id="customStyleBulk" rows="5" style="width:100%;font-size:11px;" placeholder="utilize =&gt; use&#10;in order to =&gt; to | shorter"></textarea>
-        <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importCustomStyleBulk()">Import lines</button>
-      </details>
+      <p class="help-inline" style="font-size:10px;margin:6px 0 0;">Presets, copy rules, and bulk import: toolbar <strong>Settings</strong>.</p>
     </div>
-    <details class="pe-target-section" open>
-      <summary class="pe-section-title pe-section-summary">Safety &amp; options</summary>
-    <div class="toggle-row"><span>Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
-    <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
-    <div class="toggle-row"><span>Show hover tips (ProzaEdit bubbles on key controls)</span><input type="checkbox" id="showHoverTips" checked></div>
+    <h2 class="pe-section-title">Quick options</h2>
     <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
-    <div class="toggle-row"><span>FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock"></div>
-    <div class="toggle-row"><span>Remind: use Word Version History before big applies</span><input type="checkbox" id="remindVersionHistory" checked></div>
-    <div class="form-group" style="margin-top:8px;">
-      <label for="continuityWarnLevel">Continuity warnings before Apply (1=quiet, 5=detailed)</label>
-      <input type="range" id="continuityWarnLevel" min="1" max="5" value="3" style="width:100%;">
-      <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Uses a local manuscript index (no AI). Dismissed warnings are remembered on this PC.</p>
-    </div>
-    <div class="toggle-row"><span>Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" checked></div>
-    <details class="help-box help-muted" data-simple-hide style="margin-top:8px;">
-      <summary>Optional Gemini session token ceiling</summary>
-      <p style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Off by default (same as v2). When on, blocks Gemini Coach, Deep Audit, and rewrite after an estimated session budget.</p>
-      <div class="toggle-row"><span>Enforce session token ceiling</span><input type="checkbox" id="aiEnforceSessionCeiling"></div>
-      <div class="form-group" style="margin-top:6px;">
-        <label for="aiMaxSessionTokens">Max estimated tokens per browser session</label>
-        <input type="number" id="aiMaxSessionTokens" min="1000" max="500000" step="1000" value="50000">
-      </div>
-      <button type="button" class="btn-secondary" onclick="resetAiSessionTokens()">Reset session token counter</button>
-    </details>
-    <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="captureReferenceStyle()">Capture reference style from selection</button>
-    <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Compares dialogue % and FK to future audits (local).</p>
-    <button type="button" class="btn-secondary pe-citation-target-btn" id="btnVerifyCitationsTarget" style="margin-top:6px;width:100%;" onclick="runCitationScanFromTarget()" data-pe-tip="btn-verify-citations" hidden>Verify citations (local scan)</button>
-    <p id="citationTargetHint" class="help-inline pe-citation-target-hint" style="font-size:10px;margin:4px 0 0;" hidden>Pattern assist only — enable on Checks, then scan scoped text. Not Bluebook/APA certification.</p>
-    </details>
-    <h2 class="pe-section-title">Dictionary</h2>
-    <div class="form-group">
-      <label>Custom Dictionary (per document)</label>
-      <div style="display:flex;gap:4px;">
-        <input type="text" id="dictInput" placeholder="Name, place, jargon..." style="margin-bottom:0;flex:1;">
-        <button type="button" class="btn-go" onclick="addDictionaryWord()">Add</button>
-      </div>
-      <div id="dictList" class="dict-list"></div>
-    </div>
     <button class="btn-secondary" onclick="saveConfiguration()">Save now</button>
-    <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Target fields auto-save when you change them.</p>
+    <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Target fields auto-save when you change them. Advanced options in <strong>Settings</strong>.</p>
   </div>
 
   <div id="tab2" class="tab-content pe-advanced-tab">
@@ -441,8 +399,9 @@
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
       <p><strong>Analysis scope (Target):</strong> Highlighted selection; <strong>Page range</strong> (From/To pages, ~2,800 chars each); Selected chapters (Heading 1–3 checklist); or Full manuscript.</p>
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
-      <p><strong>Hover tips:</strong> Target → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
-      <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” on Target for speed.</p>
+      <p><strong>Settings (toolbar gear):</strong> Safety toggles (confirm before apply, hover tips, FK lock, continuity slider), per-document dictionary, capture reference style, citation scan shortcut, Gemini session ceiling (when Simple mode is off), and custom-style bulk import. <strong>Target</strong> keeps manuscript profile, analysis scope, preferred style guide, quick custom rules, and Simple mode.</p>
+      <p><strong>Hover tips:</strong> Settings → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
+      <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” in Settings for speed.</p>
       <p><strong>Rewrite (audit card):</strong> Selects the finding in Word, opens Rewrite, clears stale preview — run <em>Local paraphrase</em> and apply manually (0 tokens).</p>
       <p><strong>Go to last edit:</strong> Sticky toolbar pin jumps to the text you last replaced (audit apply, thesaurus, or rewrite).</p>
       <p><strong>Thesaurus:</strong> Pick a synonym → replaces the looked-up word in scope (respects selection-only on Target unless audit-style apply).</p>
@@ -493,7 +452,7 @@
     <h2 class="pe-section-title">Platforms</h2>
     <div class="help-box">
       <p><strong>Works:</strong> Word on the web in supported browsers (Windows, macOS, iPad, Android) when signed in with Microsoft.</p>
-      <p><strong>Task pane width:</strong> Word controls column width — drag the divider between document and pane. ProzaEdit fills 100% of the host; settings and profile are on the <strong>Target</strong> tab (no gear icon). Details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORD-WEB-PANE-WIDTH.md" target="_blank" rel="noopener">WORD-WEB-PANE-WIDTH.md</a>.</p>
+      <p><strong>Task pane width:</strong> Word controls column width — drag the divider between document and pane. ProzaEdit fills 100% of the host; daily profile and scope are on <strong>Target</strong>; toolbar <strong>Settings</strong> holds advanced toggles. Details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORD-WEB-PANE-WIDTH.md" target="_blank" rel="noopener">WORD-WEB-PANE-WIDTH.md</a>.</p>
       <p><strong>Limited:</strong> Word desktop often has no Upload; iPad/Android need the browser app, not only the mobile Word app if Upload is missing.</p>
     </div>
     <h2 class="pe-section-title">Paraphrase (Rewrite tab)</h2>
@@ -539,6 +498,70 @@
       <summary>Optional Gemini rewrite (uses tokens)</summary>
       <button class="btn-secondary btn-api-opt" style="margin-top:6px;" onclick="runSmartRewrite()">Rewrite via Gemini</button>
     </details>
+  </div>
+
+  <div id="pe-settings-modal" class="pe-settings-modal hidden" role="dialog" aria-modal="true" aria-labelledby="pe-settings-title" aria-hidden="true">
+    <div class="pe-settings-backdrop" data-pe-settings-close tabindex="-1" aria-hidden="true"></div>
+    <div class="pe-settings-dialog" role="document">
+      <header class="pe-settings-header">
+        <h2 id="pe-settings-title" class="pe-settings-title">Settings</h2>
+        <button type="button" id="btn-settings-close" class="btn-linkish pe-settings-close" data-pe-settings-close aria-label="Close settings">Close</button>
+      </header>
+      <div class="pe-settings-body">
+        <h3 class="pe-section-title">Safety &amp; options</h3>
+        <div class="toggle-row"><span>Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
+        <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
+        <div class="toggle-row"><span>Show hover tips (ProzaEdit bubbles on key controls)</span><input type="checkbox" id="showHoverTips" checked></div>
+        <div class="toggle-row"><span>FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock"></div>
+        <div class="toggle-row"><span>Remind: use Word Version History before big applies</span><input type="checkbox" id="remindVersionHistory" checked></div>
+        <div class="form-group" style="margin-top:8px;">
+          <label for="continuityWarnLevel">Continuity warnings before Apply (1=quiet, 5=detailed)</label>
+          <input type="range" id="continuityWarnLevel" min="1" max="5" value="3" style="width:100%;">
+          <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Uses a local manuscript index (no AI). Dismissed warnings are remembered on this PC.</p>
+        </div>
+        <div class="toggle-row"><span>Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" checked></div>
+        <details class="help-box help-muted" data-simple-hide style="margin-top:8px;">
+          <summary>Optional Gemini session token ceiling</summary>
+          <p style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Off by default (same as v2). When on, blocks Gemini Coach, Deep Audit, and rewrite after an estimated session budget.</p>
+          <div class="toggle-row"><span>Enforce session token ceiling</span><input type="checkbox" id="aiEnforceSessionCeiling"></div>
+          <div class="form-group" style="margin-top:6px;">
+            <label for="aiMaxSessionTokens">Max estimated tokens per browser session</label>
+            <input type="number" id="aiMaxSessionTokens" min="1000" max="500000" step="1000" value="50000">
+          </div>
+          <button type="button" class="btn-secondary" onclick="resetAiSessionTokens()">Reset session token counter</button>
+        </details>
+        <h3 class="pe-section-title" style="margin-top:12px;">Reference &amp; citations</h3>
+        <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="captureReferenceStyle()">Capture reference style from selection</button>
+        <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Compares dialogue % and FK to future audits (local).</p>
+        <button type="button" class="btn-secondary pe-citation-target-btn" id="btnVerifyCitationsTarget" style="margin-top:6px;width:100%;" onclick="runCitationScanFromTarget()" data-pe-tip="btn-verify-citations" hidden>Verify citations (local scan)</button>
+        <p id="citationTargetHint" class="help-inline pe-citation-target-hint" style="font-size:10px;margin:4px 0 0;" hidden>Pattern assist only — enable on Checks, then scan scoped text. Not Bluebook/APA certification.</p>
+        <h3 class="pe-section-title" style="margin-top:12px;">Dictionary</h3>
+        <div class="form-group">
+          <label for="dictInput">Custom Dictionary (per document)</label>
+          <div style="display:flex;gap:4px;">
+            <input type="text" id="dictInput" placeholder="Name, place, jargon..." style="margin-bottom:0;flex:1;">
+            <button type="button" class="btn-go" onclick="addDictionaryWord()">Add</button>
+          </div>
+          <div id="dictList" class="dict-list"></div>
+        </div>
+        <h3 class="pe-section-title" style="margin-top:12px;">Custom style guide (advanced)</h3>
+        <p class="help-inline" style="font-size:10px;margin:0 0 6px;">Preferred guide and quick <strong>Add rule</strong> stay on Target. Use this section for presets and bulk import.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+          <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('plain-starter')">Plain starter</button>
+          <button type="button" class="btn-secondary" onclick="loadCustomStylePreset('uk-starter')">UK starter</button>
+          <button type="button" class="btn-secondary" onclick="copyCustomStyleRulesToClipboard()">Copy rules</button>
+        </div>
+        <details class="help-box help-muted" style="margin-top:8px;">
+          <summary>Paste many rules at once</summary>
+          <p style="font-size:10px;margin:4px 0;">One per line: <code>find =&gt; replace</code> or <code>find =&gt; replace | note</code>. Lines starting with # are ignored.</p>
+          <textarea id="customStyleBulk" rows="5" style="width:100%;font-size:11px;" placeholder="utilize =&gt; use&#10;in order to =&gt; to | shorter"></textarea>
+          <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importCustomStyleBulk()">Import lines</button>
+        </details>
+      </div>
+      <footer class="pe-settings-footer">
+        <button type="button" class="btn-secondary" data-pe-settings-close>Close</button>
+      </footer>
+    </div>
   </div>
 
   <script src="lib/settings-store.js"></script>

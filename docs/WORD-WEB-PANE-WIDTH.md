@@ -15,14 +15,14 @@ There is **no supported Office JavaScript API** to programmatically set, maximiz
 - Layout uses **100% width** of the host (`box-sizing`, `min-width: 0` on flex children) so content uses whatever column Word gives you.
 - **Narrow-pane CSS** (`taskpane.css`, optional `body.pe-narrow-pane` when `window.innerWidth < 360`) improves tabs, toolbar tap targets, and scrolling for ~280–400px hosts.
 - Tooltips cap at `min(280px, calc(100vw - 16px))` so bubbles stay readable in a thin column.
-- **Target** tab holds settings and profile (there is no gear icon in the ribbon for ProzaEdit).
+- **Target** tab holds daily profile, scope, and style; toolbar **Settings** (gear) opens advanced toggles and dictionary.
 
 ## Safe mitigations (in add-in only)
 
 | Approach | Used by PE |
 |----------|------------|
 | Horizontal scroll / wrapped tab bar | Yes — narrow breakpoints |
-| Collapsible `<details>` on heavy Target sections | Yes — Manuscript profile, Safety & options (default open) |
+| Collapsible `<details>` on heavy Target sections | Yes — Manuscript profile (default open); Safety moved to Settings modal |
 | Chapter checklist with vertical scroll | Yes — Selected chapters scope |
 | iframe breakout / hiding Word chrome | **No** — unsupported and brittle |
 

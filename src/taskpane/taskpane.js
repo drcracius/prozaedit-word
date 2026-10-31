@@ -367,6 +367,66 @@ function isChecked(id, defaultVal) {
   return el ? !!el.checked : !!defaultVal;
 }
 
+let settingsModalReturnFocus = null;
+
+function setupSettingsModal() {
+  const modal = getEl("pe-settings-modal");
+  if (!modal || modal.dataset.bound) return;
+  modal.dataset.bound = "1";
+  modal.addEventListener("keydown", (e) => {
+    if (modal.classList.contains("hidden")) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeSettingsModal();
+      return;
+    }
+    if (e.key === "Tab") trapFocusInSettingsModal(e, modal);
+  });
+  modal.querySelectorAll("[data-pe-settings-close]").forEach((el) => {
+    el.addEventListener("click", () => closeSettingsModal());
+  });
+}
+
+function trapFocusInSettingsModal(e, modal) {
+  const dialog = modal.querySelector(".pe-settings-dialog");
+  if (!dialog) return;
+  const focusable = dialog.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  );
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+function openSettingsModal() {
+  const modal = getEl("pe-settings-modal");
+  if (!modal) return;
+  settingsModalReturnFocus = document.activeElement;
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("pe-settings-open");
+  getEl("btn-settings-close")?.focus();
+}
+
+function closeSettingsModal() {
+  const modal = getEl("pe-settings-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("pe-settings-open");
+  const ret = settingsModalReturnFocus;
+  settingsModalReturnFocus = null;
+  if (ret && typeof ret.focus === "function") ret.focus();
+  else getEl("btn-settings-open")?.focus();
+}
+
 Office.onReady((info) => {
   if (typeof Office === "undefined") {
     document.body.insertAdjacentHTML("afterbegin", '<p style="color:#d93025;">Office.js failed to load. Check network and reload.</p>');
@@ -392,6 +452,7 @@ Office.onReady((info) => {
     setupScopeUi();
     setupMainTargetSync();
     setupAutoSaveHandlers();
+    setupSettingsModal();
     bindWorkflowStepper();
     updateWorkflowStepper("tab1");
     updateUndoRedoUi();

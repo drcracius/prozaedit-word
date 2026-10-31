@@ -10,13 +10,15 @@
     "btn-redo": "Redo the last undone ProzaEdit replacement. Ctrl+Shift+Y",
     "btn-go-last-edit":
       "Jump to the last successful Apply or replace in Word (tracked on this PC). Disabled until you apply at least one fix.",
+    "btn-settings":
+      "Open Settings: safety toggles, dictionary, citation tools, Gemini session ceiling, and custom-style bulk import. Target keeps daily profile, scope, and style guide.",
     "sel-manuscript-scope":
       "Which text ProzaEdit reads for audit. Full manuscript is capped (see scope preview). Selection uses the Word highlight.",
     "chk-repetition":
       "Flags pleonasms and repeated word pairs in the scoped text. Use Mute if a deliberate repetition is intentional.",
     "btn-card-goto": "Select the first body match for this finding in Word (sanitized search, first hit).",
     "btn-card-apply":
-      "Replace the first document match with the suggested text. Respects Confirm before Apply and continuity warnings on Target.",
+      "Replace the first document match with the suggested text. Respects Confirm before Apply and continuity warnings in Settings.",
     "btn-card-rewrite":
       "Select this finding in Word, open Rewrite, and preview a local paraphrase. You still choose Apply preview — nothing auto-writes.",
     "btn-card-mute":
@@ -49,6 +51,7 @@
     "btn-undo": "Undo last ProzaEdit replace (Ctrl+Shift+Z)",
     "btn-redo": "Redo (Ctrl+Shift+Y)",
     "btn-go-last-edit": "Jump to last applied edit",
+    "btn-settings": "Open Settings dialog",
     "sel-manuscript-scope": "Which text is read for audit",
     "btn-card-goto": "Select first match in Word",
     "btn-card-apply": "Replace first document match",

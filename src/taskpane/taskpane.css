@@ -918,6 +918,84 @@ body.pe-narrow-pane .btn-tool-icon-label {
   width: 100%;
 }
 
+.pe-settings-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12px 8px 24px;
+  box-sizing: border-box;
+}
+
+.pe-settings-modal.hidden {
+  display: none !important;
+}
+
+.pe-settings-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(32, 33, 36, 0.45);
+}
+
+.pe-settings-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  max-height: min(92vh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.pe-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.pe-settings-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.pe-settings-close {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.pe-settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pe-settings-footer {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  justify-content: flex-end;
+}
+
+body.pe-settings-open {
+  overflow: hidden;
+}
+
 .pe-simple-mode [data-simple-hide] {
   display: none !important;
 }
