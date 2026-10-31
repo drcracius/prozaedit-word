@@ -165,7 +165,7 @@ ProzaEdit’s core loop (Target → Checks → Audit → Fix) is sound. The path
 |-------|--------|---------------|--------|--------|
 | UX-1 | Icons, Simple→Critical, workflow strip, Rewrite card, type copy | No | **Complete** | `0402b52` |
 | UX-2 | Help/doc P1 fixes, active-checks hint | No | **Complete** | `7362740` |
-| UX-3 | Label dedupe, secondary icons | No | **Complete** | _(pending push)_ |
+| UX-3 | Label dedupe, secondary icons | No | **Complete** | `2b4b630` |
 | UX-4 | Feedback / score update | No | Optional | — |
 
 ---
