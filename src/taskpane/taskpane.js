@@ -1910,17 +1910,17 @@ function renderAuditCards(list) {
       <p class="card-replacement">"${escapeHtml(item.replacementText)}"</p>
       <div class="card-actions">
         <div class="card-actions-primary">
-          <button type="button" class="btn-go btn-with-icon" data-a="goto" data-pe-tip="btn-card-goto" title="Select first match in Word" aria-label="Go to finding in Word">${ic("locate")} Go to</button>
-          ${canApply ? `<button type="button" class="btn-apply btn-with-icon" data-a="apply" data-pe-tip="btn-card-apply" title="Replace first document match" aria-label="Apply fix">${ic("check")} Apply</button>` : ""}
-          ${canRewrite ? `<button type="button" class="btn-go btn-with-icon" data-a="rewrite" data-pe-tip="btn-card-rewrite" title="Open Rewrite for this finding" aria-label="Rewrite finding">${ic("edit")} Rewrite</button>` : ""}
+          <button type="button" class="btn-go btn-with-icon" data-a="goto" data-pe-tip="btn-card-goto" aria-label="Go to finding in Word">${ic("locate")} Go to</button>
+          ${canApply ? `<button type="button" class="btn-apply btn-with-icon" data-a="apply" data-pe-tip="btn-card-apply" aria-label="Apply fix">${ic("check")} Apply</button>` : ""}
+          ${canRewrite ? `<button type="button" class="btn-go btn-with-icon" data-a="rewrite" data-pe-tip="btn-card-rewrite" aria-label="Rewrite finding">${ic("edit")} Rewrite</button>` : ""}
           <button type="button" class="btn-go" data-a="localtip">Local tip</button>
         </div>
         <div class="card-actions-secondary">
           <button type="button" class="btn-go" data-a="dict">Dict</button>
           ${showHouse ? '<button type="button" class="btn-go" data-a="house">House rule</button>' : ""}
-          <button type="button" class="btn-go" data-a="mute">Mute</button>
+          <button type="button" class="btn-go btn-with-icon" data-a="mute" data-pe-tip="btn-card-mute" aria-label="Mute rule">${ic("bell-off")} Mute</button>
           <button type="button" class="btn-go" data-a="chat" title="Optional Gemini">Gemini</button>
-          <button type="button" class="btn-dismiss" data-a="dismiss">Dismiss</button>
+          <button type="button" class="btn-dismiss btn-with-icon" data-a="dismiss" data-pe-tip="btn-card-dismiss" aria-label="Dismiss finding">${ic("eye-off")} Dismiss</button>
         </div>
       </div>`;
     div.querySelector('[data-a="goto"]').onclick = () => goToIssue(item.targetText);

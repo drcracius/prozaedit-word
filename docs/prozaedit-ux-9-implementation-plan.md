@@ -11,9 +11,9 @@
 
 ProzaEdit’s core loop (Target → Checks → Audit → Fix) is sound. The path to **9.0** is incremental **scannability** (Fluent 16px icons + labels), **smarter defaults** (Simple mode → Critical audit filter), **workflow emphasis** (Run audit step aligned with primary CTA), **Fix → Rewrite bridge** on audit cards, and **type-aware copy** for non-fiction profiles. Manifest bumps stay reserved for ribbon/permission changes only.
 
-**Phase UX-1** (safe pack) ships items ranked **1–3** plus **4** (Rewrite card wiring) and **6** (summary/empty type hints)—leaving **7** (label dedupe) and residual polish for later phases.
+**Phase UX-1** (safe pack) ships items ranked **1–3** plus **4** (Rewrite card wiring) and **6** (summary/empty type hints). **UX-3** closes **#7** (label dedupe + Mute/Dismiss icons).
 
-**Score trajectory:** 7.0 baseline → **7.5 after UX-1** (icons, defaults, strip, rewrite bridge, copy).
+**Score trajectory:** 7.0 baseline → **7.5 after UX-1** → **~8.5 after UX-3** (canonical tooltips, secondary-row icons).
 
 ---
 
@@ -136,8 +136,8 @@ ProzaEdit’s core loop (Target → Checks → Audit → Fix) is sound. The path
 
 **Acceptance criteria:**
 
-- [ ] Sticky toolbar no longer duplicates long tooltip text in `title` and `data-pe-tip`
-- [ ] No regression in screen-reader labels
+- [x] Sticky toolbar no longer duplicates long tooltip text in `title` and `data-pe-tip`
+- [x] No regression in screen-reader labels
 
 **Risks:** Discoverability loss if labels over-shortened — keep ≥1 word on primary actions.
 
@@ -145,7 +145,7 @@ ProzaEdit’s core loop (Target → Checks → Audit → Fix) is sound. The path
 
 **Manifest policy:** None.
 
-**Status:** Not started.
+**Status:** Complete — see tracker below.
 
 ---
 
@@ -164,8 +164,8 @@ ProzaEdit’s core loop (Target → Checks → Audit → Fix) is sound. The path
 | Phase | Scope | Manifest bump | Status | Commit |
 |-------|--------|---------------|--------|--------|
 | UX-1 | Icons, Simple→Critical, workflow strip, Rewrite card, type copy | No | **Complete** | `0402b52` |
-| UX-2 | Help/doc P1 fixes | No | Planned | — |
-| UX-3 | Label dedupe, secondary icons | No | Planned | — |
+| UX-2 | Help/doc P1 fixes, active-checks hint | No | **Complete** | `7362740` |
+| UX-3 | Label dedupe, secondary icons | No | **Complete** | _(pending push)_ |
 | UX-4 | Feedback / score update | No | Optional | — |
 
 ---

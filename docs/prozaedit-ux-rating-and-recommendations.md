@@ -5,9 +5,9 @@
 
 ---
 
-## Overall score: **7 / 10** → **7.5 after UX-1** (2026-10-31)
+## Overall score: **7 / 10** → **7.5 after UX-1** → **~8.5 after UX-3** (2026-10-31)
 
-UX-1 added Fluent-style toolbar and card icons, Simple mode → Critical audit default, workflow strip contrast, audit-card Rewrite bridge, and non-fiction summary hints. See [prozaedit-ux-9-implementation-plan.md](./prozaedit-ux-9-implementation-plan.md).
+UX-1 added Fluent-style toolbar and card icons, Simple mode → Critical audit default, workflow strip contrast, audit-card Rewrite bridge, and non-fiction summary hints. UX-2 closed Help/doc P1 gaps. UX-3 centralizes hover copy in `tooltip-registry.js` (short native titles when tips are off), removes duplicate `title`/`data-pe-tip` on the sticky toolbar and card primaries, and adds bell-off / eye-off icons on Mute/Dismiss. See [prozaedit-ux-9-implementation-plan.md](./prozaedit-ux-9-implementation-plan.md).
 
 ProzaEdit fits the Word task-pane constraint well: a clear Target → Checks → Audit → Fix loop, local-first audits (no API required), and a sticky action strip (Undo, Run audit) that stays visible while scrolling. Simple mode hides power features without forking the product. Tooltips via `data-pe-tip` help dense Controls copy without permanent clutter.
 
@@ -53,7 +53,7 @@ Use **16px**, single-weight stroke icons, inline SVG (no external font dependenc
 | Undo / Redo | Curved arrows | Medium (text labels OK today) |
 | Go to last edit | Map pin | **Shipped** (toolbar) |
 | Rewrite (card) | Pencil / paraphrase | **Shipped** (audit primary row) |
-| Mute / Dismiss | Bell-off / eye-off | Low (secondary row) |
+| Mute / Dismiss | Bell-off / eye-off | **Shipped** (secondary row, UX-3) |
 
 **Label clutter:** Prefer icon + 1–2 word labels on the sticky toolbar; keep full sentences in Help or tooltips only.
 
@@ -80,7 +80,7 @@ Goal: raise perceived polish and speed **without** collapsing the 7-tab IA or sh
 | 4 | **Rewrite one-click (audit cards)** | Medium — bridges Fix → paraphrase without Gemini | Low — no auto-apply | **Shipped** | `sendIssueToRewrite()` + Help line; shaper stays hidden in Simple mode |
 | 5 | **Onboarding / session tips** | Medium — first-run orientation | Low | **Done** | Dismissible session tips + Help Quick start (2.0.0.15) |
 | 6 | **Type-aware empty states** | Medium — Academic/non-fiction feels intentional | Low | Small | Summary copy when fiction modules disabled; Audit empty nudge by manuscript type |
-| 7 | **Reduce duplicate labels** | Low–medium — less vertical scroll | Low | Small | One canonical string per action in tooltips; shorten sticky toolbar where icon exists |
+| 7 | **Reduce duplicate labels** | Low–medium — less vertical scroll | Low | **Shipped** (UX-3) | `NATIVE_TITLE_REGISTRY` + registry-only long tips; Mute/Dismiss icons |
 
 ### What NOT to do (keeps risk bounded)
 

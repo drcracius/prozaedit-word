@@ -2,11 +2,14 @@
 (function (global) {
   const root = (global.ProzaEdit = global.ProzaEdit || {});
 
+  /** Long copy for custom hover tips (data-pe-tip keys). */
   const TOOLTIP_REGISTRY = {
     "btn-run-audit":
       "Runs local checks on the current scope. Reads text only — does not change your manuscript until you Apply a fix.",
     "btn-undo": "Undo the last replacement made by ProzaEdit (isolated stack, up to 40 steps). Ctrl+Shift+Z",
     "btn-redo": "Redo the last undone ProzaEdit replacement. Ctrl+Shift+Y",
+    "btn-go-last-edit":
+      "Jump to the last successful Apply or replace in Word (tracked on this PC). Disabled until you apply at least one fix.",
     "sel-manuscript-scope":
       "Which text ProzaEdit reads for audit. Full manuscript is capped (see scope preview). Selection uses the Word highlight.",
     "chk-repetition":
@@ -16,6 +19,10 @@
       "Replace the first document match with the suggested text. Respects Confirm before Apply and continuity warnings on Target.",
     "btn-card-rewrite":
       "Select this finding in Word, open Rewrite, and preview a local paraphrase. You still choose Apply preview — nothing auto-writes.",
+    "btn-card-mute":
+      "Hide this rule id on future audits on this PC. The finding may still appear under a different wording.",
+    "btn-card-dismiss":
+      "Mute the rule and silence this exact wording on future audits. Stored in browser storage on this PC.",
     "slider-complexity":
       "Lower = extra tightening pass; higher = formal register stack. Neutral (3) adds nothing beyond your paraphrase mode.",
     "slider-intensity":
@@ -35,6 +42,28 @@
     "btn-session-tips-got-it":
       "Hide these session tips until you open ProzaEdit again in a new browser session. Help tab has the full Quick start guide.",
   };
+
+  /** Short native `title` when hover tips are off (no duplicate long strings in HTML). */
+  const NATIVE_TITLE_REGISTRY = {
+    "btn-run-audit": "Run audit with current checks and scope",
+    "btn-undo": "Undo last ProzaEdit replace (Ctrl+Shift+Z)",
+    "btn-redo": "Redo (Ctrl+Shift+Y)",
+    "btn-go-last-edit": "Jump to last applied edit",
+    "sel-manuscript-scope": "Which text is read for audit",
+    "btn-card-goto": "Select first match in Word",
+    "btn-card-apply": "Replace first document match",
+    "btn-card-rewrite": "Open Rewrite for this finding",
+    "btn-card-mute": "Mute this rule on this PC",
+    "btn-card-dismiss": "Dismiss this wording on this PC",
+  };
+
+  function nativeTitleFor(el) {
+    const stored = el.getAttribute("data-pe-native-title");
+    if (stored != null) return stored;
+    const key = el.getAttribute("data-pe-tip");
+    if (key && NATIVE_TITLE_REGISTRY[key]) return NATIVE_TITLE_REGISTRY[key];
+    return null;
+  }
 
   let enabled = false;
   let activeBubble = null;
@@ -95,8 +124,9 @@
         }
         el.removeAttribute("title");
       } else {
-        const native = el.getAttribute("data-pe-native-title");
+        const native = nativeTitleFor(el);
         if (native != null) el.setAttribute("title", native);
+        else el.removeAttribute("title");
         if (el.getAttribute("data-pe-tip-described") === "1") {
           el.removeAttribute("aria-describedby");
           el.removeAttribute("data-pe-tip-described");
@@ -161,6 +191,7 @@
 
   root.TooltipRegistry = {
     TOOLTIP_REGISTRY,
+    NATIVE_TITLE_REGISTRY,
     initTooltips,
     refreshTooltips,
   };
