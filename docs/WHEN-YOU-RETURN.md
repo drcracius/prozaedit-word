@@ -2,6 +2,8 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** on this PC.
 
+Implementation roadmap: `docs/prozaedit-implementation-plan-audited.md`
+
 ## Step 6 — Install ProzaEdit from GitHub (one time)
 
 1. **Get the manifest file**
