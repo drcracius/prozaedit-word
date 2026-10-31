@@ -71,7 +71,7 @@
 | 4 — Chronology v1 | **Complete** | `76adf92` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
 | 5 — Citations v1 | **Complete** | `8f12b94` | `citation-engine.js`, Checks sub-panel + Target verify; no manifest bump |
 | 6 — Install + docs hygiene | **Complete** | `3065334` | WORKFLOWS.md, THIRD-PARTY-ATTRIBUTION.md, GitHub install scripts; PE-2 manual on D PC |
-| 7+ — Optional (CI, quota, Zipf, IA merge) | **Partial** | `b9c232f` | **7c** report extract + **7a-lite** quota (default off); **7b/7d–7g** deferred |
+| 7+ — Optional (CI, quota, Zipf, IA merge) | **Partial** | `d25cb87` | **7c** report extract + **7a-lite** quota (default off); **7b/7d–7g** deferred |
 
 ---
 
