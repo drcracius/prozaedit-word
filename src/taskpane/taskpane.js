@@ -327,6 +327,9 @@ Office.onReady((info) => {
     }
     showAuditEmptyIfNeeded();
     initSessionTips();
+    ProzaEdit.Diagnostics?.bindGlobalHandlers?.();
+    ProzaEdit.Diagnostics?.initDiagnosticsUi?.();
+    ProzaEdit.Diagnostics?.flushRetryQueue?.();
     setTimeout(() => scheduleManuscriptIndexBuild(false), 2500);
     try {
       if (sessionStorage.getItem("PROZAEDIT_UPDATE_CHECK") !== PROZAEDIT_BUILD_VERSION) {
@@ -336,9 +339,28 @@ Office.onReady((info) => {
     } catch (_) {}
   } catch (e) {
     console.error(e);
+    ProzaEdit.Diagnostics?.reportMajor?.({ phase: "init" }, e?.message || "Init failure").catch(() => {});
     alert("ProzaEdit failed to initialize. Reload the task pane.");
   }
 });
+
+async function reportProzaEditProblem() {
+  const noteEl = getEl("peDiagnosticsNote");
+  const note = noteEl?.value?.trim() || "";
+  showPeStatus("Preparing anonymous report…");
+  try {
+    const r = await ProzaEdit.Diagnostics.sendReport({
+      kind: "user",
+      message: "User reported a problem",
+      userNote: note,
+      skipDedupe: true,
+    });
+    if (noteEl) noteEl.value = "";
+    showPeStatus(r?.detail || "Done.", r?.mode === "sent" || r?.mode === "clipboard" ? "ok" : "warn");
+  } catch (e) {
+    showPeStatus("Could not prepare report.", "warn");
+  }
+}
 
 function updateWorkflowStepper(tabId) {
   let step = "1";
@@ -1864,6 +1886,10 @@ function runAuditInternalCore(opts) {
       const sum = getEl("summaryReport");
       if (sum) sum.innerHTML = `<span style="color:var(--red)">${escapeHtml(e.message)}</span>`;
       showAuditEmptyIfNeeded();
+      ProzaEdit.Diagnostics?.reportMajor?.(
+        { phase: "runAudit", scope: getScopeMode(), label: opts.label },
+        e?.message || "Audit failed"
+      ).catch(() => {});
       return false;
     })
     .finally(() => {

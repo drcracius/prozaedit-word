@@ -453,6 +453,19 @@
       <p><strong>Install file:</strong> only <code>manifest.hosted.xml</code> is uploaded to Word once. The app loads from GitHub Pages after that.</p>
       <p><a href="https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml" target="_blank" rel="noopener">Download manifest.hosted.xml</a> (OneDrive/iCloud/Downloads all work — open from that folder when Word asks).</p>
     </div>
+    <h2 class="pe-section-title">Diagnostics &amp; privacy</h2>
+    <div class="help-box">
+      <p>Optional anonymous crash reports help fix bugs. <strong>Off by default.</strong> We never send your document text, selection, or API keys — only build version, error type, and a trimmed stack trace.</p>
+      <div class="toggle-row">
+        <span>Send anonymous crash reports</span>
+        <input type="checkbox" id="peDiagnosticsOptIn" aria-describedby="peDiagnosticsPrivacy">
+      </div>
+      <p id="peDiagnosticsPrivacy" class="help-muted" style="font-size:11px;margin:6px 0;">When enabled and the owner has configured ingest, crashes and unhandled errors may be sent automatically. Otherwise reports copy redacted JSON to your clipboard.</p>
+      <label for="peDiagnosticsNote">Optional note (what you were doing, not manuscript text)</label>
+      <input type="text" id="peDiagnosticsNote" maxlength="500" placeholder="e.g. Run audit on full manuscript" aria-label="Diagnostics note">
+      <button type="button" class="btn-secondary" style="margin-top:8px;" onclick="reportProzaEditProblem()">Report a problem</button>
+      <p class="help-muted" style="font-size:11px;margin-top:6px;">Full details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
+    </div>
     <h2 class="pe-section-title">Platforms</h2>
     <div class="help-box">
       <p><strong>Works:</strong> Word on the web in supported browsers (Windows, macOS, iPad, Android) when signed in with Microsoft.</p>
@@ -529,6 +542,8 @@
   <script src="lib/report-docx-export.js"></script>
   <script src="lib/edit-history.js"></script>
   <script src="lib/pe-icons.js"></script>
+  <script src="lib/diagnostics-config.js"></script>
+  <script src="lib/diagnostics-reporter.js"></script>
   <script src="taskpane.js"></script>
 </body>
 </html>

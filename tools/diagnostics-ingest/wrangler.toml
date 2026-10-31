@@ -1,0 +1,7 @@
+name = "prozaedit-diagnostics-ingest"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+GITHUB_REPO = "drcracius/prozaedit-word"
+GITHUB_LABELS = "auto-report"
