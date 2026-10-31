@@ -68,7 +68,7 @@
 | 1 — Navigator extract | **Complete** | `91ecf56` | `word-safe-navigator.js`; no manifest bump |
 | 2 — UX polish (tooltips + tokens) | **Complete** | `adba593` | `tooltip-registry.js`, Show hover tips, indigo/card tokens |
 | 3 — Banks + shaper v1 | **Complete** | `83e88f0` | `lexical-banks.js`, `lexical-shaper.js`, Rewrite Advanced panel; no manifest bump |
-| 4 — Chronology v1 | **Complete** | `40891b2` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
+| 4 — Chronology v1 | **Complete** | `76adf92` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
 | 5 — Citations v1 | Not started | — | Opt-in; no tab until validated (D6) |
 | 6 — Install + docs hygiene | Not started | — | PE-2, WORKFLOWS.md, scripts |
 | 7+ — Optional (CI, quota, Zipf, IA merge) | Not started | — | Default-off toggles |
