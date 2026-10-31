@@ -123,6 +123,8 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 *(Same as v1 plan — smoke checklist, manifest discipline, PE-2 logging only.)*
 
+**PE-2 (D, Windows):** [pe-2-shared-folder-checklist.md](pe-2-shared-folder-checklist.md)
+
 **Acceptance:** Audit → Apply fix → Undo → Go to (web); Check for updates; manifest/UI version match on `main`.
 
 ---
