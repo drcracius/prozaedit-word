@@ -450,12 +450,15 @@ Load order is fixed in `taskpane.html`; `taskpane.js` orchestrates UI and Word c
 | `ai-quota-manager.js` | Optional session token estimate ceiling for Gemini (default off) |
 | `report-docx-export.js` | Audit report plain-text build, `.txt` download, `createDocument` export + fallback |
 | `edit-history.js` | Session undo/redo stack for ProzaEdit replacements |
+| `pe-icons.js` | Shared inline SVG icons for toolbar and audit card actions (UX-1/UX-3) |
+| `diagnostics-config.js` | Anonymous diagnostics ingest URL + feature flags (empty URL = client no-op) |
+| `diagnostics-reporter.js` | Opt-in crash/error reports with redaction (no document text or API keys) |
 
-**Module count:** **25** files under `src/taskpane/lib/` (load order fixed in `taskpane.html`).
+**Module count:** **28** files under `src/taskpane/lib/` (load order fixed in `taskpane.html`; `taskpane.js` orchestrates after all libs).
 
 **Version discipline:** Bump `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` together when users must re-register the add-in; UI-only pushes need only GitHub Pages refresh.
 
-**Testing:** No automated test suite or CI in the public repo; validate manually in Word on the web after changes to `src/` or `assets/`.
+**Testing:** GitHub Actions runs `scripts/verify-version-sync.sh` and **`npm test`** (pure JS unit tests — no Office.js) on push/PR to `main`. Still validate behavior manually in Word on the web after changes to `src/` or `assets/`.
 
 ---
 
@@ -464,7 +467,7 @@ Load order is fixed in `taskpane.html`; `taskpane.js` orchestrates UI and Word c
 - Install: `docs/BETA-TESTERS-INSTALL.txt`, `docs/BETA-SETUP-GITHUB.md`, `docs/WHEN-YOU-RETURN.md`, `scripts/install/README.md`
 - Workflows & attribution: `docs/WORKFLOWS.md`, `docs/THIRD-PARTY-ATTRIBUTION.md`
 - Release notes: [RELEASE-NOTES-2.0.0.15.md](RELEASE-NOTES-2.0.0.15.md)
-- Roadmap: [prozaedit-implementation-plan-audited.md](prozaedit-implementation-plan-audited.md)
+- Roadmap: [prozaedit-implementation-plan-audited.md](prozaedit-implementation-plan-audited.md) · [Approved scope vs vNext](prozaedit-approved-scope-vs-vnext.md)
 - Engineering map: [prozaedit-codebase-overview.md](/cursor/stores/self/docs/prozaedit-codebase-overview.md)
 - Source of truth: [source-of-truth.md](/cursor/stores/self/docs/source-of-truth.md)
 

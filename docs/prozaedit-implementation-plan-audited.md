@@ -71,7 +71,7 @@
 | 4 — Chronology v1 | **Complete** | `76adf92` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
 | 5 — Citations v1 | **Complete** | `8f12b94` | `citation-engine.js`, Checks sub-panel + Target verify; no manifest bump |
 | 6 — Install + docs hygiene | **Complete** | `3065334` | WORKFLOWS.md, THIRD-PARTY-ATTRIBUTION.md, GitHub install scripts; PE-2 manual on D PC |
-| 7+ — Optional (CI, quota, Zipf, IA merge) | **Partial** | `d25cb87` | **7c** report extract + **7a-lite** quota (default off); **7b/7d–7g** deferred |
+| 7+ — Optional (CI, quota, Zipf, IA merge) | **Partial** | PE-32 | **7a-lite**, **7c**, **7b** (version-sync + `npm test` on `main`); **7d–7g** deferred |
 
 ---
 
@@ -83,13 +83,13 @@ Seven tabs + workflow strip unchanged. **2.0.0.15** registers Phases 2–7: hove
 
 ### 4.2 `src/taskpane/lib/` inventory (post–Phase 7c)
 
-**25 modules:** Phase 5 set plus **`report-docx-export.js`**, **`ai-quota-manager.js`** (session ceiling lite, default off).
+**28 modules:** Phase 7c set plus **`pe-icons.js`**, **`diagnostics-config.js`**, **`diagnostics-reporter.js`** (UX + PE-28).
 
-**Still deferred vs vNext spec:** structured styled `.docx` report sections (Zipf shaper v2, full quota modal, CI).
+**Still deferred vs vNext spec:** Zipf shaper v2, full quota modal, IA merge, dark mode, header metrics (7d–7g).
 
 ### 4.3 Known gaps (unchanged)
 
-Root install `.bat` / PE-2 catalog, broken Help doc paths, no CI, vNext engines — see v1 plan §2.4.
+Root install `.bat` / **PE-2** catalog proof (owner on Windows PC), hosted diagnostics **ingest** deploy (client ships opt-in off), vNext engines — see v1 plan §2.4.
 
 ---
 
@@ -218,7 +218,7 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 | Workstream | Status | Notes |
 |------------|--------|-------|
 | **7a — AI quota** | **Lite delivered** | `ai-quota-manager.js`; Target optional session ceiling; **enforce default off** |
-| **7b — CI** | Deferred | No `package.json` / lint / pure-function tests in this pass |
+| **7b — CI** | **Complete** | PE-30: `version-sync.yml` + `verify-version-sync.sh` on `main`; PE-32: root `package.json` + `node --test` for pure JS (navigator, banks, chronology, citation, diagnostics redaction) — no Office.js in CI |
 | **7c — Report module** | **Complete** | `report-docx-export.js`; plain-text + `createDocument` + `.txt` fallback unchanged |
 | **7d — Zipf shaper v2** | Deferred | Phase 3 local shaper retained |
 | **7e — IA consolidation** | Deferred | D1: keep Checks separate |
@@ -254,7 +254,7 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 | D6 | Citations tab timing | Open | After real brief validation |
 | D7 | npm dev server on `main` | Open | Slim `dev/` optional |
 | D8 | Features doc single source | Open | Sync on release (Phase 6) |
-| D9 | README pointer to plan | Open | Coordinator choice |
+| D9 | README pointer to plan | **Closed** | `README.md` → audited plan + approved-scope doc |
 
 ---
 
@@ -310,4 +310,4 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 ---
 
-*Primary roadmap aligned to GitHub `main` through Phase 7c partial (manifest baseline **2.0.0.15**).*
+*Primary roadmap aligned to GitHub `main` through Phase **7b** + 7a/7c (manifest baseline **2.0.0.15**). Approved scope vs vNext: [prozaedit-approved-scope-vs-vnext.md](./prozaedit-approved-scope-vs-vnext.md).*
