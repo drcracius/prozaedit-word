@@ -309,6 +309,7 @@ Office.onReady((info) => {
     updateAuditFilterChips();
     updateAuditSortChips();
     applySimpleMode();
+    maybeDefaultAuditFilterForSimple();
     syncShaperSliderLabels();
     applyHoverTips();
     updateActiveChecksHint();
@@ -320,6 +321,7 @@ Office.onReady((info) => {
       sm.dataset.bound = "1";
       sm.addEventListener("change", () => {
         applySimpleMode();
+        if (isChecked("simpleMode", false)) applySimpleModeAuditFilterDefault();
         persistSettings(false);
       });
     }
@@ -344,7 +346,9 @@ function updateWorkflowStepper(tabId) {
   else if (tabId === "tab4") step = currentAuditSuggestions.length ? "4" : "3";
   else if (tabId === "tab1") step = "1";
   document.querySelectorAll(".workflow-step[data-workflow-step]").forEach((el) => {
-    el.classList.toggle("workflow-step-active", el.dataset.workflowStep === step);
+    const on = el.dataset.workflowStep === step;
+    el.classList.toggle("workflow-step-active", on);
+    el.classList.toggle("active", on);
   });
 }
 
@@ -493,6 +497,9 @@ function applyUiConfig(p) {
   if (p.sectionParagraphCount) setV("sectionParagraphCount", p.sectionParagraphCount);
   if (p.auditCardFilter && ["all", "confirmed", "preference", "styleguide"].includes(p.auditCardFilter)) {
     auditCardFilter = p.auditCardFilter;
+    updateAuditFilterChips();
+  } else if (p.simpleMode) {
+    auditCardFilter = "confirmed";
     updateAuditFilterChips();
   }
   if (p.auditCardSort && ["priority", "module"].includes(p.auditCardSort)) {
@@ -741,6 +748,32 @@ function buildManuscriptProfile() {
 
 function applySimpleMode() {
   document.body.classList.toggle("pe-simple-mode", isChecked("simpleMode", false));
+}
+
+function applySimpleModeAuditFilterDefault() {
+  auditCardFilter = "confirmed";
+  updateAuditFilterChips();
+  applyAuditCardFilter();
+}
+
+/** On load: simple mode without a saved filter chip defaults to Critical. */
+function maybeDefaultAuditFilterForSimple() {
+  if (!isChecked("simpleMode", false)) return;
+  const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
+  let savedFilter;
+  try {
+    const p = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
+    savedFilter = p?.auditCardFilter;
+  } catch (_) {
+    savedFilter = undefined;
+  }
+  if (savedFilter == null) applySimpleModeAuditFilterDefault();
+}
+
+function getManuscriptTypeAwareHint() {
+  if (isFictionManuscriptType()) return "";
+  const type = (getEl("manuscriptType")?.value || "Non-fiction").replace(/\s*\(.+\)\s*$/, "").trim();
+  return `Non-fiction profile (${type}): fiction plot and spoiler modules stay off — audit emphasizes clarity, repetition, and house style.`;
 }
 
 const PE_SESSION_TIPS_KEY = "pe-session-tips-dismissed";
@@ -1452,7 +1485,13 @@ function showAuditEmptyIfNeeded() {
   }
   if (currentAuditSuggestions.length) return;
   if (sumText && !/Run audit|Running|Deep audit/i.test(sumText)) return;
-  box.innerHTML = AUDIT_EMPTY_HTML;
+  const hint = getManuscriptTypeAwareHint();
+  box.innerHTML = hint
+    ? AUDIT_EMPTY_HTML.replace(
+        "</div>",
+        `<p class="audit-type-hint">${escapeHtml(hint)}</p></div>`
+      )
+    : AUDIT_EMPTY_HTML;
 }
 
 function buildCopilotAuditText() {
@@ -1666,6 +1705,8 @@ function finalizeAudit(result, label) {
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
   html += `<p>${escapeHtml(buildManuscriptProfile())}</p>`;
+  const typeHint = getManuscriptTypeAwareHint();
+  if (typeHint) html += `<p class="audit-type-hint">${escapeHtml(typeHint)}</p>`;
   if (isChecked("fictionScopeReminder", true) && fictionModulesActive() && !scopeCoversFullManuscript()) {
     html += `<p style="color:#c5221f;font-weight:600;">Fiction/plot checks are running on a partial scope. Review the full manuscript (or a wide chapter range) before applying changes that affect names, facts, or continuity.</p>`;
   }
@@ -1845,6 +1886,7 @@ function renderAuditCards(list) {
   if (!box) return;
   box.innerHTML = "";
   list = Array.isArray(list) ? list : [];
+  const ic = (name) => (window.ProzaEdit?.PeIcons?.svg ? ProzaEdit.PeIcons.svg(name) : "");
   if (!list.length) {
     if (currentAuditSuggestions.length && auditCardFilter !== "all") {
       box.innerHTML = "<p class=\"audit-empty\">No items in this filter. Try <strong>All</strong>.</p>";
@@ -1859,6 +1901,7 @@ function renderAuditCards(list) {
     const id = String(item.id || `c${i}`).replace(/[^a-zA-Z0-9_-]/g, "_");
     item.id = id;
     const canApply = item.replacementText && !String(item.replacementText).startsWith("(");
+    const canRewrite = item.targetText && !String(item.targetText).startsWith("(");
     const showHouse = isStyleGuideFinding(item) && item.targetText && !String(item.targetText).startsWith("(");
     const div = document.createElement("div");
     div.className = `card ${item.type}`;
@@ -1871,10 +1914,10 @@ function renderAuditCards(list) {
       <p class="card-replacement">"${escapeHtml(item.replacementText)}"</p>
       <div class="card-actions">
         <div class="card-actions-primary">
-          <button type="button" class="btn-go" data-a="goto" data-pe-tip="btn-card-goto" title="Select first match in Word">Go to</button>
-          ${canApply ? '<button type="button" class="btn-apply" data-a="apply" data-pe-tip="btn-card-apply" title="Replace first document match">Apply fix</button>' : ""}
+          <button type="button" class="btn-go btn-with-icon" data-a="goto" data-pe-tip="btn-card-goto" title="Select first match in Word" aria-label="Go to finding in Word">${ic("locate")} Go to</button>
+          ${canApply ? `<button type="button" class="btn-apply btn-with-icon" data-a="apply" data-pe-tip="btn-card-apply" title="Replace first document match" aria-label="Apply fix">${ic("check")} Apply</button>` : ""}
+          ${canRewrite ? `<button type="button" class="btn-go btn-with-icon" data-a="rewrite" data-pe-tip="btn-card-rewrite" title="Open Rewrite for this finding" aria-label="Rewrite finding">${ic("edit")} Rewrite</button>` : ""}
           <button type="button" class="btn-go" data-a="localtip">Local tip</button>
-          <button type="button" class="btn-go" data-a="rewrite" data-pe-tip="btn-card-rewrite" title="Open Rewrite tab">Rewrite</button>
         </div>
         <div class="card-actions-secondary">
           <button type="button" class="btn-go" data-a="dict">Dict</button>
@@ -1885,8 +1928,9 @@ function renderAuditCards(list) {
         </div>
       </div>`;
     div.querySelector('[data-a="goto"]').onclick = () => goToIssue(item.targetText);
+    const rewriteBtn = div.querySelector('[data-a="rewrite"]');
+    if (rewriteBtn) rewriteBtn.onclick = () => sendIssueToRewrite(item);
     div.querySelector('[data-a="localtip"]').onclick = () => showLocalTipForIssue(item);
-    div.querySelector('[data-a="rewrite"]').onclick = () => sendIssueToRewrite(item);
     div.querySelector('[data-a="chat"]').onclick = () => sendIssueToChat(item);
     if (canApply) div.querySelector('[data-a="apply"]').onclick = () => applyFix(id, item.targetText, item.replacementText);
     div.querySelector('[data-a="dict"]').onclick = () => addDictionaryWordFromCard(item.targetText);
@@ -1926,7 +1970,7 @@ function clearAuditReport() {
   lastAuditExcerpt = "";
   lastAuditMeta = {};
   lastFeedbackLetter = "";
-  auditCardFilter = "all";
+  auditCardFilter = isChecked("simpleMode", false) ? "confirmed" : "all";
   updateAuditFilterChips();
   const box = getEl("cardContainer");
   const sum = getEl("summaryReport");

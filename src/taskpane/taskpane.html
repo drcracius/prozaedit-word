@@ -14,10 +14,10 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <ol class="workflow-steps" aria-label="Quick start">
-    <li class="workflow-step workflow-step-active" data-workflow-step="1"><span class="workflow-num">1</span> Target</li>
-    <li class="workflow-step" data-workflow-step="2"><span class="workflow-num">2</span> Checks</li>
-    <li class="workflow-step" data-workflow-step="3"><span class="workflow-num">3</span> Run audit</li>
-    <li class="workflow-step" data-workflow-step="4"><span class="workflow-num">4</span> Fix cards</li>
+    <li class="workflow-step pe-workflow-step workflow-step-active active" data-workflow-step="1"><span class="workflow-num">1</span> Target</li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="2"><span class="workflow-num">2</span> Checks</li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="3"><span class="workflow-num">3</span> Run audit</li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="4"><span class="workflow-num">4</span> Fix cards</li>
   </ol>
   <details class="help-box help-details">
     <summary>Quick start &amp; editing stack</summary>
@@ -41,14 +41,23 @@
     <button type="button" class="btn-secondary pe-session-tips-dismiss" onclick="dismissSessionTips()" data-pe-tip="btn-session-tips-got-it">Got it</button>
   </div>
   <div class="pe-toolbar pe-toolbar-sticky" role="toolbar" aria-label="ProzaEdit actions">
-    <button type="button" id="btnUndo" class="btn-tool" disabled onclick="prozaEditUndo()" title="Undo last ProzaEdit replace (Ctrl+Shift+Z)" data-pe-tip="btn-undo">↶ Undo</button>
-    <button type="button" id="btnRedo" class="btn-tool" disabled onclick="prozaEditRedo()" title="Redo (Ctrl+Shift+Y)" data-pe-tip="btn-redo">↷ Redo</button>
+    <button type="button" id="btnUndo" class="btn-tool btn-tool-icon" disabled onclick="prozaEditUndo()" title="Undo last ProzaEdit replace (Ctrl+Shift+Z)" aria-label="Undo last ProzaEdit replace" data-pe-tip="btn-undo">
+      <svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+      <span class="btn-tool-icon-label">Undo</span>
+    </button>
+    <button type="button" id="btnRedo" class="btn-tool btn-tool-icon" disabled onclick="prozaEditRedo()" title="Redo (Ctrl+Shift+Y)" aria-label="Redo last undone replace" data-pe-tip="btn-redo">
+      <svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+      <span class="btn-tool-icon-label">Redo</span>
+    </button>
     <button type="button" id="btnGoLastEdit" class="btn-tool btn-tool-icon" disabled onclick="goToLastEdit()" title="Jump to last applied edit" aria-label="Go to last edit" data-pe-tip="btn-go-last-edit">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
       <span class="btn-tool-icon-label">Last edit</span>
     </button>
     <span id="peStatus" class="pe-status" aria-live="polite"></span>
-    <button type="button" class="btn-tool btn-tool-accent" onclick="runPrimaryAudit()" title="Run audit with current checks and scope" data-pe-tip="btn-run-audit">⚡ Run audit</button>
+    <button type="button" class="btn-tool btn-tool-accent btn-tool-icon" onclick="runPrimaryAudit()" title="Run audit with current checks and scope" aria-label="Run audit" data-pe-tip="btn-run-audit">
+      <svg class="pe-icon pe-icon-on-accent" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span class="btn-tool-icon-label">Run audit</span>
+    </button>
   </div>
   <div class="nav-tabs" role="tablist" aria-label="ProzaEdit sections">
     <button type="button" class="tab-btn active" data-pe-tab="tab1" role="tab" aria-selected="true" onclick="showTab('tab1')">Target</button>
@@ -415,6 +424,7 @@
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
       <p><strong>Hover tips:</strong> Target → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
       <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” on Target for speed.</p>
+      <p><strong>Rewrite (audit card):</strong> Selects the finding in Word, opens Rewrite, clears stale preview — run <em>Local paraphrase</em> and apply manually (0 tokens).</p>
       <p><strong>Go to last edit:</strong> Sticky toolbar pin jumps to the text you last replaced (audit apply, thesaurus, or rewrite).</p>
       <p><strong>Thesaurus:</strong> Pick a synonym → replaces the looked-up word in scope (respects selection-only on Target unless audit-style apply).</p>
       <p><strong>Rewrite:</strong> Local paraphrase preview → <em>Apply preview to selection</em> writes into Word; use Undo or Last edit if you need to find the change.</p>
@@ -518,6 +528,7 @@
   <script src="lib/ai-quota-manager.js"></script>
   <script src="lib/report-docx-export.js"></script>
   <script src="lib/edit-history.js"></script>
+  <script src="lib/pe-icons.js"></script>
   <script src="taskpane.js"></script>
 </body>
 </html>

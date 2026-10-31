@@ -5,7 +5,9 @@
 
 ---
 
-## Overall score: **7 / 10**
+## Overall score: **7 / 10** → **7.5 after UX-1** (2026-10-31)
+
+UX-1 added Fluent-style toolbar and card icons, Simple mode → Critical audit default, workflow strip contrast, audit-card Rewrite bridge, and non-fiction summary hints. See [prozaedit-ux-9-implementation-plan.md](./prozaedit-ux-9-implementation-plan.md).
 
 ProzaEdit fits the Word task-pane constraint well: a clear Target → Checks → Audit → Fix loop, local-first audits (no API required), and a sticky action strip (Undo, Run audit) that stays visible while scrolling. Simple mode hides power features without forking the product. Tooltips via `data-pe-tip` help dense Controls copy without permanent clutter.
 

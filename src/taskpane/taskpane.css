@@ -73,10 +73,17 @@ body {
   color: var(--primary);
 }
 
-.workflow-step-active {
-  background: #eef2ff;
+.workflow-step-active,
+.pe-workflow-step.active {
+  background: var(--primary);
   border-color: var(--primary);
-  color: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.35);
+}
+
+.workflow-step[data-workflow-step="3"].workflow-step-active,
+.workflow-step[data-workflow-step="3"].pe-workflow-step.active {
+  font-weight: 700;
 }
 
 .workflow-num {
@@ -91,9 +98,26 @@ body {
   flex-shrink: 0;
 }
 
-.workflow-step-active .workflow-num {
-  background: var(--primary);
-  color: #fff;
+.workflow-step-active .workflow-num,
+.pe-workflow-step.active .workflow-num {
+  background: #fff;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.pe-icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.pe-icon-on-accent {
+  stroke: #fff;
+}
+
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .pe-toolbar-sticky {
@@ -171,6 +195,13 @@ body {
   font-size: 10px;
   margin: 0 0 6px;
   color: var(--text-muted);
+}
+
+.audit-type-hint {
+  font-size: 10px;
+  color: var(--primary);
+  font-weight: 600;
+  margin: 4px 0 0;
 }
 
 .partner-tools {
