@@ -24,6 +24,189 @@ body {
   font-size: 12px;
   color: var(--text);
   background: var(--surface);
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.pe-target-section {
+  margin-bottom: 8px;
+}
+
+.pe-section-summary {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 6px;
+}
+
+.pe-section-summary::-webkit-details-marker {
+  display: none;
+}
+
+.pe-section-summary::before {
+  content: "▸ ";
+  color: var(--primary);
+  font-size: 10px;
+}
+
+.pe-target-section[open] > .pe-section-summary::before {
+  content: "▾ ";
+}
+
+.scope-chapter-checklist {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin: 4px 0;
+  background: var(--bg);
+}
+
+.scope-chapter-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  margin: 4px 0;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.scope-chapter-check input {
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: auto;
+  min-height: 18px;
+  min-width: 18px;
+}
+
+.scope-chapter-check span {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.scope-chapter-empty {
+  font-size: 11px;
+  color: var(--red);
+  margin: 4px 0;
+}
+
+.scope-chapter-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 420px) {
+  body {
+    padding: 6px 8px;
+  }
+
+  .pe-brand {
+    margin: -6px -8px 8px;
+    padding: 8px 8px 6px;
+  }
+
+  .nav-tabs {
+    flex-wrap: wrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    gap: 2px;
+    margin-bottom: 8px;
+    padding-bottom: 2px;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    min-width: 4.5rem;
+    min-height: 36px;
+    padding: 8px 6px;
+    scroll-snap-align: start;
+    font-size: 9px;
+  }
+
+  .tab-btn.active {
+    box-shadow: inset 0 -2px 0 #fff;
+  }
+
+  .pe-toolbar {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .btn-tool {
+    min-height: 36px;
+    padding: 8px 8px;
+  }
+
+  .pe-toolbar .pe-status {
+    flex: 1 1 100%;
+    white-space: normal;
+    min-width: 0;
+  }
+
+  .workflow-steps {
+    flex-wrap: wrap;
+  }
+
+  .workflow-step {
+    flex: 1 1 45%;
+    min-height: 32px;
+  }
+
+  .form-group,
+  .audit-run-hub,
+  .partner-tools {
+    min-width: 0;
+  }
+
+  #tab3.tab-content.active,
+  #tab4.tab-content.active {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 0;
+  }
+
+  .card,
+  .card-actions,
+  .card-actions-primary,
+  .card-actions-secondary {
+    min-width: 0;
+  }
+
+  .btn-main,
+  .btn-secondary {
+    min-height: 40px;
+  }
+}
+
+body.pe-narrow-pane {
+  padding: 4px 6px;
+}
+
+body.pe-narrow-pane .pe-brand-wordmark {
+  max-width: 100%;
+}
+
+body.pe-narrow-pane .tab-btn {
+  font-size: 8px;
+  min-width: 3.75rem;
+  padding: 6px 4px;
+}
+
+body.pe-narrow-pane .nav-tabs {
+  max-height: 4.5rem;
+  align-content: flex-start;
+}
+
+body.pe-narrow-pane .btn-tool-icon-label {
+  font-size: 9px;
 }
 
 .pe-brand {

@@ -53,6 +53,7 @@ let skipFullScanConfirm = false;
 let msIndexCache = null;
 let msIndexBusy = false;
 let scopeChapterListCache = [];
+let pendingSelectedChapterIndices = null;
 
 const AUDIT_PIN_FIELDS = [
   ["manuscriptType", "pinManuscriptType", true],
@@ -95,7 +96,9 @@ function setupSafeHandlers() {
       if (scope.value === "full") {
         alert("Full manuscript scans can be slow on long docs. For plot/character checks, prefer full or wide chapter range when possible.");
       }
-      if (scope.value === "chapter" || scope.value === "chapter-range") refreshChapterScopeLists();
+      if (scope.value === "selected-chapters" || scope.value === "chapter" || scope.value === "chapter-range") {
+        refreshChapterScopeLists();
+      }
       schedulePersistSettings();
     });
   }
@@ -117,27 +120,96 @@ function getScopeOptions() {
     chapterSingle: getEl("scopeChapterSingle")?.value || 1,
     chapterFrom: getEl("scopeChapterFrom")?.value || 1,
     chapterTo: getEl("scopeChapterTo")?.value || 1,
+    selectedChapterIndices: getSelectedChapterIndicesFromUi(),
     chapters: scopeChapterListCache,
   };
+}
+
+function getSelectedChapterIndicesFromUi() {
+  const boxes = document.querySelectorAll("#scopeChapterChecklist input[type=checkbox]");
+  const out = [];
+  boxes.forEach((el) => {
+    if (el.checked) {
+      const n = parseInt(el.value, 10);
+      if (n > 0) out.push(n);
+    }
+  });
+  return out.sort((a, b) => a - b);
+}
+
+function updateScopeChapterEmptyState() {
+  const empty = getEl("scopeChapterEmptyState");
+  if (!empty) return;
+  const mode = getScopeMode();
+  const show =
+    mode === "selected-chapters" && scopeChapterListCache.length > 0 && !getSelectedChapterIndicesFromUi().length;
+  empty.classList.toggle("hidden", !show);
+}
+
+function selectAllChapterChecks(on) {
+  document.querySelectorAll("#scopeChapterChecklist input[type=checkbox]").forEach((el) => {
+    el.checked = !!on;
+  });
+  updateScopeChapterEmptyState();
+  refreshScopeCharPreview();
+  schedulePersistSettings();
+}
+
+function renderChapterChecklist(list, selectedIndices) {
+  const container = getEl("scopeChapterChecklist");
+  if (!container) return;
+  container.innerHTML = "";
+  if (!list.length) {
+    container.innerHTML =
+      '<p class="scope-chapter-empty">No Heading 1–3 chapters — apply heading styles, then Reload.</p>';
+    return;
+  }
+  const normalized = ProzaEdit.ScopeReader.normalizeSelectedChapterIndices(selectedIndices, list);
+  const defaultAll = !normalized.length;
+  list.forEach((c) => {
+    const label = document.createElement("label");
+    label.className = "scope-chapter-check";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = String(c.index);
+    cb.checked = defaultAll || normalized.includes(c.index);
+    const span = document.createElement("span");
+    span.textContent = `${c.index}. ${c.title}`;
+    label.appendChild(cb);
+    label.appendChild(span);
+    container.appendChild(label);
+  });
+}
+
+function setupNarrowPaneClass() {
+  const sync = () => {
+    document.body.classList.toggle("pe-narrow-pane", window.innerWidth < 360);
+  };
+  sync();
+  window.addEventListener("resize", sync);
 }
 
 function syncScopePanels() {
   const mode = getScopeMode();
   const pages = getEl("scopePagesPanel");
   const ch = getEl("scopeChapterPanel");
-  const single = getEl("scopeChapterSingleWrap");
-  const range = getEl("scopeChapterRangeWrap");
+  const chapterModes = mode === "selected-chapters" || mode === "chapter" || mode === "chapter-range";
   if (pages) pages.classList.toggle("hidden", mode !== "pages");
-  if (ch) ch.classList.toggle("hidden", mode !== "chapter" && mode !== "chapter-range");
-  if (single) single.classList.toggle("hidden", mode !== "chapter");
-  if (range) {
-    range.classList.toggle("hidden", mode !== "chapter-range");
-    range.style.display = mode === "chapter-range" ? "flex" : "none";
-  }
+  if (ch) ch.classList.toggle("hidden", !chapterModes);
+  updateScopeChapterEmptyState();
 }
 
 function setupScopeUi() {
   syncScopePanels();
+  const checklist = getEl("scopeChapterChecklist");
+  if (checklist && !checklist.dataset.scopeBound) {
+    checklist.dataset.scopeBound = "1";
+    checklist.addEventListener("change", () => {
+      updateScopeChapterEmptyState();
+      refreshScopeCharPreview();
+      schedulePersistSettings();
+    });
+  }
   ["scopePageFrom", "scopePageTo", "scopeChapterSingle", "scopeChapterFrom", "scopeChapterTo"].forEach((id) => {
     const el = getEl(id);
     if (el && !el.dataset.scopeBound) {
@@ -148,6 +220,9 @@ function setupScopeUi() {
       });
     }
   });
+  if (getScopeMode() === "selected-chapters" && !scopeChapterListCache.length) {
+    refreshChapterScopeLists();
+  }
 }
 
 function fillChapterSelects(list) {
@@ -170,6 +245,9 @@ function fillChapterSelects(list) {
   opts("scopeChapterSingle");
   opts("scopeChapterFrom");
   opts("scopeChapterTo");
+  renderChapterChecklist(list, pendingSelectedChapterIndices);
+  pendingSelectedChapterIndices = null;
+  updateScopeChapterEmptyState();
 }
 
 function refreshChapterScopeLists() {
@@ -204,10 +282,15 @@ function refreshScopeCharPreview() {
     return Promise.resolve();
   }
   const mode = getScopeMode();
-  if (mode === "chapter" || mode === "chapter-range") {
+  if (mode === "selected-chapters" || mode === "chapter" || mode === "chapter-range") {
     if (!scopeChapterListCache.length) {
       updateScopeCharPreviewDisplay(0, "Chapters not loaded", mode);
       return refreshChapterScopeLists();
+    }
+    if (mode === "selected-chapters" && !getSelectedChapterIndicesFromUi().length) {
+      updateScopeCharPreviewDisplay(0, "No chapters selected", mode);
+      updateScopeChapterEmptyState();
+      return Promise.resolve();
     }
   }
   return wordRun("scope-measure", async (ctx) => {
@@ -261,7 +344,13 @@ function fictionModulesActive() {
 function scopeCoversFullManuscript() {
   const mode = getScopeMode();
   if (mode === "full") return true;
-  if (mode === "chapter-range" && scopeChapterListCache.length) {
+  if (!scopeChapterListCache.length) return false;
+  if (mode === "selected-chapters") {
+    const sel = getSelectedChapterIndicesFromUi();
+    const all = scopeChapterListCache.map((c) => c.index);
+    return sel.length === all.length && sel.every((v, i) => v === all[i]);
+  }
+  if (mode === "chapter-range") {
     const from = parseInt(getEl("scopeChapterFrom")?.value, 10) || 1;
     const to = parseInt(getEl("scopeChapterTo")?.value, 10) || 1;
     return from <= 1 && to >= scopeChapterListCache.length;
@@ -327,6 +416,7 @@ Office.onReady((info) => {
     }
     showAuditEmptyIfNeeded();
     initSessionTips();
+    setupNarrowPaneClass();
     ProzaEdit.Diagnostics?.bindGlobalHandlers?.();
     ProzaEdit.Diagnostics?.initDiagnosticsUi?.();
     ProzaEdit.Diagnostics?.flushRetryQueue?.();
@@ -468,6 +558,7 @@ function collectUiConfig() {
     scopeChapterSingle: getEl("scopeChapterSingle")?.value || "1",
     scopeChapterFrom: getEl("scopeChapterFrom")?.value || "1",
     scopeChapterTo: getEl("scopeChapterTo")?.value || "1",
+    selectedChapterIndices: getSelectedChapterIndicesFromUi(),
     auditExtended: isAuditExtended(),
     reportDensity: getEl("reportDensity")?.value || "balanced",
     chronoDepth: getEl("selChronoDepth")?.value || "meso",
@@ -494,6 +585,12 @@ function collectUiConfig() {
 
 function applyUiConfig(p) {
   if (!p) return;
+  if (ProzaEdit.ScopeReader?.migrateLegacyChapterScope) {
+    p = ProzaEdit.ScopeReader.migrateLegacyChapterScope(p);
+  }
+  if (Array.isArray(p.selectedChapterIndices)) {
+    pendingSelectedChapterIndices = p.selectedChapterIndices;
+  }
   const setV = (id, v) => {
     const el = document.getElementById(id);
     if (el && v != null) el.value = v;
@@ -555,7 +652,15 @@ function loadSavedSettings() {
   const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
   if (!raw) return;
   try {
-    applyUiConfig(typeof raw === "string" ? JSON.parse(raw) : raw);
+    let parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (ProzaEdit.ScopeReader?.migrateLegacyChapterScope) {
+      const migrated = ProzaEdit.ScopeReader.migrateLegacyChapterScope(parsed);
+      if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
+        parsed = migrated;
+        ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CONFIG, JSON.stringify(migrated));
+      }
+    }
+    applyUiConfig(parsed);
     adaptModules();
     toggleCustomStylePanel();
     if (!isChecked("rememberApiKey", false)) persistSettings(false);
@@ -695,13 +800,18 @@ function setupAutoSaveHandlers() {
 async function prepareScopeForAudit() {
   const scope = getScopeMode();
   if (scope !== "selection") {
-    if (scope === "chapter" || scope === "chapter-range") {
+    if (scope === "selected-chapters" || scope === "chapter" || scope === "chapter-range") {
       if (!scopeChapterListCache.length) {
         try {
           await refreshChapterScopeLists();
         } catch (_) {
           return false;
         }
+      }
+      if (scope === "selected-chapters" && !getSelectedChapterIndicesFromUi().length) {
+        alert("Select at least one chapter on Target (checklist under Selected chapters), or reload the chapter list.");
+        showTab("tab1");
+        return false;
       }
     }
     await refreshScopeCharPreview();
@@ -2270,7 +2380,11 @@ async function runCitationScan() {
     if (!ready) return;
     const result = await wordRun("cite", async (ctx) => {
       const opts = getScopeOptions();
-      if (opts.mode === "chapter" || opts.mode === "chapter-range") {
+      if (
+        opts.mode === "selected-chapters" ||
+        opts.mode === "chapter" ||
+        opts.mode === "chapter-range"
+      ) {
         opts.chapters = scopeChapterListCache;
       }
       const paragraphs = await ProzaEdit.ScopeReader.readParagraphsInScope(ctx, opts);
@@ -2328,7 +2442,11 @@ async function runTimelineScan() {
     if (!ready) return;
     const result = await wordRun("chrono", async (ctx) => {
       const opts = getScopeOptions();
-      if (opts.mode === "chapter" || opts.mode === "chapter-range") {
+      if (
+        opts.mode === "selected-chapters" ||
+        opts.mode === "chapter" ||
+        opts.mode === "chapter-range"
+      ) {
         opts.chapters = scopeChapterListCache;
       }
       const paragraphs = await ProzaEdit.ScopeReader.readParagraphsInScope(ctx, opts);

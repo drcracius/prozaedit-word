@@ -70,7 +70,9 @@
   </div>
 
   <div id="tab1" class="tab-content active" role="tabpanel">
-    <h2 class="pe-section-title">Manuscript profile</h2>
+    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Settings &amp; profile live here</strong> (no gear icon). On Word web, drag the pane divider for width — see Help → Platforms.</p>
+    <details class="pe-target-section" open>
+      <summary class="pe-section-title pe-section-summary">Manuscript profile</summary>
     <div class="form-group">
       <label for="manuscriptType">Manuscript Type</label>
       <select id="manuscriptType" onchange="adaptModules()">
@@ -108,13 +110,13 @@
         <option value="Very Harsh Senior Editor (9.0+ Target)" selected>Very Harsh Senior Editor (9.0+ Target)</option>
       </select>
     </div>
+    </details>
     <div class="form-group">
       <label for="scope">Analysis scope</label>
       <select id="scope" data-pe-tip="sel-manuscript-scope" aria-label="Manuscript scope for audit">
         <option value="selection" selected>Highlighted / selected text</option>
         <option value="pages">Page range (approximate)</option>
-        <option value="chapter">Single chapter (Heading 1–3)</option>
-        <option value="chapter-range">Chapter range (Heading 1–3)</option>
+        <option value="selected-chapters">Selected chapters (Heading 1–3)</option>
         <option value="full">Full manuscript</option>
       </select>
       <p id="scopeCharPreview" class="scope-char-preview" aria-live="polite">Select a scope, then click Refresh count.</p>
@@ -129,14 +131,18 @@
       </div>
     </div>
     <div id="scopeChapterPanel" class="form-group scope-subpanel hidden">
-      <div id="scopeChapterSingleWrap">
-        <label for="scopeChapterSingle">Chapter</label>
-        <select id="scopeChapterSingle"><option value="1">(Refresh chapters)</option></select>
+      <div id="scopeChapterSelectedWrap">
+        <p class="help-inline scope-chapter-hint">Pick any chapters (non-contiguous OK). Reload after you add headings.</p>
+        <div id="scopeChapterChecklist" class="scope-chapter-checklist" role="group" aria-label="Chapters to include in analysis"></div>
+        <p id="scopeChapterEmptyState" class="scope-chapter-empty hidden" role="status">No chapters selected — check at least one below, or reload the chapter list.</p>
+        <div class="scope-chapter-actions">
+          <button type="button" class="btn-linkish" onclick="selectAllChapterChecks(true)">Select all</button>
+          <button type="button" class="btn-linkish" onclick="selectAllChapterChecks(false)">Clear all</button>
+        </div>
       </div>
-      <div id="scopeChapterRangeWrap" class="hidden" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
-        <label for="scopeChapterFrom">From ch.</label>
+      <div id="scopeChapterLegacyWrap" class="hidden" aria-hidden="true">
+        <select id="scopeChapterSingle"><option value="1">1</option></select>
         <select id="scopeChapterFrom"></select>
-        <label for="scopeChapterTo">To ch.</label>
         <select id="scopeChapterTo"></select>
       </div>
       <button type="button" class="btn-linkish" onclick="refreshChapterScopeLists()">Reload chapter list from document</button>
@@ -185,7 +191,8 @@
         <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importCustomStyleBulk()">Import lines</button>
       </details>
     </div>
-    <h2 class="pe-section-title">Safety &amp; options</h2>
+    <details class="pe-target-section" open>
+      <summary class="pe-section-title pe-section-summary">Safety &amp; options</summary>
     <div class="toggle-row"><span>Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
     <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
     <div class="toggle-row"><span>Show hover tips (ProzaEdit bubbles on key controls)</span><input type="checkbox" id="showHoverTips" checked></div>
@@ -212,6 +219,7 @@
     <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Compares dialogue % and FK to future audits (local).</p>
     <button type="button" class="btn-secondary pe-citation-target-btn" id="btnVerifyCitationsTarget" style="margin-top:6px;width:100%;" onclick="runCitationScanFromTarget()" data-pe-tip="btn-verify-citations" hidden>Verify citations (local scan)</button>
     <p id="citationTargetHint" class="help-inline pe-citation-target-hint" style="font-size:10px;margin:4px 0 0;" hidden>Pattern assist only — enable on Checks, then scan scoped text. Not Bluebook/APA certification.</p>
+    </details>
     <h2 class="pe-section-title">Dictionary</h2>
     <div class="form-group">
       <label>Custom Dictionary (per document)</label>
@@ -478,6 +486,7 @@
     <h2 class="pe-section-title">Platforms</h2>
     <div class="help-box">
       <p><strong>Works:</strong> Word on the web in supported browsers (Windows, macOS, iPad, Android) when signed in with Microsoft.</p>
+      <p><strong>Task pane width:</strong> Word controls column width — drag the divider between document and pane. ProzaEdit fills 100% of the host; settings and profile are on the <strong>Target</strong> tab (no gear icon). Details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORD-WEB-PANE-WIDTH.md" target="_blank" rel="noopener">WORD-WEB-PANE-WIDTH.md</a>.</p>
       <p><strong>Limited:</strong> Word desktop often has no Upload; iPad/Android need the browser app, not only the mobile Word app if Upload is missing.</p>
     </div>
     <h2 class="pe-section-title">Paraphrase (Rewrite tab)</h2>

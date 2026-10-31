@@ -10,11 +10,80 @@ ProzaEdit.ScopeReader = {
     pages: 150000,
     chapter: 150000,
     "chapter-range": 200000,
+    "selected-chapters": 200000,
     full: 450000,
   },
 
   getLimit(mode) {
     return this.LIMITS[mode] || this.LIMITS.selection;
+  },
+
+  /** Contiguous chapter numbers (1-based) inclusive. */
+  expandRangeToIndices(fromNum, toNum) {
+    const a = Math.min(parseInt(fromNum, 10) || 1, parseInt(toNum, 10) || 1);
+    const b = Math.max(parseInt(fromNum, 10) || 1, parseInt(toNum, 10) || 1);
+    const out = [];
+    for (let i = a; i <= b; i++) out.push(i);
+    return out;
+  },
+
+  /** Unique sorted 1-based chapter indices; pass chapter list or max index number. */
+  normalizeSelectedChapterIndices(indices, chaptersOrMax) {
+    let max = 0;
+    let valid = null;
+    if (Array.isArray(chaptersOrMax)) {
+      valid = new Set();
+      chaptersOrMax.forEach((c) => {
+        const n = parseInt(c?.index, 10);
+        if (n >= 1) {
+          valid.add(n);
+          if (n > max) max = n;
+        }
+      });
+    } else {
+      max = Math.max(0, parseInt(chaptersOrMax, 10) || 0);
+    }
+    if (!max) return [];
+    const set = new Set();
+    (Array.isArray(indices) ? indices : []).forEach((raw) => {
+      const n = parseInt(raw, 10);
+      if (n < 1 || n > max) return;
+      if (valid && valid.size && !valid.has(n)) return;
+      set.add(n);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  },
+
+  /** One-time migration from legacy single/range chapter scope fields. */
+  migrateLegacyChapterScope(config) {
+    const p = config && typeof config === "object" ? { ...config } : {};
+    if (Array.isArray(p.selectedChapterIndices) && p.selectedChapterIndices.length) {
+      if (p.scope === "chapter" || p.scope === "chapter-range") p.scope = "selected-chapters";
+      return p;
+    }
+    if (p.scope === "chapter") {
+      const n = parseInt(p.scopeChapterSingle, 10) || 1;
+      p.selectedChapterIndices = [n];
+      p.scope = "selected-chapters";
+    } else if (p.scope === "chapter-range") {
+      p.selectedChapterIndices = this.expandRangeToIndices(p.scopeChapterFrom, p.scopeChapterTo);
+      p.scope = "selected-chapters";
+    }
+    return p;
+  },
+
+  formatSelectedChaptersLabel(indices, chapters) {
+    const list = chapters || [];
+    const normalized = this.normalizeSelectedChapterIndices(indices, list);
+    if (!normalized.length) return "no chapters selected";
+    if (normalized.length === 1) {
+      const ch = list.find((c) => c.index === normalized[0]);
+      return ch ? `Ch. ${normalized[0]}: ${ch.title}` : `Ch. ${normalized[0]}`;
+    }
+    if (normalized.length <= 4) {
+      return normalized.map((n) => `Ch.${n}`).join(" + ");
+    }
+    return `${normalized.length} chapters`;
   },
 
   async listChapters(context) {
@@ -101,6 +170,23 @@ ProzaEdit.ScopeReader = {
     return { text, label: `Ch. ${a}–${b}` };
   },
 
+  async readBySelectedChapters(context, indices, chapters) {
+    const list = chapters || (await this.listChapters(context));
+    const normalized = this.normalizeSelectedChapterIndices(indices, list);
+    if (!normalized.length) {
+      throw new Error("Select at least one chapter on Target (Reload chapter list), then check the chapters to include.");
+    }
+    let text = "";
+    for (let i = 0; i < normalized.length; i++) {
+      const ch = list.find((c) => c.index === normalized[i]);
+      if (!ch) continue;
+      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara);
+    }
+    if (!text.trim()) throw new Error("Selected chapters contain no text.");
+    const label = this.formatSelectedChaptersLabel(normalized, list);
+    return { text, label: `Selected: ${label}` };
+  },
+
   async measureScope(context, opts) {
     opts = opts || {};
     const mode = opts.mode || "selection";
@@ -124,6 +210,9 @@ ProzaEdit.ScopeReader = {
     }
     if (mode === "chapter-range") {
       return this.readByChapterRange(context, opts.chapterFrom, opts.chapterTo, opts.chapters);
+    }
+    if (mode === "selected-chapters") {
+      return this.readBySelectedChapters(context, opts.selectedChapterIndices, opts.chapters);
     }
     throw new Error("Unknown scope mode.");
   },
@@ -160,6 +249,35 @@ ProzaEdit.ScopeReader = {
       if (!startCh || !endCh) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
       start = startCh.startPara;
       end = endCh.endPara;
+    } else if (mode === "selected-chapters") {
+      const list = opts.chapters || (await this.listChapters(context));
+      const normalized = this.normalizeSelectedChapterIndices(opts.selectedChapterIndices, list);
+      if (!normalized.length) throw new Error("No chapters selected. Check chapters on Target after Reload chapter list.");
+      const ranges = normalized
+        .map((n) => list.find((c) => c.index === n))
+        .filter(Boolean)
+        .sort((x, y) => x.startPara - y.startPara);
+      for (let r = 0; r < ranges.length; r++) {
+        const ch = ranges[r];
+        for (let i = ch.startPara; i <= ch.endPara; i++) {
+          paras.items[i].load(["text", "styleBuiltIn"]);
+        }
+      }
+      await context.sync();
+      const out = [];
+      for (let r = 0; r < ranges.length; r++) {
+        const ch = ranges[r];
+        for (let i = ch.startPara; i <= ch.endPara; i++) {
+          const p = paras.items[i];
+          const s = p.styleBuiltIn;
+          let headingLevel = 0;
+          if (s === Word.Style.heading1) headingLevel = 1;
+          else if (s === Word.Style.heading2) headingLevel = 2;
+          else if (s === Word.Style.heading3) headingLevel = 3;
+          out.push({ index: i, text: p.text || "", headingLevel });
+        }
+      }
+      return out;
     } else if (mode === "pages") {
       const from = Math.max(1, parseInt(opts.pageFrom, 10) || 1);
       const to = Math.max(from, parseInt(opts.pageTo, 10) || from);

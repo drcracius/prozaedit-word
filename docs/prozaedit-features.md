@@ -48,11 +48,12 @@ The task pane uses seven tabs plus a sticky toolbar and a four-step workflow str
 |-------|----------|
 | Highlighted / selected text | Word selection; if empty at audit time, user may confirm auto **Select next section** |
 | Page range (approximate) | ~2,800 characters per “page” (Word JS has no real page API) |
-| Single chapter | Paragraphs under **Heading 1–3** until next heading |
-| Chapter range | Same heading model, from/to chapter |
+| Selected chapters | Multi-select checklist from **Heading 1–3** list; non-contiguous OK (e.g. Ch 2 + Ch 7); persisted as `selectedChapterIndices` |
 | Full manuscript | Entire `body.text`; confirm on first full scan; hard caps apply |
 
-**Refresh count** measures character length against per-mode limits (see §3). **Reload chapter list** scans headings for chapter dropdowns.
+Legacy saved configs with single-chapter or from/to range migrate once to **Selected chapters** on load.
+
+**Refresh count** measures character length against per-mode limits (see §3). **Reload chapter list** scans headings for the chapter checklist.
 
 **Style & language:**
 
@@ -242,8 +243,8 @@ From `scope-reader.js` and `taskpane.js`:
 
 | Scope mode | Character limit (audit) |
 |------------|-------------------------|
-| selection, pages, chapter | 150,000 |
-| chapter-range | 200,000 |
+| selection, pages, chapter (legacy) | 150,000 |
+| selected-chapters, chapter-range (legacy) | 200,000 |
 | full | 450,000 |
 
 Additional caps: body read up to 1,000,000 chars for index; chat context 3,500; deep audit excerpt 6,000; rewrite selection 3,500; max 15,000 paragraphs for full-doc stats and chapter scan.
