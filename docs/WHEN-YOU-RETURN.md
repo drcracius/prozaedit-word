@@ -42,6 +42,15 @@ Send them:
 - `manifest.hosted.xml` (or the GitHub raw link above)
 - `docs/BETA-TESTERS-INSTALL.txt`
 
+## Version alignment (authoritative)
+
+- **Hosted beta:** `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` must match (currently **2.0.0.14**).
+- **Local dev:** `manifest.xml` remains **2.0.0.0** for localhost sideload only; bump it only when you change dev manifest metadata, not for GitHub Pages UI pushes.
+
+## Install helpers not in GitHub tree
+
+Root `.bat` files (`Create-Hosted-Manifest.bat`, `Install-In-Word.bat`, etc.) and `scripts/install/` from PC handoff are **not** shipped on `main`. Download [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) from GitHub; see `_archive/local-dev/` README stubs for archived local-dev tooling.
+
 ---
 
 *Generated while you were away; see `docs/CHAT-HISTORY-SUMMARY.md` for full context.*
