@@ -70,7 +70,7 @@
   </div>
 
   <div id="tab1" class="tab-content active" role="tabpanel">
-    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Settings &amp; profile live here</strong> (no gear icon). On Word web, drag the pane divider for width — see Help → Platforms.</p>
+    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Settings &amp; profile live here</strong> (no gear icon). All settings on this tab are editable; changes auto-save or use <strong>Save now</strong>. On Word web, drag the pane divider for width — see Help → Platforms.</p>
     <details class="pe-target-section" open>
       <summary class="pe-section-title pe-section-summary">Manuscript profile</summary>
     <div class="form-group">
@@ -119,15 +119,21 @@
         <option value="selected-chapters">Selected chapters (Heading 1–3)</option>
         <option value="full">Full manuscript</option>
       </select>
+      <p class="help-inline scope-mode-hint">Modes: <strong>highlighted selection</strong>; <strong>approximate page range</strong> (choose Page range, then set <strong>From page</strong> / <strong>To page</strong> — about 2,800 characters per page); <strong>selected chapters</strong> (checklist when that mode is active); or <strong>full manuscript</strong>.</p>
       <p id="scopeCharPreview" class="scope-char-preview" aria-live="polite">Select a scope, then click Refresh count.</p>
       <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="refreshScopeCharPreview()">Refresh count</button>
     </div>
     <div id="scopePagesPanel" class="form-group scope-subpanel hidden">
-      <label>Approximate pages (Word has no page API — ~2,800 chars/page)</label>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <input type="number" id="scopePageFrom" min="1" value="1" style="width:70px;margin:0;" aria-label="From page">
-        <span>to</span>
-        <input type="number" id="scopePageTo" min="1" value="5" style="width:70px;margin:0;" aria-label="To page">
+      <p class="help-inline" style="margin:0 0 6px;font-size:10px;">Word has no page API — pages are estimated at ~2,800 characters each.</p>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div>
+          <label for="scopePageFrom">From page</label>
+          <input type="number" id="scopePageFrom" min="1" value="1" style="width:70px;margin:0;" aria-label="From page">
+        </div>
+        <div>
+          <label for="scopePageTo">To page</label>
+          <input type="number" id="scopePageTo" min="1" value="5" style="width:70px;margin:0;" aria-label="To page">
+        </div>
       </div>
     </div>
     <div id="scopeChapterPanel" class="form-group scope-subpanel hidden">
@@ -433,6 +439,7 @@
     <h2 class="pe-section-title">ProzaEdit Help</h2>
     <div class="help-box">
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
+      <p><strong>Analysis scope (Target):</strong> Highlighted selection; <strong>Page range</strong> (From/To pages, ~2,800 chars each); Selected chapters (Heading 1–3 checklist); or Full manuscript.</p>
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
       <p><strong>Hover tips:</strong> Target → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
       <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” on Target for speed.</p>
