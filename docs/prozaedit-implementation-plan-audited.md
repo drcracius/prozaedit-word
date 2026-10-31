@@ -69,7 +69,7 @@
 | 2 — UX polish (tooltips + tokens) | **Complete** | `adba593` | `tooltip-registry.js`, Show hover tips, indigo/card tokens |
 | 3 — Banks + shaper v1 | **Complete** | `83e88f0` | `lexical-banks.js`, `lexical-shaper.js`, Rewrite Advanced panel; no manifest bump |
 | 4 — Chronology v1 | **Complete** | `76adf92` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
-| 5 — Citations v1 | **Complete** | *(pending push SHA)* | `citation-engine.js`, Checks sub-panel + Target verify; no manifest bump |
+| 5 — Citations v1 | **Complete** | `8f12b94` | `citation-engine.js`, Checks sub-panel + Target verify; no manifest bump |
 | 6 — Install + docs hygiene | Not started | — | PE-2, WORKFLOWS.md, scripts |
 | 7+ — Optional (CI, quota, Zipf, IA merge) | Not started | — | Default-off toggles |
 
