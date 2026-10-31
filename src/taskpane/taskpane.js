@@ -1,7 +1,7 @@
 /**
  * ProzaEdit Word Task Pane v3.0.0 (Phases 1–4 integrated)
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.5";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.6";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const GUARDRAILS = `OPERATIONAL MANDATES:
@@ -1438,23 +1438,98 @@ async function copyFeedbackLetter() {
   }
 }
 
+function buildAuditReportPlainText() {
+  if (!currentAuditSuggestions.length && !lastAuditExcerpt) return "";
+  const ctx = buildAuditContext();
+  const header = `ProzaEdit audit report · ${new Date().toLocaleString()}\n${"=".repeat(48)}\n\n`;
+  const body =
+    lastFeedbackLetter ||
+    (ProzaEdit.ManuscriptOverview?.buildFeedbackLetter
+      ? ProzaEdit.ManuscriptOverview.buildFeedbackLetter(lastAuditExcerpt, ctx, lastAuditMeta, currentAuditSuggestions)
+      : "");
+  return (header + (body || "")).replace(/\r/g, "").substring(0, 480000);
+}
+
 function insertAuditReportInWord() {
-  if (!currentAuditSuggestions.length && !lastAuditExcerpt) {
+  const text = buildAuditReportPlainText();
+  if (!text) {
     showPeStatus("Run an audit first.", "warn");
     return;
   }
   if (!confirm("Insert a plain-text audit report at the end of this document?")) return;
-  const ctx = buildAuditContext();
-  const body =
-    lastFeedbackLetter ||
-    ProzaEdit.ManuscriptOverview.buildFeedbackLetter(lastAuditExcerpt, ctx, lastAuditMeta, currentAuditSuggestions);
   wordRun("insert-report", async (context) => {
     const end = context.document.body.getRange("End");
-    end.insertText("\n\n" + body.replace(/\r/g, ""), Word.InsertLocation.before);
+    end.insertText("\n\n" + text, Word.InsertLocation.before);
     await context.sync();
   })
     .then(() => showPeStatus("Report inserted at document end.", "ok"))
     .catch((e) => alert(e.message));
+}
+
+function downloadAuditReportFile(ext) {
+  const text = buildAuditReportPlainText();
+  if (!text) {
+    showPeStatus("Run an audit first.", "warn");
+    return;
+  }
+  try {
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ProzaEdit-audit-${new Date().toISOString().slice(0, 10)}.${ext || "txt"}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showPeStatus("Report downloaded — open in Word and Save As .docx or PDF if needed.", "ok");
+  } catch (e) {
+    alert(e.message || "Download failed.");
+  }
+}
+
+async function exportAuditReportNewWordDoc() {
+  const text = buildAuditReportPlainText();
+  if (!text) {
+    showPeStatus("Run an audit first.", "warn");
+    return;
+  }
+  try {
+    await wordRun("export-new-doc", async (context) => {
+      if (!context.application?.createDocument) {
+        throw new Error("UNSUPPORTED");
+      }
+      const newDoc = context.application.createDocument();
+      newDoc.body.insertText(text, Word.InsertLocation.start);
+      await context.sync();
+      newDoc.open();
+      await context.sync();
+    });
+    showPeStatus("Report opened in a new Word document. Use File → Save As (.docx).", "ok");
+  } catch (e) {
+    if (String(e.message).includes("UNSUPPORTED")) {
+      downloadAuditReportFile("txt");
+      showPeStatus("This Word host cannot create a new doc — downloaded .txt instead.", "warn");
+      return;
+    }
+    alert(e.message);
+  }
+}
+
+function exportAuditReportPdfGuide() {
+  const text = buildAuditReportPlainText();
+  if (!text) {
+    showPeStatus("Run an audit first.", "warn");
+    return;
+  }
+  exportAuditReportNewWordDoc().then(() => {
+    alert(
+      "PDF export (Microsoft Word):\n\n" +
+        "• Word on the web: File → Export → Download as PDF\n" +
+        "• Word desktop: File → Save As → PDF\n\n" +
+        "The report should be in the new document that just opened. If not, use Download .txt and open that file in Word first."
+    );
+  });
 }
 
 async function copyAuditForCopilotFromAnywhere() {

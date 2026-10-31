@@ -64,10 +64,13 @@ ProzaEdit.ManuscriptOverview = {
       for (let j = i + 1; j < names.length && pairs.length < (limit || 6); j++) {
         const a = names[i];
         const b = names[j];
+        const sw = ProzaEdit.ProperNoun?.STOPWORDS;
+        if (sw && (sw.has(a.toLowerCase()) || sw.has(b.toLowerCase()))) continue;
+        if (a.length < 5 && b.length < 5) continue;
         let hit = a[0]?.toLowerCase() === b[0]?.toLowerCase() && a.toLowerCase() !== b.toLowerCase();
         if (!hit && lev) {
           const d = lev(a.toLowerCase(), b.toLowerCase());
-          hit = d > 0 && d <= 2 && a[0]?.toLowerCase() === b[0]?.toLowerCase();
+          hit = d > 0 && d <= 2 && a[0]?.toLowerCase() === b[0]?.toLowerCase() && Math.abs(a.length - b.length) <= 2;
         }
         if (hit) pairs.push(`${a} / ${b}`);
       }

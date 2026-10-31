@@ -234,7 +234,7 @@
     <h2 class="pe-section-title">What to check</h2>
     <div class="form-group form-group-flush">
       <div class="toggle-row"><span>Repetition &amp; redundancy (word-pair check)</span><input type="checkbox" id="chkRep" checked></div>
-      <div class="toggle-row"><span>Proper noun consistency</span><input type="checkbox" id="chkProp" checked></div>
+      <div class="toggle-row"><span>Proper noun consistency (name variants; may false-flag — use Mute/Dict)</span><input type="checkbox" id="chkProp" checked></div>
       <div class="toggle-row"><span>Proofreading &amp; language (US/UK + style guide packs)</span><input type="checkbox" id="chkSpell" checked></div>
       <div class="toggle-row"><span>AI Detection (heuristic) + Anti-AI Voice</span><input type="checkbox" id="chkAI" checked></div>
       <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">AI detection is heuristic only—not proof of AI or plagiarism.</p>
@@ -291,7 +291,10 @@
       <summary>Share report</summary>
       <div class="audit-actions-row">
         <button type="button" class="btn-secondary" onclick="copyFeedbackLetter()">Copy feedback letter</button>
-        <button type="button" class="btn-secondary" onclick="insertAuditReportInWord()">Insert report in Word</button>
+        <button type="button" class="btn-secondary" onclick="insertAuditReportInWord()">Insert at end of doc</button>
+        <button type="button" class="btn-secondary" onclick="exportAuditReportNewWordDoc()">Export → new Word doc</button>
+        <button type="button" class="btn-secondary" onclick="downloadAuditReportFile('txt')">Download .txt</button>
+        <button type="button" class="btn-secondary" onclick="exportAuditReportPdfGuide()">Export PDF (via Word)</button>
         <button type="button" class="btn-secondary" onclick="resetMutedRules()">Reset muted rules</button>
       </div>
     </details>
