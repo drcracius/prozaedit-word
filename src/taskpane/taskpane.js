@@ -268,7 +268,9 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
   if (!el) return;
   const limit = getScopeCharLimit(mode);
   const over = charCount > limit;
+  const ok = !over && charCount > 0;
   el.classList.toggle("over-limit", over);
+  el.classList.toggle("pe-scope-ok", ok);
   const fmt = charCount.toLocaleString();
   const lim = limit.toLocaleString();
   el.textContent = over
@@ -304,6 +306,7 @@ function refreshScopeCharPreview() {
       if (el) {
         el.textContent = e.message;
         el.classList.add("over-limit");
+        el.classList.remove("pe-scope-ok");
       }
     });
 }
@@ -368,6 +371,7 @@ function isChecked(id, defaultVal) {
 }
 
 let settingsModalReturnFocus = null;
+let rewriteFromAuditSession = false;
 
 function setupSettingsModal() {
   const modal = getEl("pe-settings-modal");
@@ -405,14 +409,23 @@ function trapFocusInSettingsModal(e, modal) {
   }
 }
 
+function decorateSettingsBackIcon() {
+  const back = getEl("btn-settings-back");
+  if (!back || back.dataset.iconDecorated) return;
+  back.dataset.iconDecorated = "1";
+  const icon = ProzaEdit.PeIcons?.svg?.("chevron-left");
+  if (icon) back.insertAdjacentHTML("afterbegin", icon);
+}
+
 function openSettingsModal() {
   const modal = getEl("pe-settings-modal");
   if (!modal) return;
+  decorateSettingsBackIcon();
   settingsModalReturnFocus = document.activeElement;
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
   document.body.classList.add("pe-settings-open");
-  getEl("btn-settings-close")?.focus();
+  getEl("btn-settings-back")?.focus();
 }
 
 function closeSettingsModal() {
@@ -525,6 +538,23 @@ function updateWorkflowStepper(tabId) {
   });
 }
 
+function updateRewriteBackNav() {
+  const btn = getEl("btnRewriteBackAudit");
+  if (!btn) return;
+  btn.classList.toggle("hidden", !rewriteFromAuditSession);
+  if (rewriteFromAuditSession && !btn.dataset.decorated) {
+    btn.dataset.decorated = "1";
+    const icon = ProzaEdit.PeIcons?.svg?.("chevron-left");
+    btn.innerHTML = icon ? `${icon}<span>Back to Audit</span>` : "← Back to Audit";
+  }
+}
+
+function backToAuditFromRewrite() {
+  rewriteFromAuditSession = false;
+  updateRewriteBackNav();
+  showTab("tab4");
+}
+
 function showTab(tabId) {
   if (!TAB_IDS.includes(tabId)) return;
   TAB_IDS.forEach((id) => {
@@ -543,6 +573,7 @@ function showTab(tabId) {
     updateActiveChecksHint();
   }
   if (tabId === "tab3") updateActiveChecksHint();
+  if (tabId === "tab6") updateRewriteBackNav();
 }
 
 function bindWorkflowStepper() {
@@ -745,8 +776,17 @@ function schedulePersistSettings() {
   persistDebounceTimer = setTimeout(() => persistSettings(false), 350);
 }
 
+function flashTargetSaveOk() {
+  const btn = getEl("btnSaveTarget");
+  if (!btn) return;
+  btn.classList.add("pe-save-flash-ok");
+  setTimeout(() => btn.classList.remove("pe-save-flash-ok"), 2200);
+}
+
 function saveConfiguration() {
-  persistSettings(true);
+  persistSettings(true).then((ok) => {
+    if (ok) flashTargetSaveOk();
+  });
 }
 
 function isAuditExtended() {
@@ -2655,6 +2695,8 @@ async function sendIssueToRewrite(item) {
     alert("Cannot paraphrase this item.");
     return;
   }
+  rewriteFromAuditSession = true;
+  updateRewriteBackNav();
   showTab("tab6");
   lastRewritePreview = "";
   lastRewriteOriginal = "";
