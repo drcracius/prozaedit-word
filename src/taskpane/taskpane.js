@@ -42,6 +42,7 @@ let lastDocStats = null;
 let lastMiniScores = null;
 let heatmapBusy = false;
 let chronologyBusy = false;
+let citationBusy = false;
 let persistDebounceTimer = null;
 let skipFullScanConfirm = false;
 let msIndexCache = null;
@@ -385,6 +386,20 @@ function adaptModules() {
   }
   const chronoSpoiler = getEl("chkChronoSpoilerGuard");
   if (chronoSpoiler) chronoSpoiler.disabled = !fiction;
+  const citeEligible = ProzaEdit.CitationEngine?.isEligibleManuscript?.(getEl("manuscriptType")?.value || "");
+  const citePanel = getEl("peCitationPanel");
+  if (citePanel) {
+    citePanel.hidden = !citeEligible;
+    citePanel.toggleAttribute("disabled-section", !citeEligible);
+  }
+  const citeTargetBtn = getEl("btnVerifyCitationsTarget");
+  const citeTargetHint = getEl("citationTargetHint");
+  if (citeTargetBtn) citeTargetBtn.hidden = !citeEligible;
+  if (citeTargetHint) citeTargetHint.hidden = !citeEligible;
+  const citeScanBtn = getEl("btnScanCitations");
+  const citeOptIn = isChecked("chkCitationScan", false);
+  if (citeScanBtn) citeScanBtn.disabled = !citeEligible || !citeOptIn;
+  if (citeTargetBtn) citeTargetBtn.disabled = !citeEligible || !citeOptIn;
   updateActiveChecksHint();
   schedulePersistSettings();
 }
@@ -425,6 +440,9 @@ function collectUiConfig() {
     reportDensity: getEl("reportDensity")?.value || "balanced",
     chronoDepth: getEl("selChronoDepth")?.value || "meso",
     chronoSpoilerGuard: isChecked("chkChronoSpoilerGuard", false),
+    citationScan: isChecked("chkCitationScan", false),
+    citationStyle: getEl("selCitationStyle")?.value || "auto",
+    citationReconcileBiblio: isChecked("chkCitationReconcile", true),
     modules: {},
   };
   MODULE_IDS.forEach((id) => {
@@ -484,6 +502,9 @@ function applyUiConfig(p) {
   if (p.reportDensity) setV("reportDensity", p.reportDensity);
   if (p.chronoDepth) setV("selChronoDepth", p.chronoDepth);
   setC("chkChronoSpoilerGuard", !!p.chronoSpoilerGuard);
+  setC("chkCitationScan", !!p.citationScan);
+  if (p.citationStyle) setV("selCitationStyle", p.citationStyle);
+  setC("chkCitationReconcile", p.citationReconcileBiblio !== false);
   syncExtendedAuditToggles();
   syncScopePanels();
   applySimpleMode();
@@ -592,6 +613,7 @@ function setupAutoSaveHandlers() {
     el.dataset.peAutosave = "1";
     el.addEventListener("change", () => {
       if (el.id === "manuscriptType") adaptModules();
+      if (el.id === "chkCitationScan") adaptModules();
       if (el.id === "scope") updateActiveChecksHint();
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
       if (el.id === "showHoverTips") applyHoverTips();
@@ -619,6 +641,9 @@ function setupAutoSaveHandlers() {
     "reportDensity",
     "selChronoDepth",
     "chkChronoSpoilerGuard",
+    "chkCitationScan",
+    "selCitationStyle",
+    "chkCitationReconcile",
   ].forEach((id) => bind(getEl(id)));
   MODULE_IDS.forEach((id) => bind(getEl(id)));
   document.querySelectorAll('input[data-audit-extended="1"]').forEach((el) => {
@@ -2097,8 +2122,113 @@ function renderChronologyTimeline(events) {
   });
 }
 
+function buildCitationContext() {
+  return {
+    citationStyle: getEl("selCitationStyle")?.value || "auto",
+    citationReconcileBiblio: isChecked("chkCitationReconcile", true),
+    manuscriptType: getEl("manuscriptType")?.value || "",
+    mutedRules: ProzaEdit.Settings.getMutedRules(),
+    reportDensity: getEl("reportDensity")?.value || "balanced",
+  };
+}
+
+function renderCitationSamples(inTextCitations) {
+  const box = getEl("citationSampleList");
+  if (!box) return;
+  const rows = (inTextCitations || []).slice(0, 40).filter((c) => c.raw && String(c.raw).length <= 255);
+  if (!rows.length) {
+    box.innerHTML = "<p class=\"help-inline\">No citation-shaped patterns in this scope.</p>";
+    return;
+  }
+  let html = `<p class="help-inline">${inTextCitations.length} pattern(s) detected (samples).</p><ul class="cite-sample-list">`;
+  rows.forEach((c) => {
+    const raw = escapeHtml(String(c.raw).substring(0, 72));
+    html += `<li><span class="cite-sample-raw">${raw}</span><button type="button" class="btn-go btn-go-compact">Go to</button></li>`;
+  });
+  html += "</ul>";
+  box.innerHTML = html;
+  box.querySelectorAll(".btn-go-compact").forEach((btn, i) => {
+    const text = rows[i].raw;
+    if (text) btn.onclick = () => goToIssue(text.substring(0, 120));
+  });
+}
+
+function runCitationScanFromTarget() {
+  if (!isChecked("chkCitationScan", false)) {
+    alert("Enable “Citation pattern scan (opt-in)” on the Checks tab first.");
+    showTab("tab3");
+    return;
+  }
+  runCitationScan();
+}
+
+async function runCitationScan() {
+  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy || citationBusy) return;
+  const manuscriptType = getEl("manuscriptType")?.value || "";
+  if (!ProzaEdit.CitationEngine?.isEligibleManuscript?.(manuscriptType)) {
+    alert("Citation verify is for Academic, Business, or Technical/Journalism manuscripts. Set Manuscript type on Target.");
+    return;
+  }
+  if (!isChecked("chkCitationScan", false)) {
+    alert("Opt in on Checks: turn on “Enable citation pattern scan”, then run Verify citations.");
+    showTab("tab3");
+    return;
+  }
+  citationBusy = true;
+  const btn = getEl("btnScanCitations");
+  const targetBtn = getEl("btnVerifyCitationsTarget");
+  const statusEl = getEl("citationScanStatus");
+  if (btn) btn.disabled = true;
+  if (targetBtn) targetBtn.disabled = true;
+  const btnLabel = btn?.textContent || "Verify citations";
+  if (btn) btn.textContent = "Scanning…";
+  showPeStatus("Citation scan (local)…");
+  try {
+    const ready = await prepareScopeForAudit();
+    if (!ready) return;
+    const result = await wordRun("cite", async (ctx) => {
+      const opts = getScopeOptions();
+      if (opts.mode === "chapter" || opts.mode === "chapter-range") {
+        opts.chapters = scopeChapterListCache;
+      }
+      const paragraphs = await ProzaEdit.ScopeReader.readParagraphsInScope(ctx, opts);
+      return ProzaEdit.CitationEngine.analyze(paragraphs, buildCitationContext());
+    });
+    renderCitationSamples(result.inTextCitations);
+    if (statusEl) {
+      let msg = `${result.stats.inTextCount || 0} in-text pattern(s), ${result.findings.length} finding(s). Style: ${result.stats.style || "auto"}.`;
+      if (result.bibliography?.entryCount != null) {
+        msg += ` Bibliography entries scanned: ${result.bibliography.entryCount}.`;
+      } else if (result.bibliography?.skipped) {
+        msg += ` Biblio: ${result.bibliography.skipped}.`;
+      }
+      statusEl.textContent = msg;
+    }
+    if (result.findings.length) {
+      currentAuditSuggestions = ProzaEdit.CitationEngine.mergeFindings(currentAuditSuggestions, result.findings);
+      applyAuditCardFilter();
+      showPeStatus(`${result.findings.length} citation finding(s) added to Audit cards.`, "ok");
+    } else {
+      showPeStatus("Citation scan complete.", "ok");
+    }
+    if (ProzaEdit.TooltipRegistry?.refreshTooltips) {
+      ProzaEdit.TooltipRegistry.refreshTooltips(isChecked("showHoverTips", true));
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = "";
+    alert(e.message);
+  } finally {
+    citationBusy = false;
+    adaptModules();
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btnLabel;
+    }
+  }
+}
+
 async function runTimelineScan() {
-  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy) return;
+  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy || citationBusy) return;
   const fiction = (getEl("manuscriptType")?.value || "").includes("Fiction");
   if (!fiction) {
     alert("Timeline scan is for fiction manuscripts. Set Manuscript type to Fiction on Target.");
@@ -2151,7 +2281,7 @@ async function runTimelineScan() {
 }
 
 async function scanChapterHeatmap() {
-  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy) return;
+  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy || citationBusy) return;
   heatmapBusy = true;
   setModuleButtonsDisabled(true);
   showPeStatus("Building chapter heatmap…");

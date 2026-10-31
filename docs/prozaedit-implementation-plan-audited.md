@@ -69,7 +69,7 @@
 | 2 — UX polish (tooltips + tokens) | **Complete** | `adba593` | `tooltip-registry.js`, Show hover tips, indigo/card tokens |
 | 3 — Banks + shaper v1 | **Complete** | `83e88f0` | `lexical-banks.js`, `lexical-shaper.js`, Rewrite Advanced panel; no manifest bump |
 | 4 — Chronology v1 | **Complete** | `76adf92` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
-| 5 — Citations v1 | Not started | — | Opt-in; no tab until validated (D6) |
+| 5 — Citations v1 | **Complete** | *(pending push SHA)* | `citation-engine.js`, Checks sub-panel + Target verify; no manifest bump |
 | 6 — Install + docs hygiene | Not started | — | PE-2, WORKFLOWS.md, scripts |
 | 7+ — Optional (CI, quota, Zipf, IA merge) | Not started | — | Default-off toggles |
 
@@ -81,11 +81,11 @@
 
 Seven tabs + workflow strip unchanged. Phase 2 adds hover-tip registry and Editorial Studio **token** pass (not full dark mode).
 
-### 4.2 `src/taskpane/lib/` inventory (post–Phase 4)
+### 4.2 `src/taskpane/lib/` inventory (post–Phase 5)
 
-**22 modules:** post–Phase 3 set plus **`chronology-engine.js`**.
+**23 modules:** post–Phase 4 set plus **`citation-engine.js`**.
 
-**Still absent vs vNext spec:** `citation-engine.js`, `report-docx-export.js`, `ai-quota-manager.js`.
+**Still absent vs vNext spec:** `report-docx-export.js`, `ai-quota-manager.js`.
 
 ### 4.3 Known gaps (unchanged)
 
@@ -182,9 +182,15 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 ---
 
-## Phase 5 — Citations engine (opt-in)
+## Phase 5 — Citations engine (opt-in) ✅ COMPLETE
 
-*(Same as v1.)*
+**Delivered:**
+
+1. **`lib/citation-engine.js` v1** — APA-ish, CMOS-ish, and Bluebook-lite regex/heuristic packs; findings as standard audit cards (`ruleId`, mute, report-density caps). Lightweight References/Bibliography section match for in-text vs end refs; `BIBLIOGRAPHY_TODO` for footnote/DOI v1.1.
+2. **UI (D6)** — No top-level Citations tab. **Checks → Citation verify (beta)** sub-panel (opt-in toggle; Academic / Business / Technical-Journalism gating via `adaptModules()`). **Target → Verify citations** when eligible. Simple mode unchanged.
+3. **`acad:citation_hint`** in `audit-engine.js` unchanged (Run audit path).
+
+**Acceptance:** Fiction → citation panel hidden; explicit scan only; no network; no manifest bump.
 
 ---
 

@@ -176,6 +176,8 @@
     <div class="toggle-row"><span>Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" checked></div>
     <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="captureReferenceStyle()">Capture reference style from selection</button>
     <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Compares dialogue % and FK to future audits (local).</p>
+    <button type="button" class="btn-secondary pe-citation-target-btn" id="btnVerifyCitationsTarget" style="margin-top:6px;width:100%;" onclick="runCitationScanFromTarget()" data-pe-tip="btn-verify-citations" hidden>Verify citations (local scan)</button>
+    <p id="citationTargetHint" class="help-inline pe-citation-target-hint" style="font-size:10px;margin:4px 0 0;" hidden>Pattern assist only — enable on Checks, then scan scoped text. Not Bluebook/APA certification.</p>
     <h2 class="pe-section-title">Dictionary</h2>
     <div class="form-group">
       <label>Custom Dictionary (per document)</label>
@@ -250,6 +252,24 @@
       <div class="toggle-row"><span>6. Pacing & Readability</span><input type="checkbox" id="mPacing" checked></div>
       <div class="toggle-row"><span>7. Spoiler Control</span><input type="checkbox" id="mSpoiler" checked></div>
     </div>
+    <details class="help-box help-muted pe-citation-block" id="peCitationPanel" open>
+      <summary>Citation verify (beta)</summary>
+      <p class="help-inline" style="margin:4px 0 8px;font-size:10px;">Heuristic APA / CMOS / Bluebook-lite patterns on current Target scope — pattern assist only, not certification. Opt-in below; does not replace the academic citation hint during Run audit.</p>
+      <div class="form-group form-group-flush">
+        <div class="toggle-row"><span>Enable citation pattern scan (opt-in)</span><input type="checkbox" id="chkCitationScan"></div>
+        <label for="selCitationStyle">Citation style pack</label>
+        <select id="selCitationStyle" class="pe-select" data-pe-tip="sel-citation-style">
+          <option value="auto" selected>Auto (from manuscript type)</option>
+          <option value="APA">APA-ish (parentheticals)</option>
+          <option value="CHICAGO">CMOS-ish (author–date)</option>
+          <option value="BLUEBOOK">Bluebook-lite (legal reporters)</option>
+        </select>
+        <div class="toggle-row" style="margin-top:8px;"><span>Lightweight bibliography match (References section)</span><input type="checkbox" id="chkCitationReconcile" checked></div>
+        <button type="button" class="btn-secondary" id="btnScanCitations" style="margin-top:8px;width:100%;" onclick="runCitationScan()" data-pe-tip="btn-scan-citations">Verify citations</button>
+      </div>
+      <div id="citationScanStatus" class="help-inline" style="margin-top:6px;font-size:10px;"></div>
+      <div id="citationSampleList" class="cite-sample-wrap" aria-live="polite"></div>
+    </details>
     <details class="help-box help-muted pe-chrono-block" id="peChronoPanel" open>
       <summary>Timeline scan (beta)</summary>
       <p class="help-inline" style="margin:4px 0 8px;font-size:10px;">Heuristic temporal anchors on the current Target scope — not a continuity bible. Run audit separately; this scan is explicit.</p>
@@ -449,6 +469,7 @@
   <script src="lib/continuity-guard.js"></script>
   <script src="lib/word-safe-navigator.js"></script>
   <script src="lib/chronology-engine.js"></script>
+  <script src="lib/citation-engine.js"></script>
   <script src="lib/tooltip-registry.js"></script>
   <script src="lib/local-rewrite.js"></script>
   <script src="lib/lexical-shaper.js"></script>

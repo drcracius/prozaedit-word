@@ -24,6 +24,12 @@
       "Walks scoped paragraphs for temporal anchors (later that night, flashback phrases, years). Findings merge into Audit when present.",
     "sel-chronology-depth":
       "Macro: chapter headings only. Meso: scene breaks + time phrases. Micro: every anchor in each paragraph.",
+    "btn-scan-citations":
+      "Scans scoped body text for citation pattern issues (APA, CMOS, Bluebook-lite). Findings merge into Audit cards when present.",
+    "btn-verify-citations":
+      "Same as Checks → Verify citations. Requires opt-in on Checks. Pattern assist only — not stylebook certification.",
+    "sel-citation-style":
+      "Which heuristic pack leads the scan. Auto picks APA for academic, Bluebook-lite for business, CMOS-ish for technical/journalism.",
   };
 
   let enabled = false;
