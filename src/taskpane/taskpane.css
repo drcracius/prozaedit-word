@@ -100,6 +100,19 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+.scope-char-preview {
+  font-size: 11px;
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+.scope-char-preview.over-limit {
+  color: #c5221f;
+  font-weight: 600;
+}
+.scope-subpanel.hidden {
+  display: none;
+}
+
 .pe-section-title {
   font-size: 10px;
   font-weight: 700;

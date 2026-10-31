@@ -6,12 +6,15 @@ REQUIREMENTS
   - Microsoft Word (desktop or word.office.com)
   - Internet while using ProzaEdit
 
-STEPS
-  1. Save manifest.hosted.xml somewhere easy (Downloads is fine).
-  2. Open Word (word.office.com is often easiest).
-  3. Home → Add-ins → More settings / Get Add-ins
-  4. Upload My Add-in → select manifest.hosted.xml
-  5. Home → ProzaEdit to open the editor
+STEPS (Word on the web — easiest)
+  1. Save manifest.hosted.xml (Downloads is fine).
+  2. Go to https://office.com → Word → create a NEW blank document.
+  3. Add-ins → More Add-ins → My Add-ins → Manage My Add-ins
+  4. Click Upload (dropdown menu) → Upload My Add-in → pick manifest.hosted.xml
+  5. Open your real manuscript (same account). Home → ProzaEdit
+
+Note: Upload may fail on an old blank doc; use a fresh blank doc for step 2–4.
+Desktop Word often has no Upload — use the browser steps above.
 
 DAILY USE
   Open Word → Home → ProzaEdit

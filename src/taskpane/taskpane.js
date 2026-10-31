@@ -39,6 +39,9 @@ let lastMiniScores = null;
 let heatmapBusy = false;
 let persistDebounceTimer = null;
 let skipFullScanConfirm = false;
+let msIndexCache = null;
+let msIndexBusy = false;
+let scopeChapterListCache = [];
 
 const AUDIT_PIN_FIELDS = [
   ["manuscriptType", "pinManuscriptType", true],
@@ -76,11 +79,181 @@ function setupSafeHandlers() {
   const scope = document.getElementById("scope");
   if (scope) {
     scope.addEventListener("change", () => {
+      syncScopePanels();
+      updateActiveChecksHint();
       if (scope.value === "full") {
-        alert("Full manuscript scans can be slow on long docs. Prefer selection or section loop.");
+        alert("Full manuscript scans can be slow on long docs. For plot/character checks, prefer full or wide chapter range when possible.");
       }
+      if (scope.value === "chapter" || scope.value === "chapter-range") refreshChapterScopeLists();
+      schedulePersistSettings();
     });
   }
+}
+
+function getScopeMode() {
+  return getEl("scope")?.value || "selection";
+}
+
+function getScopeCharLimit(mode) {
+  return ProzaEdit.ScopeReader?.getLimit?.(mode || getScopeMode()) || MAX_LOCAL_AUDIT_CHARS;
+}
+
+function getScopeOptions() {
+  return {
+    mode: getScopeMode(),
+    pageFrom: getEl("scopePageFrom")?.value || 1,
+    pageTo: getEl("scopePageTo")?.value || 5,
+    chapterSingle: getEl("scopeChapterSingle")?.value || 1,
+    chapterFrom: getEl("scopeChapterFrom")?.value || 1,
+    chapterTo: getEl("scopeChapterTo")?.value || 1,
+    chapters: scopeChapterListCache,
+  };
+}
+
+function syncScopePanels() {
+  const mode = getScopeMode();
+  const pages = getEl("scopePagesPanel");
+  const ch = getEl("scopeChapterPanel");
+  const single = getEl("scopeChapterSingleWrap");
+  const range = getEl("scopeChapterRangeWrap");
+  if (pages) pages.classList.toggle("hidden", mode !== "pages");
+  if (ch) ch.classList.toggle("hidden", mode !== "chapter" && mode !== "chapter-range");
+  if (single) single.classList.toggle("hidden", mode !== "chapter");
+  if (range) {
+    range.classList.toggle("hidden", mode !== "chapter-range");
+    range.style.display = mode === "chapter-range" ? "flex" : "none";
+  }
+}
+
+function setupScopeUi() {
+  syncScopePanels();
+  ["scopePageFrom", "scopePageTo", "scopeChapterSingle", "scopeChapterFrom", "scopeChapterTo"].forEach((id) => {
+    const el = getEl(id);
+    if (el && !el.dataset.scopeBound) {
+      el.dataset.scopeBound = "1";
+      el.addEventListener("change", () => {
+        schedulePersistSettings();
+        refreshScopeCharPreview();
+      });
+    }
+  });
+}
+
+function fillChapterSelects(list) {
+  scopeChapterListCache = list || [];
+  const opts = (n) => {
+    const sel = getEl(n);
+    if (!sel) return;
+    sel.innerHTML = "";
+    if (!list.length) {
+      sel.innerHTML = '<option value="1">No Heading 1–3 chapters found</option>';
+      return;
+    }
+    list.forEach((c) => {
+      const o = document.createElement("option");
+      o.value = String(c.index);
+      o.textContent = `${c.index}. ${c.title.substring(0, 48)}`;
+      sel.appendChild(o);
+    });
+  };
+  opts("scopeChapterSingle");
+  opts("scopeChapterFrom");
+  opts("scopeChapterTo");
+}
+
+function refreshChapterScopeLists() {
+  return wordRun("ch-list", async (ctx) => {
+    const list = await ProzaEdit.ScopeReader.listChapters(ctx);
+    fillChapterSelects(list);
+    if (!list.length) throw new Error("No chapters — apply Heading 1–3 to chapter titles.");
+  })
+    .then(() => {
+      showPeStatus(`Found ${scopeChapterListCache.length} chapter(s).`, "ok");
+      refreshScopeCharPreview();
+    })
+    .catch((e) => showPeStatus(e.message, "warn"));
+}
+
+function updateScopeCharPreviewDisplay(charCount, label, mode) {
+  const el = getEl("scopeCharPreview");
+  if (!el) return;
+  const limit = getScopeCharLimit(mode);
+  const over = charCount > limit;
+  el.classList.toggle("over-limit", over);
+  const fmt = charCount.toLocaleString();
+  const lim = limit.toLocaleString();
+  el.textContent = over
+    ? `${label}: ~${fmt} characters — over limit (${lim}). Narrow scope or use section loop.`
+    : `${label}: ~${fmt} characters (limit ${lim}).`;
+}
+
+function refreshScopeCharPreview() {
+  const mode = getScopeMode();
+  if (mode === "chapter" || mode === "chapter-range") {
+    if (!scopeChapterListCache.length) {
+      updateScopeCharPreviewDisplay(0, "Chapters not loaded", mode);
+      return refreshChapterScopeLists();
+    }
+  }
+  return wordRun("scope-measure", async (ctx) => {
+    const opts = getScopeOptions();
+    const result = await ProzaEdit.ScopeReader.measureScope(ctx, opts);
+    return { len: (result.text || "").length, label: result.label || mode };
+  })
+    .then(({ len, label }) => updateScopeCharPreviewDisplay(len, label, mode))
+    .catch((e) => {
+      const el = getEl("scopeCharPreview");
+      if (el) {
+        el.textContent = e.message;
+        el.classList.add("over-limit");
+      }
+    });
+}
+
+function scheduleManuscriptIndexBuild(force) {
+  if (msIndexBusy && !force) return;
+  msIndexBusy = true;
+  wordRun("ms-index", async (ctx) => {
+    const body = ctx.document.body;
+    body.load("text");
+    await ctx.sync();
+    return (body.text || "").substring(0, 600000);
+  })
+    .then((text) => {
+      if (text.length < 200) return;
+      msIndexCache = ProzaEdit.ContinuityGuard.buildIndex(text);
+      return ProzaEdit.Settings.setAsync(ProzaEdit.ContinuityGuard.KEYS.INDEX, JSON.stringify(msIndexCache));
+    })
+    .catch(() => {})
+    .finally(() => {
+      msIndexBusy = false;
+    });
+}
+
+function getManuscriptIndex() {
+  if (msIndexCache) return msIndexCache;
+  try {
+    const raw = ProzaEdit.Settings.get(ProzaEdit.ContinuityGuard.KEYS.INDEX, null);
+    if (raw) msIndexCache = typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch (_) {}
+  return msIndexCache;
+}
+
+function fictionModulesActive() {
+  return ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"].some((id) =>
+    isModuleEnabled(id)
+  );
+}
+
+function scopeCoversFullManuscript() {
+  const mode = getScopeMode();
+  if (mode === "full") return true;
+  if (mode === "chapter-range" && scopeChapterListCache.length) {
+    const from = parseInt(getEl("scopeChapterFrom")?.value, 10) || 1;
+    const to = parseInt(getEl("scopeChapterTo")?.value, 10) || 1;
+    return from <= 1 && to >= scopeChapterListCache.length;
+  }
+  return false;
 }
 
 function getEl(id) {
@@ -114,6 +287,7 @@ Office.onReady((info) => {
     setupThesaurusDelegation();
     setupUndoRedoShortcuts();
     setupAuditPins();
+    setupScopeUi();
     setupMainTargetSync();
     setupAutoSaveHandlers();
     bindWorkflowStepper();
@@ -135,6 +309,7 @@ Office.onReady((info) => {
       });
     }
     showAuditEmptyIfNeeded();
+    setTimeout(() => scheduleManuscriptIndexBuild(false), 2500);
   } catch (e) {
     console.error(e);
     alert("ProzaEdit failed to initialize. Reload the task pane.");
@@ -214,6 +389,13 @@ function collectUiConfig() {
     simpleMode: isChecked("simpleMode", false),
     fkLock: isChecked("fkLock", false),
     remindVersionHistory: isChecked("remindVersionHistory", true),
+    fictionScopeReminder: isChecked("fictionScopeReminder", true),
+    continuityWarnLevel: parseInt(getEl("continuityWarnLevel")?.value, 10) || 3,
+    scopePageFrom: getEl("scopePageFrom")?.value || "1",
+    scopePageTo: getEl("scopePageTo")?.value || "5",
+    scopeChapterSingle: getEl("scopeChapterSingle")?.value || "1",
+    scopeChapterFrom: getEl("scopeChapterFrom")?.value || "1",
+    scopeChapterTo: getEl("scopeChapterTo")?.value || "1",
     auditExtended: isAuditExtended(),
     modules: {},
   };
@@ -265,8 +447,13 @@ function applyUiConfig(p) {
   setC("simpleMode", p.simpleMode);
   setC("fkLock", p.fkLock);
   setC("remindVersionHistory", p.remindVersionHistory);
+  setC("fictionScopeReminder", p.fictionScopeReminder !== false);
+  if (p.continuityWarnLevel) setV("continuityWarnLevel", p.continuityWarnLevel);
+  if (p.scopePageFrom) setV("scopePageFrom", p.scopePageFrom);
+  if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
   setC("auditExtended", p.auditExtended);
   syncExtendedAuditToggles();
+  syncScopePanels();
   applySimpleMode();
   updateActiveChecksHint();
 }
@@ -342,7 +529,17 @@ function updateActiveChecksHint() {
     else if (mods.length === 7) parts.push("fiction×7");
   }
   const ext = isAuditExtended() ? " · extended" : "";
-  const scope = getEl("scope")?.value === "full" ? "full doc" : "selection";
+  const sm = getScopeMode();
+  const scope =
+    sm === "full"
+      ? "full doc"
+      : sm === "pages"
+        ? "pages"
+        : sm === "chapter"
+          ? "chapter"
+          : sm === "chapter-range"
+            ? "ch. range"
+            : "selection";
   const sg = getEl("styleGuideRef")?.value || "auto";
   let sgLabel = sg;
   if (sg === "custom" || sg === "custom-plus-auto") {
@@ -380,6 +577,10 @@ function setupAutoSaveHandlers() {
     "confirmBeforeApply",
     "fkLock",
     "remindVersionHistory",
+    "fictionScopeReminder",
+    "continuityWarnLevel",
+    "scopePageFrom",
+    "scopePageTo",
     "sectionParagraphCount",
   ].forEach((id) => bind(getEl(id)));
   MODULE_IDS.forEach((id) => bind(getEl(id)));
@@ -394,8 +595,25 @@ function setupAutoSaveHandlers() {
 }
 
 async function prepareScopeForAudit() {
-  const scope = getEl("scope")?.value || "selection";
-  if (scope !== "selection") return true;
+  const scope = getScopeMode();
+  if (scope !== "selection") {
+    if (scope === "chapter" || scope === "chapter-range") {
+      if (!scopeChapterListCache.length) {
+        try {
+          await refreshChapterScopeLists();
+        } catch (_) {
+          return false;
+        }
+      }
+    }
+    await refreshScopeCharPreview();
+    const prev = getEl("scopeCharPreview");
+    if (prev?.classList.contains("over-limit")) {
+      alert("Scope exceeds character limit. Narrow pages/chapters or use section loop.");
+      return false;
+    }
+    return true;
+  }
   try {
     const has = await wordRun("sel-check", async (ctx) => {
       const sel = ctx.document.getSelection();
@@ -540,6 +758,17 @@ function applyDocumentEdit(beforeText, afterText, label, options) {
     window._peVersionReminded = true;
     showPeStatus("Tip: File → Version History before large edits.", "ok");
   }
+  const level = parseInt(getEl("continuityWarnLevel")?.value, 10) || 3;
+  const index = getManuscriptIndex();
+  const warnings = ProzaEdit.ContinuityGuard.assessReplace(before, after, index, level);
+  if (warnings.length) {
+    const block = ProzaEdit.ContinuityGuard.formatWarningBlock(warnings);
+    const proceed = confirm(
+      `Continuity check (local, 0 tokens):\n\n${block}\n\nApply this change anyway?\n(Cancel = skip; use Dismiss on card to silence similar warnings.)`
+    );
+    if (!proceed) return Promise.resolve(false);
+    warnings.forEach((w) => ProzaEdit.ContinuityGuard.dismissWarningKey(w.key));
+  }
   if (!confirmBeforeApply(`Replace "${before}" with "${after}"?`)) return Promise.resolve(false);
   const searchOpts = options && options.forceDocument ? { forceDocument: true } : {};
   return swapTextInScope(before, after, searchOpts)
@@ -630,13 +859,19 @@ async function searchInScope(context, target, options) {
 }
 
 async function readScopeText(context) {
-  const scope = getEl("scope")?.value || "selection";
-  const range = scope === "selection" ? context.document.getSelection() : context.document.body;
-  range.load("text");
-  await context.sync();
-  const text = range.text || "";
-  if (!text.trim()) throw new Error('Highlight text or set scope to "Full Manuscript".');
-  if (scope !== "selection" && text.length > MAX_BODY) throw new Error("Document too large—use selection or section loop.");
+  const mode = getScopeMode();
+  const opts = getScopeOptions();
+  const measured = await ProzaEdit.ScopeReader.measureScope(context, opts);
+  const text = measured.text || "";
+  if (!text.trim()) {
+    if (mode === "selection") throw new Error("Highlight text in Word, or choose page/chapter/full scope.");
+    throw new Error("No text for this scope.");
+  }
+  const cap = getScopeCharLimit(mode);
+  if (text.length > MAX_BODY && mode === "full") throw new Error("Document too large—use chapter range or section loop.");
+  if (text.length > cap) {
+    throw new Error(`Scope ~${text.length.toLocaleString()} chars exceeds limit ${cap.toLocaleString()}. Narrow the range.`);
+  }
   return text;
 }
 
@@ -1286,6 +1521,9 @@ function finalizeAudit(result, label) {
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
   html += `<p>${escapeHtml(buildManuscriptProfile())}</p>`;
+  if (isChecked("fictionScopeReminder", true) && fictionModulesActive() && !scopeCoversFullManuscript()) {
+    html += `<p style="color:#c5221f;font-weight:600;">Fiction/plot checks are running on a partial scope. Review the full manuscript (or a wide chapter range) before applying changes that affect names, facts, or continuity.</p>`;
+  }
   const ctx = buildAuditContext();
   lastAuditMeta = { label, score, criticalCount, prefCount, metrics, traffic, compareLine, refLine };
   if (window.ProzaEdit?.ManuscriptOverview?.buildHtml && lastAuditExcerpt) {
@@ -1373,7 +1611,7 @@ function runExtendedLocalAudit() {
 
 function runAuditInternal(opts) {
   if (auditBusy || deepBusy) return Promise.resolve(false);
-  if (getEl("scope")?.value === "full" && !skipFullScanConfirm) {
+  if (getScopeMode() === "full" && !skipFullScanConfirm) {
     const ok = confirm(
       "Full-document scan may be slow on long manuscripts.\n\nOK = run once now\nCancel = use selection or Section + audit instead"
     );
@@ -1409,7 +1647,7 @@ function runAuditInternalCore(opts) {
   if (sumEl) sumEl.innerHTML = opts.status || "Running audit…";
 
   return wordRun("audit", async (ctx) => {
-    if (getEl("scope")?.value === "full") {
+    if (getScopeMode() === "full") {
       const paras = ctx.document.body.paragraphs;
       paras.load("items");
       await ctx.sync();
@@ -1419,7 +1657,7 @@ function runAuditInternalCore(opts) {
     }
     let text = await readScopeText(ctx);
     let truncated = false;
-    const cap = getEl("scope")?.value === "full" ? MAX_LOCAL_AUDIT_FULL : MAX_LOCAL_AUDIT_CHARS;
+    const cap = getScopeCharLimit(getScopeMode());
     if (text.length > cap) {
       text = text.substring(0, cap);
       truncated = true;
