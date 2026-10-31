@@ -14,6 +14,8 @@
     "btn-card-goto": "Select the first body match for this finding in Word (sanitized search, first hit).",
     "btn-card-apply":
       "Replace the first document match with the suggested text. Respects Confirm before Apply and continuity warnings on Target.",
+    "btn-card-rewrite":
+      "Select this finding in Word, open Rewrite, and preview a local paraphrase. You still choose Apply preview — nothing auto-writes.",
     "slider-complexity":
       "Lower = extra tightening pass; higher = formal register stack. Neutral (3) adds nothing beyond your paraphrase mode.",
     "slider-intensity":

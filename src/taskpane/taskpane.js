@@ -1874,6 +1874,7 @@ function renderAuditCards(list) {
           <button type="button" class="btn-go" data-a="goto" data-pe-tip="btn-card-goto" title="Select first match in Word">Go to</button>
           ${canApply ? '<button type="button" class="btn-apply" data-a="apply" data-pe-tip="btn-card-apply" title="Replace first document match">Apply fix</button>' : ""}
           <button type="button" class="btn-go" data-a="localtip">Local tip</button>
+          <button type="button" class="btn-go" data-a="rewrite" data-pe-tip="btn-card-rewrite" title="Open Rewrite tab">Rewrite</button>
         </div>
         <div class="card-actions-secondary">
           <button type="button" class="btn-go" data-a="dict">Dict</button>
@@ -1885,6 +1886,7 @@ function renderAuditCards(list) {
       </div>`;
     div.querySelector('[data-a="goto"]').onclick = () => goToIssue(item.targetText);
     div.querySelector('[data-a="localtip"]').onclick = () => showLocalTipForIssue(item);
+    div.querySelector('[data-a="rewrite"]').onclick = () => sendIssueToRewrite(item);
     div.querySelector('[data-a="chat"]').onclick = () => sendIssueToChat(item);
     if (canApply) div.querySelector('[data-a="apply"]').onclick = () => applyFix(id, item.targetText, item.replacementText);
     div.querySelector('[data-a="dict"]').onclick = () => addDictionaryWordFromCard(item.targetText);
@@ -2400,6 +2402,40 @@ function sendIssueToChat(item) {
   input.value = `Issue (${item.module}): "${item.targetText}"\n${item.explanation}\nSuggest a fix in my voice. One paragraph.`;
   updateTokenEstimate();
   input.focus();
+}
+
+async function sendIssueToRewrite(item) {
+  const target = item?.targetText;
+  if (!target || String(target).startsWith("(")) {
+    alert("Cannot paraphrase this item.");
+    return;
+  }
+  showTab("tab6");
+  lastRewritePreview = "";
+  lastRewriteOriginal = "";
+  const preview = getEl("rewritePreview");
+  if (preview) preview.innerText = "Selecting passage in Word…";
+  try {
+    await wordRun("rewrite-from-card", async (ctx) => {
+      await ProzaEdit.WordSafeNavigator.selectFirstInBody(ctx, target);
+    });
+    const scopeEl = getEl("scope");
+    if (scopeEl && scopeEl.value !== "selection") {
+      scopeEl.value = "selection";
+      const pinScope = getEl("pinScope");
+      if (pinScope) pinScope.value = "selection";
+      await persistSettings(false);
+    }
+    const snippet = String(target).length > 120 ? `${String(target).slice(0, 117)}…` : target;
+    if (preview) {
+      preview.innerText = `Selected in Word: “${snippet}”\n\nPick a paraphrase mode, then Local paraphrase (free). Nothing changes until you apply the preview.`;
+    }
+    showPeStatus("Rewrite tab — run Local paraphrase when ready.", "ok");
+    getEl("rewriteMode")?.focus();
+  } catch (e) {
+    if (preview) preview.innerText = e.message || "Could not select text.";
+    alert(e.message || "Could not select text.");
+  }
 }
 
 /* Section loop */

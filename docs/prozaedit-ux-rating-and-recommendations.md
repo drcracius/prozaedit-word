@@ -50,6 +50,7 @@ Use **16px**, single-weight stroke icons, inline SVG (no external font dependenc
 | Apply fix | Checkmark / replace | High |
 | Undo / Redo | Curved arrows | Medium (text labels OK today) |
 | Go to last edit | Map pin | **Shipped** (toolbar) |
+| Rewrite (card) | Pencil / paraphrase | **Shipped** (audit primary row) |
 | Mute / Dismiss | Bell-off / eye-off | Low (secondary row) |
 
 **Label clutter:** Prefer icon + 1–2 word labels on the sticky toolbar; keep full sentences in Help or tooltips only.
@@ -61,6 +62,32 @@ Use **16px**, single-weight stroke icons, inline SVG (no external font dependenc
 ## Shipped in this pass (optional icons)
 
 - Sticky toolbar **Last edit** — map-pin SVG + short label; navigates via `WordSafeNavigator` to the last successful Apply/replace snippet tracked in `edit-history.js`.
+- Audit card **Rewrite** — selects finding text in Word, opens Rewrite tab, clears stale preview; user runs Local paraphrase and applies manually (0 tokens).
+
+---
+
+## Path to 9.0
+
+Goal: raise perceived polish and speed **without** collapsing the 7-tab IA or shipping a dark-mode rewrite. Each item is incremental; ship one at a time and measure confusion (support questions, mis-clicks) before the next.
+
+| Rank | Initiative | Impact | Risk | Effort | Notes |
+|------|------------|--------|------|--------|-------|
+| 1 | **Icon toolbar pass (Fluent 16px)** | High — sticky strip + card Go to/Apply read faster | Low–medium — must keep text labels + `aria-label` | Medium | Inline SVG on Run audit, Undo/Redo, Go to/Apply on cards; match Office stroke weight |
+| 2 | **Simple mode defaults (Critical filter)** | High — shorter Audit lists for casual users | Low — reversible via chip | Small | On `pe-simple-mode`, default audit chip to Critical; power users tap All |
+| 3 | **Workflow strip polish** | Medium — clearer “Run audit” moment | Low | Small | Stronger active-step contrast; align accent with primary Run audit button |
+| 4 | **Rewrite one-click (audit cards)** | Medium — bridges Fix → paraphrase without Gemini | Low — no auto-apply | **Shipped** | `sendIssueToRewrite()` + Help line; shaper stays hidden in Simple mode |
+| 5 | **Onboarding / session tips** | Medium — first-run orientation | Low | **Done** | Dismissible session tips + Help Quick start (2.0.0.15) |
+| 6 | **Type-aware empty states** | Medium — Academic/non-fiction feels intentional | Low | Small | Summary copy when fiction modules disabled; Audit empty nudge by manuscript type |
+| 7 | **Reduce duplicate labels** | Low–medium — less vertical scroll | Low | Small | One canonical string per action in tooltips; shorten sticky toolbar where icon exists |
+
+### What NOT to do (keeps risk bounded)
+
+- **Do not** merge tabs 7 → 4 without a major version and retraining — authors rely on muscle memory for Target / Checks / Audit.
+- **Do not** ship **dark mode** as a big-bang theme swap — Office host chrome stays light; a half-themed pane reads broken.
+- **Do not** auto-apply rewrites or audit fixes to “save clicks” — confirm paths are the trust anchor.
+- **Do not** hide Checks fiction/citation gating behind a single “Advanced” tab — eligibility must stay visible where scans run.
+
+**How 7 → 9 is achievable:** Keep the same mental model (Target → Checks → Audit → Fix). Layer **scannability** (icons), **defaults** (Simple + Critical), **bridges** (Rewrite card), and **copy** (empty states). Reserve manifest/version bumps for ribbon or permission changes only.
 
 ---
 
