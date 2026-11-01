@@ -763,6 +763,7 @@
             </div>
             <p id="aiProviderHint" class="help-muted" style="font-size:10px;margin:4px 0;"></p>
             <p id="aiUsageMeter" class="help-muted" style="font-size:10px;margin:4px 0;" aria-live="polite"></p>
+            <p class="help-muted" style="font-size:10px;margin:4px 0;">Repeating the same AI request reuses the earlier reply from this device (shown as "cached, 0 tokens"). Replies are kept up to 7 days, never in the document and never with your key. <button type="button" class="btn-linkish" onclick="clearAiCache()">Clear saved AI replies</button> <span id="aiCacheInfo" aria-live="polite"></span></p>
             <p class="help-muted pe-cloud-disclosure">Everything works offline without a key. A subscription such as ChatGPT Plus, Claude Pro, Gemini Advanced or Copilot is <strong>not</strong> an API key; this feature needs a pay-as-you-go (or free-tier) API key from the provider. Nothing is sent until you click an AI action and confirm; then only the prompt, the passage you chose and (if built) the manuscript outline go to the provider you picked. The key stays in this browser profile only, never in the document. AI suggestions are never applied automatically.</p>
           </div>
           <p class="help-muted" style="font-size:10px;margin:6px 0 4px;">Task pane theme only — Word document canvas stays as Word sets it.</p>
@@ -972,6 +973,7 @@
   <script src="lib/local-coach.js"></script>
   <script src="lib/ai-safety.js"></script>
   <script src="lib/ai-key-store.js"></script>
+  <script src="lib/ai-cache.js"></script>
   <script src="lib/ai-providers.js"></script>
   <script src="lib/gemini-client.js"></script>
   <script src="lib/ai-quota-manager.js"></script>

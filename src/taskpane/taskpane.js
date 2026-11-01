@@ -4577,9 +4577,20 @@ function onAiProviderChange() {
   schedulePersistSettings();
 }
 
+let aiLastCallNote = "";
+
 function updateAiMeter() {
   const el = getEl("aiUsageMeter");
-  if (el) el.textContent = ProzaEdit.AIQuotaManager.meterText(readAiQuotaLimitsFromDom());
+  if (el) el.textContent = ProzaEdit.AIQuotaManager.meterText(readAiQuotaLimitsFromDom()) + (aiLastCallNote ? ` · last: ${aiLastCallNote}` : "");
+}
+
+function clearAiCache() {
+  const ok = ProzaEdit.AICache?.clear?.();
+  aiLastCallNote = "";
+  const info = getEl("aiCacheInfo");
+  if (info) info.textContent = ok ? "Saved AI replies cleared." : "Could not clear (browser storage is blocked).";
+  showPeStatus(ok ? "Saved AI replies cleared." : "Could not clear saved AI replies.", ok ? "ok" : "warn");
+  updateAiMeter();
 }
 
 /** One-line estimate shown in every AI confirm. maxInputChars is an upper bound; the real prompt may be smaller. */
@@ -4595,6 +4606,19 @@ function aiIndexChars() {
 }
 
 async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, signal) {
+  const cacheKey = ProzaEdit.AICache?.makeKey({
+    providerId: aiProviderId(),
+    model: aiModelId(),
+    genre: getEl("manuscriptType")?.value || "",
+    temperature: generationConfig?.temperature,
+    prompt,
+  });
+  const cached = cacheKey ? ProzaEdit.AICache.get(cacheKey) : null;
+  if (cached) {
+    aiLastCallNote = "cached, 0 tokens";
+    updateAiMeter();
+    return cached.text;
+  }
   const limits = readAiQuotaLimitsFromDom();
   const maxOut = Math.min(limits.maxOutputTokens, outputReserve != null ? outputReserve : generationConfig?.maxOutputTokens || 1024);
   const est = ProzaEdit.AIProviders.estimate(aiProviderId(), aiModelId(), prompt, maxOut);
@@ -4616,8 +4640,11 @@ async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, sign
   });
   const used = res.usage ? res.usage.inputTokens + res.usage.outputTokens : est.totalTokens;
   ProzaEdit.AIQuotaManager.recordUsage(used || est.totalTokens);
+  aiLastCallNote = `${(used || est.totalTokens).toLocaleString()} tokens`;
   updateAiMeter();
-  return String(res.text).split(ProzaEdit.AISafety.OPEN).join("").split(ProzaEdit.AISafety.CLOSE).join("").trim();
+  const clean = String(res.text).split(ProzaEdit.AISafety.OPEN).join("").split(ProzaEdit.AISafety.CLOSE).join("").trim();
+  if (cacheKey) ProzaEdit.AICache.set(cacheKey, clean, [getApiKey()]);
+  return clean;
 }
 
 const geminiGenerateWithQuota = aiGenerateWithQuota;
