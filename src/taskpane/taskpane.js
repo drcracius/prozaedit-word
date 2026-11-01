@@ -1056,6 +1056,11 @@ function collectUiConfig() {
     showDarkAppearanceTip: isChecked("showDarkAppearanceTip", true),
     themePreference: getThemePreferenceFromUi(),
     lastActiveTab: getCurrentActiveTabId(),
+    batchSectionCount: Math.min(8, Math.max(1, parseInt(getEl("batchSectionCount")?.value, 10) || 3)),
+    rewriteMode: (() => {
+      const v = getEl("rewriteMode")?.value || "fluency";
+      return ["fluency", "formal", "creative", "academic"].includes(v) ? v : "fluency";
+    })(),
     ...ProzaEdit.UiPrefs?.normalizeShaperFields?.({
       shaperComplexity: getEl("slider-shaper-complexity")?.value,
       shaperIntensity: getEl("slider-shaper-intensity")?.value,
@@ -1107,6 +1112,13 @@ function applyUiConfig(p) {
   if (p.rememberApiKey && p.apiKey) setV("apiKey", p.apiKey);
   else setV("apiKey", "");
   if (p.sectionParagraphCount) setV("sectionParagraphCount", p.sectionParagraphCount);
+  if (p.batchSectionCount != null) {
+    setV("batchSectionCount", Math.min(8, Math.max(1, parseInt(p.batchSectionCount, 10) || 3)));
+  }
+  if (p.rewriteMode) {
+    const mode = String(p.rewriteMode);
+    setV("rewriteMode", ["fluency", "formal", "creative", "academic"].includes(mode) ? mode : "fluency");
+  }
   if (p.auditCardFilter && ["all", "confirmed", "preference", "styleguide"].includes(p.auditCardFilter)) {
     auditCardFilter = p.auditCardFilter;
     updateAuditFilterChips();
@@ -1366,6 +1378,8 @@ function setupAutoSaveHandlers() {
     "scopePageFrom",
     "scopePageTo",
     "sectionParagraphCount",
+    "batchSectionCount",
+    "rewriteMode",
     "reportDensity",
     "selChronoDepth",
     "chkChronoSpoilerGuard",
@@ -2962,6 +2976,9 @@ function finalizeAudit(result, label) {
   if (summary) summary.innerHTML = html;
   setAuditSuggestions(suggestions);
   cacheAudit(label, html, suggestions, traffic, score);
+  if (suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated")) {
+    showPeStatus("Scope excerpt truncated at cap — see Audit card or use a smaller scope.", "warn");
+  }
 }
 
 function cacheAudit(label, html, suggestions, traffic, score) {
