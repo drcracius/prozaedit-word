@@ -1914,6 +1914,20 @@ textarea:focus {
   box-shadow: var(--pe-card-shadow);
 }
 
+.card-review-progress {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text-muted);
+  font-size: var(--pe-font-size-xs);
+  font-weight: 600;
+}
+
+.pe-cloud-disclosure {
+  margin: 6px 0;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
 .pe-tooltip-bubble {
   position: fixed;
   z-index: 10000;

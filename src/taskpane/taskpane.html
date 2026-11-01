@@ -240,6 +240,7 @@
 
   <div id="tab2" class="tab-content pe-advanced-tab">
     <div class="help-box">Synonyms, antonyms, nuance. Click to replace in Word.</div>
+    <p class="help-inline pe-cloud-disclosure">Online lookup: only the search word is sent to Datamuse when you click Search. Run audit does not use Datamuse.</p>
     <div class="form-group">
       <label for="thesaurusInput">Word / Phrase Lookup</label>
       <input type="text" id="thesaurusInput" placeholder="Enter word or select in Word...">
@@ -264,9 +265,9 @@
     </details>
     <div class="audit-run-hub pe-checks-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
-      <div id="peLongOpProgressChecks" class="pe-longop-progress hidden" aria-live="polite">
+      <div id="peLongOpProgressChecks" class="pe-longop-progress hidden" role="status" aria-live="polite" aria-atomic="true">
         <span id="peLongOpProgressLabelChecks" class="pe-longop-progress-label">Reading document…</span>
-        <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpChecks">Cancel</button>
+        <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpChecks" aria-label="Cancel current operation">Cancel</button>
       </div>
       <p id="peChecksRunAuditTagline" class="pe-checks-run-tagline help-muted">ProzaEdit checks when you click Run — it does not underline while you type.</p>
       <p id="peChecksReportDepthPlainHint" class="pe-checks-depth-plain help-muted hidden" aria-live="polite"></p>
@@ -371,9 +372,9 @@
     <p id="auditScopeChip" class="pe-scope-chip pe-audit-scope-chip help-muted" aria-live="polite">Scope (read-only): —</p>
     <div class="audit-run-hub audit-run-hub-inline">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
-      <div id="peLongOpProgressAudit" class="pe-longop-progress hidden" aria-live="polite">
+      <div id="peLongOpProgressAudit" class="pe-longop-progress hidden" role="status" aria-live="polite" aria-atomic="true">
         <span id="peLongOpProgressLabelAudit" class="pe-longop-progress-label">Reading document…</span>
-        <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpAudit">Cancel</button>
+        <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpAudit" aria-label="Cancel current operation">Cancel</button>
       </div>
       <label class="toggle-row compact"><span>Extended checks</span><input type="checkbox" data-audit-extended="1" id="auditExtended"></label>
       <button type="button" class="btn-linkish" onclick="showTab('tab3')">Configure checks →</button>
@@ -448,6 +449,7 @@
     <details class="help-box help-muted pe-gemini-block" style="margin-top:8px;">
       <summary>Optional Gemini API (uses tokens)</summary>
       <div class="form-group" style="border:none;padding:0;margin-top:6px;">
+        <p class="help-inline pe-cloud-disclosure">Cloud action: the prompt and chosen context are sent to Google only when you click <strong>Send via Gemini</strong>. Context is selection-only by default; turning that off can send a document excerpt. Local Coach and Run audit do not use Gemini.</p>
         <p class="help-inline" style="font-size:10px;margin:0 0 6px;">API key: <button type="button" class="btn-linkish" onclick="openSettingsModal('essentials')">Settings → Essentials</button></p>
         <div class="toggle-row"><span>Context: selection only</span><input type="checkbox" id="chatSelectionOnly" checked></div>
         <button class="btn-secondary btn-api-opt" onclick="sendChatMessage()">Send via Gemini</button>
@@ -589,6 +591,7 @@
     </details>
     <details class="help-box help-muted pe-gemini-block" style="margin-top:8px;">
       <summary>Optional Gemini rewrite (uses tokens)</summary>
+      <p class="help-inline pe-cloud-disclosure">Cloud action: the selected text and rewrite instructions are sent to Google only when clicked.</p>
       <button class="btn-secondary btn-api-opt" style="margin-top:6px;" onclick="runSmartRewrite()">Rewrite via Gemini</button>
     </details>
   </div>
@@ -632,6 +635,7 @@
             <label for="apiKey">Gemini API key (optional)</label>
             <input type="password" id="apiKey" placeholder="Leave blank to stay local-only">
             <div class="toggle-row"><span>Remember in this document</span><input type="checkbox" id="rememberApiKey"></div>
+            <p class="help-muted pe-cloud-disclosure">Leave blank for local-only use. Gemini actions send only their prompt/context to Google when clicked. “Remember” stores the key in this Word document, so leave it off for shared files.</p>
           </div>
           <p class="help-muted" style="font-size:10px;margin:6px 0 4px;">Task pane theme only — Word document canvas stays as Word sets it.</p>
           <fieldset class="pe-theme-options" id="peThemeFieldset">
@@ -786,6 +790,7 @@
   <script src="lib/plain-language-helpers.js"></script>
   <script src="lib/long-operation-helpers.js"></script>
   <script src="lib/long-operation-controller.js"></script>
+  <script src="lib/audit-review-helpers.js"></script>
   <script src="lib/text-metrics.js"></script>
   <script src="lib/proper-noun-analyse.js"></script>
   <script src="lib/lexical-banks.js"></script>
