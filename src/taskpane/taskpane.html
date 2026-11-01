@@ -16,7 +16,7 @@
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
     <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.19</span>)</p>
     <p id="peWhatsNewBullet" class="pe-top-banner-body">Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Fixes now check their exact spot before editing, and repeated AI requests are reused at no cost. New: tense and viewpoint shifts are flagged only when clearly accidental, and an optional Content notes switch (Settings, off by default) reports strong language and violence neutrally. Accuracy is now measured on a labeled test set. Everything still works offline.</p>
-    <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-79-WORD-FIXES.md" target="_blank" rel="noopener">Release notes</a></p>
+    <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
       <button type="button" class="btn-secondary" onclick="dismissWhatsNewBanner(false)">Got it</button>
       <button type="button" class="btn-linkish" onclick="dismissWhatsNewBanner(true)">Don&apos;t show again</button>
@@ -326,10 +326,10 @@
     </div>
     <h2 class="pe-section-title">What to check</h2>
     <div class="form-group form-group-flush">
-      <div class="toggle-row" data-pe-tip="chk-repetition"><span>Repetition &amp; redundancy (word-pair check)</span><input type="checkbox" id="chkRep" checked></div>
-      <div class="toggle-row"><span>Proper noun consistency (name variants; may false-flag — use Mute/Dict)</span><input type="checkbox" id="chkProp" checked></div>
-      <div class="toggle-row"><span>Proofreading &amp; language (US/UK + style guide packs)</span><input type="checkbox" id="chkSpell" checked></div>
-      <div class="toggle-row"><span>AI Detection (heuristic) + Anti-AI Voice</span><input type="checkbox" id="chkAI" checked></div>
+      <div class="toggle-row" data-pe-tip="chk-repetition"><span id="chkRep-lbl">Repetition &amp; redundancy (word-pair check)</span><input type="checkbox" id="chkRep" aria-labelledby="chkRep-lbl" checked></div>
+      <div class="toggle-row"><span id="chkProp-lbl">Proper noun consistency (name variants; may false-flag — use Mute/Dict)</span><input type="checkbox" id="chkProp" aria-labelledby="chkProp-lbl" checked></div>
+      <div class="toggle-row"><span id="chkSpell-lbl">Proofreading &amp; language (US/UK + style guide packs)</span><input type="checkbox" id="chkSpell" aria-labelledby="chkSpell-lbl" checked></div>
+      <div class="toggle-row"><span id="chkAI-lbl">AI Detection (heuristic) + Anti-AI Voice</span><input type="checkbox" id="chkAI" aria-labelledby="chkAI-lbl" checked></div>
       <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">AI detection is heuristic only—not proof of AI or plagiarism.</p>
     </div>
     <details id="peChecksMoreOptional" class="help-box help-muted pe-checks-more-optional">
@@ -377,20 +377,20 @@
     </details>
     <h2 class="pe-section-title">Fiction modules</h2>
     <div class="form-group form-group-flush">
-      <div class="toggle-row"><span>1. Plot & Chapter Structure</span><input type="checkbox" id="mPlot" checked></div>
-      <div class="toggle-row"><span>2. Characterization & Motivation</span><input type="checkbox" id="mMotivation" checked></div>
-      <div class="toggle-row"><span>3. Dialogue & Viewpoint (POV)</span><input type="checkbox" id="mDialogue" checked></div>
-      <div class="toggle-row"><span>4. Continuity & Chronology</span><input type="checkbox" id="mContinuity" checked></div>
-      <div class="toggle-row"><span>5. Plausibility & Evidence</span><input type="checkbox" id="mPlausibility" checked></div>
-      <div class="toggle-row"><span>6. Pacing & Readability</span><input type="checkbox" id="mPacing" checked></div>
-      <div class="toggle-row"><span>7. Spoiler Control</span><input type="checkbox" id="mSpoiler" checked></div>
+      <div class="toggle-row"><span id="mPlot-lbl">1. Plot & Chapter Structure</span><input type="checkbox" id="mPlot" aria-labelledby="mPlot-lbl" checked></div>
+      <div class="toggle-row"><span id="mMotivation-lbl">2. Characterization & Motivation</span><input type="checkbox" id="mMotivation" aria-labelledby="mMotivation-lbl" checked></div>
+      <div class="toggle-row"><span id="mDialogue-lbl">3. Dialogue & Viewpoint (POV)</span><input type="checkbox" id="mDialogue" aria-labelledby="mDialogue-lbl" checked></div>
+      <div class="toggle-row"><span id="mContinuity-lbl">4. Continuity & Chronology</span><input type="checkbox" id="mContinuity" aria-labelledby="mContinuity-lbl" checked></div>
+      <div class="toggle-row"><span id="mPlausibility-lbl">5. Plausibility & Evidence</span><input type="checkbox" id="mPlausibility" aria-labelledby="mPlausibility-lbl" checked></div>
+      <div class="toggle-row"><span id="mPacing-lbl">6. Pacing & Readability</span><input type="checkbox" id="mPacing" aria-labelledby="mPacing-lbl" checked></div>
+      <div class="toggle-row"><span id="mSpoiler-lbl">7. Spoiler Control</span><input type="checkbox" id="mSpoiler" aria-labelledby="mSpoiler-lbl" checked></div>
       <p class="help-inline">Disabled fiction toggles are not run by the audit engine (not just greyed out).</p>
     </div>
     <details class="help-box help-muted pe-citation-block" id="peCitationPanel">
       <summary>Citation verify (beta)</summary>
       <p class="help-inline" style="margin:4px 0 8px;font-size:10px;">Heuristic APA / CMOS / Bluebook-lite patterns on current Target scope — pattern assist only, not certification. Opt-in below; does not replace the academic citation hint during Run audit.</p>
       <div class="form-group form-group-flush">
-        <div class="toggle-row"><span>Enable citation pattern scan (opt-in)</span><input type="checkbox" id="chkCitationScan"></div>
+        <div class="toggle-row"><span id="chkCitationScan-lbl">Enable citation pattern scan (opt-in)</span><input type="checkbox" id="chkCitationScan" aria-labelledby="chkCitationScan-lbl"></div>
         <label for="selCitationStyle">Citation style pack</label>
         <select id="selCitationStyle" class="pe-select" data-pe-tip="sel-citation-style">
           <option value="auto" selected>Auto (from manuscript type)</option>
@@ -398,7 +398,7 @@
           <option value="CHICAGO">CMOS-ish (author–date)</option>
           <option value="BLUEBOOK">Bluebook-lite (legal reporters)</option>
         </select>
-        <div class="toggle-row" style="margin-top:8px;"><span>Lightweight bibliography match (References section)</span><input type="checkbox" id="chkCitationReconcile" checked></div>
+        <div class="toggle-row" style="margin-top:8px;"><span id="chkCitationReconcile-lbl">Lightweight bibliography match (References section)</span><input type="checkbox" id="chkCitationReconcile" aria-labelledby="chkCitationReconcile-lbl" checked></div>
         <button type="button" class="btn-secondary" id="btnScanCitations" style="margin-top:8px;width:100%;" onclick="runCitationScan()" data-pe-tip="btn-scan-citations">Verify citations</button>
       </div>
       <div id="citationScanStatus" class="help-inline" style="margin-top:6px;font-size:10px;"></div>
@@ -414,7 +414,7 @@
           <option value="meso" selected>Scene + anchors (meso)</option>
           <option value="micro">All anchors (micro)</option>
         </select>
-        <div class="toggle-row" style="margin-top:8px;"><span>Spoiler guard v1 (heuristic; opt-in — may false-flag dialogue)</span><input type="checkbox" id="chkChronoSpoilerGuard"></div>
+        <div class="toggle-row" style="margin-top:8px;"><span id="chkChronoSpoilerGuard-lbl">Spoiler guard v1 (heuristic; opt-in — may false-flag dialogue)</span><input type="checkbox" id="chkChronoSpoilerGuard" aria-labelledby="chkChronoSpoilerGuard-lbl"></div>
         <button type="button" class="btn-secondary" id="btnScanTimeline" style="margin-top:8px;width:100%;" onclick="runTimelineScan()" data-pe-tip="btn-scan-chronology">Scan timeline</button>
       </div>
       <div id="chronoScanStatus" class="help-inline" style="margin-top:6px;font-size:10px;"></div>
@@ -483,7 +483,7 @@
       <div class="chat-msg chat-ai"><strong>Local Coach:</strong> Ask about POV, pacing, dialogue, show/tell—no API key needed.</div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
-      <input type="text" id="chatInput" placeholder="e.g. How do I fix POV slips?" style="flex:1;margin-bottom:0;">
+      <input type="text" id="chatInput" aria-label="Ask the coach a question" placeholder="e.g. How do I fix POV slips?" style="flex:1;margin-bottom:0;">
       <button id="micBtn" type="button" onclick="toggleVoiceDictation()" title="Dictate">🎤</button>
     </div>
     <div id="tokenEstimate" class="token-estimate">Local Coach: 0 tokens</div>
@@ -509,7 +509,7 @@
           <button type="button" class="btn-secondary pe-btn" onclick="openAiHelpSetup()">Set up AI help (add API key)</button>
         </div>
         <div class="pe-ai-help-ready hidden" data-pe-ai-help-ready>
-          <div class="toggle-row"><span>Context: selection only</span><input type="checkbox" id="chatSelectionOnly" checked></div>
+          <div class="toggle-row"><span id="chatSelectionOnly-lbl">Context: selection only</span><input type="checkbox" id="chatSelectionOnly" aria-labelledby="chatSelectionOnly-lbl" checked></div>
           <button class="btn-secondary btn-api-opt" onclick="sendChatMessage()">Send via AI</button>
         </div>
       </div>
@@ -747,7 +747,7 @@
       <div class="pe-settings-body">
         <details class="pe-settings-group" id="pe-settings-group-essentials" open>
           <summary>Essentials</summary>
-          <div class="toggle-row"><span>Simple view (on) / Advanced view (off) — Simple hides Thesaurus, shaper &amp; extra tuning; AI help stays available</span><input type="checkbox" id="simpleMode"></div>
+          <div class="toggle-row"><span id="simpleMode-lbl">Simple view (on) / Advanced view (off) — Simple hides Thesaurus, shaper &amp; extra tuning; AI help stays available</span><input type="checkbox" id="simpleMode" aria-labelledby="simpleMode-lbl"></div>
           <p id="peSimpleModeEssentialsIntro" class="help-muted pe-simple-mode-essentials-intro" style="font-size:10px;margin:6px 0 4px;">Simple view hides the Thesaurus tab, the lexical shaper, and extra tuning. Coach, Rewrite and optional AI help stay available. Turn Simple off for every control.</p>
           <p id="peSimpleModeAdvancedTabsList" class="help-muted pe-simple-advanced-tabs hidden" style="font-size:10px;margin:4px 0 6px;"></p>
           <button type="button" class="btn-linkish pe-btn" id="btnTurnOffSimpleMode" onclick="turnOffSimpleModeFromEssentials()">Switch to Advanced view</button>
@@ -756,7 +756,7 @@
             <select id="aiProvider" aria-describedby="aiProviderHint"></select>
             <label for="apiKey" id="apiKeyLabel">API key (optional)</label>
             <input type="password" id="apiKey" autocomplete="off" spellcheck="false" placeholder="Leave blank to stay local-only">
-            <div class="toggle-row"><span>Remember on this device only (not in the document)</span><input type="checkbox" id="rememberApiKey"></div>
+            <div class="toggle-row"><span id="rememberApiKey-lbl">Remember on this device only (not in the document)</span><input type="checkbox" id="rememberApiKey" aria-labelledby="rememberApiKey-lbl"></div>
             <label for="aiModel">Model</label>
             <select id="aiModel"></select>
             <div data-simple-hide>
@@ -778,23 +778,23 @@
         </details>
         <details class="pe-settings-group" id="pe-settings-group-safety">
           <summary>Advanced — Safety</summary>
-          <div class="toggle-row"><span>Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" checked></div>
-          <div class="toggle-row"><span>Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" checked></div>
-          <div class="toggle-row"><span>Show hover tips (ProzaEdit bubbles on key controls)</span><input type="checkbox" id="showHoverTips" checked></div>
-          <div class="toggle-row"><span>FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock"></div>
-          <div class="toggle-row"><span>Content notes: flag strong language and violence density (informational, never a judgment; off by default)</span><input type="checkbox" id="contentNotes"></div>
-          <div class="toggle-row"><span>Remind: use Word Version History before big applies</span><input type="checkbox" id="remindVersionHistory" checked></div>
+          <div class="toggle-row"><span id="replaceInSelectionOnly-lbl">Edits apply to selection only (thesaurus; audit Apply fix always searches document)</span><input type="checkbox" id="replaceInSelectionOnly" aria-labelledby="replaceInSelectionOnly-lbl" checked></div>
+          <div class="toggle-row"><span id="confirmBeforeApply-lbl">Confirm before Apply / replace (recommended)</span><input type="checkbox" id="confirmBeforeApply" aria-labelledby="confirmBeforeApply-lbl" checked></div>
+          <div class="toggle-row"><span id="showHoverTips-lbl">Show hover tips (ProzaEdit bubbles on key controls)</span><input type="checkbox" id="showHoverTips" aria-labelledby="showHoverTips-lbl" checked></div>
+          <div class="toggle-row"><span id="fkLock-lbl">FK lock (warn when grade outside target band)</span><input type="checkbox" id="fkLock" aria-labelledby="fkLock-lbl"></div>
+          <div class="toggle-row"><span id="contentNotes-lbl">Content notes: flag strong language and violence density (informational, never a judgment; off by default)</span><input type="checkbox" id="contentNotes" aria-labelledby="contentNotes-lbl"></div>
+          <div class="toggle-row"><span id="remindVersionHistory-lbl">Remind: use Word Version History before big applies</span><input type="checkbox" id="remindVersionHistory" aria-labelledby="remindVersionHistory-lbl" checked></div>
           <div class="form-group" style="margin-top:8px;">
             <label for="continuityWarnLevel">Continuity warnings before Apply (1=quiet, 5=detailed)</label>
             <input type="range" id="continuityWarnLevel" min="1" max="5" value="3" style="width:100%;">
             <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Uses a local manuscript index (no AI). Dismissed warnings are remembered on this PC.</p>
           </div>
-          <div class="toggle-row"><span>Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" checked></div>
+          <div class="toggle-row"><span id="fictionScopeReminder-lbl">Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" aria-labelledby="fictionScopeReminder-lbl" checked></div>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="safety" style="margin-top:10px;">Reset Safety to defaults</button>
           <details class="help-box help-muted" style="margin-top:8px;" id="peAiLimitsBox">
             <summary>AI help limits (token budget)</summary>
             <p style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Hard limits keep optional AI help from burning tokens. Counts are estimates (or provider-reported usage). Nothing runs in the background; every call asks first.</p>
-            <div class="toggle-row"><span>Hard stop at the limits (recommended)</span><input type="checkbox" id="aiEnforceSessionCeiling" checked></div>
+            <div class="toggle-row"><span id="aiEnforceSessionCeiling-lbl">Hard stop at the limits (recommended)</span><input type="checkbox" id="aiEnforceSessionCeiling" aria-labelledby="aiEnforceSessionCeiling-lbl" checked></div>
             <div class="form-group" style="margin-top:6px;">
               <label for="aiMaxSessionTokens">Max tokens per session (this pane)</label>
               <input type="number" id="aiMaxSessionTokens" min="1000" max="500000" step="1000" value="50000">
@@ -806,11 +806,11 @@
         </details>
         <details class="pe-settings-group" id="pe-settings-group-onboarding">
           <summary>Advanced — Onboarding</summary>
-          <div class="toggle-row"><span>Show new-session tips banner</span><input type="checkbox" id="showSessionTips" checked></div>
-          <div class="toggle-row"><span>Show What&apos;s new banner (once per release)</span><input type="checkbox" id="showWhatsNew" checked></div>
-          <div class="toggle-row"><span>Show prior-session recap banner</span><input type="checkbox" id="showPriorSessionSummary" checked></div>
-          <div class="toggle-row"><span>Warn before long operations (audit, scans)</span><input type="checkbox" id="showLongOperationWarnings" checked></div>
-          <div class="toggle-row"><span>Show dark-appearance tip when the pane is dark</span><input type="checkbox" id="showDarkAppearanceTip" checked></div>
+          <div class="toggle-row"><span id="showSessionTips-lbl">Show new-session tips banner</span><input type="checkbox" id="showSessionTips" aria-labelledby="showSessionTips-lbl" checked></div>
+          <div class="toggle-row"><span id="showWhatsNew-lbl">Show What&apos;s new banner (once per release)</span><input type="checkbox" id="showWhatsNew" aria-labelledby="showWhatsNew-lbl" checked></div>
+          <div class="toggle-row"><span id="showPriorSessionSummary-lbl">Show prior-session recap banner</span><input type="checkbox" id="showPriorSessionSummary" aria-labelledby="showPriorSessionSummary-lbl" checked></div>
+          <div class="toggle-row"><span id="showLongOperationWarnings-lbl">Warn before long operations (audit, scans)</span><input type="checkbox" id="showLongOperationWarnings" aria-labelledby="showLongOperationWarnings-lbl" checked></div>
+          <div class="toggle-row"><span id="showDarkAppearanceTip-lbl">Show dark-appearance tip when the pane is dark</span><input type="checkbox" id="showDarkAppearanceTip" aria-labelledby="showDarkAppearanceTip-lbl" checked></div>
           <p class="help-muted" style="font-size:10px;margin:4px 0 0;">Banners appear at the top of the pane. “Got it” hides until the next browser session; What&apos;s new can be dismissed per release. Long-operation warnings can be dismissed per action without turning this off.</p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="onboarding" style="margin-top:10px;">Reset Onboarding to defaults</button>
         </details>
@@ -825,7 +825,7 @@
           <p id="peMciStatusSettings" class="pe-mci-status pe-mci-stale" aria-live="polite">Full MS context not built</p>
           <button type="button" class="btn-secondary pe-btn" style="margin-bottom:8px;" onclick="runBuildFullManuscriptContext(true)">Build full manuscript context</button>
           <p id="peMciStorageHintSettings" class="help-muted" style="font-size:10px;margin:0 0 8px;">—</p>
-          <div class="toggle-row"><span>Auto-refresh context before audit (when stale)</span><input type="checkbox" id="autoRefreshManuscriptContext"></div>
+          <div class="toggle-row"><span id="autoRefreshManuscriptContext-lbl">Auto-refresh context before audit (when stale)</span><input type="checkbox" id="autoRefreshManuscriptContext" aria-labelledby="autoRefreshManuscriptContext-lbl"></div>
           <p class="help-inline" style="font-size:10px;margin:4px 0 0;">Off by default — turning on may start a background read before Run audit. You can cancel from the banner.</p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="manuscript" style="margin-top:10px;">Reset Manuscript settings</button>
         </details>
@@ -851,15 +851,15 @@
             </select>
             <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Session chips on Audit still change the live filter. With Simple mode on and no saved filter, Critical is used.</p>
           </div>
-          <div class="toggle-row"><span>Extended checks (fillers, duplicates, deeper editorial pass)</span><input type="checkbox" data-audit-extended="1" id="auditExtendedSettings"></div>
+          <div class="toggle-row"><span id="auditExtendedSettings-lbl">Extended checks (fillers, duplicates, deeper editorial pass)</span><input type="checkbox" data-audit-extended="1" id="auditExtendedSettings" aria-labelledby="auditExtendedSettings-lbl"></div>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="audit" style="margin-top:10px;">Reset Audit &amp; reports to defaults</button>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-privacy">
           <summary>Advanced — Privacy &amp; diagnostics</summary>
           <p class="help-inline" style="font-size:10px;margin:6px 0;">Optional anonymous crash reports help fix bugs. <strong>Off by default.</strong> We never send document text, selection, or API keys.</p>
           <div class="toggle-row">
-            <span>Send anonymous crash reports</span>
-            <input type="checkbox" id="peDiagnosticsOptIn" aria-describedby="peDiagnosticsPrivacy">
+            <span id="peDiagnosticsOptIn-lbl">Send anonymous crash reports</span>
+            <input type="checkbox" id="peDiagnosticsOptIn" aria-labelledby="peDiagnosticsOptIn-lbl" aria-describedby="peDiagnosticsPrivacy">
           </div>
           <p id="peDiagnosticsPrivacy" class="help-muted" style="font-size:11px;margin:6px 0;">When enabled and the owner has configured ingest, crashes and unhandled errors may be sent automatically. Otherwise reports copy redacted JSON to your clipboard.</p>
           <label for="peDiagnosticsNote">Optional note (what you were doing, not manuscript text)</label>
@@ -900,7 +900,7 @@
             <summary>Backup / move dictionary (JSON)</summary>
             <p style="font-size:10px;margin:4px 0;">Copy JSON to a notes file, or paste a JSON array into another document.</p>
             <button type="button" class="btn-secondary" onclick="copyDictionaryExport()">Copy dictionary JSON</button>
-            <textarea id="dictImportArea" rows="4" style="width:100%;font-size:10px;margin-top:6px;" placeholder='["McGuffin","Arrakis"]'></textarea>
+            <textarea id="dictImportArea" aria-label="Dictionary terms to import (JSON list)" rows="4" style="width:100%;font-size:10px;margin-top:6px;" placeholder='["McGuffin","Arrakis"]'></textarea>
             <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importDictionaryFromTextarea()">Import JSON</button>
           </details>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="dictionary" style="margin-top:10px;">Clear dictionary for this document</button>
@@ -911,9 +911,9 @@
             <label for="customStyleName">Custom guide name</label>
             <input type="text" id="customStyleName" placeholder="e.g. My thriller house style" maxlength="80">
             <label style="margin-top:8px;display:block;">Add rule (phrase to flag in audit)</label>
-            <input type="text" id="customStyleFind" placeholder="Find phrase, e.g. utilize" style="margin-bottom:4px;">
-            <input type="text" id="customStyleReplace" placeholder="Suggest replace with, e.g. use" style="margin-bottom:4px;">
-            <input type="text" id="customStyleHint" placeholder="Optional note for the card" style="margin-bottom:4px;">
+            <input type="text" id="customStyleFind" aria-label="Custom rule: phrase to find" placeholder="Find phrase, e.g. utilize" style="margin-bottom:4px;">
+            <input type="text" id="customStyleReplace" aria-label="Custom rule: suggested replacement" placeholder="Suggest replace with, e.g. use" style="margin-bottom:4px;">
+            <input type="text" id="customStyleHint" aria-label="Custom rule: hint shown on the card" placeholder="Optional note for the card" style="margin-bottom:4px;">
             <button type="button" class="btn-go" onclick="addCustomStyleRule()">Add rule</button>
             <div id="customStyleRulesList" class="dict-list" style="margin-top:6px;"></div>
           </div>
@@ -926,7 +926,7 @@
           <details class="help-box help-muted" style="margin-top:8px;">
             <summary>Paste many rules at once</summary>
             <p style="font-size:10px;margin:4px 0;">One per line: <code>find =&gt; replace</code> or <code>find =&gt; replace | note</code>. Lines starting with # are ignored.</p>
-            <textarea id="customStyleBulk" rows="5" style="width:100%;font-size:11px;" placeholder="utilize =&gt; use&#10;in order to =&gt; to | shorter"></textarea>
+            <textarea id="customStyleBulk" aria-label="Custom rules, one per line" rows="5" style="width:100%;font-size:11px;" placeholder="utilize =&gt; use&#10;in order to =&gt; to | shorter"></textarea>
             <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importCustomStyleBulk()">Import lines</button>
           </details>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="custom-style" style="margin-top:10px;">Reset custom style rules</button>

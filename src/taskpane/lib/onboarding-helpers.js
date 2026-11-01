@@ -233,7 +233,7 @@ ProzaEdit.Onboarding = {
     bullet:
       "Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Fixes now check their exact spot before editing, and repeated AI requests are reused at no cost. New: tense and viewpoint shifts are flagged only when clearly accidental, and an optional Content notes switch (Settings, off by default) reports strong language and violence neutrally. Accuracy is now measured on a labeled test set. Everything still works offline.",
     releaseNotesUrl:
-      "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-79-WORD-FIXES.md",
+      "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },
 
   TAB_LABELS: {

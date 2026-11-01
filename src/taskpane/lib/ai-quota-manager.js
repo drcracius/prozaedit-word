@@ -27,30 +27,36 @@ ProzaEdit.AIQuotaManager = {
     return new Date().toISOString().slice(0, 10);
   },
 
+  /* Pane-lifetime counters: the larger of these and browser storage is used, so blocked or failing storage can never
+     make the hard caps unenforceable. */
+  _mem: { session: 0, day: 0, dayKey: "" },
+
   getSessionTokens() {
+    let stored = 0;
     try {
-      return parseInt(sessionStorage.getItem(this.SESSION_TOKEN_KEY) || "0", 10) || 0;
-    } catch (_) {
-      return 0;
-    }
+      stored = parseInt(sessionStorage.getItem(this.SESSION_TOKEN_KEY) || "0", 10) || 0;
+    } catch (_) {}
+    return Math.max(stored, this._mem.session);
   },
 
   getDayTokens() {
+    let stored = 0;
     try {
       const raw = JSON.parse(localStorage.getItem(this.DAY_TOKEN_KEY) || "null");
-      return raw && raw.day === this._today() ? parseInt(raw.tokens, 10) || 0 : 0;
-    } catch (_) {
-      return 0;
-    }
+      stored = raw && raw.day === this._today() ? parseInt(raw.tokens, 10) || 0 : 0;
+    } catch (_) {}
+    return Math.max(stored, this._mem.dayKey === this._today() ? this._mem.day : 0);
   },
 
   resetSessionTokens() {
+    this._mem.session = 0;
     try {
       sessionStorage.setItem(this.SESSION_TOKEN_KEY, "0");
     } catch (_) {}
   },
 
   resetDayTokens() {
+    this._mem.day = 0;
     try {
       localStorage.removeItem(this.DAY_TOKEN_KEY);
     } catch (_) {}
@@ -59,11 +65,16 @@ ProzaEdit.AIQuotaManager = {
   recordUsage(tokensUsed) {
     const add = Math.max(0, parseInt(tokensUsed, 10) || 0);
     if (!add) return;
+    const session = this.getSessionTokens() + add;
+    const day = this.getDayTokens() + add;
+    this._mem.session = session;
+    this._mem.day = day;
+    this._mem.dayKey = this._today();
     try {
-      sessionStorage.setItem(this.SESSION_TOKEN_KEY, String(this.getSessionTokens() + add));
+      sessionStorage.setItem(this.SESSION_TOKEN_KEY, String(session));
     } catch (_) {}
     try {
-      localStorage.setItem(this.DAY_TOKEN_KEY, JSON.stringify({ day: this._today(), tokens: this.getDayTokens() + add }));
+      localStorage.setItem(this.DAY_TOKEN_KEY, JSON.stringify({ day: this._today(), tokens: day }));
     } catch (_) {}
   },
 

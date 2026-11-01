@@ -12,5 +12,12 @@ Based on PE-79 (PR #27, not yet merged).
 - **Tense and POV drift hints** and optional **Content notes** (profanity/violence, off by default, informational) — see GENRE-PROFILES.md.
 - **Simple view** hides low-confidence suggestions behind "Show them".
 - Removed regex lookbehind (older Office WebViews). 
-- Tests: 224 (was 168).
+- Tests: see `npm test` (224 at PE-82; more added by the PE-83 corpus and the PE-84 independent audit).
 - Manifest `AppDomains` unchanged: Gemini already worked without listing its domain, so no re-upload is needed; add the domains only if a provider is blocked in real Word.
+
+## PE-84 independent audit fixes (still 2.0.0.19)
+
+- AI budget caps now also hold when the browser blocks or fails storage (counters are kept in memory for the life of the pane as well).
+- Spacing-only cards (double space) now say how to fix them (Word Find & Replace) instead of "no text to replace".
+- All settings checkboxes and several text fields now have accessible names for screen readers.
+- "Release notes" link in What's new points to these notes; privacy doc now discloses the automatic once-per-session update check.

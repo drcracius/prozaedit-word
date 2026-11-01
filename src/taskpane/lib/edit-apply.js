@@ -8,7 +8,14 @@ ProzaEdit.EditApply = {
   isApplicable(fromText, toText) {
     const from = String(fromText == null ? "" : fromText);
     const to = String(toText == null ? "" : toText);
-    if (!from.trim()) return { ok: false, reason: "There is no text to replace." };
+    if (!from.trim()) {
+      return {
+        ok: false,
+        reason: from
+          ? "Spacing-only fixes cannot be applied one at a time safely. In Word use Find & Replace (Ctrl+H): replace two spaces with one."
+          : "There is no text to replace.",
+      };
+    }
     if (!to.trim() && to !== "") return { ok: false, reason: "The replacement is blank." };
     if (/^\(.*\)$/.test(to.trim())) return { ok: false, reason: "This card has no automatic replacement." };
     if (from === to) return { ok: false, reason: "The replacement is identical to the original." };

@@ -2,7 +2,7 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Web 1.0 RC on `main`:** build **2.0.0.18**, **224** tests, PE-48 agent prep merged ([#5](https://github.com/drcracius/prozaedit-word/pull/5)); owner Phase 1 (**PE-47**) open; desktop **PE-2** deferred.
+**Web 1.0 RC on `main`:** build **2.0.0.19** (PE-81/82/83 branch; see README for the current test count), PE-48 agent prep merged ([#5](https://github.com/drcracius/prozaedit-word/pull/5)); owner Phase 1 (**PE-47**) open; desktop **PE-2** deferred.
 
 **After install:** [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) → [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md).
 
