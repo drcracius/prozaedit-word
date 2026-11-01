@@ -22,6 +22,15 @@
       <button type="button" class="btn-linkish" onclick="dismissWhatsNewBanner(true)">Don&apos;t show again</button>
     </div>
   </div>
+  <div id="peLongOpWarningBanner" class="pe-top-banner help-box hidden" role="region" aria-label="Long operation warning">
+    <p class="pe-top-banner-lead"><strong>Long operation</strong></p>
+    <p id="peLongOpWarningBody" class="pe-top-banner-body">This action may take several minutes on long documents.</p>
+    <div class="pe-top-banner-actions">
+      <button type="button" class="btn-secondary pe-btn" id="btnLongOpContinue">Continue</button>
+      <button type="button" class="btn-linkish" id="btnLongOpNotNow">Not now</button>
+      <button type="button" class="btn-linkish" id="btnLongOpDontShowAgain">Don&apos;t show again</button>
+    </div>
+  </div>
   <div id="pePriorSessionBanner" class="pe-top-banner help-box hidden" role="region" aria-label="Prior session summary">
     <p class="pe-top-banner-lead"><strong>Welcome back</strong></p>
     <ul id="pePriorSessionLines" class="help-list pe-prior-session-lines"></ul>
@@ -74,7 +83,10 @@
       <svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
       <span class="btn-tool-icon-label">Last edit</span>
     </button>
-    <span id="peStatus" class="pe-status" aria-live="polite"></span>
+    <span id="peStatusWrap" class="pe-status-wrap">
+      <span id="peStatus" class="pe-status" aria-live="polite"></span>
+      <button type="button" id="btnPeStatusDismiss" class="pe-status-dismiss hidden" onclick="dismissPeStatus()" aria-label="Dismiss status message">×</button>
+    </span>
     <button type="button" id="btn-settings-open" class="btn-tool btn-tool-icon" onclick="openSettingsModal()" aria-label="Open settings" aria-haspopup="dialog" data-pe-tip="btn-settings">
       <svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
       <span class="btn-tool-icon-label">Settings</span>
@@ -89,7 +101,7 @@
     <button type="button" class="tab-btn active" data-pe-tab="tab1" role="tab" aria-selected="true" onclick="showTab('tab1')">Target</button>
     <button type="button" class="tab-btn" data-pe-tab="tab2" data-simple-hide role="tab" onclick="showTab('tab2')">Thesaurus</button>
     <button type="button" class="tab-btn" data-pe-tab="tab3" role="tab" onclick="showTab('tab3')">Checks</button>
-    <button type="button" class="tab-btn" data-pe-tab="tab4" role="tab" onclick="showTab('tab4')">Audit</button>
+    <button type="button" class="tab-btn" data-pe-tab="tab4" role="tab" onclick="showTab('tab4')">Audit <span id="peAuditTabBadge" class="pe-tab-badge hidden" aria-label="Open issue count"></span></button>
     <button type="button" class="tab-btn" data-pe-tab="tab5" role="tab" onclick="showTab('tab5')">Coach</button>
     <button type="button" class="tab-btn" data-pe-tab="tab6" role="tab" onclick="showTab('tab6')">Rewrite</button>
     <button type="button" class="tab-btn" data-pe-tab="tab7" role="tab" onclick="showTab('tab7')">Help</button>
@@ -220,8 +232,13 @@
   </div>
 
   <div id="tab3" class="tab-content" role="tabpanel">
+    <p id="checksScopeChip" class="pe-scope-chip help-muted" aria-live="polite">Scope: —</p>
     <div class="audit-run-hub">
-      <button class="btn-main btn-main-hub" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
+      <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
+      <div id="peLongOpProgressChecks" class="pe-longop-progress hidden" aria-live="polite">
+        <span id="peLongOpProgressLabelChecks" class="pe-longop-progress-label">Reading document…</span>
+        <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpChecks">Cancel</button>
+      </div>
       <label class="toggle-row compact"><span>Extended checks (fillers, duplicates, deeper editorial pass)</span><input type="checkbox" data-audit-extended="1" id="auditExtendedChecks"></label>
       <p id="activeChecksHint" class="active-checks-hint">Turn on checks below, then Run audit.</p>
     </div>
@@ -313,7 +330,11 @@
 
   <div id="tab4" class="tab-content" role="tabpanel">
     <div class="audit-run-hub audit-run-hub-inline">
-      <button class="btn-main btn-main-hub" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
+      <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
+      <div id="peLongOpProgressAudit" class="pe-longop-progress hidden" aria-live="polite">
+        <span id="peLongOpProgressLabelAudit" class="pe-longop-progress-label">Reading document…</span>
+        <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpAudit">Cancel</button>
+      </div>
       <label class="toggle-row compact"><span>Extended checks</span><input type="checkbox" data-audit-extended="1" id="auditExtended"></label>
       <button type="button" class="btn-linkish" onclick="showTab('tab3')">Configure checks →</button>
     </div>
@@ -417,7 +438,8 @@
       <p><strong>Analysis scope (Target):</strong> Highlighted selection; <strong>Page range</strong> (From/To pages, ~2,800 chars each); Selected chapters (Heading 1–3 checklist); or Full manuscript.</p>
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
       <p><strong>Settings (toolbar gear):</strong> Simple mode, safety toggles (confirm before apply, hover tips, FK lock, continuity slider), audit defaults (report depth, default filter, extended checks), privacy &amp; diagnostics, per-document dictionary, capture reference style, citation scan shortcut, Gemini session ceiling (when Simple mode is off), and custom style rules (add/edit/bulk import). <strong>Target</strong> keeps manuscript profile, analysis scope, and preferred style guide.</p>
-      <p><strong>Look &amp; navigation:</strong> Single light theme (indigo actions, green accents for active steps and OK hints). The line under the toolbar shows your <strong>scope</strong> and character estimate after <strong>Refresh count</strong>. ProzaEdit remembers your <strong>last tab</strong> per document. Open Settings with toolbar gear, <strong>Ctrl+Shift+,</strong> or <strong>Alt+Shift+S</strong> (when not typing in a field). Deep links: Help → Privacy, Target → Custom rules, or bookmark <code>#pe-settings-privacy</code>. Settings and Rewrite (from an audit card) offer <strong>Back</strong> when you need to return without hunting tabs.</p>
+      <p><strong>Keyboard shortcuts:</strong> Open Settings — <strong>Ctrl+Shift+,</strong> or <strong>Alt+Shift+S</strong> (when focus is not in a text field). Undo / Redo — toolbar buttons (Word undo still applies to all edits). See checklist §8 for banner and control sync tests.</p>
+      <p><strong>Look &amp; navigation:</strong> Single light theme (indigo actions, green accents for active steps and OK hints). The line under the toolbar shows your <strong>scope</strong> and character estimate after <strong>Refresh count</strong>. ProzaEdit remembers your <strong>last tab</strong> per document. Deep links: Help → Privacy, Target → Custom rules, or bookmark <code>#pe-settings-privacy</code>. Settings and Rewrite (from an audit card) offer <strong>Back</strong> when you need to return without hunting tabs.</p>
       <p><strong>Hover tips:</strong> Settings → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
       <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” in Settings for speed.</p>
       <p><strong>Rewrite (audit card):</strong> Selects the finding in Word, opens Rewrite, clears stale preview — run <em>Local paraphrase</em> and apply manually (0 tokens).</p>
@@ -512,6 +534,11 @@
         <h2 id="pe-settings-title" class="pe-settings-title">Settings</h2>
         <button type="button" id="btn-settings-close" class="btn-linkish pe-settings-close" data-pe-settings-close aria-label="Close settings">Close</button>
       </header>
+      <div class="pe-settings-search-wrap">
+        <label for="peSettingsFilter" class="visually-hidden">Filter settings groups</label>
+        <input type="search" id="peSettingsFilter" class="pe-settings-search" placeholder="Filter settings (e.g. onboarding, audit)…" autocomplete="off">
+      </div>
+      <p class="help-muted pe-settings-shortcuts" style="font-size:10px;margin:0 0 8px;padding:0 12px;">Shortcuts: <strong>Ctrl+Shift+,</strong> or <strong>Alt+Shift+S</strong> opens Settings (when not typing in a field).</p>
       <div class="pe-settings-body">
         <details class="pe-settings-group" id="pe-settings-group-safety" open>
           <summary>Safety</summary>
@@ -544,7 +571,8 @@
           <div class="toggle-row"><span>Show new-session tips banner</span><input type="checkbox" id="showSessionTips" checked></div>
           <div class="toggle-row"><span>Show What&apos;s new banner (once per release)</span><input type="checkbox" id="showWhatsNew" checked></div>
           <div class="toggle-row"><span>Show prior-session recap banner</span><input type="checkbox" id="showPriorSessionSummary" checked></div>
-          <p class="help-muted" style="font-size:10px;margin:4px 0 0;">Banners appear at the top of the pane. “Got it” hides until the next browser session; What&apos;s new can be dismissed per release.</p>
+          <div class="toggle-row"><span>Warn before long operations (audit, scans)</span><input type="checkbox" id="showLongOperationWarnings" checked></div>
+          <p class="help-muted" style="font-size:10px;margin:4px 0 0;">Banners appear at the top of the pane. “Got it” hides until the next browser session; What&apos;s new can be dismissed per release. Long-operation warnings can be dismissed per action without turning this off.</p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="onboarding" style="margin-top:10px;">Reset Onboarding to defaults</button>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-audit">
@@ -647,6 +675,8 @@
   <script src="lib/settings-store.js"></script>
   <script src="lib/ui-prefs-helpers.js"></script>
   <script src="lib/onboarding-helpers.js"></script>
+  <script src="lib/long-operation-helpers.js"></script>
+  <script src="lib/long-operation-controller.js"></script>
   <script src="lib/text-metrics.js"></script>
   <script src="lib/proper-noun-analyse.js"></script>
   <script src="lib/lexical-banks.js"></script>

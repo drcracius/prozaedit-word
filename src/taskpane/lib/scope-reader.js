@@ -107,19 +107,48 @@ ProzaEdit.ScopeReader = {
     });
   },
 
-  async textFromParagraphRange(context, startPara, endPara) {
+  _cancelCheck(opts) {
+    if (opts && typeof opts.cancelCheck === "function") opts.cancelCheck();
+  },
+
+  async textFromParagraphRange(context, startPara, endPara, opts) {
+    opts = opts || {};
     const paras = context.document.body.paragraphs;
     paras.load("items");
     await context.sync();
     if (startPara < 0 || endPara >= paras.items.length) throw new Error("Chapter range out of document bounds.");
-    for (let i = startPara; i <= endPara; i++) paras.items[i].load("text");
-    await context.sync();
+    const CHUNK = 50;
     let text = "";
-    for (let i = startPara; i <= endPara; i++) text += (paras.items[i].text || "") + "\n";
+    for (let blockStart = startPara; blockStart <= endPara; blockStart += CHUNK) {
+      this._cancelCheck(opts);
+      const blockEnd = Math.min(blockStart + CHUNK - 1, endPara);
+      for (let i = blockStart; i <= blockEnd; i++) paras.items[i].load("text");
+      await context.sync();
+      for (let i = blockStart; i <= blockEnd; i++) text += (paras.items[i].text || "") + "\n";
+    }
     return text;
   },
 
-  async readByPageRange(context, pageFrom, pageTo) {
+  async readFullManuscriptChunked(context, opts) {
+    opts = opts || {};
+    const paras = context.document.body.paragraphs;
+    paras.load("items");
+    await context.sync();
+    const total = paras.items.length;
+    const CHUNK = 40;
+    let text = "";
+    for (let start = 0; start < total; start += CHUNK) {
+      this._cancelCheck(opts);
+      const end = Math.min(start + CHUNK - 1, total - 1);
+      for (let i = start; i <= end; i++) paras.items[i].load("text");
+      await context.sync();
+      for (let i = start; i <= end; i++) text += (paras.items[i].text || "") + "\n";
+    }
+    return { text, label: "full manuscript" };
+  },
+
+  async readByPageRange(context, pageFrom, pageTo, opts) {
+    opts = opts || {};
     const from = Math.max(1, parseInt(pageFrom, 10) || 1);
     const to = Math.max(from, parseInt(pageTo, 10) || from);
     const startChar = (from - 1) * this.CHARS_PER_PAGE;
@@ -131,46 +160,53 @@ ProzaEdit.ScopeReader = {
     if (!total) throw new Error("Document is empty.");
     let charPos = 0;
     let out = "";
-    for (let i = 0; i < total; i++) {
-      paras.items[i].load("text");
-    }
-    await context.sync();
-    for (let i = 0; i < total; i++) {
-      const t = paras.items[i].text || "";
-      const chunkLen = t.length + 1;
-      const paraStart = charPos;
-      const paraEnd = charPos + chunkLen;
-      if (paraEnd > startChar && paraStart < endChar) {
-        out += t + "\n";
+    const CHUNK = 50;
+    for (let blockStart = 0; blockStart < total; blockStart += CHUNK) {
+      this._cancelCheck(opts);
+      const blockEnd = Math.min(blockStart + CHUNK - 1, total - 1);
+      for (let i = blockStart; i <= blockEnd; i++) paras.items[i].load("text");
+      await context.sync();
+      for (let i = blockStart; i <= blockEnd; i++) {
+        const t = paras.items[i].text || "";
+        const chunkLen = t.length + 1;
+        const paraStart = charPos;
+        const paraEnd = charPos + chunkLen;
+        if (paraEnd > startChar && paraStart < endChar) {
+          out += t + "\n";
+        }
+        charPos = paraEnd;
+        if (charPos >= endChar) break;
       }
-      charPos = paraEnd;
       if (charPos >= endChar) break;
     }
     if (!out.trim()) throw new Error(`No text in approximate pages ${from}–${to}. Try a wider range.`);
     return { text: out, label: `approx. pages ${from}–${to}` };
   },
 
-  async readByChapter(context, chapterNum, chapters) {
+  async readByChapter(context, chapterNum, chapters, opts) {
+    opts = opts || {};
     const list = chapters || (await this.listChapters(context));
     const n = parseInt(chapterNum, 10);
     const ch = list.find((c) => c.index === n);
     if (!ch) throw new Error(`Chapter ${n} not found. Use Heading 1–3 on chapter titles.`);
-    const text = await this.textFromParagraphRange(context, ch.startPara, ch.endPara);
+    const text = await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts);
     return { text, label: `Ch. ${n}: ${ch.title}` };
   },
 
-  async readByChapterRange(context, fromNum, toNum, chapters) {
+  async readByChapterRange(context, fromNum, toNum, chapters, opts) {
+    opts = opts || {};
     const list = chapters || (await this.listChapters(context));
     const a = Math.min(parseInt(fromNum, 10) || 1, parseInt(toNum, 10) || 1);
     const b = Math.max(parseInt(fromNum, 10) || 1, parseInt(toNum, 10) || 1);
     const start = list.find((c) => c.index === a);
     const end = list.find((c) => c.index === b);
     if (!start || !end) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
-    const text = await this.textFromParagraphRange(context, start.startPara, end.endPara);
+    const text = await this.textFromParagraphRange(context, start.startPara, end.endPara, opts);
     return { text, label: `Ch. ${a}–${b}` };
   },
 
-  async readBySelectedChapters(context, indices, chapters) {
+  async readBySelectedChapters(context, indices, chapters, opts) {
+    opts = opts || {};
     const list = chapters || (await this.listChapters(context));
     const normalized = this.normalizeSelectedChapterIndices(indices, list);
     if (!normalized.length) {
@@ -178,9 +214,10 @@ ProzaEdit.ScopeReader = {
     }
     let text = "";
     for (let i = 0; i < normalized.length; i++) {
+      this._cancelCheck(opts);
       const ch = list.find((c) => c.index === normalized[i]);
       if (!ch) continue;
-      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara);
+      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts);
     }
     if (!text.trim()) throw new Error("Selected chapters contain no text.");
     const label = this.formatSelectedChaptersLabel(normalized, list);
@@ -190,29 +227,34 @@ ProzaEdit.ScopeReader = {
   async measureScope(context, opts) {
     opts = opts || {};
     const mode = opts.mode || "selection";
+    this._cancelCheck(opts);
     if (mode === "selection") {
       const sel = context.document.getSelection();
       sel.load("text");
       await context.sync();
+      this._cancelCheck(opts);
       return { text: sel.text || "", label: "selection" };
     }
     if (mode === "full") {
+      if (typeof opts.cancelCheck === "function") {
+        return this.readFullManuscriptChunked(context, opts);
+      }
       const body = context.document.body;
       body.load("text");
       await context.sync();
       return { text: body.text || "", label: "full manuscript" };
     }
     if (mode === "pages") {
-      return this.readByPageRange(context, opts.pageFrom, opts.pageTo);
+      return this.readByPageRange(context, opts.pageFrom, opts.pageTo, opts);
     }
     if (mode === "chapter") {
-      return this.readByChapter(context, opts.chapterSingle, opts.chapters);
+      return this.readByChapter(context, opts.chapterSingle, opts.chapters, opts);
     }
     if (mode === "chapter-range") {
-      return this.readByChapterRange(context, opts.chapterFrom, opts.chapterTo, opts.chapters);
+      return this.readByChapterRange(context, opts.chapterFrom, opts.chapterTo, opts.chapters, opts);
     }
     if (mode === "selected-chapters") {
-      return this.readBySelectedChapters(context, opts.selectedChapterIndices, opts.chapters);
+      return this.readBySelectedChapters(context, opts.selectedChapterIndices, opts.chapters, opts);
     }
     throw new Error("Unknown scope mode.");
   },
@@ -221,6 +263,7 @@ ProzaEdit.ScopeReader = {
   async readParagraphsInScope(context, opts) {
     opts = opts || {};
     const mode = opts.mode || "selection";
+    this._cancelCheck(opts);
     const paras = context.document.body.paragraphs;
     paras.load("items");
     await context.sync();
@@ -334,18 +377,22 @@ ProzaEdit.ScopeReader = {
       if (end < start) end = Math.min(start + selParas.items.length - 1, total - 1);
     }
 
-    for (let i = start; i <= end; i++) paras.items[i].load(["text", "styleBuiltIn"]);
-    await context.sync();
-
     const out = [];
-    for (let i = start; i <= end; i++) {
-      const p = paras.items[i];
-      const s = p.styleBuiltIn;
-      let headingLevel = 0;
-      if (s === Word.Style.heading1) headingLevel = 1;
-      else if (s === Word.Style.heading2) headingLevel = 2;
-      else if (s === Word.Style.heading3) headingLevel = 3;
-      out.push({ index: i, text: p.text || "", headingLevel });
+    const CHUNK = 50;
+    for (let blockStart = start; blockStart <= end; blockStart += CHUNK) {
+      this._cancelCheck(opts);
+      const blockEnd = Math.min(blockStart + CHUNK - 1, end);
+      for (let i = blockStart; i <= blockEnd; i++) paras.items[i].load(["text", "styleBuiltIn"]);
+      await context.sync();
+      for (let i = blockStart; i <= blockEnd; i++) {
+        const p = paras.items[i];
+        const s = p.styleBuiltIn;
+        let headingLevel = 0;
+        if (s === Word.Style.heading1) headingLevel = 1;
+        else if (s === Word.Style.heading2) headingLevel = 2;
+        else if (s === Word.Style.heading3) headingLevel = 3;
+        out.push({ index: i, text: p.text || "", headingLevel });
+      }
     }
     return out;
   },

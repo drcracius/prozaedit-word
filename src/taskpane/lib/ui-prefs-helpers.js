@@ -38,6 +38,7 @@ ProzaEdit.UiPrefs = {
     showSessionTips: true,
     showWhatsNew: true,
     showPriorSessionSummary: true,
+    showLongOperationWarnings: true,
   },
 
   validateLastActiveTab(tabId, options) {
@@ -89,6 +90,7 @@ ProzaEdit.UiPrefs = {
           showSessionTips: base.showSessionTips,
           showWhatsNew: base.showWhatsNew,
           showPriorSessionSummary: base.showPriorSessionSummary,
+          showLongOperationWarnings: base.showLongOperationWarnings,
         };
       case "audit":
         return {

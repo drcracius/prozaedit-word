@@ -25,7 +25,9 @@
 - [ ] Help **Open Settings → Privacy** and Target **Custom rules → manage** land in the right group.
 - [ ] Bookmark `#pe-settings-privacy` on reload opens Privacy group.
 - [ ] Each group **Reset … to defaults** (confirm) — Safety, Onboarding, Audit, Privacy, Dictionary, Custom style; Reference shows info only.
-- [ ] **Onboarding** group: **Show new-session tips**, **Show What's new**, **Show prior-session recap** (all default on); **Reset Onboarding** restores defaults.
+- [ ] **Onboarding** group: **Show new-session tips**, **Show What's new**, **Show prior-session recap**, **Warn before long operations** (all default on); **Reset Onboarding** restores defaults.
+- [ ] Settings **Filter settings** box hides non-matching groups (e.g. type `audit`).
+- [ ] Toolbar status line: message auto-clears ~6s; **×** dismisses immediately.
 - [ ] **Got it** on session tips banner hides `#peSessionTips` until next browser session (global `.hidden` utility).
 - [ ] **What's new** top banner (`#peWhatsNewBanner`) shows once per release when enabled; **Got it** dismisses for version; **Don't show again** turns off the toggle.
 - [ ] **Prior session** banner (`#pePriorSessionBanner`) after a prior visit: recap lines from `pe-last-session-summary`; **Got it** hides for session; **Turn off in Settings** opens Onboarding.
@@ -39,9 +41,16 @@
 ## 5. Checks and audit
 
 - [ ] Checks: enable modules → **Run audit** (toolbar or Audit hub).
+- [ ] Checks **Scope (read-only)** chip matches Target scope / refresh count.
+- [ ] **Run audit** shows **Reading document…** then **Analyzing…**; **Cancel** stops cleanly with status **Cancelled.** (no stuck disabled buttons).
+- [ ] Full manuscript or large scope: **Long operation** banner when **Warn before long operations** is on (Settings → Onboarding); **Continue** / **Not now** / **Don't show again**.
+- [ ] Audit tab **badge** shows open issue count after audit; clears when audit cleared.
 - [ ] Audit: filter chips, sort; read-only **Report depth** and **Default filter** hints match Settings → Audit.
 - [ ] Change report depth / default filter in Settings — hints update on Audit tab.
+- [ ] Empty Audit state: **Run audit from Checks** CTA.
 - [ ] **Apply fix** on a card → **Undo** → **Last edit**.
+- [ ] Optional: **Verify citations** / **Scan timeline** on large scope — warning banner; Cancel during scan.
+- [ ] Optional: **Batch section audits** — warning; **Cancel batch** or hub Cancel stops between sections.
 
 ## 6. Help, About, and diagnostics
 
@@ -68,4 +77,4 @@
 
 ---
 
-*Automated coverage:* `npm test` (includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`, `onboarding-banners.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).
+*Automated coverage:* `npm test` (includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`, `onboarding-banners.test.mjs`, `long-operation-helpers.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).
