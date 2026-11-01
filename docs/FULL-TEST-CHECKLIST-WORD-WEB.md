@@ -10,7 +10,7 @@
 
 - [ ] New blank document → **Insert** → **Add-ins** → **Upload My Add-in** → `manifest.hosted.xml` from GitHub raw.
 - [ ] Open a test manuscript → **Home** → **ProzaEdit** task pane loads (brand header, workflow strip, toolbar).
-- [ ] **Help → Check for updates** reports manifest/UI **2.0.0.15**.
+- [ ] **Help → About ProzaEdit → Check for updates** reports manifest/UI **2.0.0.15**.
 
 ## 2. Target and scope
 
@@ -24,7 +24,7 @@
 - [ ] **Ctrl+Shift+,** and **Alt+Shift+S** open Settings (not while focused in a text field).
 - [ ] Help **Open Settings → Privacy** and Target **Custom rules → manage** land in the right group.
 - [ ] Bookmark `#pe-settings-privacy` on reload opens Privacy group.
-- [ ] Each group **Reset … to defaults** (confirm) — Safety, Audit, Privacy, Dictionary, Custom style; Reference shows info only.
+- [ ] Each group **Reset … to defaults** (confirm) — Safety, Onboarding, Audit, Privacy, Dictionary, Custom style; Reference shows info only.
 - [ ] **Onboarding** group: **Show new-session tips**, **Show What's new**, **Show prior-session recap** (all default on); **Reset Onboarding** restores defaults.
 - [ ] **Got it** on session tips banner hides `#peSessionTips` until next browser session (global `.hidden` utility).
 - [ ] **What's new** top banner (`#peWhatsNewBanner`) shows once per release when enabled; **Got it** dismisses for version; **Don't show again** turns off the toggle.
