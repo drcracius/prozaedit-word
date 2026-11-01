@@ -1190,6 +1190,40 @@ body.pe-narrow-pane .btn-tool-icon-label {
   background: var(--surface-subtle);
 }
 
+.pe-workflow-next-step {
+  font-size: 10px;
+  margin: -4px 0 8px;
+  padding: 0 4px;
+  line-height: 1.35;
+  font-style: italic;
+}
+
+.pe-full-ms-tip {
+  font-size: 10px;
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--pe-primary-indigo);
+  background: var(--pe-muted-surface);
+}
+
+.pe-first-audit-checklist .pe-first-audit-steps {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.partner-tools-more {
+  margin-top: 4px;
+}
+
+.partner-tools-more summary.partner-tools-hint {
+  cursor: pointer;
+  list-style: none;
+}
+
+.partner-tools-more summary.partner-tools-hint::-webkit-details-marker {
+  display: none;
+}
+
 .pe-top-banner {
   margin: 0 0 8px;
   padding: 8px 10px;

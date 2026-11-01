@@ -80,7 +80,10 @@ ProzaEdit.LongOp = {
   warningCopyForAction(actionId) {
     const id = String(actionId || "");
     if (id === ProzaEdit.LongOp.ACTION_IDS.AUDIT_FULL) {
-      return "A full-manuscript audit reads the entire document and may take several minutes on long drafts.";
+      return (
+        "A full-manuscript audit reads the entire document and may take several minutes on long drafts. " +
+        "For very long documents, try Selected chapters or Page range (common pro workaround)."
+      );
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE) {
       return "This audit covers a large scope and may take a minute or more.";
