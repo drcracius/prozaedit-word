@@ -42,7 +42,7 @@ The index stores a **per-chapter content hash**, a **document hash**, and a fing
 ## Privacy
 
 - Building and storing the index is **local only**.
-- **The index is sent to Google when you use a Gemini action** (Coach → Send via Gemini, Deep audit, Rewrite via Gemini) — as a labelled block in the prompt. If you do not want that, do not use Gemini, or do not build the index. Local audit, local Coach and local Rewrite never contact Gemini.
+- **The index is sent to your chosen AI provider when you use an AI action** (Coach → Send via AI, Deep audit, AI rewrite) — as a labelled block in the prompt. If you do not want that, do not use Gemini, or do not build the index. Local audit, local Coach and local Rewrite never contact Gemini.
 - The Settings and Gemini panels state this in plain words; see also [PRIVACY-AND-DATA-PE.md](./PRIVACY-AND-DATA-PE.md).
 
 ## Settings
@@ -60,9 +60,9 @@ When the index is **fresh**, ProzaEdit injects the outline and arc notes into:
 - **Gemini** prompts (also when stale, flagged)
 - **Continuity warnings** before Apply (names matched as whole words)
 
-## Gemini prompt budget
+## AI prompt budget
 
-A single Gemini request is capped (about 32,000 characters). The prompt is built from labelled parts instead of cutting the tail off:
+A single AI request is capped (about 32,000 characters). The prompt is built from labelled parts instead of cutting the tail off:
 
 1. The **instruction** is always kept.
 2. Your **question** and the **excerpt**, including the **end of the excerpt**, are kept.

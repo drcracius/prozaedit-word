@@ -11,7 +11,7 @@
     "btn-go-last-edit":
       "Jump to the last successful Apply or replace in Word (tracked on this PC). Disabled until you apply at least one fix.",
     "btn-settings":
-      "Open Settings: safety toggles, dictionary, citation tools, Gemini session ceiling, and custom-style bulk import. Target keeps daily profile, scope, and style guide.",
+      "Open Settings: safety toggles, dictionary, citation tools, AI provider and token limits, and custom-style bulk import. Target keeps daily profile, scope, and style guide.",
     "sel-manuscript-scope":
       "Which text ProzaEdit reads for audit. Full manuscript is capped (see scope preview). Selection uses the Word highlight.",
     "chk-repetition":

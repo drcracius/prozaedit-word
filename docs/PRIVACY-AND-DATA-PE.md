@@ -20,23 +20,23 @@
 
 | Service | When | What is sent |
 |---------|------|----------------|
-| **Google Gemini** | Coach **Send via Gemini**, **Deep audit**, **Rewrite via Gemini** | Your prompt plus the context ProzaEdit attaches (selection-only by default for Coach). **If you built a manuscript context index, that local heuristic outline — chapter titles, word counts, first/last lines, recurring names, frequent words and time cues — is included in the request too** (flagged if it may be out of date). Over-long prompts are trimmed with a visible note; the instruction, your question and the end of the excerpt are kept. |
+| **Your chosen AI provider** (Google Gemini, OpenAI, Anthropic Claude or OpenRouter — only if you add your own API key under Settings → AI help) | Coach **Send via AI**, **Deep audit**, **AI rewrite** — each asks first and shows an estimate | Your prompt plus the context ProzaEdit attaches (selection-only by default for Coach). **If you built a manuscript context index, that local heuristic outline — chapter titles, word counts, first/last lines, recurring names, frequent words and time cues — is included in the request too** (flagged if it may be out of date). Over-long prompts are trimmed with a visible note; the instruction, your question and the end of the excerpt are kept. |
 | **Datamuse** | **Thesaurus** lookup | The single word you search. |
 
-The manuscript context index itself is **not AI-generated** and building it sends nothing anywhere; it is stored in this document's own settings key (`PROZAEDIT_MCI_V2`). Local audit, local Coach and local Rewrite never contact Gemini.
+The manuscript context index itself is **not AI-generated** and building it sends nothing anywhere; it is stored in this document's own settings key (`PROZAEDIT_MCI_V2`). Local audit, local Coach and local Rewrite never contact any AI provider. Offline is the default: with no API key nothing leaves the PC except the optional Thesaurus lookup and the update check.
 
-No ProzaEdit-hosted model training pipeline exists in this build; third-party terms apply when you use Gemini or Datamuse.
+No ProzaEdit-hosted model training pipeline exists in this build; third-party terms apply when you use an AI provider or Datamuse. Consumer subscriptions (ChatGPT Plus, Claude Pro, Gemini Advanced, Copilot) do not include API access; AI help needs an API key from the provider.
 
 ---
 
 ## Stored on this Word document
 
-- **`PROZAEDIT_CONFIG`** — UI preferences, optional **Remember API key** (off by default).
+- **`PROZAEDIT_CONFIG`** — UI preferences, the genre profile and the AI provider/model/limits choice. **API keys are never stored in the document.**
 - **Custom dictionary** — terms you add in Settings → Dictionary.
 - **Muted rules (document copy)** — rule IDs muted during audits on this file.
 - **Custom style rules**, last audit snapshot, and similar document-scoped keys.
 
-**Remember API key:** when enabled, the Gemini key is stored inside the document. Use only on files you control on a private PC.
+**Remember on this device:** when enabled, the key is kept in this browser profile's local storage only (never in the document, never in diagnostics, never in logs). Leave it off on shared PCs. Documents saved by older versions that still contain a key have it moved to the device and removed from the document the first time they open. AI replies are only shown as suggestions; nothing is applied automatically, and findings that do not quote your text exactly are discarded.
 
 ---
 

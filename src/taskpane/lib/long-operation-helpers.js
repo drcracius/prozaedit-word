@@ -98,7 +98,7 @@ ProzaEdit.LongOp = {
       return "Batch section audit runs multiple audits in a row and may take several minutes.";
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.DEEP_AUDIT) {
-      return "Deep audit reads scope text then calls Gemini — may take a minute.";
+      return "Deep audit reads scope text then calls your AI provider — may take a minute.";
     }
     return "This action may take a while on long documents.";
   },
