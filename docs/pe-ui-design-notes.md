@@ -59,10 +59,25 @@ Collapsible `<details class="pe-settings-group">`:
 
 Accent greens and indigo are chosen for readable text on white/slate surfaces in narrow Word web panes; severity chips keep existing high-contrast traffic colors.
 
-## Dark palette (PE-51 polish)
+## Dark palette (PE-54 revision)
 
-Dark mode avoids pure black/white. Surfaces stack as **base** (`--bg`, ~`#0b1120`), **pane** (`--surface`, ~`#151c2c`), **elevated** (cards `--pe-card-surface`, settings groups), and **inset** (`--surface-inset` for inputs, inactive chips, workflow steps). Borders use `--border` / `--border-muted` (~`#2e3d52` / `#243044`); body text `--text` (~`#e2e8f0`), secondary `--text-muted` (~`#8899ae`).
+Direction: warm **editorial charcoal** (VS Code Dark+–style warmth), not blue-gray slate. Light tokens are frozen; only `[data-pe-theme="dark"]` values and dark-scoped rules change.
 
-Accents stay on-brand: **indigo** primary (`--pe-primary-indigo` ~`#93a4ff`) for actions, links, and focus (`--pe-focus-ring`); **green** (`--pe-success` ~`#3ee4a3`, `--pe-success-bg` ~`#0f3329`) for OK states, active workflow, and tab underline. Help/banner tints use `--pe-help-box-bg` and `--pe-banner-tint-*` instead of light-blue literals. Brand header stays deep slate (`--pe-brand-bg`); wordmark gets a minimal brightness filter only in dark.
+| Token | Hex (approx.) | Role |
+| --- | --- | --- |
+| `--bg` | `#1a1a1c` | Base wash (scope lists, inset wells) |
+| `--surface` | `#212124` | Pane body, settings groups |
+| `--pe-card-surface` | `#2a2a2e` | Cards, audit hubs, elevated panels |
+| `--surface-subtle` | `#1f1f22` | Tabs bar, toolbar, chips row |
+| `--surface-inset` | `#18181a` | Inputs, inactive chips, workflow steps |
+| `--border` / `--border-muted` | `#3a3a3f` / `#2e2e32` | Dividers (subtle, non-glowing) |
+| `--text` / `--text-muted` | `#ececec` / `#a3a3a8` | Primary and secondary copy |
+| `--pe-primary-indigo` | `#8490ff` | Actions, links, focus (`--pe-focus-ring` ~`#9490ff`) |
+| `--pe-success` / `--pe-success-bg` | `#5cb88a` / `#1e2e26` | Workflow OK, tab underline, completion |
+| `--pe-warning` / `--pe-warning-bg` | `#d4a054` / `#2e2618` | Caution banners (desaturated gold) |
+| `--red` / `--red-bg` | `#e89292` / `#3a2222` | Critical severity on cards |
+| `--orange` / `--orange-bg` | `#e89656` / `#3a2818` | Style severity on cards |
+| `--pe-help-box-bg`, `--pe-banner-tint-*` | `#252528`, `#404048` border | Subtle tinted banners (not saturated boxes) |
+| `--pe-brand-bg` | `#141416` | Brand bar; wordmark filter in dark-only CSS |
 
-Component polish is scoped with `[data-pe-theme="dark"]` so **light CSS variables and layout are unchanged** from PE-50.
+PE-51 component polish (tabs, toolbar, settings modal, audit cards, focus rings) remains scoped under `[data-pe-theme="dark"]`.
