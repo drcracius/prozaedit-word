@@ -13,8 +13,10 @@ PE-69 hardens the card-by-card review flow against recurring writing-add-in comp
 - Word-host failures now suggest retrying, reopening the task pane, and using a smaller scope where appropriate.
 - A failed audit no longer announces **Audit finished**.
 - Long-operation cancel controls use an atomic live status, expose an accessible label, and show **Cancelling…** while waiting for a safe cooperative stop.
+- The onboarding tour traps Tab/Shift+Tab focus inside its modal until Done, Skip, or Escape.
 - Gemini chat/rewrite controls say that prompt/context is sent to Google only when the user clicks the cloud action.
 - Settings warns that **Remember in this document** stores the Gemini key in the Word document and should remain off for shared files.
+- Thesaurus copy explains that an online lookup sends only the search word to Datamuse.
 
 ## Guardrails retained
 

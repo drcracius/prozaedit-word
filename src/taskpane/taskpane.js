@@ -526,10 +526,14 @@ function setupSettingsModal() {
 
 function trapFocusInSettingsModal(e, modal) {
   const dialog = modal.querySelector(".pe-settings-dialog");
-  if (!dialog) return;
-  const focusable = dialog.querySelectorAll(
+  trapFocusWithin(e, dialog);
+}
+
+function trapFocusWithin(e, container) {
+  if (!container) return;
+  const focusable = [...container.querySelectorAll(
     'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-  );
+  )].filter((el) => !el.closest(".hidden") && (el.offsetParent !== null || el === document.activeElement));
   if (!focusable.length) return;
   const first = focusable[0];
   const last = focusable[focusable.length - 1];
@@ -2414,7 +2418,9 @@ function onboardingTourKeydownHandler(e) {
   if (e.key === "Escape") {
     e.preventDefault();
     skipOnboardingTour();
+    return;
   }
+  if (e.key === "Tab") trapFocusWithin(e, shell.querySelector(".pe-onboarding-tour-panel"));
 }
 
 function renderOnboardingTourStep(stepIndex) {
