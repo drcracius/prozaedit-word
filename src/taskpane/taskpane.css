@@ -1,3 +1,7 @@
+.hidden {
+  display: none !important;
+}
+
 :root {
   --pe-primary-indigo: #4338ca;
   --pe-primary-indigo-hover: #3730a3;
@@ -936,6 +940,38 @@ body.pe-narrow-pane .btn-tool-icon-label {
   line-height: 1.35;
   border-bottom: 1px solid var(--border-muted, #e8eaed);
   background: var(--surface-subtle, #f8f9fa);
+}
+
+.pe-top-banner {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--pe-primary-indigo);
+}
+
+.pe-top-banner-lead {
+  margin: 0 0 4px;
+}
+
+.pe-top-banner-body {
+  margin: 0 0 6px;
+  font-size: 11px;
+}
+
+.pe-top-banner-links {
+  margin: 0 0 6px;
+  font-size: 11px;
+}
+
+.pe-top-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pe-prior-session-lines {
+  margin: 4px 0 8px;
+  font-size: 11px;
 }
 
 .pe-session-tips {

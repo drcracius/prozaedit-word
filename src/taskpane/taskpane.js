@@ -5,6 +5,7 @@
 const PROZAEDIT_BUILD_VERSION = "2.0.0.15";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
+const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
 const GUARDRAILS = `OPERATIONAL MANDATES:
 Zero plagiarism; original suggestions only.
 Ban AI tropes: delve, tapestry, testament, beacon, nestled, moreover, furthermore, "it is important to note".
@@ -468,6 +469,7 @@ function decorateSettingsBackIcon() {
 
 const PE_SETTINGS_GROUP_IDS = {
   safety: "pe-settings-group-safety",
+  onboarding: "pe-settings-group-onboarding",
   audit: "pe-settings-group-audit",
   privacy: "pe-settings-group-privacy",
   reference: "pe-settings-group-reference",
@@ -501,7 +503,6 @@ function openSettingsModal(focusGroup) {
     const hash = ProzaEdit.UiPrefs?.settingsHashForSection?.(norm || focusGroup);
     if (hash) history.replaceState(null, "", hash);
   } catch (_) {}
-  syncSessionTipsPermanentCheckbox();
   getEl("btn-settings-back")?.focus();
 }
 
@@ -538,6 +539,7 @@ Office.onReady((info) => {
   }
   try {
     loadSavedSettings();
+    migrateLegacySessionTipsOnInit();
     adaptModules();
     renderDictionaryList();
     loadCustomStyleUi();
@@ -579,8 +581,10 @@ Office.onReady((info) => {
       });
     }
     showAuditEmptyIfNeeded();
+    initAboutSection();
+    initWhatsNewBanner();
+    initPriorSessionBanner();
     initSessionTips();
-    setupSessionTipsPermanentSetting();
     setupSettingsKeyboardShortcut();
     tryOpenSettingsFromLocationHash();
     updateWorkflowStatusLine();
@@ -666,6 +670,7 @@ function showTab(tabId) {
   });
   updateWorkflowStepper(tabId);
   schedulePersistLastActiveTab(tabId);
+  scheduleLastSessionSummaryPersist();
   if (tabId === "tab4") {
     syncAuditPinsFromMain();
     restoreCachedAuditIfEmpty();
@@ -760,6 +765,9 @@ function collectUiConfig() {
     citationReconcileBiblio: isChecked("chkCitationReconcile", true),
     aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", false),
     aiMaxSessionTokens: getEl("aiMaxSessionTokens")?.value || "50000",
+    showSessionTips: isChecked("showSessionTips", true),
+    showWhatsNew: isChecked("showWhatsNew", true),
+    showPriorSessionSummary: isChecked("showPriorSessionSummary", true),
     lastActiveTab: getCurrentActiveTabId(),
     modules: {},
   };
@@ -824,6 +832,9 @@ function applyUiConfig(p) {
   setC("fkLock", p.fkLock);
   setC("remindVersionHistory", p.remindVersionHistory);
   setC("fictionScopeReminder", p.fictionScopeReminder !== false);
+  setC("showSessionTips", p.showSessionTips !== false);
+  setC("showWhatsNew", p.showWhatsNew !== false);
+  setC("showPriorSessionSummary", p.showPriorSessionSummary !== false);
   if (p.continuityWarnLevel) setV("continuityWarnLevel", p.continuityWarnLevel);
   if (p.scopePageFrom) setV("scopePageFrom", p.scopePageFrom);
   if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
@@ -898,6 +909,17 @@ function loadSavedSettings() {
         parsed = migrated;
         ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CONFIG, JSON.stringify(migrated));
       }
+    }
+    let legacyTipsHidden = false;
+    try {
+      legacyTipsHidden =
+        localStorage.getItem(ProzaEdit.Onboarding?.LEGACY_TIPS_PERMANENT_LOCAL_KEY || "pe-session-tips-dismissed") === "1";
+    } catch (_) {}
+    parsed = ProzaEdit.Onboarding?.migrateShowSessionTipsFromLegacy?.(parsed, legacyTipsHidden) || parsed;
+    if (legacyTipsHidden && parsed.showSessionTips === false) {
+      try {
+        localStorage.removeItem(ProzaEdit.Onboarding?.LEGACY_TIPS_PERMANENT_LOCAL_KEY || "pe-session-tips-dismissed");
+      } catch (_) {}
     }
     applyUiConfig(parsed);
     adaptModules();
@@ -1041,7 +1063,46 @@ function setupAutoSaveHandlers() {
     "aiEnforceSessionCeiling",
     "aiMaxSessionTokens",
     "settingsDefaultAuditFilter",
+    "showSessionTips",
+    "showWhatsNew",
+    "showPriorSessionSummary",
   ].forEach((id) => bind(getEl(id)));
+  const showTipsEl = getEl("showSessionTips");
+  if (showTipsEl && !showTipsEl.dataset.peOnboardingFx) {
+    showTipsEl.dataset.peOnboardingFx = "1";
+    showTipsEl.addEventListener("change", () => {
+      if (!isChecked("showSessionTips", true)) {
+        const el = getEl("peSessionTips");
+        if (el) el.classList.add("hidden");
+      } else {
+        initSessionTips();
+      }
+    });
+  }
+  const showWhatsNewEl = getEl("showWhatsNew");
+  if (showWhatsNewEl && !showWhatsNewEl.dataset.peOnboardingFx) {
+    showWhatsNewEl.dataset.peOnboardingFx = "1";
+    showWhatsNewEl.addEventListener("change", () => {
+      if (!isChecked("showWhatsNew", true)) {
+        const el = getEl("peWhatsNewBanner");
+        if (el) el.classList.add("hidden");
+      } else {
+        initWhatsNewBanner();
+      }
+    });
+  }
+  const showPriorEl = getEl("showPriorSessionSummary");
+  if (showPriorEl && !showPriorEl.dataset.peOnboardingFx) {
+    showPriorEl.dataset.peOnboardingFx = "1";
+    showPriorEl.addEventListener("change", () => {
+      if (!isChecked("showPriorSessionSummary", true)) {
+        const el = getEl("pePriorSessionBanner");
+        if (el) el.classList.add("hidden");
+      } else {
+        initPriorSessionBanner();
+      }
+    });
+  }
   MODULE_IDS.forEach((id) => bind(getEl(id)));
   document.querySelectorAll('input[data-audit-extended="1"]').forEach((el) => {
     if (el.dataset.peAutosave) return;
@@ -1210,47 +1271,142 @@ function getManuscriptTypeAwareHint() {
   return `Non-fiction profile (${type}): fiction plot and spoiler modules stay off — audit emphasizes clarity, repetition, and house style.`;
 }
 
-const PE_SESSION_TIPS_KEY = "pe-session-tips-dismissed";
+let lastSessionSummaryRanAudit = false;
+let lastSessionSummaryTimer = null;
 
-function isSessionTipsPermanentlyHidden() {
+function migrateLegacySessionTipsOnInit() {
   try {
-    if (localStorage.getItem(PE_SESSION_TIPS_KEY) === "1") return true;
+    const key = ProzaEdit.Onboarding?.LEGACY_TIPS_PERMANENT_LOCAL_KEY || "pe-session-tips-dismissed";
+    if (localStorage.getItem(key) !== "1") return;
+    localStorage.removeItem(key);
+    const cb = getEl("showSessionTips");
+    if (cb && cb.checked) {
+      cb.checked = false;
+      persistSettings(false);
+    }
   } catch (_) {}
-  return false;
 }
 
-function setSessionTipsPermanentlyHidden(on) {
-  try {
-    if (on) localStorage.setItem(PE_SESSION_TIPS_KEY, "1");
-    else localStorage.removeItem(PE_SESSION_TIPS_KEY);
-  } catch (_) {}
-  if (on) {
-    const el = getEl("peSessionTips");
-    if (el) el.classList.add("hidden");
+function initAboutSection() {
+  const setText = (id, text) => {
+    const el = getEl(id);
+    if (el && text != null) el.textContent = text;
+  };
+  setText("peAboutBuildVersion", PROZAEDIT_BUILD_VERSION);
+  setText("peAboutManifestVersion", PROZAEDIT_BUILD_VERSION);
+  setText("peAboutAddInId", PROZAEDIT_ADDIN_ID);
+  const rel = ProzaEdit.Onboarding?.WHATS_NEW_RELEASE;
+  if (rel && rel.version === PROZAEDIT_BUILD_VERSION) {
+    setText("peWhatsNewVersion", rel.version);
+    setText("peWhatsNewBullet", rel.bullet);
+    const link = getEl("peWhatsNewReleaseLink");
+    if (link && rel.releaseNotesUrl) link.href = rel.releaseNotesUrl;
   }
 }
 
-function syncSessionTipsPermanentCheckbox() {
-  const cb = getEl("peSessionTipsHidePermanent");
-  if (!cb) return;
-  cb.checked = isSessionTipsPermanentlyHidden();
+function markWhatsNewVersionSeen() {
+  const key = ProzaEdit.Onboarding?.whatsNewSeenStorageKey?.(PROZAEDIT_BUILD_VERSION);
+  if (!key) return;
+  try {
+    localStorage.setItem(key, "1");
+  } catch (_) {}
 }
 
-function setupSessionTipsPermanentSetting() {
-  const cb = getEl("peSessionTipsHidePermanent");
-  if (!cb || cb.dataset.bound) return;
-  cb.dataset.bound = "1";
-  syncSessionTipsPermanentCheckbox();
-  cb.addEventListener("change", () => {
-    setSessionTipsPermanentlyHidden(cb.checked);
-    showPeStatus(cb.checked ? "Session tips hidden permanently." : "Session tips will show in new sessions.", "ok");
+function initWhatsNewBanner() {
+  const el = getEl("peWhatsNewBanner");
+  if (!el) return;
+  const show = ProzaEdit.Onboarding?.shouldShowWhatsNewBanner?.({
+    showWhatsNew: isChecked("showWhatsNew", true),
+    buildVersion: PROZAEDIT_BUILD_VERSION,
   });
+  if (!show) {
+    el.classList.add("hidden");
+    return;
+  }
+  el.classList.remove("hidden");
+}
+
+function dismissWhatsNewBanner(dontShowAgain) {
+  const el = getEl("peWhatsNewBanner");
+  if (el) el.classList.add("hidden");
+  markWhatsNewVersionSeen();
+  if (dontShowAgain) {
+    const cb = getEl("showWhatsNew");
+    if (cb) cb.checked = false;
+    persistSettings(false);
+  }
+}
+
+function initPriorSessionBanner() {
+  const el = getEl("pePriorSessionBanner");
+  const list = getEl("pePriorSessionLines");
+  if (!el || !list) return;
+  if (!isChecked("showPriorSessionSummary", true)) {
+    el.classList.add("hidden");
+    return;
+  }
+  try {
+    if (sessionStorage.getItem(ProzaEdit.Onboarding?.PRIOR_BANNER_SESSION_KEY || "pe-prior-session-banner-dismissed") === "1") {
+      el.classList.add("hidden");
+      return;
+    }
+  } catch (_) {}
+  let raw = null;
+  try {
+    raw = localStorage.getItem(ProzaEdit.Onboarding?.LAST_SESSION_SUMMARY_KEY || "pe-last-session-summary");
+  } catch (_) {}
+  const summary = ProzaEdit.Onboarding?.parseSessionSummary?.(raw);
+  if (!summary) {
+    el.classList.add("hidden");
+    return;
+  }
+  const lines = ProzaEdit.Onboarding?.formatPriorSessionLines?.(summary) || [];
+  if (!lines.length) {
+    el.classList.add("hidden");
+    return;
+  }
+  list.innerHTML = lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("");
+  el.classList.remove("hidden");
+}
+
+function dismissPriorSessionBanner() {
+  const el = getEl("pePriorSessionBanner");
+  if (el) el.classList.add("hidden");
+  try {
+    sessionStorage.setItem(ProzaEdit.Onboarding?.PRIOR_BANNER_SESSION_KEY || "pe-prior-session-banner-dismissed", "1");
+  } catch (_) {}
+}
+
+function scheduleLastSessionSummaryPersist(extra) {
+  if (lastSessionSummaryTimer) clearTimeout(lastSessionSummaryTimer);
+  lastSessionSummaryTimer = setTimeout(() => {
+    lastSessionSummaryTimer = null;
+    writeLastSessionSummary(extra);
+  }, 400);
+}
+
+function writeLastSessionSummary(extra) {
+  extra = extra || {};
+  const patch = ProzaEdit.Onboarding?.buildSessionSummaryPatch?.(
+    {
+      lastTab: getCurrentActiveTabId(),
+      scopeMode: getScopeModeLabel(),
+      ranAudit: extra.ranAudit === true || lastSessionSummaryRanAudit,
+      buildVersion: PROZAEDIT_BUILD_VERSION,
+    },
+    PROZAEDIT_BUILD_VERSION
+  );
+  if (!patch) return;
+  try {
+    localStorage.setItem(ProzaEdit.Onboarding?.LAST_SESSION_SUMMARY_KEY || "pe-last-session-summary", JSON.stringify(patch));
+  } catch (_) {}
 }
 
 function initSessionTips() {
-  if (isSessionTipsPermanentlyHidden()) return;
+  if (!isChecked("showSessionTips", true)) return;
+  const dismissedKey = ProzaEdit.Onboarding?.SESSION_TIPS_DISMISSED_KEY || "pe-session-tips-dismissed";
   try {
-    if (sessionStorage.getItem(PE_SESSION_TIPS_KEY) === "1") return;
+    if (sessionStorage.getItem(dismissedKey) === "1") return;
   } catch (_) {}
   const el = getEl("peSessionTips");
   if (!el) return;
@@ -1264,7 +1420,7 @@ function dismissSessionTips() {
   const el = getEl("peSessionTips");
   if (el) el.classList.add("hidden");
   try {
-    sessionStorage.setItem(PE_SESSION_TIPS_KEY, "1");
+    sessionStorage.setItem(ProzaEdit.Onboarding?.SESSION_TIPS_DISMISSED_KEY || "pe-session-tips-dismissed", "1");
   } catch (_) {}
 }
 
@@ -1301,6 +1457,7 @@ function resetSettingsGroup(groupKey) {
   const norm = ProzaEdit.UiPrefs?.normalizeSettingsSection?.(groupKey) || groupKey;
   const labels = {
     safety: "Safety",
+    onboarding: "Onboarding",
     audit: "Audit & reports",
     privacy: "Privacy & diagnostics",
     dictionary: "Dictionary",
@@ -1348,6 +1505,11 @@ function resetSettingsGroup(groupKey) {
     applyDefaultAuditFilterFromSettings();
   }
   if (norm === "safety") applySimpleMode();
+  if (norm === "onboarding") {
+    initWhatsNewBanner();
+    initPriorSessionBanner();
+    initSessionTips();
+  }
   persistSettings(false);
   showPeStatus(`${label} reset to defaults.`, "ok");
 }
@@ -2424,6 +2586,8 @@ function runAuditInternalCore(opts) {
     }
     lastAuditExcerpt = text;
     finalizeAudit(result, opts.label || "Full audit (local)");
+    lastSessionSummaryRanAudit = true;
+    scheduleLastSessionSummaryPersist({ ranAudit: true });
   })
     .catch((e) => {
       const sum = getEl("summaryReport");
@@ -2567,6 +2731,7 @@ function applyFix(cardId, target, replacement) {
     if (!ok) return;
     removeAuditCard(cardId);
     scheduleManuscriptIndexBuild(true);
+    scheduleLastSessionSummaryPersist();
   });
 }
 
@@ -2601,6 +2766,8 @@ async function checkForUpdates(manual) {
     const remote = parseManifestVersion(xml);
     if (!remote) throw new Error("Manifest version not found online.");
     const cmp = compareVersion(remote, PROZAEDIT_BUILD_VERSION);
+    const aboutManifest = getEl("peAboutManifestVersion");
+    if (aboutManifest) aboutManifest.textContent = remote;
     if (cmp > 0) {
       setStatus(
         `Update available: manifest ${remote} (you have UI ${PROZAEDIT_BUILD_VERSION}). Close this pane and reopen ProzaEdit; re-upload manifest if Word asks.`,

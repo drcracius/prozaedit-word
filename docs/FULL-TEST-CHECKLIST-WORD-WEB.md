@@ -25,7 +25,10 @@
 - [ ] Help **Open Settings → Privacy** and Target **Custom rules → manage** land in the right group.
 - [ ] Bookmark `#pe-settings-privacy` on reload opens Privacy group.
 - [ ] Each group **Reset … to defaults** (confirm) — Safety, Audit, Privacy, Dictionary, Custom style; Reference shows info only.
-- [ ] **Hide new-session tips permanently** (Safety) — new session: tips banner stays hidden; Help Quick start still available.
+- [ ] **Onboarding** group: **Show new-session tips**, **Show What's new**, **Show prior-session recap** (all default on); **Reset Onboarding** restores defaults.
+- [ ] **Got it** on session tips banner hides `#peSessionTips` until next browser session (global `.hidden` utility).
+- [ ] **What's new** top banner (`#peWhatsNewBanner`) shows once per release when enabled; **Got it** dismisses for version; **Don't show again** turns off the toggle.
+- [ ] **Prior session** banner (`#pePriorSessionBanner`) after a prior visit: recap lines from `pe-last-session-summary`; **Got it** hides for session; **Turn off in Settings** opens Onboarding.
 
 ## 4. Tabs and navigation
 
@@ -40,8 +43,9 @@
 - [ ] Change report depth / default filter in Settings — hints update on Audit tab.
 - [ ] **Apply fix** on a card → **Undo** → **Last edit**.
 
-## 6. Help and diagnostics
+## 6. Help, About, and diagnostics
 
+- [ ] **Help → About ProzaEdit**: build version, manifest version, add-in ID, GitHub repo, **Check for updates** (matches manifest **2.0.0.15** when current).
 - [ ] Help copy mentions scope line, last tab, Settings shortcuts.
 - [ ] Settings → Privacy: opt-in off by default; **Report a problem** copies redacted JSON (no document text in clipboard JSON).
 
@@ -51,4 +55,4 @@
 
 ---
 
-*Automated coverage:* `npm test` (includes `ui-prefs-helpers.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).
+*Automated coverage:* `npm test` (includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).

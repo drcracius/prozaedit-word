@@ -8,13 +8,14 @@ ProzaEdit.UiPrefs = {
     style: "custom-style",
     "custom-style": "custom-style",
     safety: "safety",
+    onboarding: "onboarding",
     audit: "audit",
     privacy: "privacy",
     reference: "reference",
     dictionary: "dictionary",
   },
 
-  SETTINGS_GROUP_KEYS: ["safety", "audit", "privacy", "reference", "dictionary", "custom-style"],
+  SETTINGS_GROUP_KEYS: ["safety", "onboarding", "audit", "privacy", "reference", "dictionary", "custom-style"],
 
   /** Shipped defaults for Settings groups (matches taskpane.html on first load). */
   UI_CONFIG_DEFAULTS: {
@@ -34,6 +35,9 @@ ProzaEdit.UiPrefs = {
     reportDensity: "balanced",
     aiEnforceSessionCeiling: false,
     aiMaxSessionTokens: "50000",
+    showSessionTips: true,
+    showWhatsNew: true,
+    showPriorSessionSummary: true,
   },
 
   validateLastActiveTab(tabId, options) {
@@ -79,6 +83,12 @@ ProzaEdit.UiPrefs = {
           continuityWarnLevel: base.continuityWarnLevel,
           aiEnforceSessionCeiling: base.aiEnforceSessionCeiling,
           aiMaxSessionTokens: base.aiMaxSessionTokens,
+        };
+      case "onboarding":
+        return {
+          showSessionTips: base.showSessionTips,
+          showWhatsNew: base.showWhatsNew,
+          showPriorSessionSummary: base.showPriorSessionSummary,
         };
       case "audit":
         return {
