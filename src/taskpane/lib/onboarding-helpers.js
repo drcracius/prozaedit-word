@@ -60,7 +60,7 @@ ProzaEdit.Onboarding = {
     "Simple mode is on — fewer tabs, important issues first. Turn off in Settings → Essentials.",
 
   FULL_MANUSCRIPT_SCOPE_TIP:
-    "For very long documents, try Selected chapters or Page range (common pro workaround).",
+    "For very long documents, use Audit next chapter on Checks (one chapter at a time), or choose Chosen chapters or Page range on Target.",
 
   MANUAL_AUDIT_HELP_COPY:
     "ProzaEdit runs manual audits when you click Run audit — not Grammarly-style realtime underlines.",
@@ -173,7 +173,7 @@ ProzaEdit.Onboarding = {
       lines.push("This was a large scope — runs can take longer on full manuscripts.");
     }
     lines.push(
-      "Next run: try Selected chapters or Page range, and keep the Critical filter for a faster first pass."
+      "Next run: try Audit next chapter on Checks, Chosen chapters or Page range, and keep the Critical filter for a faster first pass."
     );
     return lines.join(" ");
   },
@@ -229,11 +229,20 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.23",
+    version: "2.0.0.24",
     bullet:
-      "Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Fixes now check their exact spot before editing, and repeated AI requests are reused at no cost. New: tense and viewpoint shifts are flagged only when clearly accidental, and an optional Content notes switch (Settings, off by default) reports strong language and violence neutrally. Accuracy is now measured on a labeled test set. Everything still works offline.",
+      "Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Fixes now check their exact spot before editing, and repeated AI requests are reused at no cost. New: tense and viewpoint shifts are flagged only when clearly accidental, and an optional Content notes switch (Settings, off by default) reports strong language and violence neutrally. Accuracy is now measured on a labeled test set. New: Audit next chapter on Checks takes very long books one chapter at a time, keeps your place and combines the results. Some labels were renamed in plain words (Book outline, Deeper checks, Chosen chapters). Everything still works offline.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
+  },
+
+  SCOPE_FRIENDLY: {
+    selection: "Text you selected",
+    pages: "Page range",
+    chapter: "One chapter",
+    "chapter-range": "Chapters",
+    "selected-chapters": "Chosen chapters",
+    full: "Whole document",
   },
 
   TAB_LABELS: {
@@ -310,10 +319,11 @@ ProzaEdit.Onboarding = {
     if (!s) return [];
     const labels = tabLabels || ProzaEdit.Onboarding.TAB_LABELS;
     const lines = [];
-    lines.push(`Last visit: ${s.lastVisitAt}`);
+    const when = new Date(s.lastVisitAt);
+    lines.push(`Last visit: ${isNaN(when.getTime()) ? s.lastVisitAt : when.toLocaleString()}`);
     const tabLabel = labels[s.lastTab] || s.lastTab || "—";
     lines.push(`Last tab: ${tabLabel}`);
-    if (s.scopeMode) lines.push(`Scope: ${s.scopeMode}`);
+    if (s.scopeMode) lines.push(`Scope: ${ProzaEdit.Onboarding.SCOPE_FRIENDLY[s.scopeMode] || s.scopeMode}`);
     lines.push(`Ran audit: ${s.ranAudit ? "Yes" : "No"}`);
     if (s.buildVersion) lines.push(`Build: ${s.buildVersion}`);
     return lines.slice(0, 4);

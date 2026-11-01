@@ -111,7 +111,7 @@ ProzaEdit.Gemini = {
         if (over <= 0) break;
         const allowed = s.body.length - over;
         const minKeep = role === "excerpt" ? this.MIN_EXCERPT_KEEP_CHARS : role === "context" ? 400 : 600;
-        let next = allowed >= minKeep ? this.elideMiddle(s.body, allowed, role === "index" ? "the manuscript index" : s.id) : "";
+        let next = allowed >= minKeep ? this.elideMiddle(s.body, allowed, role === "index" ? "the book outline" : s.id) : "";
         if (role === "excerpt" && !next) {
           next = this.elideMiddle(s.body, Math.max(this.MIN_EXCERPT_KEEP_CHARS, allowed), s.id) || s.body;
         }
@@ -130,7 +130,7 @@ ProzaEdit.Gemini = {
   describeTrim(trimmed) {
     if (!trimmed || !trimmed.length) return "";
     const names = {
-      index: "manuscript index",
+      index: "book outline",
       context: "surrounding context",
       excerpt: "selected text (middle only)",
     };

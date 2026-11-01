@@ -52,9 +52,10 @@ export function createWordMock(opts = {}) {
     failRunError: null,
     syncHook: null,
     settingsFail: false,
-    headings: [],
+    headings: opts.headings || [],
   };
   const settings = { ...(opts.settings || {}) };
+  let itemsCache = {};
   const makeRange = (text) => ({
     text,
     load() {},
@@ -104,12 +105,15 @@ export function createWordMock(opts = {}) {
             paragraphs: {
               load() {},
               get items() {
-                return state.paragraphs.map((t, i) => ({
+                if (itemsCache.src === state.paragraphs && itemsCache.head === state.headings) return itemsCache.items;
+                const items = state.paragraphs.map((t, i) => ({
                   text: t,
                   styleBuiltIn: state.headings.includes(i) ? "Heading1" : "Normal",
                   load() {},
                   getRange: () => makeRange(t),
                 }));
+                itemsCache = { src: state.paragraphs, head: state.headings, items };
+                return items;
               },
             },
             search: (q) => state.bodySearch(q),

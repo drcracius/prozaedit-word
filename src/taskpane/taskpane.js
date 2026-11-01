@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.23";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.24";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -404,7 +404,7 @@ function getScopeModeLabel(mode) {
   if (m === "selected-chapters" || m === "chapter" || m === "chapter-range") {
     const n = getSelectedChapterIndicesFromUi().length;
     if (m === "selected-chapters" && n) return `${n} chapter(s) selected`;
-    return "Selected chapters";
+    return "Chosen chapters";
   }
   if (m === "full") return "Full manuscript";
   return m;
@@ -546,7 +546,7 @@ function buildManuscriptIndexNow() {
       if (token !== msIndexBuildToken || activeLongOp) return;
       if (statusEl) {
         statusEl.textContent = ProzaEdit.ScopeReader.formatReadStatus({
-          phase: indexScoped ? "Building scoped index" : "Building manuscript index",
+          phase: indexScoped ? "Building chapter outline" : "Building book outline",
           ...partial,
         });
       }
@@ -579,7 +579,7 @@ function buildManuscriptIndexNow() {
     })
     .finally(() => {
       if (token === msIndexBuildToken) msIndexBusy = false;
-      if (token === msIndexBuildToken && statusEl && !activeLongOp && /^Building (manuscript|scoped) index/.test(String(statusEl.textContent || ""))) {
+      if (token === msIndexBuildToken && statusEl && !activeLongOp && /^Building (book|chapter) outline/.test(String(statusEl.textContent || ""))) {
         updateWorkflowStatusLine();
       }
     });
@@ -759,7 +759,7 @@ async function confirmBuildManuscriptContext() {
   const index = getManuscriptContextIndex();
   const storageHint = ProzaEdit.ManuscriptContextIndex?.formatStorageBlurb?.(index) || "local document settings";
   return peConfirm({
-    title: "Build full manuscript context?",
+    title: "Build book outline?",
     message:
       `ProzaEdit will read your whole document in chunks to build a local outline for continuity checks and chapter-scoped audits: chapter list, word counts, first/last lines, recurring names, and time cues. It is rule-based, not an AI summary.\n\n` +
       `This may take several minutes on long manuscripts. You can Cancel from the banner, and Word stays usable.\n\n` +
@@ -797,7 +797,7 @@ async function runBuildFullManuscriptContext(userInitiated, buildOptions) {
         yieldFn: () => ProzaEdit.ScopeReader.microYield(),
       });
     });
-    if (!index) throw new Error("Could not build manuscript context.");
+    if (!index) throw new Error("Could not build book outline.");
     const diff = ProzaEdit.ManuscriptContextIndex.diffSections(previous, index);
     setManuscriptContextIndex(index);
     mciLegacyPending = null;
@@ -810,7 +810,7 @@ async function runBuildFullManuscriptContext(userInitiated, buildOptions) {
       mciSaveWarned = false;
       await persistSettings(false);
     }
-    let msg = index.truncated ? "Full MS context ready (names and cues sampled across the whole book)." : "Full MS context ready.";
+    let msg = index.truncated ? "Book outline ready (names and cues sampled across the whole book)." : "Book outline ready.";
     if (diff.comparable) msg += diff.changed ? ` ${diff.changed} of ${diff.total} chapters changed since the last build.` : " No chapter text changed since the last build.";
     if (!saved.ok) {
       mciSaveWarned = true;
@@ -827,10 +827,10 @@ async function runBuildFullManuscriptContext(userInitiated, buildOptions) {
   } catch (e) {
     if (isLongOpCancelledError(e)) {
       cancelled = true;
-      showPeStatus(mciCheckpoint.state ? "Manuscript context build cancelled. Progress is kept: run it again to resume where it stopped." : "Manuscript context build cancelled.", "warn");
+      showPeStatus(mciCheckpoint.state ? "Book outline build cancelled. Progress is kept: run it again to resume where it stopped." : "Book outline build cancelled.", "warn");
       return false;
     }
-    reportActionError(e, "build full manuscript context");
+    reportActionError(e, "build book outline");
     return false;
   } finally {
     mciBuildBusy = false;
@@ -851,9 +851,9 @@ async function maybeAutoRefreshManuscriptContextBeforeAudit() {
   } catch (_) {}
   if (!warned) {
     const ok = await peConfirm({
-      title: "Refresh manuscript context?",
+      title: "Refresh book outline?",
       message:
-        "Auto-refresh is on and your full-manuscript context is stale or missing.\n\nProzaEdit will run a background read before this audit. Cancel to skip the audit.",
+        "Auto-refresh is on and your book outline is stale or missing.\n\nProzaEdit will run a background read before this audit. Cancel to skip the audit.",
       confirmLabel: "Refresh & continue",
       cancelLabel: "Cancel audit",
     });
@@ -868,7 +868,7 @@ async function maybeAutoRefreshManuscriptContextBeforeAudit() {
 function geminiIndexDisclosure() {
   const index = getManuscriptContextIndex();
   if (!index || index.invalid) return "";
-  return "\n\nYour manuscript index (a heuristic outline: chapter titles, first/last lines, recurring names, time cues) is included in this request because you built it.";
+  return "\n\nYour book outline (a heuristic outline: chapter titles, first/last lines, recurring names, time cues) is included in this request because you built it.";
 }
 
 /** Heuristic index block for prompts. Stale/unverified indexes are included but flagged, never silently dropped. */
@@ -888,8 +888,8 @@ function manuscriptContextStatusLine() {
   const index = getManuscriptContextIndex();
   if (!index || index.invalid) return "";
   return mciIsFresh()
-    ? "Manuscript index: ready (heuristic outline, local)."
-    : "Manuscript index: may be out of date — refresh it from Checks or Settings.";
+    ? "Book outline: ready (heuristic outline, local)."
+    : "Book outline: may be out of date — refresh it from Checks or Settings.";
 }
 
 function fictionModulesActive() {
@@ -2336,7 +2336,7 @@ async function prepareScopeForAudit(retryOpts) {
         }
       }
       if (scope === "selected-chapters" && !getSelectedChapterIndicesFromUi().length) {
-        showPeStatus("Select at least one chapter on Target (checklist under Selected chapters), or reload the chapter list.", "warn");
+        showPeStatus("Select at least one chapter on Target (checklist under Chosen chapters), or reload the chapter list.", "warn");
         showTab("tab1");
         return false;
       }
@@ -2344,7 +2344,8 @@ async function prepareScopeForAudit(retryOpts) {
     await refreshScopeCharPreview();
     const prev = getEl("scopeCharPreview");
     if (prev?.classList.contains("over-limit")) {
-      showPeStatus("Scope exceeds character limit. Narrow pages/chapters or use section loop.", "warn");
+      showPeStatus("Scope exceeds character limit. Use Audit next chapter (Checks tab) to go chapter by chapter, or narrow pages/chapters.", "warn");
+      renderChapterWalkPanel(true);
       return false;
     }
     return true;
@@ -2427,7 +2428,7 @@ async function prepareGeminiPrompt(makeSections) {
   const notes = [];
   if (built.note) notes.push(built.note);
   if (indexKept && !mciIsFresh()) {
-    notes.push("A manuscript index that may be out of date was included (flagged as such). Refresh it from Checks or Settings.");
+    notes.push("A book outline that may be out of date was included (flagged as such). Refresh it from Checks or Settings.");
   }
   return { text: built.text, note: notes.join(" "), trimmed: built.trimmed, indexIncluded: indexKept };
 }
@@ -3446,7 +3447,7 @@ async function resetSettingsGroup(groupKey) {
     audit: "Audit & reports",
     privacy: "Privacy & diagnostics",
     dictionary: "Dictionary",
-    manuscript: "Manuscript context",
+    manuscript: "Book outline",
     "custom-style": "Custom style",
   };
   const label = labels[norm] || norm;
@@ -4943,7 +4944,7 @@ function finalizeAudit(result, label, fopts) {
     getEl("miniScores")?.classList.add("hidden");
   }
   let compareLine = fopts.rerender ? lastAuditMeta.compareLine || "" : "";
-  if (!fopts.rerender) try {
+  if (!fopts.rerender && !result.summaryNote) try {
     const prevRaw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.LAST_AUDIT_STATS);
     const prev = prevRaw ? (typeof prevRaw === "string" ? JSON.parse(prevRaw) : prevRaw) : null;
     if (prev && prev.critical != null) {
@@ -4961,6 +4962,7 @@ function finalizeAudit(result, label, fopts) {
     }
   } catch (_) {}
   let html = `<h3>${escapeHtml(label)}</h3>`;
+  if (result.summaryNote) html += `<p class="help-muted" style="font-size:12px;">${escapeHtml(result.summaryNote)}</p>`;
   html += `<p>Words: ${metrics.wordCount} · FK grade ~${metrics.fleschKincaidGrade} · FRE ~${metrics.fleschReadingEase}</p>`;
   const sevLabel = auditFilterDisplayLabel("confirmed");
   html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
@@ -4971,9 +4973,9 @@ function finalizeAudit(result, label, fopts) {
   html += `<p>${escapeHtml(buildManuscriptProfile({ baseOnly: true, noGenreNote: true }))}</p>`;
   const mc = result.manuscriptContext;
   if (mc?.used) {
-    html += `<p class="help-muted" style="font-size:12px;">Manuscript index used: ${mc.namesUsed} recurring names checked for spelling variants.</p>`;
+    html += `<p class="help-muted" style="font-size:12px;">Book outline used: ${mc.namesUsed} recurring names checked for spelling variants.</p>`;
   } else if (mc?.indexPresent) {
-    html += `<p class="help-muted" style="font-size:12px;">Manuscript index is out of date, so name checks used this text only. Refresh it on Checks or in Settings.</p>`;
+    html += `<p class="help-muted" style="font-size:12px;">Book outline is out of date, so name checks used this text only. Refresh it on Checks or in Settings.</p>`;
   }
   const typeHint = getManuscriptTypeAwareHint();
   if (typeHint) html += `<p class="audit-type-hint">${escapeHtml(typeHint)}</p>`;
@@ -5006,19 +5008,19 @@ function finalizeAudit(result, label, fopts) {
   updateWorkflowCrossNav(getCurrentActiveTabId() || "tab4");
   updateChecksPostRunNav();
   if (fopts.rerender) return;
-  cacheAudit(label, html, suggestions, traffic, score);
+  cacheAudit(label, html, suggestions, traffic, score, !!result.summaryNote);
   lastAuditHadTruncation = suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated");
   lastAuditScopeModeAtRun = getScopeMode();
   updateAuditScopeFootnote();
   if (lastAuditHadTruncation) {
     showPeStatus(
-      "Scope hit the character cap — open the Truncated scope card below, or try Selected chapters / Page range.",
+      "Scope hit the character cap — open the Truncated scope card below, or try Chosen chapters / Page range.",
       "warn"
     );
   }
 }
 
-function cacheAudit(label, html, suggestions, traffic, score) {
+function cacheAudit(label, html, suggestions, traffic, score, partialWalk) {
   const safeList = Array.isArray(suggestions) ? suggestions.slice(0, 80) : [];
   const json = JSON.stringify({
     label,
@@ -5032,7 +5034,7 @@ function cacheAudit(label, html, suggestions, traffic, score) {
   });
   if (json.length <= MAX_AUDIT_CACHE_CHARS) {
     ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.LAST_AUDIT, json);
-    ProzaEdit.Settings.setAsync(
+    if (!partialWalk) ProzaEdit.Settings.setAsync(
       ProzaEdit.Settings.KEYS.LAST_AUDIT_STATS,
       JSON.stringify({
         critical: modeVisibleSuggestions(safeList).filter((s) => s.type === "confirmed").length,
@@ -5084,8 +5086,8 @@ function runProzaEditAudit() {
 function runExtendedLocalAudit() {
   runAuditInternal({
     extendedLocal: true,
-    label: "Extended local audit",
-    status: "Running extended local audit (0 tokens)…",
+    label: "Deeper local audit",
+    status: "Running deeper local audit (0 tokens)…",
     btnId: "btnRunAudit",
     btnDone: "Run audit",
   });
@@ -5267,7 +5269,8 @@ function runAuditInternalCore(opts) {
     }
     lastAuditExcerpt = text;
     ProzaEdit.ScopeReader.clearScopeResumeSnapshot?.();
-    finalizeAudit(result, opts.label || "Full audit (local)");
+    const shown = typeof opts.onResult === "function" ? opts.onResult(result, text, truncated) || result : result;
+    finalizeAudit(shown, opts.label || "Full audit (local)");
     timing.mark("render");
     sessionAuditCompletedThisSession = true;
     updateWorkflowNextStepHint();
@@ -5716,6 +5719,160 @@ async function selectNextChapterAndAudit() {
   } catch (e) {
     reportActionError(e, "select the next chapter");
   }
+}
+
+let chapterWalkState = null;
+let chapterWalkMemory = {};
+
+function chapterWalkStoredState() {
+  return ProzaEdit.ChapterWalk.parse(ProzaEdit.Settings.get(ProzaEdit.ChapterWalk.STORAGE_KEY, null));
+}
+
+function persistChapterWalk() {
+  if (!chapterWalkState) return Promise.resolve(false);
+  return ProzaEdit.Settings.setAsync(ProzaEdit.ChapterWalk.STORAGE_KEY, ProzaEdit.ChapterWalk.serialize(chapterWalkState)).catch(() => false);
+}
+
+function syncChapterWalkState() {
+  const CW = ProzaEdit.ChapterWalk;
+  const r = CW.reconcile(chapterWalkState || chapterWalkStoredState(), scopeChapterListCache);
+  if (r.reset) {
+    chapterWalkMemory = {};
+    showPeStatus("Your chapter list changed, so chapter-by-chapter progress started over.", "warn");
+  }
+  chapterWalkState = r.state;
+  return chapterWalkState;
+}
+
+function renderChapterWalkPanel(openIt) {
+  const box = getEl("peChapterWalk");
+  const line = getEl("peChapterWalkProgress");
+  const btn = getEl("btnAuditNextChapter");
+  const skip = getEl("btnSkipChapter");
+  const reset = getEl("btnRestartChapterWalk");
+  if (!box || !line || !ProzaEdit.ChapterWalk) return;
+  const CW = ProzaEdit.ChapterWalk;
+  const list = scopeChapterListCache;
+  const st = list.length ? syncChapterWalkState() : chapterWalkState || CW.reconcile(chapterWalkStoredState(), list).state;
+  const done = CW.doneCount(st);
+  const next = list.length ? CW.nextIndex(st, list) : 0;
+  const nextCh = list.find((c) => c.index === next);
+  if (!list.length) {
+    line.textContent = done ? `${done} chapter(s) audited earlier. Reload the chapter list to continue.` : "Needs Heading 1–3 on chapter titles. Click the button to start.";
+  } else if (!next) {
+    line.textContent = `${CW.progressLabel(st, list)}. ${CW.summaryLines(st, list).join(" · ")}`;
+  } else {
+    line.textContent = `${CW.progressLabel(st, list)} — next: ${nextCh ? nextCh.title : ""}${done ? ` · ${CW.summaryLines(st, list).join(" · ")}` : ""}`;
+  }
+  if (btn) btn.textContent = !list.length ? "Audit first chapter" : !next ? "Audit again from the start" : done ? "Audit next chapter" : "Audit first chapter";
+  if (skip) skip.classList.toggle("hidden", !next);
+  if (reset) reset.classList.toggle("hidden", !done);
+  if (openIt || (done && next)) box.open = true;
+}
+
+async function auditNextChapter() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
+  const CW = ProzaEdit.ChapterWalk;
+  if (!scopeChapterListCache.length) {
+    await refreshChapterScopeLists();
+    renderChapterWalkPanel(true);
+    if (!scopeChapterListCache.length) return;
+  }
+  let st = syncChapterWalkState();
+  let next = CW.nextIndex(st, scopeChapterListCache);
+  if (!next) {
+    chapterWalkState = CW.create(scopeChapterListCache);
+    chapterWalkMemory = {};
+    st = chapterWalkState;
+    next = CW.nextIndex(st, scopeChapterListCache);
+  }
+  const ch = scopeChapterListCache.find((c) => c.index === next);
+  if (!ch) return;
+  const total = scopeChapterListCache.length;
+  const position = CW.doneCount(st) + 1;
+  const prevScope = getScopeMode();
+  const scopeEl = getEl("scope");
+  if (scopeEl) {
+    scopeEl.value = "selected-chapters";
+    syncScopePanels();
+  }
+  document.querySelectorAll("#scopeChapterChecklist input[type=checkbox]").forEach((cb) => {
+    cb.checked = cb.value === String(ch.index);
+  });
+  const snapshotState = st;
+  const ok = await runAuditInternal({
+    label: `Chapter ${position} of ${total}: ${ch.title}`,
+    status: `Chapter ${position} of ${total}: ${ch.title}…`,
+    skipLongOpWarning: true,
+    onResult: (result, text, truncated) => {
+      if (chapterWalkState !== snapshotState) return result;
+      const list = result.suggestions || [];
+      CW.record(snapshotState, ch, {
+        words: result.metrics?.wordCount || 0,
+        critical: list.filter((s) => s.type === "confirmed").length,
+        style: list.filter(scoreCountsPref).length,
+        truncated,
+        at: Date.now(),
+      });
+      chapterWalkMemory[ch.index] = list;
+      persistChapterWalk();
+      const merged = CW.mergedSuggestions(chapterWalkMemory, scopeChapterListCache);
+      const totals = CW.totals(snapshotState);
+      return {
+        ...result,
+        suggestions: merged,
+        score: undefined,
+        metrics: { ...(result.metrics || {}), wordCount: totals.words },
+        summaryNote: `Combined results for ${totals.chapters} of ${total} chapters. The word count is the total so far; reading grade, dialogue share and the overview panel describe the latest chapter ("${ch.title}").`,
+      };
+    },
+  });
+  if (ok) {
+    await persistChapterWalk();
+    const after = CW.nextIndex(chapterWalkState, scopeChapterListCache);
+    showPeStatus(
+      after
+        ? `${CW.doneCount(chapterWalkState)} of ${total} chapters audited. Click Audit next chapter to continue — your place is saved.`
+        : `All ${total} chapters audited. Results are merged below.`,
+      "ok"
+    );
+  } else {
+    showPeStatus("That chapter was not audited, so your place is unchanged. Click Audit next chapter to try again" + (getEl("scopeCharPreview")?.classList.contains("over-limit") ? ", or Skip this chapter if it is longer than the limit." : "."), "warn");
+  }
+  restoreScopeModeIfChanged(prevScope);
+  renderChapterWalkPanel(true);
+}
+
+async function skipChapterWalkChapter() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
+  const CW = ProzaEdit.ChapterWalk;
+  if (!scopeChapterListCache.length) return;
+  const st = syncChapterWalkState();
+  const next = CW.nextIndex(st, scopeChapterListCache);
+  const ch = scopeChapterListCache.find((c) => c.index === next);
+  if (!ch) return;
+  CW.record(st, ch, { skipped: true, at: Date.now() });
+  await persistChapterWalk();
+  renderChapterWalkPanel(true);
+  showPeStatus(`Skipped "${ch.title}".`, "ok");
+}
+
+async function restartChapterWalk() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
+  chapterWalkState = ProzaEdit.ChapterWalk.create(scopeChapterListCache);
+  chapterWalkMemory = {};
+  await persistChapterWalk();
+  renderChapterWalkPanel(true);
+  showPeStatus("Chapter-by-chapter progress cleared.", "ok");
 }
 
 function cancelBatchAudit() {
@@ -6275,7 +6432,7 @@ async function runDeepAuditAI() {
     !(await aiConfirmOnce({
       title: `Deep audit via ${aiLabel()}`,
       message:
-        `Deep Audit uses 1 ${aiLabel()} API call and sends up to ${MAX_DEEP.toLocaleString()} characters of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
+        `Deep Audit uses 1 ${aiLabel()} API call and sends up to ${MAX_DEEP.toLocaleString()} characters of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry Deeper local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))

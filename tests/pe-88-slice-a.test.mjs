@@ -93,7 +93,7 @@ test("PE-88: auto-refresh consent still asked when localStorage throws", async (
 test("PE-88: index-build status text is rebuilt (not left on 'Building ...') after a scoped build", async () => {
   const t = await bootTaskpane({ word: { paragraphs: ["x ".repeat(300)], selection: "x ".repeat(300) } });
   try {
-    t.peval(`getEl("peWorkflowStatusLine").textContent = "Building scoped index: 1/2"; msIndexBuildToken++;`);
+    t.peval(`getEl("peWorkflowStatusLine").textContent = "Building chapter outline: 1/2"; msIndexBuildToken++;`);
     const tok = t.peval(`msIndexBuildToken`);
     t.peval(`scheduleManuscriptIndexBuild(false)`);
     await t.settle(80);

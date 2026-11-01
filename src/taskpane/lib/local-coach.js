@@ -99,7 +99,7 @@ ProzaEdit.LocalCoach = {
       re: /\b(plot|chapter|structure|arc|midpoint|climax)\b/i,
       tips: [
         "End chapters on unresolved tension; logistics-only endings often flag in local audit.",
-        "Audit one chapter at a time (Target → Selected chapters) to keep long manuscripts manageable (0 tokens).",
+        "Audit one chapter at a time (Target → Chosen chapters) to keep long manuscripts manageable (0 tokens).",
       ],
     },
     {
@@ -134,7 +134,7 @@ ProzaEdit.LocalCoach = {
 
   GENERAL: [
     "Highlight the passage in Word, run **Run Full Audit (local)**—zero tokens.",
-    "Use **Extended local audit** for an extra rule pass before any paid/API step.",
+    "Use **Deeper local audit** for an extra rule pass before any paid/API step.",
     "Apply fixes with undo available (toolbar ↶ Undo).",
   ],
 

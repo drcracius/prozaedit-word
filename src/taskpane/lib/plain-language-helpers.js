@@ -87,7 +87,7 @@ ProzaEdit.PlainLanguage = {
     if (mod.includes("proper noun")) return true;
     const text = String(item.targetText || "").trim();
     if (!text || text.length > 48 || text === "(truncated)") return false;
-    return /^[A-Z][a-z]+(?:['\u2019][A-Z][a-z]+)*(?:\s+[A-Z][a-z]+){0,2}$/.test(text);
+    return /^(?:\p{Lu}['\u2019])?\p{Lu}[\p{Ll}\p{M}]+(?:['\u2019-]?\p{Lu}[\p{Ll}\p{M}]+)*(?:\s+\p{Lu}[\p{Ll}\p{M}]+(?:['\u2019-]?\p{Lu}[\p{Ll}\p{M}]+)*){0,2}$/u.test(text);
   },
 
   shouldShowMuteDictionaryNudge(item, alreadyShownThisSession) {

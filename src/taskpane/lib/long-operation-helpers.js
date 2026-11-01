@@ -82,7 +82,7 @@ ProzaEdit.LongOp = {
     if (id === ProzaEdit.LongOp.ACTION_IDS.AUDIT_FULL) {
       return (
         "A full-manuscript audit reads the entire document and may take several minutes on long drafts. " +
-        "For very long documents, try Selected chapters or Page range."
+        "For very long documents, try Chosen chapters or Page range."
       );
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE) {

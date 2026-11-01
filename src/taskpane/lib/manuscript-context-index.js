@@ -1021,7 +1021,7 @@ ProzaEdit.ManuscriptContextIndex = {
   formatStatusBadge(index, fresh) {
     const norm = this.normalizeStored(index);
     if (!norm || norm.invalid) {
-      return { text: "Full MS context not built", className: "pe-mci-stale", state: "none" };
+      return { text: "Book outline not built", className: "pe-mci-stale", state: "none" };
     }
     const f = this.freshnessOf(norm, fresh);
     const built = norm.builtAt ? new Date(norm.builtAt) : null;
@@ -1034,7 +1034,7 @@ ProzaEdit.ManuscriptContextIndex = {
         state: "stale",
       };
     }
-    let text = `Full MS context ready · ${stamp}`;
+    let text = `Book outline ready · ${stamp}`;
     if (norm.truncated) text += " · sampled";
     if (norm.storageNote) text += " · trimmed for storage";
     return { text, className: "pe-mci-ready", state: f.state };

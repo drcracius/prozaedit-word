@@ -90,11 +90,23 @@ ProzaEdit.CustomStyleGuide = {
     return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
+  /**
+   * Case-insensitive phrase test. With wholeWord, the match must not touch a letter, digit or underscore on either
+   * side (Unicode-aware, so "café" and "naïve" work); a side that starts/ends with punctuation needs no boundary.
+   */
   phraseInText(text, lower, phrase, wholeWord) {
-    const p = String(phrase || "").toLowerCase();
+    const p = String(phrase || "").trim().toLowerCase();
     if (!p) return false;
-    if (!wholeWord || p.includes(" ")) return lower.includes(p);
-    return new RegExp(`\\b${this.escapeRegex(p)}\\b`, "i").test(text);
+    if (!wholeWord) return String(lower != null ? lower : text).includes(p);
+    const W = "[\\p{L}\\p{N}_]";
+    const pre = new RegExp(`^${W}`, "u").test(p) ? `(?:^|[^\\p{L}\\p{N}_])` : "";
+    const post = new RegExp(`${W}$`, "u").test(p) ? `(?!${W})` : "";
+    const body = this.escapeRegex(p).replace(/\s+/g, "\\s+");
+    try {
+      return new RegExp(`${pre}${body}${post}`, "iu").test(String(text != null ? text : lower));
+    } catch (_) {
+      return String(lower != null ? lower : text).includes(p);
+    }
   },
 
   /** Curated starters (original lines — not copied from licensed guides). */

@@ -16,13 +16,14 @@ ProzaEdit.EditorHeuristics = {
     // common cases only, so the card is low confidence, hidden in Simple view, and never auto-replaces.
     const anBeforeConsonantSound = /^(b|c(d|f|g|h|j|k|l|m|n|p|q|r|s|t|v|w|x|y|z)|uni(?!t)|one|once|u[bcdefghjkpqwxyz])/i;
     const aBeforeVowelSound = /^(a|e|i|o|u)/i;
-    const useAn = /^(hour|honest|honor|heir|html|hmi|mba|mri|nlp|ngo|fbi|fda|eu|uk|un|us|ufo|mp|lp|rt|hr)\b/i;
+    const useAn = /^(hour\w*|honest\w*|hono(u)?r\w*|heir\w*|histor\w*|html|hmi|mba|mri|nlp|ngo|fbi|fda|eu|uk|un|us|ufo|mp|lp|rt|hr)\b/i;
     const useA = /^(uni(t|form|verse|ty)|user|euro|one|once|ouija|ukulele)\b/i;
 
     while ((m = re.exec(text)) !== null && n < limit) {
       const article = m[1].toLowerCase();
       const word = m[2];
       const wLow = word.toLowerCase();
+      if (word.length > 1 && word === word.toUpperCase() && /[A-Z]/.test(word)) continue;
       let bad = false;
       let hint = "";
       if (article === "a") {

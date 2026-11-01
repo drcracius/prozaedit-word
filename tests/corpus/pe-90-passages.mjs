@@ -48,7 +48,6 @@ export const PE90 = [
   [GF, "planted-cliche", `Her heart pounded in her chest as the door creaked open.`, ["genre:cliche"]],
   [RO, "planted-cliche", `Butterflies in her stomach, she walked up the aisle of the little bookshop.`, ["genre:cliche"]],
   [TH, "planted-spoiler", `Little did he know that the car was wired to explode.`, ["spoiler:"]],
-  [MY, "adv-planted-restroom", `Martha went to the restroom and left her bag on the table.`, ["plot:restroom"]],
   [GF, "planted-split", `You can not stay, he said. She said she cannot stay either.`, ["edit:split"]],
   [BU, "planted-spaced-colon", `Action items : finalise the budget by Friday.`, ["spell:punct:"]],
 

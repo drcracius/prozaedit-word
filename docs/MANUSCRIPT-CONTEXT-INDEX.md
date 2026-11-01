@@ -10,10 +10,10 @@ Chapter-scoped audits are fast, but suggestions can miss story arc, name continu
 
 ## Build the index
 
-1. Open **Checks** (or **Target → Full manuscript context**, or **Settings → Manuscript context index**).
-2. Click **Build full manuscript context**.
+1. Open **Checks** (or **Target → Book outline**, or **Settings → Book outline**).
+2. Click **Build book outline**.
 3. Confirm the dialog — ProzaEdit reads in **chunked sections** with cooperative yields. You can **Cancel** from the banner and keep using Word.
-4. When finished, status shows **Full MS context ready** with a timestamp, plus how many chapters changed since the previous build.
+4. When finished, status shows **Book outline ready** with a timestamp, plus how many chapters changed since the previous build.
 
 ### Whole-book coverage (PE-79)
 
@@ -30,7 +30,7 @@ The index stores a **per-chapter content hash**, a **document hash**, and a fing
 - **Cancel and resume:** cancelling the build keeps finished batches in memory only; running it again resumes if the version, age (30 min), paragraph count and every batch-start hash still match, otherwise it restarts. Never written to the document.
 - A cheap **freshness check** compares the live document with the index (paragraph count plus the probe paragraphs). It runs at most every 20 seconds, immediately before any Gemini request, after you Apply / Undo / Redo a fix, when you return to the pane, and at startup.
 - Editing text **inside** a paragraph (same paragraph count) is detected whenever the edited paragraph is among the probes. Documents of up to 300 paragraphs are checked paragraph by paragraph; in larger documents an edit outside the probed paragraphs is only noticed when the paragraph count changes or you rebuild. When in doubt, rebuild — the status line says so.
-- When the index may be out of date you see **"Manuscript index may be out of date — Refresh index"** on Checks, Coach and Rewrite, and in Settings; the changed chapters are named when known.
+- When the index may be out of date you see **"Book outline may be out of date — Refresh index"** on Checks, Coach and Rewrite, and in Settings; the changed chapters are named when known.
 - A stale index is **never silently dropped** from Gemini prompts. It is still included, labelled *"may be out of date"*, and the pane tells you so. Local checks that could produce false flags (the audit name roster) use the index **only while it is fresh**.
 
 ## Storage
@@ -68,7 +68,7 @@ A single AI request is capped (about 32,000 characters). The prompt is built fro
 1. The **instruction** is always kept.
 2. Your **question** and the **excerpt**, including the **end of the excerpt**, are kept.
 3. The **index** is trimmed first, then the extra context, then the **middle** of the excerpt as a last resort.
-4. Whenever something is trimmed, the pane shows a note (*"Manuscript index shortened to fit"*) so you know what the model did not see.
+4. Whenever something is trimmed, the pane shows a note (*"Book outline shortened to fit"*) so you know what the model did not see.
 
 ## Limits (honest caps)
 

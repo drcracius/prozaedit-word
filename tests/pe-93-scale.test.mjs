@@ -47,7 +47,7 @@ test("PE-93: 300k-word fiction doc - index build, timeline and audit-refusal fin
     const h0 = HEAP();
     let t0 = Date.now();
     await run(t, "btnBuildManuscriptContext");
-    assert.match(t.status(), /context ready/i);
+    assert.match(t.status(), /outline ready/i);
     assert.ok(Date.now() - t0 < 20000, "index build < 20 s");
     t0 = Date.now();
     await run(t, "btnScanTimeline");

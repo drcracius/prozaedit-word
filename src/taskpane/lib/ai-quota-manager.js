@@ -114,7 +114,7 @@ ProzaEdit.AIQuotaManager = {
       return {
         ok: false,
         code: "run_cap",
-        message: `This request is too large (${run.promptChars.toLocaleString()} characters). Select a smaller passage or turn off the manuscript index for this call.`,
+        message: `This request is too large (${run.promptChars.toLocaleString()} characters). Select a smaller passage or turn off the book outline for this call.`,
       };
     }
     if (run.lastCallAt && run.now != null && run.now - run.lastCallAt < limits.minIntervalMs) {

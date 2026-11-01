@@ -391,16 +391,6 @@ ProzaEdit.Audit = {
   },
 
   _plot(text, lower, push, ctx) {
-    if (text.includes("went to the restroom and left")) {
-      push({
-        ruleId: "plot:restroom",
-        module: "Plot & Chapter Structure",
-        type: "preference",
-        explanation: "Scene lacks immediate tension at transition.",
-        targetText: "went to the restroom and left",
-        replacementText: "stepped into the restroom, leaving her glass unattended on the dark counter",
-      });
-    }
     const last = ProzaEdit.Metrics.splitSentences(text.trim()).pop() || "";
     if (last.length > 20 && !/[?!]$/.test(last.trim()) && /\b(went|walked|left|arrived|sat)\b/i.test(last)) {
       push({
@@ -683,7 +673,7 @@ ProzaEdit.Audit = {
       if (new RegExp(`\\b${word}\\b`, "i").test(narration)) {
         push({
           ruleId: `ext:filler:${word}`,
-          module: "Extended local pass",
+          module: "Deeper local pass",
           type: "preference",
           explanation: `Filler/intensifier “${word}” — tighten prose (${hint}).`,
           targetText: word,
@@ -708,7 +698,7 @@ ProzaEdit.Audit = {
         rep++;
         push({
           ruleId: `ext:repeat:${w}`,
-          module: "Extended local pass",
+          module: "Deeper local pass",
           type: "preference",
           explanation: `Word “${w}” appears ~${c} times in excerpt—consider synonyms (Thesaurus tab, Datamuse, free).`,
           targetText: w,
@@ -721,7 +711,7 @@ ProzaEdit.Audit = {
     if (hyphens >= 8 && (enDash > 0 || emDash > 0)) {
       push({
         ruleId: "ext:dash_mix",
-        module: "Extended local pass",
+        module: "Deeper local pass",
         type: "preference",
         explanation: "Hyphens appear alongside en/em dashes — check dash style is consistent. Compound words keep their hyphens; review by hand.",
         targetText: "-",
@@ -732,7 +722,7 @@ ProzaEdit.Audit = {
     if (emDash >= 6 && (emDash * 1000) / Math.max(1, wordCount) >= 12) {
       push({
         ruleId: "ext:emdash",
-        module: "Extended local pass",
+        module: "Deeper local pass",
         type: "preference",
         explanation: "Heavy em-dash use—consider whether some could be commas or sentence breaks. Dashes are normal for interrupted speech, so review by hand.",
         targetText: "—",

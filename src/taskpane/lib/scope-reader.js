@@ -42,7 +42,7 @@ ProzaEdit.ScopeReader = {
     if (cc > 0) {
       parts.push(`~${cc.toLocaleString()} chars`);
       if (cap > 0 && cc >= this.softCapThreshold(cap)) {
-        parts.push(`(approaching ${cap.toLocaleString()} cap — try Selected chapters)`);
+        parts.push(`(approaching ${cap.toLocaleString()} cap — try Chosen chapters)`);
       }
     }
     if (info.scopeLabel) parts.push(`— ${info.scopeLabel}`);
@@ -366,7 +366,7 @@ ProzaEdit.ScopeReader = {
       if (!ch) continue;
       text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, { ...opts, _paras: sharedParas }, ch.title);
       if (text.length > maxChars) {
-        throw new Error(`Selected chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
+        throw new Error(`Chosen chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
       }
       if (typeof opts.onProgress === "function") {
         opts.onProgress({
@@ -377,7 +377,7 @@ ProzaEdit.ScopeReader = {
         });
       }
     }
-    if (!text.trim()) throw new Error("Selected chapters contain no text.");
+    if (!text.trim()) throw new Error("Chosen chapters contain no text.");
     const label = this.formatSelectedChaptersLabel(normalized, list);
     return { text, label: `Selected: ${label}` };
   },
@@ -497,7 +497,7 @@ ProzaEdit.ScopeReader = {
             out.push({ index: i, text, headingLevel });
           }
           if (chars > maxChars) {
-            throw new Error(`Selected chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
+            throw new Error(`Chosen chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
           }
         }
       }

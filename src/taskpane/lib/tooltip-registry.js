@@ -28,7 +28,7 @@
     "slider-complexity":
       "Lower = extra tightening pass; higher = formal register stack. Neutral (3) adds nothing beyond your paraphrase mode.",
     "slider-intensity":
-      "Lower = lighter creative trim; higher = academic hedge trim. Uses local rewrite passes only (not vivid-verb map yet).",
+      "Lower = lighter creative trim; higher = academic hedge trim. Uses local rewrite passes only (no AI).",
     "slider-density":
       "Lower = prune decorative intensifiers; higher = leave modifiers. Neutral (3) skips extra pruning.",
     "btn-scan-chronology":
@@ -78,6 +78,14 @@
       activeBubble.parentNode.removeChild(activeBubble);
     }
     activeBubble = null;
+    document.querySelectorAll("[data-pe-tip-described]").forEach((el) => {
+      el.removeAttribute("aria-describedby");
+      el.removeAttribute("data-pe-tip-described");
+    });
+  }
+
+  function onKeyDown(e) {
+    if (e.key === "Escape" && activeBubble) hideTooltip();
   }
 
   function showFor(el) {
@@ -177,6 +185,7 @@
     document.body.addEventListener("pointerout", onPointerOut);
     document.body.addEventListener("focusin", onFocusIn);
     document.body.addEventListener("focusout", onFocusOut);
+    document.addEventListener("keydown", onKeyDown);
   }
 
   function initTooltips(on) {

@@ -139,7 +139,7 @@ test("dedupe keeps the highest-confidence card for the same target (low AI card 
 });
 
 test("confidence: plot:*, ai:detect, ext dashes/repeat and long sentences barely over the limit are low; Strunk/plain are low in fiction only", () => {
-  assert.equal(P.Audit.confidenceFor({ ruleId: "plot:restroom", type: "preference" }), "low");
+  assert.equal(P.Audit.confidenceFor({ ruleId: "plot:weak_hook", type: "preference" }), "low");
   assert.equal(P.Audit.confidenceFor({ ruleId: "ai:detect:uniform_sentences", type: "preference" }), "low");
   assert.equal(P.Audit.confidenceFor({ ruleId: "ext:emdash", type: "preference" }), "low");
   const fic = P.Audit.run("He did it in order to win.", ctxFor("Fiction (General)")).suggestions.find((s) => s.ruleId.startsWith("sg:plain"));

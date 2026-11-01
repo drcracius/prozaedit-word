@@ -161,7 +161,8 @@ ProzaEdit.ManuscriptOverview = {
     html += `<li><strong>Type:</strong> ${this._esc(ctx.manuscriptType)} · <strong>Reader:</strong> ${this._esc(ctx.targetAudience)} · <strong>Style basis:</strong> ${this._esc(this.styleGuideLabel(ctx.styleGuideRef, ctx))}</li>`;
     html += `<li><strong>Words:</strong> ${metrics.wordCount} · <strong>Sentences:</strong> ${metrics.sentenceCount} · <strong>Dialogue:</strong> ~${dialoguePct}% · <strong>Narrative:</strong> ~${narrativePct}%</li>`;
     if (extras.docStats) {
-      html += `<li><strong>Document:</strong> ~${extras.docStats.paragraphs} paragraphs · ~${extras.docStats.estWords} words (estimate)</li>`;
+      const ew = extras.docStats.estWords;
+      html += `<li><strong>Document:</strong> ~${extras.docStats.paragraphs} paragraphs${typeof ew === "number" ? ` · ~${ew} words (estimate)` : " (too long to estimate words here)"}</li>`;
     }
     if (ProzaEdit.EditorHeuristics?.docFormalTally && /Academic|Business|Technical/.test(String(ctx.manuscriptType || ""))) {
       const ft = ProzaEdit.EditorHeuristics.docFormalTally(text);
