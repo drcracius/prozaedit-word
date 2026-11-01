@@ -1719,7 +1719,15 @@ function bindWorkflowStepper() {
   });
 }
 
+function updateGenreBlurb() {
+  const el = getEl("peGenreBlurb");
+  if (!el || !ProzaEdit.Genres) return;
+  const p = ProzaEdit.Genres.resolve(getEl("manuscriptType")?.value);
+  el.textContent = `${p.label}: ${p.blurb} Checks, thresholds and AI prompts follow this choice; it is saved with this document.`;
+}
+
 function adaptModules() {
+  updateGenreBlurb();
   const fiction = isFictionManuscriptType();
   FICTION_MODULE_IDS.forEach((id) => {
     const el = document.getElementById(id);
@@ -2367,6 +2375,7 @@ async function prepareGeminiPrompt(makeSections) {
 }
 
 function updateAiHelpAvailability() {
+  updateAiMeter();
   const hasKey = !!getApiKey();
   const simple = isChecked("simpleMode", false);
   document.querySelectorAll(".pe-ai-help").forEach((box) => {
