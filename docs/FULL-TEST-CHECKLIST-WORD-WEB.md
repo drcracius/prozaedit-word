@@ -100,7 +100,7 @@ Run these on **Word on the web** (and desktop if available). The automated harne
 - [ ] **Try again (Gemini):** break the key/network, send chat: recovery copy (key never shown), **Try again** repeats exactly one request.
 - [ ] **Long document:** 50k and 100k words — run audit on selection, then Section loop; Word stays responsive, cards show the first 300 with a note, cancel works mid-read.
 - [ ] **Rapid clicks:** double-click Run audit, Apply and Mute: only one action happens.
-- [ ] **Dialogs blocked:** if your tenant blocks `confirm()` in the task pane, note whether Apply still works (known risk; see release notes).
+- [ ] **Apply confirm:** with **Confirm before Apply** on, Apply shows an **in-pane** dialog (PE-74); Cancel must not change Word; Confirm applies once.
 - [ ] **Accessibility:** Tab order reaches Cancel first while busy; screen reader announces progress and "Cancelled"; tab list responds to arrow keys; Settings and tour close with `Esc`; check 200% zoom and Windows high contrast.
 - [ ] **Diagnostics timing (optional):** open the pane with `?pe-dev=1` (or set `localStorage pe-dev=1`) and confirm the status line shows phase timings after an audit; without the flag it must not.
 

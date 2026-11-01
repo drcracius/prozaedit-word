@@ -135,6 +135,7 @@
   </div>
   </div>
   <p id="peWorkflowStatusLine" class="pe-workflow-status-line help-muted" aria-live="polite">Scope: highlighted selection — refresh count on Target for character estimate.</p>
+  <p id="peDocScopeTrustLine" class="pe-doc-scope-trust-line help-muted" role="note">Dictionary: this Word document · Mute: this document + this browser · Dismiss wording: this browser only (not other PCs or files).</p>
   <nav id="peWorkflowCrossNav" class="pe-workflow-cross-nav hidden" aria-label="Related workflow steps"></nav>
   <div class="nav-tabs" role="tablist" aria-label="ProzaEdit sections">
     <button type="button" class="tab-btn active" data-pe-tab="tab1" data-pe-tab-default-label="Target" role="tab" aria-selected="true" onclick="showTab('tab1')"><span data-pe-tab-label>Target</span></button>
@@ -526,7 +527,7 @@
       <p><strong>Thesaurus:</strong> Pick a synonym → replaces the looked-up word in scope (respects selection-only on Target unless audit-style apply).</p>
       <p><strong>Rewrite:</strong> Local paraphrase preview → <em>Apply preview to selection</em> writes into Word; use Undo or Last edit if you need to find the change.</p>
       <p><strong>Audit → Rewrite:</strong> Card <em>Rewrite</em> selects the finding and opens the Rewrite tab (preview only until you apply).</p>
-      <p><strong>Mute / Dismiss:</strong> Mute hides the rule id; Dismiss also silences that exact wording. Both persist in browser storage on this PC. Dict adds proper nouns to skip name checks.</p>
+      <p><strong>Mute / Dismiss / Dictionary:</strong> <strong>Dictionary</strong> terms are saved in <strong>this Word document</strong>. <strong>Mute</strong> saves the rule in this document and in <strong>this browser</strong> (same PC profile — not other computers or Word accounts). <strong>Dismiss</strong> silences that exact wording in <strong>this browser only</strong>. ProzaEdit does not sync ignores across documents or devices yet. Use <strong>Dict</strong> on a card for one-click dictionary adds.</p>
       <p><strong>Full manuscript:</strong> Target → Full Manuscript, or use Section + audit on Checks for long docs.</p>
       <p><strong>More:</strong> <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORKFLOWS.md" target="_blank" rel="noopener">WORKFLOWS.md</a> (editing stack) · <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a></p>
     </div>
@@ -548,9 +549,30 @@
       <p><strong>Install file:</strong> only <code>manifest.hosted.xml</code> is uploaded to Word once. The app loads from GitHub Pages after that.</p>
       <p><a href="https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml" target="_blank" rel="noopener">Download manifest.hosted.xml</a> (OneDrive/iCloud/Downloads all work — open from that folder when Word asks).</p>
     </div>
-    <h2 class="pe-section-title">Diagnostics &amp; privacy</h2>
+    <details class="help-box help-details" id="peHelpPrivacySummary">
+      <summary>Privacy &amp; data (summary)</summary>
+      <ul class="help-list">
+        <li><strong>Run audit / Local Coach / paraphrase</strong> — local in your browser; no cloud by default.</li>
+        <li><strong>Gemini</strong> (optional) — sends only the prompt and context you trigger to Google when you click Send / Deep audit / Rewrite via Gemini.</li>
+        <li><strong>Thesaurus (Datamuse)</strong> — sends a single lookup word when you search synonyms.</li>
+        <li><strong>Diagnostics</strong> — opt-in; clipboard JSON is redacted (no document text or API keys).</li>
+        <li><strong>Remember API key</strong> — stores the key inside this Word document when enabled.</li>
+      </ul>
+      <p class="help-inline"><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/PRIVACY-AND-DATA-PE.md" target="_blank" rel="noopener">PRIVACY-AND-DATA-PE.md</a> · <button type="button" class="btn-linkish" onclick="openSettingsModal('privacy')">Settings → Privacy</button></p>
+    </details>
+    <details class="help-box help-details" id="peHelpSupportSummary">
+      <summary>Support &amp; compatibility</summary>
+      <ul class="help-list">
+        <li><strong>Primary:</strong> Word on the web (upload manifest once).</li>
+        <li><strong>Desktop:</strong> best-effort; Upload is often missing — use the browser.</li>
+        <li><strong>Issues:</strong> <a href="https://github.com/drcracius/prozaedit-word/issues" target="_blank" rel="noopener">GitHub issues</a> · Help → Report a problem (redacted JSON).</li>
+        <li><strong>Validation:</strong> <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/FULL-TEST-CHECKLIST-WORD-WEB.md" target="_blank" rel="noopener">FULL-TEST-CHECKLIST-WORD-WEB.md</a></li>
+      </ul>
+      <p class="help-inline"><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/SUPPORT-AND-COMPATIBILITY-PE.md" target="_blank" rel="noopener">SUPPORT-AND-COMPATIBILITY-PE.md</a></p>
+    </details>
+    <h2 class="pe-section-title">Diagnostics</h2>
     <div class="help-box">
-      <p>Optional anonymous crash reports and manual problem reports live in toolbar <strong>Settings → Privacy &amp; diagnostics</strong> (<strong>Off by default</strong>). We never send manuscript text, selection, or API keys. Full details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
+      <p>Optional anonymous crash reports and manual problem reports live in toolbar <strong>Settings → Privacy &amp; diagnostics</strong> (<strong>Off by default</strong>). Full details: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
       <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="openSettingsModal('privacy')">Open Settings → Privacy</button>
     </div>
     <h2 class="pe-section-title">Platforms</h2>
@@ -607,6 +629,18 @@
     </details>
   </div>
 
+  <div id="pe-confirm-modal" class="pe-confirm-modal hidden" role="dialog" aria-modal="true" aria-labelledby="peConfirmTitle" aria-describedby="peConfirmMessage" aria-hidden="true">
+    <div class="pe-confirm-backdrop" tabindex="-1" aria-hidden="true"></div>
+    <div class="pe-confirm-dialog" role="document">
+      <h2 id="peConfirmTitle" class="pe-confirm-title">Confirm</h2>
+      <p id="peConfirmMessage" class="pe-confirm-message"></p>
+      <div class="pe-confirm-actions pe-top-banner-actions">
+        <button type="button" id="peConfirmPrimary" class="btn-main pe-btn">Continue</button>
+        <button type="button" id="peConfirmSecondary" class="btn-secondary pe-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div id="peOnboardingTour" class="pe-onboarding-tour hidden" role="dialog" aria-modal="true" aria-labelledby="peOnboardingTourTitle" aria-describedby="peOnboardingTourBody" aria-hidden="true">
     <div class="pe-onboarding-tour-backdrop" aria-hidden="true"></div>
     <div class="pe-onboarding-tour-panel help-box">
@@ -646,7 +680,7 @@
             <label for="apiKey">Gemini API key (optional)</label>
             <input type="password" id="apiKey" placeholder="Leave blank to stay local-only">
             <div class="toggle-row"><span>Remember in this document</span><input type="checkbox" id="rememberApiKey"></div>
-            <p class="help-muted pe-cloud-disclosure">Leave blank for local-only use. Gemini actions send only their prompt/context to Google when clicked. “Remember” stores the key in this Word document, so leave it off for shared files.</p>
+            <p class="help-muted pe-cloud-disclosure">Leave blank for local-only use. Gemini actions send only their prompt/context to Google when clicked. “Remember” stores the key in this Word document — leave it <strong>off</strong> on first use and for shared files.</p>
           </div>
           <p class="help-muted" style="font-size:10px;margin:6px 0 4px;">Task pane theme only — Word document canvas stays as Word sets it.</p>
           <fieldset class="pe-theme-options" id="peThemeFieldset">
@@ -737,7 +771,7 @@
             <a href="https://github.com/drcracius/prozaedit-word/issues/new/choose" target="_blank" rel="noopener">Report on GitHub</a>
             (paste redacted JSON from the button above).
           </p>
-          <p class="help-muted" style="font-size:11px;margin-top:6px;"><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
+          <p class="help-muted" style="font-size:11px;margin-top:6px;"><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/PRIVACY-AND-DATA-PE.md" target="_blank" rel="noopener">PRIVACY-AND-DATA-PE.md</a> · <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/DIAGNOSTICS.md" target="_blank" rel="noopener">DIAGNOSTICS.md</a></p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="privacy" style="margin-top:10px;">Reset Privacy &amp; diagnostics to defaults</button>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-reference">
@@ -834,6 +868,7 @@
   <script src="lib/pe-icons.js"></script>
   <script src="lib/diagnostics-config.js"></script>
   <script src="lib/diagnostics-reporter.js"></script>
+  <script src="lib/pe-confirm-dialog.js"></script>
   <script src="taskpane.js"></script>
 </body>
 </html>

@@ -191,6 +191,10 @@ export async function bootTaskpane(opts = {}) {
       errors.push(e);
     }
   }
+  const acceptConfirm = opts.confirm === undefined ? true : !!opts.confirm;
+  if (window.ProzaEdit?.ConfirmDialog) {
+    window.ProzaEdit.ConfirmDialog.show = () => Promise.resolve(acceptConfirm);
+  }
   const d = window.document;
   const api = {
     peval: (code) => new vm.Script(code).runInContext(vmContext),
