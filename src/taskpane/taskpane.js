@@ -725,9 +725,13 @@ function setLongOpProgressVisible(visible, label) {
   ["Checks", "Audit"].forEach((suffix) => {
     const box = getEl(`peLongOpProgress${suffix}`);
     const lbl = getEl(`peLongOpProgressLabel${suffix}`);
+    const cancel = getEl(`btnCancelLongOp${suffix}`);
     if (box) box.classList.toggle("hidden", !visible);
     if (lbl && label) lbl.textContent = label;
+    if (!visible && cancel) cancel.disabled = false;
   });
+  getEl("tab3")?.setAttribute("aria-busy", visible ? "true" : "false");
+  getEl("tab4")?.setAttribute("aria-busy", visible ? "true" : "false");
   const auditBtns = [getEl("btnRunAudit"), getEl("btnAuditPrimary")];
   auditBtns.forEach((b) => {
     if (!b) return;
@@ -764,7 +768,16 @@ function endLongOperation(controller) {
 }
 
 function setupLongOpCancelButtons() {
-  const cancel = () => activeLongOp?.cancel?.();
+  const cancel = () => {
+    activeLongOp?.cancel?.();
+    ["Checks", "Audit"].forEach((suffix) => {
+      const button = getEl(`btnCancelLongOp${suffix}`);
+      const label = getEl(`peLongOpProgressLabel${suffix}`);
+      if (button) button.disabled = true;
+      if (label) label.textContent = "Cancelling…";
+    });
+    showPeStatus("Cancelling after the current Word step…", "warn");
+  };
   getEl("btnCancelLongOpChecks")?.addEventListener("click", cancel);
   getEl("btnCancelLongOpAudit")?.addEventListener("click", cancel);
 }
@@ -2699,6 +2712,14 @@ function wordRun(label, fn) {
   });
 }
 
+function wordRecoveryMessage(error, action) {
+  return (
+    ProzaEdit.AuditReview?.recoveryMessage?.(error, action) ||
+    error?.message ||
+    "Word could not complete that action. Try again or reopen the task pane."
+  );
+}
+
 function useSelectionEdits() {
   return !!document.getElementById("replaceInSelectionOnly")?.checked;
 }
@@ -2817,8 +2838,9 @@ function applyDocumentEdit(beforeText, afterText, label, options) {
       return true;
     })
     .catch((e) => {
-      showPeStatus(e.message, "warn");
-      alert(e.message);
+      const message = wordRecoveryMessage(e, "apply this edit");
+      showPeStatus(message, "warn");
+      alert(message);
       return false;
     });
 }
@@ -2834,8 +2856,9 @@ async function prozaEditUndo() {
     showPeStatus(`Undid: ${entry.label}`, "ok");
   } catch (e) {
     ProzaEdit.EditHistory.revertPopUndo(entry);
-    showPeStatus(e.message, "warn");
-    alert(e.message);
+    const message = wordRecoveryMessage(e, "undo this edit");
+    showPeStatus(message, "warn");
+    alert(message);
   } finally {
     historyBusy = false;
     updateUndoRedoUi();
@@ -2853,8 +2876,9 @@ async function prozaEditRedo() {
     showPeStatus(`Redid: ${entry.label}`, "ok");
   } catch (e) {
     ProzaEdit.EditHistory.revertPopRedo(entry);
-    showPeStatus(e.message, "warn");
-    alert(e.message);
+    const message = wordRecoveryMessage(e, "redo this edit");
+    showPeStatus(message, "warn");
+    alert(message);
   } finally {
     historyBusy = false;
     updateUndoRedoUi();
@@ -3740,6 +3764,7 @@ function runAuditInternalCore(opts) {
   if (sumEl) sumEl.innerHTML = opts.status || "Reading document…";
 
   let cancelled = false;
+  let failed = false;
 
   return wordRun("audit", async (ctx) => {
     longOp.setStatus("Reading document…");
@@ -3792,8 +3817,10 @@ function runAuditInternalCore(opts) {
         showAuditEmptyIfNeeded();
         return false;
       }
+      failed = true;
+      const message = wordRecoveryMessage(e, "finish this audit");
       const sum = getEl("summaryReport");
-      if (sum) sum.innerHTML = `<span style="color:var(--red)">${escapeHtml(e.message)}</span>`;
+      if (sum) sum.innerHTML = `<span style="color:var(--red)">${escapeHtml(message)}</span>`;
       showAuditEmptyIfNeeded();
       ProzaEdit.Diagnostics?.reportMajor?.(
         { phase: "runAudit", scope: getScopeMode(), label: opts.label },
@@ -3809,6 +3836,7 @@ function runAuditInternalCore(opts) {
       const primary = getEl("btnAuditPrimary");
       if (primary) setRunAuditHubButtonLabel(primary, "Run audit");
       if (cancelled) showPeStatus("Cancelled.", "warn");
+      else if (failed) showPeStatus("Audit could not finish. Review the recovery steps above.", "warn");
       else showPeStatus("Audit finished (0 tokens).", "ok");
     })
     .then((v) => v !== false);
@@ -3839,7 +3867,10 @@ function renderAuditCards(list) {
     const div = document.createElement("div");
     div.className = `card ${item.type}`;
     div.id = `card_${id}`;
+    div.tabIndex = -1;
+    div.setAttribute("aria-label", `${ProzaEdit.AuditReview?.progressLabel?.(i, list.length) || `Finding ${i + 1} of ${list.length}`}: ${item.module}`);
     div.innerHTML = `
+      <span class="card-review-progress">${escapeHtml(ProzaEdit.AuditReview?.progressLabel?.(i, list.length) || `Finding ${i + 1} of ${list.length}`)}</span>
       <span class="badge ${item.type === "confirmed" ? "badge-confirmed" : "badge-pref"}">${item.type}</span>
       <strong>${escapeHtml(item.module)}</strong>
       <p class="card-explanation">${escapeHtml(item.explanation)}</p>
@@ -3914,11 +3945,32 @@ async function dismissCard(item) {
 }
 
 function removeAuditCard(id) {
+  const box = getEl("cardContainer");
+  const visibleIds = box
+    ? [...box.querySelectorAll(".card")].map((card) => String(card.id || "").replace(/^card_/, ""))
+    : [];
+  const removedCard = getEl(`card_${id}`);
+  const active = document.activeElement;
+  const shouldRestoreFocus = !!(removedCard && active && removedCard.contains(active));
+  const action = shouldRestoreFocus ? active.closest?.("[data-a]")?.dataset?.a || "" : "";
+  const oldTop = removedCard?.getBoundingClientRect?.().top;
+  const nextId = ProzaEdit.AuditReview?.nextTargetId?.(visibleIds, id) || "";
   currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id !== id);
   updateAuditFilterChips();
   updateAuditTabBadge();
-  document.getElementById(`card_${id}`)?.remove();
   applyAuditCardFilter();
+  const nextCard = nextId ? getEl(`card_${nextId}`) : null;
+  if (nextCard && Number.isFinite(oldTop)) {
+    const newTop = nextCard.getBoundingClientRect?.().top;
+    if (Number.isFinite(newTop)) window.scrollBy(0, newTop - oldTop);
+  }
+  if (shouldRestoreFocus) {
+    const focusTarget =
+      nextCard?.querySelector(action ? `[data-a="${action}"]` : "button") ||
+      nextCard ||
+      document.querySelector('.chip[data-audit-filter].chip-active');
+    focusTarget?.focus?.({ preventScroll: true });
+  }
 }
 
 function clearAuditReport() {
@@ -3950,7 +4002,11 @@ function goToIssue(target) {
   }
   wordRun("goto", async (ctx) => {
     await ProzaEdit.WordSafeNavigator.selectFirstInBody(ctx, target);
-  }).catch((e) => alert(e.message));
+  }).catch((e) => {
+    const message = wordRecoveryMessage(e, "locate this finding");
+    showPeStatus(message, "warn");
+    alert(message);
+  });
 }
 
 function applyFix(cardId, target, replacement) {
