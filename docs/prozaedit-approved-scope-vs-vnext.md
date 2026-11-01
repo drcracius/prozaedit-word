@@ -12,7 +12,7 @@
 |--------|------:|---------|
 | **vNext master spec alignment** | **~42%** | Progress against the [Next-Gen Master Specification](./prozaedit-nextgen-master-specification.md) north star — different IA (Narrative/Citations tabs, Checks merged into Audit), Zipf shaper v2, dark mode, DAG chronology UI, full quota modal, §11 HTML cutover, Office.js-in-CI, etc. See [spec review](./prozaedit-nextgen-spec-review.md). |
 | **Chat-approved Project roadmap (repo)** | **100%** | All chat-approved work that can land in **repo/docs/CI** without owner PC or Cloudflare credentials — including PE-2 **verify script**, diagnostics **deploy workflow**, GitHub issue template, PE-43/45 UX. |
-| **Chat-approved Project roadmap (live product — web RC)** | **~99%** | Repo-complete **web beta**; owner closes validation via checklist + UX-4 ([FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)). Optional: live diagnostics ingest (**2.0.0.16**). **PE-2 desktop deferred — not counted as a gap.** |
+| **Chat-approved Project roadmap (live product — web RC)** | **~99%** | Repo-complete **web beta**; owner closes validation via checklist + UX-4 ([FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)). Optional: live diagnostics ingest (**2.0.0.17**). **PE-2 desktop deferred — not counted as a gap.** |
 
 **One-line:** vNext **42%** is the long-range spec; **repo-side approved roadmap is 100%**; live web beta waits on owner checklist + feedback, not Windows Shared Folder.
 
@@ -41,7 +41,7 @@ Primary execution doc: [prozaedit-implementation-plan-audited.md](./prozaedit-im
 | **UX-1–UX-4** | UX pack + measurement docs | **Done** | UX-9 plan |
 | **PE-28** | Diagnostics client (opt-in, redaction) | **Done** | [DIAGNOSTICS.md](./DIAGNOSTICS.md) |
 | **PE-28** | Diagnostics ingest automation (repo) | **Done** | `deploy.sh`, workflow, issue template; URL empty in client |
-| **PE-28** | Hosted diagnostics **ingest live** | **Owner optional** | Deploy workflow; URL + AppDomain + **2.0.0.16** |
+| **PE-28** | Hosted diagnostics **ingest live** | **Owner optional** | Deploy workflow; URL + AppDomain + **2.0.0.17** |
 | **PE-30** | Shipped rating + version-sync CI on `main` | **Done** | [prozaedit-audit-rating-current.md](./prozaedit-audit-rating-current.md) |
 | **PE-43** | Cancel long ops, P1/P2 UI backlog, uniformity pass | **Done** | PR #2 |
 | **PE-45** | Final polish (shaper CONFIG, scope chips, Simple banner) | **Done** | PR #3 |
@@ -61,7 +61,7 @@ See [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md).
 |------|--------|-----------|
 | **Word web checklist** | [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) + pass/fail log | **Yes** |
 | **UX-4 feedback** | Five prompts in [UX rating](./prozaedit-ux-rating-and-recommendations.md) | **Yes** (or owner diary) |
-| **Diagnostics ingest** | Secrets → deploy workflow → URL + AppDomain + **2.0.0.16** per [DIAGNOSTICS.md](./DIAGNOSTICS.md) | **Optional** |
+| **Diagnostics ingest** | Secrets → deploy workflow → URL + AppDomain + **2.0.0.17** per [DIAGNOSTICS.md](./DIAGNOSTICS.md) | **Optional** |
 | **PE-2 Shared Folder** | [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md) | **No — deferred** |
 
 Until checklist + UX-4 complete, treat **live product** as **web RC complete, owner validation pending** (~99% roadmap — not blocked on PE-2).
@@ -74,7 +74,7 @@ Do **not** implement without a new chat-approved plan:
 
 - Tab merge, Narrative/Citations top-level tabs, §11 HTML cutover  
 - Dark mode system, Zipf shaper v2, full quota modal UX  
-- Manifest bump unless AppDomain or registration requires it (diagnostics post-deploy is the documented exception → **2.0.0.16**)
+- Manifest bump unless AppDomain or registration requires it (diagnostics post-deploy is the documented exception → **2.0.0.17**)
 
 ---
 

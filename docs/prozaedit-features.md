@@ -62,12 +62,12 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 - **Language:** `en-US` or `en-GB` (dialect flags, `-ise`/`-ize` checks for GB).
 - **Preferred style guide:** Auto, Plain US, Strunk 1920, GOV.UK, Microsoft, Google Dev, Red Hat, Custom only, or Custom + Auto. Built-in packs are **local heuristics** keyed to public sources—not pasted guide text.
 - **Custom house style:** On Target, pick **Custom** or **Custom + Auto** and see a one-line rule count with a link to **Settings → Custom style** (add/edit rules, presets, bulk import).
-- **Simple mode (read-only on Target):** One line shows On/Off with a link to **Settings → Safety**; hides Thesaurus tab and optional Gemini blocks (`pe-simple-mode` CSS).
+- **Simple mode (read-only on Target):** One line shows On/Off with a link to **Settings → Safety**; hides the Thesaurus tab and extra tuning (`pe-simple-mode` CSS); AI help (optional) stays available but off until a Gemini key is set.
 
 **Settings modal (toolbar gear):** Collapsible groups — **Safety** (open), **Onboarding**, **Appearance**, **Audit & reports**, **Privacy & diagnostics**, **Reference & citations**, **Dictionary**, **Custom style** (opens automatically when you already have rules). Footer **Save & close** persists and dismisses (same as auto-save on change). Each group (except Reference) has **Reset … to defaults** with confirm. **Keyboard:** `Ctrl+Shift+,` or `Alt+Shift+S` opens Settings when the pane is focused (does not override Word while typing in inputs). **Deep links:** `openSettingsModal('safety'|'onboarding'|'appearance'|'audit'|'privacy'|'reference'|'dictionary'|'style')` and URL hash `#pe-settings-{section}` (e.g. `#pe-settings-privacy`).
 
 - **Appearance:** Task pane theme — **Light** (default), **Dark**, or **Match system** (`prefers-color-scheme`). Stored as `themePreference` in `PROZAEDIT_CONFIG`; applies immediately on change. Affects the add-in pane only (not the Word document canvas or host chrome).
-- **Safety:** Simple mode; edits apply to selection only (thesaurus/rewrite; audit Apply fix always searches document); confirm before Apply; hover tips; FK lock; Version History reminder; continuity warnings (1–5); fiction scope reminder; **hide new-session tips permanently**; optional Gemini session token ceiling (hidden in Simple mode).
+- **Safety:** Simple mode; edits apply to selection only (thesaurus/rewrite; audit Apply fix always searches document); confirm before Apply; hover tips; FK lock; Version History reminder; continuity warnings (1–5); fiction scope reminder; **hide new-session tips permanently**; optional Gemini session token ceiling (its control is hidden in Simple mode; if it was enabled earlier it still applies, and the error message says where to change it).
 - **Audit & reports:** Report depth (Light / Balanced / Dense); default audit filter (All / Critical / Style / Style guide — Simple mode may override to Critical on load when no saved filter); default **Extended checks** (synced with Checks/Audit run toggles). Audit tab shows read-only hints tied to these Settings values.
 - **Privacy & diagnostics:** Opt-in anonymous crash reports; manual **Report a problem** (redacted JSON); GitHub fallback link when ingest is not configured.
 - **Reference & citations:** Capture reference style from selection; **Verify citations** shortcut when manuscript type and Checks opt-in allow it.
@@ -262,7 +262,7 @@ Truncation adds a system card suggesting narrower scope. Full manuscript audit w
 
 ### Simple vs Advanced
 
-**Simple mode** hides Thesaurus and Gemini-related UI (`data-simple-hide`, `pe-gemini-block`). Core audit, Coach local, Rewrite local remain available.
+**Simple mode** hides Thesaurus, the lexical shaper and extra tuning (`data-simple-hide`); the shaper is inactive while hidden. The Gemini blocks (`pe-gemini-block`, `pe-ai-help`) stay visible as **AI help (optional)** — off until a key is set, with a route to Settings → Essentials. Core audit, Coach local, Rewrite local remain available. Toggling Simple/Advanced mid-session does not reset anything.
 
 ### Analytics, heatmap, overview
 

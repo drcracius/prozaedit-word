@@ -34,9 +34,27 @@ ProzaEdit.Audit = {
     };
   },
 
+  /**
+   * Known-name roster from the manuscript context index. Only a FRESH index is used (a stale one could
+   * contain names the author has since renamed, which would create false variant flags).
+   */
+  _manuscriptRoster(ctx) {
+    const idx = ctx && ctx.manuscriptContextIndex;
+    if (!idx || typeof idx !== "object" || idx.invalid || !ctx.manuscriptContextFresh) return [];
+    const MCI = ProzaEdit.ManuscriptContextIndex;
+    if (MCI?.knownNames) return MCI.knownNames(idx, ctx.dictionary);
+    return Array.isArray(idx.nameSeeds) ? idx.nameSeeds.slice(0, 80) : [];
+  },
+
   run(text, ctx) {
     text = String(text || "");
     ctx = this._stripIneligibleFictionFlags(ctx || {});
+    const roster = this._manuscriptRoster(ctx);
+    const manuscriptContext = {
+      indexPresent: !!(ctx.manuscriptContextIndex && !ctx.manuscriptContextIndex.invalid),
+      used: roster.length > 0,
+      namesUsed: roster.length,
+    };
     const suggestions = [];
     let idSeq = 0;
     const muted = new Set(ctx.mutedRules || []);
@@ -65,12 +83,13 @@ ProzaEdit.Audit = {
         traffic: ProzaEdit.Metrics.trafficLight(10),
         criticalCount: 0,
         prefCount: 0,
+        manuscriptContext,
       };
     }
 
     if (ctx.chkRep) this._repetition(text, lower, push);
     if (ctx.chkProp) {
-      ProzaEdit.ProperNoun.findInconsistencies(text, ctx.dictionary).forEach(push);
+      ProzaEdit.ProperNoun.findInconsistencies(text, ctx.dictionary, { knownNames: roster }).forEach(push);
     }
     if (ctx.chkSpell) this._proofing(text, lower, push, ctx.language);
     if (ctx.chkAI) this._aiVoice(text, lower, push);
@@ -138,7 +157,7 @@ ProzaEdit.Audit = {
     score = Math.round(score * 10) / 10;
     const traffic = ProzaEdit.Metrics.trafficLight(score);
 
-    return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount };
+    return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext };
   },
 
   _dedupe(list) {

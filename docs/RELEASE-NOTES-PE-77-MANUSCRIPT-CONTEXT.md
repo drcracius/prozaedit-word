@@ -2,9 +2,11 @@
 
 **Version:** 2.0.0.15 (no manifest bump)
 
+> **Superseded in part by [PE-79](./RELEASE-NOTES-PE-79-WORD-FIXES.md) (2.0.0.16):** the index is a local *heuristic* outline (not AI), is sent to Google with Gemini calls, lives under its own settings key `PROZAEDIT_MCI_V2`, and is edit-aware. The text below describes the PE-77 original.
+
 ## Summary
 
-Adds **Manuscript Context Index (MCI)**: a local, chunked full-document profile separate from audit scope so chapter-scoped runs still see story arc, continuity, and name seeds.
+Adds **Manuscript Context Index (MCI)**: a local, heuristic (non-AI), chunked full-document profile separate from audit scope so chapter-scoped runs still see story arc, continuity, and name seeds.
 
 ## User-visible changes
 

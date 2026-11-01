@@ -948,6 +948,28 @@ body.pe-narrow-pane .btn-tool-icon-label {
   color: var(--text-muted, #5f6368);
 }
 
+.pe-mci-stale-notice {
+  font-size: var(--pe-font-size-2xs);
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--orange-muted, #e37400);
+  background: var(--bg);
+}
+
+.pe-mci-stale-notice.hidden {
+  display: none !important;
+}
+
+.pe-simple-mode .pe-ai-help {
+  opacity: 0.9;
+}
+
+.pe-ai-help-setup.hidden,
+.pe-ai-help-ready.hidden {
+  display: none !important;
+}
+
 .pe-scope-chip {
   font-size: 10px;
   margin: 0 0 8px;
@@ -1706,10 +1728,6 @@ body.pe-settings-open {
 
 body.pe-onboarding-tour-open .pe-first-audit-checklist,
 body.pe-simple-first-run-active .pe-first-audit-checklist {
-  display: none !important;
-}
-
-.pe-simple-mode .pe-gemini-block {
   display: none !important;
 }
 

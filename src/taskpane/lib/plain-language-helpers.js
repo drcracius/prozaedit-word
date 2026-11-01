@@ -26,7 +26,7 @@ ProzaEdit.PlainLanguage = {
   },
 
   SIMPLE_MODE_ESSENTIALS_INTRO:
-    "Simple mode hides extra tabs and optional checks. Turn off to see Coach, Rewrite, and more.",
+    "Simple view hides the Thesaurus tab, the lexical shaper, and extra tuning. Coach, Rewrite and optional AI help stay available. Turn Simple off for every control.",
 
   NEW_TO_EDITING_TOOLS_BULLETS: [
     "Work one chapter or a highlighted passage at a time — you do not need the whole book on day one.",
