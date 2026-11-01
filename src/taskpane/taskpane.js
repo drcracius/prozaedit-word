@@ -59,6 +59,11 @@ let activeLongOp = null;
 let pendingLongOpActionId = null;
 let pendingLongOpRunner = null;
 let configFirstRunComplete = false;
+let configOnboardingTourComplete = false;
+let onboardingTourActiveStep = 0;
+let onboardingTourPreviousFocus = null;
+let lastAuditHadTruncation = false;
+let lastAuditScopeModeAtRun = "";
 let sessionAuditCompletedThisSession = false;
 let muteDictionaryNudgeShownThisSession = false;
 
@@ -230,6 +235,10 @@ function updateWorkflowNextStepHint() {
     sessionAuditCompleted: sessionAuditCompletedThisSession,
     hasAuditCards: currentAuditSuggestions.length > 0,
   });
+  if (show) {
+    el.textContent =
+      "Next step: set scope on Target (or keep your highlight), open Checks if needed, then Run audit from the toolbar.";
+  }
   el.classList.toggle("hidden", !show);
 }
 
@@ -897,6 +906,8 @@ Office.onReady((info) => {
     initSessionTips();
     initSimpleModeFirstRunBanner();
     initDarkAppearanceTip();
+    setupFirstAuditChecklistDismissTracking();
+    setTimeout(() => maybeInitOnboardingTour(), 600);
     setupSettingsKeyboardShortcut();
     tryOpenSettingsFromLocationHash();
     updateWorkflowStatusLine();
@@ -1090,6 +1101,7 @@ function collectUiConfig() {
     lastActiveTab: getCurrentActiveTabId(),
     batchSectionCount: Math.min(8, Math.max(1, parseInt(getEl("batchSectionCount")?.value, 10) || 3)),
     firstRunComplete: configFirstRunComplete,
+    onboardingTourComplete: configOnboardingTourComplete,
     rewriteMode: (() => {
       const v = getEl("rewriteMode")?.value || "fluency";
       return ["fluency", "formal", "creative", "academic"].includes(v) ? v : "fluency";
@@ -1166,6 +1178,7 @@ function applyUiConfig(p) {
   }
   setC("simpleMode", p.simpleMode);
   if (typeof p.firstRunComplete === "boolean") configFirstRunComplete = p.firstRunComplete;
+  if (typeof p.onboardingTourComplete === "boolean") configOnboardingTourComplete = p.onboardingTourComplete;
   setC("showHoverTips", p.showHoverTips !== false);
   setC("fkLock", p.fkLock);
   setC("remindVersionHistory", p.remindVersionHistory);
@@ -1936,6 +1949,7 @@ function dismissSessionTips(dontShowAgain) {
   try {
     sessionStorage.setItem(ProzaEdit.Onboarding?.SESSION_TIPS_DISMISSED_KEY || "pe-session-tips-dismissed", "1");
   } catch (_) {}
+  maybeInitOnboardingTour();
 }
 
 function initSimpleModeFirstRunBanner() {
@@ -1943,6 +1957,7 @@ function initSimpleModeFirstRunBanner() {
   if (!el) return;
   const show = ProzaEdit.Onboarding?.shouldShowSimpleModeFirstRunBanner?.({
     firstRunComplete: configFirstRunComplete,
+    onboardingTourComplete: configOnboardingTourComplete,
     simpleMode: isChecked("simpleMode", false),
   });
   if (!show) {
@@ -1968,6 +1983,186 @@ function dismissSimpleModeFirstRunBanner(dontShowAgain) {
       "1"
     );
   } catch (_) {}
+  maybeInitOnboardingTour();
+}
+
+function isFirstAuditChecklistDismissed() {
+  const key = ProzaEdit.Onboarding?.FIRST_AUDIT_CHECKLIST_DISMISSED_KEY || "pe-first-audit-checklist-dismissed";
+  try {
+    if (sessionStorage.getItem(key) === "1") return true;
+  } catch (_) {}
+  const details = getEl("peFirstAuditChecklist");
+  return details ? !details.open : false;
+}
+
+function onboardingTourUiBlockingBanners() {
+  const simpleEl = getEl("peSimpleModeFirstRunBanner");
+  const tipsEl = getEl("peSessionTips");
+  return {
+    simpleModeFirstRunBannerVisible:
+      !!simpleEl && !simpleEl.classList.contains("hidden"),
+    sessionTipsVisible: !!tipsEl && !tipsEl.classList.contains("hidden"),
+  };
+}
+
+function shouldOfferOnboardingTourNow() {
+  return !!ProzaEdit.Onboarding?.shouldShowOnboardingTour?.({
+    onboardingTourComplete: configOnboardingTourComplete,
+    firstRunComplete: configFirstRunComplete,
+    showSessionTips: isChecked("showSessionTips", true),
+    checklistDismissed: isFirstAuditChecklistDismissed(),
+  });
+}
+
+function markOnboardingTourCompleteAndPersist() {
+  if (configOnboardingTourComplete) return;
+  configOnboardingTourComplete = true;
+  persistSettings(false);
+}
+
+function clearOnboardingTourAnchorHighlight() {
+  document.querySelectorAll(".pe-tour-anchor-highlight").forEach((el) => {
+    el.classList.remove("pe-tour-anchor-highlight");
+  });
+}
+
+function closeOnboardingTourShell() {
+  const shell = getEl("peOnboardingTour");
+  if (!shell) return;
+  shell.classList.add("hidden");
+  shell.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("pe-onboarding-tour-open");
+  clearOnboardingTourAnchorHighlight();
+  if (document.body.dataset.peTourKeydown) {
+    document.removeEventListener("keydown", onboardingTourKeydownHandler);
+    delete document.body.dataset.peTourKeydown;
+  }
+  const prev = onboardingTourPreviousFocus;
+  onboardingTourPreviousFocus = null;
+  if (prev && typeof prev.focus === "function") prev.focus();
+}
+
+function onboardingTourKeydownHandler(e) {
+  const shell = getEl("peOnboardingTour");
+  if (!shell || shell.classList.contains("hidden")) return;
+  if (e.key === "Escape") {
+    e.preventDefault();
+    skipOnboardingTour();
+  }
+}
+
+function renderOnboardingTourStep(stepIndex) {
+  const stop = ProzaEdit.Onboarding?.getOnboardingTourStop?.(stepIndex);
+  const shell = getEl("peOnboardingTour");
+  if (!stop || !shell) return;
+  onboardingTourActiveStep = stepIndex;
+  const title = getEl("peOnboardingTourTitle");
+  const body = getEl("peOnboardingTourBody");
+  const progress = getEl("peOnboardingTourProgress");
+  const btnNext = getEl("peOnboardingTourNext");
+  const btnDone = getEl("peOnboardingTourDone");
+  const total = ProzaEdit.Onboarding?.onboardingTourStopCount?.() || 3;
+  if (title) title.textContent = stop.title;
+  if (body) body.textContent = stop.body;
+  if (progress) progress.textContent = `Step ${stepIndex + 1} of ${total}`;
+  const isLast = stepIndex >= total - 1;
+  if (btnNext) btnNext.classList.toggle("hidden", isLast);
+  if (btnDone) btnDone.classList.toggle("hidden", !isLast);
+  if (stop.tabId) showTab(stop.tabId);
+  clearOnboardingTourAnchorHighlight();
+  if (stop.anchorSelector) {
+    const anchor = document.querySelector(stop.anchorSelector);
+    if (anchor) {
+      anchor.classList.add("pe-tour-anchor-highlight");
+      try {
+        anchor.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      } catch (_) {}
+    }
+  }
+  btnNext?.focus();
+}
+
+function openOnboardingTour(stepIndex) {
+  const shell = getEl("peOnboardingTour");
+  if (!shell || shell.classList.contains("hidden") === false) return;
+  onboardingTourPreviousFocus = document.activeElement;
+  shell.classList.remove("hidden");
+  shell.setAttribute("aria-hidden", "false");
+  document.body.classList.add("pe-onboarding-tour-open");
+  if (!document.body.dataset.peTourKeydown) {
+    document.body.dataset.peTourKeydown = "1";
+    document.addEventListener("keydown", onboardingTourKeydownHandler);
+  }
+  renderOnboardingTourStep(stepIndex || 0);
+}
+
+function maybeInitOnboardingTour() {
+  if (!shouldOfferOnboardingTourNow()) return;
+  const defer = ProzaEdit.Onboarding?.shouldDeferOnboardingTour?.(onboardingTourUiBlockingBanners());
+  if (defer) return;
+  openOnboardingTour(0);
+}
+
+function advanceOnboardingTour() {
+  const total = ProzaEdit.Onboarding?.onboardingTourStopCount?.() || 3;
+  if (onboardingTourActiveStep >= total - 1) {
+    finishOnboardingTour();
+    return;
+  }
+  renderOnboardingTourStep(onboardingTourActiveStep + 1);
+}
+
+function skipOnboardingTour() {
+  markOnboardingTourCompleteAndPersist();
+  closeOnboardingTourShell();
+}
+
+function finishOnboardingTour() {
+  markOnboardingTourCompleteAndPersist();
+  closeOnboardingTourShell();
+}
+
+function setupFirstAuditChecklistDismissTracking() {
+  const el = getEl("peFirstAuditChecklist");
+  if (!el || el.dataset.peTourBound) return;
+  el.dataset.peTourBound = "1";
+  el.addEventListener("toggle", () => {
+    if (!el.open) {
+      try {
+        sessionStorage.setItem(
+          ProzaEdit.Onboarding?.FIRST_AUDIT_CHECKLIST_DISMISSED_KEY || "pe-first-audit-checklist-dismissed",
+          "1"
+        );
+      } catch (_) {}
+    }
+  });
+}
+
+function updateAuditScopeFootnote() {
+  const el = getEl("peAuditScopeFootnote");
+  if (!el) return;
+  if (!currentAuditSuggestions.length) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+  const mode = lastAuditScopeModeAtRun || getScopeMode();
+  const limit = ProzaEdit.ScopeReader?.getLimit?.(mode) || 450000;
+  const excerptLen = (lastAuditExcerpt || "").length;
+  const opts = {
+    hadTruncation: lastAuditHadTruncation,
+    scopeMode: mode,
+    excerptCharLength: excerptLen,
+    scopeLimit: limit,
+  };
+  const show = ProzaEdit.Onboarding?.shouldShowAuditScopeFootnote?.(opts);
+  if (!show) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+  el.textContent = ProzaEdit.Onboarding?.buildAuditScopeFootnoteCopy?.(opts) || "";
+  el.classList.remove("hidden");
 }
 
 function initDarkAppearanceTip() {
@@ -3069,7 +3264,10 @@ function finalizeAudit(result, label) {
   if (summary) summary.innerHTML = html;
   setAuditSuggestions(suggestions);
   cacheAudit(label, html, suggestions, traffic, score);
-  if (suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated")) {
+  lastAuditHadTruncation = suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated");
+  lastAuditScopeModeAtRun = getScopeMode();
+  updateAuditScopeFootnote();
+  if (lastAuditHadTruncation) {
     showPeStatus(
       "Scope hit the character cap — open the Truncated scope card below, or try Selected chapters / Page range.",
       "warn"
@@ -3120,6 +3318,11 @@ function restoreCachedAuditIfEmpty() {
       getEl("miniScores")?.classList.add("hidden");
     }
     setAuditSuggestions(d.suggestions);
+    lastAuditHadTruncation = (d.suggestions || []).some(
+      (s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated"
+    );
+    lastAuditScopeModeAtRun = getScopeMode();
+    updateAuditScopeFootnote();
   } catch (_) {}
 }
 
@@ -3350,6 +3553,8 @@ function removeAuditCard(id) {
 function clearAuditReport() {
   currentAuditSuggestions = [];
   lastAuditExcerpt = "";
+  lastAuditHadTruncation = false;
+  lastAuditScopeModeAtRun = "";
   lastAuditMeta = {};
   lastFeedbackLetter = "";
   auditCardFilter = isChecked("simpleMode", false) ? "confirmed" : "all";
@@ -3360,6 +3565,7 @@ function clearAuditReport() {
   if (sum) sum.innerHTML = "Audit cleared. Run audit again for a fresh pass.";
   getEl("trafficBar")?.classList.add("hidden");
   getEl("miniScores")?.classList.add("hidden");
+  updateAuditScopeFootnote();
   ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.LAST_AUDIT, "");
   showAuditEmptyIfNeeded();
   updateAuditTabBadge();

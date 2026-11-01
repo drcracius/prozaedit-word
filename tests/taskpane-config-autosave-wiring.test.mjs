@@ -40,3 +40,14 @@ test("finalizeAudit surfaces truncation in status bar", () => {
   const src = fs.readFileSync(taskpanePath, "utf8");
   assert.match(src, /sys_trunc[\s\S]*showPeStatus\([\s\S]*character cap/);
 });
+
+test("onboarding tour and audit footnote DOM ids wired", () => {
+  const html = fs.readFileSync(path.join("src", "taskpane", "taskpane.html"), "utf8");
+  assert.match(html, /id="peOnboardingTour"/);
+  assert.match(html, /id="peOnboardingTourNext"/);
+  assert.match(html, /id="peAuditScopeFootnote"/);
+  const src = fs.readFileSync(taskpanePath, "utf8");
+  assert.match(src, /onboardingTourComplete/);
+  assert.match(src, /maybeInitOnboardingTour/);
+  assert.match(src, /updateAuditScopeFootnote/);
+});

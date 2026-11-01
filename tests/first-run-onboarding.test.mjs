@@ -9,8 +9,11 @@ test("Onboarding.resolveFirstRunOnLoad bootstrap vs legacy", () => {
   assert.equal(boot.patch.simpleMode, true);
   assert.equal(boot.patch.auditCardFilter, "confirmed");
   assert.equal(boot.patch.firstRunComplete, false);
+  assert.equal(boot.patch.onboardingTourComplete, false);
 
-  assert.equal(Onboarding.resolveFirstRunOnLoad({ rawConfig: "{}", parsedConfig: {} }).kind, "migrate-legacy");
+  const legacy = Onboarding.resolveFirstRunOnLoad({ rawConfig: "{}", parsedConfig: {} });
+  assert.equal(legacy.kind, "migrate-legacy");
+  assert.equal(legacy.patch.onboardingTourComplete, true);
   assert.equal(
     Onboarding.resolveFirstRunOnLoad({ rawConfig: "{}", parsedConfig: { firstRunComplete: true } }).kind,
     "none"

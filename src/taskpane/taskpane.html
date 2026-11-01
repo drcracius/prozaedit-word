@@ -64,7 +64,7 @@
     <li class="workflow-step pe-workflow-step" data-workflow-step="3"><span class="workflow-num">3</span> Run audit</li>
     <li class="workflow-step pe-workflow-step" data-workflow-step="4"><span class="workflow-num">4</span> Fix cards</li>
   </ol>
-  <p id="peWorkflowNextStep" class="pe-workflow-next-step help-muted hidden" role="status" aria-live="polite">Next: set scope on Target, then Run audit.</p>
+  <p id="peWorkflowNextStep" class="pe-workflow-next-step help-muted hidden" role="status" aria-live="polite">Next step: set scope on Target, then Run audit.</p>
   <details class="help-box help-details">
     <summary>Quick start &amp; editing stack</summary>
     <p><strong>Local-first:</strong> audit, coach, paraphrase = <strong>0 API tokens</strong>. Partner tools in Word:</p>
@@ -401,6 +401,7 @@
     <p id="auditDefaultFilterHint" class="audit-default-filter-hint help-muted" style="font-size:10px;margin:0 0 8px;" aria-live="polite">Default filter: All (change in Settings)</p>
     <p id="peAuditFilterLanesHint" class="pe-audit-filter-lanes-hint help-muted" style="font-size:10px;margin:0 0 8px;" aria-live="polite"><strong>Filter lanes:</strong> Pick one chip (Critical, Style, Style guide) to work one category at a time — not a full “run every report” pass.</p>
     <p id="peReviewModeAuditHint" class="pe-review-mode-audit-hint help-muted hidden" style="font-size:10px;margin:0 0 8px;" aria-live="polite"></p>
+    <p id="peAuditScopeFootnote" class="pe-audit-scope-footnote help-muted hidden" role="status" aria-live="polite"></p>
     <details class="help-box help-muted audit-share">
       <summary>Share report</summary>
       <div class="audit-actions-row">
@@ -470,6 +471,14 @@
       <p><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/QUICK-START.md" target="_blank" rel="noopener">QUICK-START.md</a></p>
     </div>
     <h2 class="pe-section-title">ProzaEdit Help</h2>
+    <div class="help-box pe-start-here">
+      <p><strong>Start here</strong></p>
+      <ul class="help-list">
+        <li><strong>Target</strong> — choose scope and manuscript type.</li>
+        <li><strong>Checks</strong> → <strong>Run audit</strong> (toolbar or Checks button).</li>
+        <li><strong>Audit</strong> — fix <strong>Critical</strong> cards first; use Go to and Apply.</li>
+      </ul>
+    </div>
     <div class="help-box">
       <p><strong>Manual audits (not realtime):</strong> ProzaEdit runs <strong>manual audits</strong> when you click <strong>Run audit</strong> — not Grammarly-style realtime underlines in Word.</p>
       <details id="peFirstAuditChecklistHelp" class="help-muted pe-first-audit-checklist" style="margin:8px 0;">
@@ -576,6 +585,20 @@
     </details>
   </div>
 
+  <div id="peOnboardingTour" class="pe-onboarding-tour hidden" role="dialog" aria-modal="true" aria-labelledby="peOnboardingTourTitle" aria-describedby="peOnboardingTourBody" aria-hidden="true">
+    <div class="pe-onboarding-tour-backdrop" aria-hidden="true"></div>
+    <div class="pe-onboarding-tour-panel help-box">
+      <p id="peOnboardingTourProgress" class="pe-onboarding-tour-progress help-muted"></p>
+      <p id="peOnboardingTourTitle" class="pe-onboarding-tour-title"></p>
+      <p id="peOnboardingTourBody" class="pe-onboarding-tour-body help-muted"></p>
+      <div class="pe-top-banner-actions pe-onboarding-tour-actions">
+        <button type="button" id="peOnboardingTourNext" class="btn-secondary" onclick="advanceOnboardingTour()">Next</button>
+        <button type="button" id="peOnboardingTourDone" class="btn-secondary hidden" onclick="finishOnboardingTour()">Done</button>
+        <button type="button" class="btn-linkish" onclick="skipOnboardingTour()">Skip tour</button>
+      </div>
+    </div>
+  </div>
+
   <div id="pe-settings-modal" class="pe-settings-modal hidden" role="dialog" aria-modal="true" aria-labelledby="pe-settings-title" aria-hidden="true">
     <div class="pe-settings-backdrop" data-pe-settings-close tabindex="-1" aria-hidden="true"></div>
     <div class="pe-settings-dialog" role="document">
@@ -589,6 +612,7 @@
         <input type="search" id="peSettingsFilter" class="pe-settings-search" placeholder="Filter settings (e.g. onboarding, audit)…" autocomplete="off">
       </div>
       <p class="help-muted pe-settings-shortcuts" style="font-size:10px;margin:0 0 8px;padding:0 12px;">Shortcuts: <strong>Ctrl+Shift+,</strong> or <strong>Alt+Shift+S</strong> opens Settings (when not typing in a field).</p>
+      <p class="help-muted pe-settings-intro" style="font-size:10px;margin:0 0 8px;padding:0 12px;">Most people only need an optional <strong>Gemini API key</strong> (Coach tab) and <strong>Appearance</strong> theme — expand other groups when you need them.</p>
       <div class="pe-settings-body">
         <details class="pe-settings-group" id="pe-settings-group-safety" open>
           <summary>Safety</summary>
