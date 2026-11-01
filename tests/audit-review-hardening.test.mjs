@@ -32,7 +32,7 @@ test("audit card state, cancel accessibility, and Gemini disclosure are wired", 
   assert.match(js, /focus\?\.\(\{ preventScroll: true \}\)/);
   assert.match(js, /Finding \$\{i \+ 1\} of \$\{list\.length\}/);
   assert.match(js, /Cancelling after the current Word step/);
-  assert.match(js, /else if \(failed\) showPeStatus\("Audit could not finish/);
+  assert.match(js, /else if \(failed\) \{\s*showPeStatus\(\s*getRetryController\(\)\?\.has\?\.\(\)\s*\? "Audit could not finish/);
   assert.match(js, /if \(e\.key === "Tab"\) trapFocusWithin\(e, shell\.querySelector\("\.pe-onboarding-tour-panel"\)\)/);
   assert.match(html, /audit-review-helpers\.js/);
   assert.match(html, /role="status" aria-live="polite" aria-atomic="true"/);
