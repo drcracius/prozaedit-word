@@ -649,19 +649,20 @@ ProzaEdit.Audit = {
         ruleId: "ext:dash_mix",
         module: "Extended local pass",
         type: "preference",
-        explanation: "Mixed hyphen (-) with en/em dashes — pick one dash style for consistency.",
+        explanation: "Hyphens appear alongside en/em dashes — check dash style is consistent. Compound words keep their hyphens; review by hand.",
         targetText: "-",
-        replacementText: "–",
+        replacementText: "(manual review)",
       });
     }
-    if (emDash >= 6) {
+    const wordCount = (text.match(/\S+/g) || []).length;
+    if (emDash >= 6 && (emDash * 1000) / Math.max(1, wordCount) >= 12) {
       push({
         ruleId: "ext:emdash",
         module: "Extended local pass",
         type: "preference",
-        explanation: "Heavy em-dash use—vary with commas or sentence breaks.",
+        explanation: "Heavy em-dash use—consider whether some could be commas or sentence breaks. Dashes are normal for interrupted speech, so review by hand.",
         targetText: "—",
-        replacementText: ",",
+        replacementText: "(manual review)",
       });
     }
     if (ProzaEdit.EditorHeuristics?.runExtendedChecks) {

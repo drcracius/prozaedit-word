@@ -21,3 +21,14 @@ Based on PE-79 (PR #27, not yet merged).
 - Spacing-only cards (double space) now say how to fix them (Word Find & Replace) instead of "no text to replace".
 - All settings checkboxes and several text fields now have accessible names for screen readers.
 - "Release notes" link in What's new points to these notes; privacy doc now discloses the automatic once-per-session update check.
+
+## Audit 2 (PE-85) + best-version fixes (PE-86) — 2.0.0.20 (manifest bump: testers re-upload `manifest.hosted.xml` once)
+- Anchored Undo/Redo: edit history stores the anchor, so undo/redo verify the paragraph and never touch a different identical spot.
+- Timed-out / cancelled-in-flight / dropped / empty AI calls now count toward session and day caps (conservatively, at the estimate).
+- AI catalogue refreshed (reviewed 2026-11-01, not live-key tested): Gemini 3.x default, Claude Haiku/Sonnet 5.5, retired Claude ids removed; model lists live in one block in `ai-providers.js`; Custom model id still works; 404 says "model unavailable, pick another".
+- Gemini key sent in `x-goog-api-key` header (not URL); Anthropic no longer sends `temperature`; `gpt-5+`/`gpt-6` use `max_completion_tokens`.
+- "Failed to fetch" guidance (OpenAI key/Anthropic org CORS); Gemini free-tier data-use disclosure.
+- `ext:dash_mix` / `ext:emdash` no longer offer an Apply replacement; em-dash flag needs density ≥12 per 1k words. AI-phrasing check is off by default, Advanced-only, reworded.
+- Default scope is Full manuscript; session tip about re-uploading manifest removed; all 9–11px text raised to 12px; MCI "not built" neutral style.
+- Manifest declares WordApi 1.3 and the pane checks `isSetSupported` at start.
+- Not done: tracked-changes Apply mode, per-chapter incremental index rebuild, live model-list refresh, AppDomains additions (needs real-Word evidence).

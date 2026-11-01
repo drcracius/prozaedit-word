@@ -259,7 +259,7 @@ test("Gemini.generate still works through the abstraction (same URL family, key 
   const sb = { fetch: (u) => { url = u; return Promise.resolve(okJson({ candidates: [{ content: { parts: [{ text: "hello" }] } }] })); } };
   const pe2 = load(sb);
   assert.equal(await pe2.Gemini.generate("key-12345678", "hi"), "hello");
-  assert.match(url, /generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-2\.5-flash:generateContent/);
+  assert.match(url, /generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-3\.8-flash:generateContent/);
 });
 
 /* ---------- safe apply ---------- */

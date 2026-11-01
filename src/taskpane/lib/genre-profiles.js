@@ -45,7 +45,7 @@
       label: "Romance",
       blurb: "Emotion-forward, dialogue-rich, relationship arc.",
       rationale:
-        "Romance is the best-selling fiction category. It is dialogue-heavy and interior (filter words like 'felt' carry the genre), so dialogue band is wider and filter/adverb tolerance higher; the usual cliché list is romance-specific.",
+        "Romance is dialogue-heavy and interior (filter words like 'felt' carry the genre), so dialogue band is wider and filter/adverb tolerance higher; the usual cliché list is romance-specific.",
       bands: { dialogue: [30, 60], aslHigh: 21, aslLow: 7 },
       adverbPer1k: 34,
       filterPer1k: 24,

@@ -1,7 +1,7 @@
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.Gemini = {
-  MODEL: "gemini-2.5-flash",
+  MODEL: "gemini-3.8-flash",
   DEFAULT_TIMEOUT_MS: 90000,
   MAX_PROMPT_CHARS: 32000,
   MIN_EXCERPT_KEEP_CHARS: 1200,

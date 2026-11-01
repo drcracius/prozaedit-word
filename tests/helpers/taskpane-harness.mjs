@@ -191,6 +191,10 @@ export async function bootTaskpane(opts = {}) {
       errors.push(e);
     }
   }
+  if (opts.keepDefaultScope !== true) {
+    const sc = window.document.getElementById("scope");
+    if (sc) sc.value = "selection";
+  }
   const acceptConfirm = opts.confirm === undefined ? true : !!opts.confirm;
   if (window.ProzaEdit?.ConfirmDialog) {
     window.ProzaEdit.ConfirmDialog.show = () => Promise.resolve(acceptConfirm);

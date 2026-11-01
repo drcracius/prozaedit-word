@@ -176,7 +176,7 @@ textarea {
 .pe-section-summary::before {
   content: "▸ ";
   color: var(--primary);
-  font-size: 10px;
+  font-size:12px;
 }
 
 .pe-target-section[open] > .pe-section-summary::before {
@@ -198,7 +198,7 @@ textarea {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  font-size: 11px;
+  font-size:12px;
   margin: 4px 0;
   line-height: 1.35;
   min-width: 0;
@@ -219,7 +219,7 @@ textarea {
 }
 
 .scope-chapter-empty {
-  font-size: 11px;
+  font-size:12px;
   color: var(--red);
   margin: 4px 0;
 }
@@ -337,7 +337,7 @@ body.pe-narrow-pane .nav-tabs {
 }
 
 body.pe-narrow-pane .btn-tool-icon-label {
-  font-size: 9px;
+  font-size:12px;
 }
 
 .pe-brand {
@@ -370,7 +370,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-size: 9px;
+  font-size:12px;
   font-weight: 600;
   color: var(--text-muted);
   background: var(--bg);
@@ -408,7 +408,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   height: 16px;
   border-radius: 50%;
   background: var(--border);
-  font-size: 9px;
+  font-size:12px;
   flex-shrink: 0;
 }
 
@@ -450,7 +450,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   justify-content: space-between;
   gap: 6px 8px;
   padding: 6px 8px;
-  font-size: 11px;
+  font-size:12px;
   background: var(--bg);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -488,7 +488,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   border: 1px solid var(--red);
   border-left-width: 4px;
   background: var(--bg);
-  font-size: 11px;
+  font-size:12px;
 }
 
 .pe-global-error-message {
@@ -500,7 +500,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .pe-global-error-detail {
   margin: 0 0 6px;
-  font-size: 10px;
+  font-size:12px;
   overflow-wrap: anywhere;
 }
 
@@ -515,7 +515,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .pe-card-cap-note {
   margin: 8px 0;
-  font-size: 11px;
+  font-size:12px;
   color: var(--text-muted);
 }
 
@@ -551,7 +551,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .scope-char-preview {
-  font-size: 11px;
+  font-size:12px;
   margin: 6px 0 0;
   color: var(--text-muted);
 }
@@ -569,12 +569,12 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .audit-toolbar .report-density-label {
-  font-size: 10px;
+  font-size:12px;
   margin-left: 6px;
   color: var(--text-muted);
 }
 .pe-settings-group #reportDensity {
-  font-size: 11px;
+  font-size:12px;
   width: 100%;
   max-width: 220px;
 }
@@ -584,7 +584,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   vertical-align: baseline;
 }
 .update-status {
-  font-size: 11px;
+  font-size:12px;
   margin-top: 8px;
   color: var(--text-muted);
 }
@@ -633,7 +633,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .audit-type-hint {
-  font-size: 10px;
+  font-size:12px;
   color: var(--primary);
   font-weight: 600;
   margin: 4px 0 0;
@@ -649,7 +649,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .partner-tools-label {
   display: block;
-  font-size: 9px;
+  font-size:12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -667,7 +667,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   flex: 1 1 auto;
   min-width: 0;
   padding: 6px 8px;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 600;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -687,7 +687,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .partner-tools-hint {
-  font-size: 9px;
+  font-size:12px;
   color: var(--text-muted);
   margin: 6px 0 0;
   line-height: 1.35;
@@ -728,7 +728,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   border: 1px solid var(--border);
   padding: 6px 10px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size:12px;
   font-weight: 600;
   cursor: pointer;
   flex: 0 0 auto;
@@ -771,7 +771,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .btn-tool-icon-label {
-  font-size: 10px;
+  font-size:12px;
 }
 
 .audit-run-hub {
@@ -783,7 +783,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-checks-run-tagline {
-  font-size: 10px;
+  font-size:12px;
   margin: 6px 0 0;
   line-height: 1.4;
 }
@@ -806,14 +806,14 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-simple-mode #tab3 h2.pe-section-title {
-  font-size: 11px;
+  font-size:12px;
   font-weight: 600;
   color: var(--text-muted);
   margin-top: 4px;
 }
 
 .pe-simple-mode #tab3 .form-group-flush .toggle-row {
-  font-size: 10px;
+  font-size:12px;
   opacity: 0.95;
 }
 
@@ -830,12 +830,12 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .toggle-row.compact {
   margin: 0;
-  font-size: 11px;
+  font-size:12px;
   flex: 1 1 140px;
 }
 
 .active-checks-hint {
-  font-size: 10px;
+  font-size:12px;
   color: var(--text-muted);
   margin: 4px 0 8px;
   line-height: 1.35;
@@ -846,7 +846,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .custom-style-panel code {
-  font-size: 10px;
+  font-size:12px;
   background: var(--bg);
   padding: 1px 4px;
   border-radius: 3px;
@@ -856,7 +856,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   background: none;
   border: none;
   color: var(--pe-link, var(--primary));
-  font-size: 11px;
+  font-size:12px;
   cursor: pointer;
   padding: 4px 0;
   text-decoration: underline;
@@ -878,7 +878,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .pe-status {
   flex: 1 1 auto;
-  font-size: 10px;
+  font-size:12px;
   color: var(--text-muted);
   min-height: 14px;
   padding: 0 4px;
@@ -917,7 +917,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   min-width: 16px;
   padding: 0 4px;
   margin-left: 2px;
-  font-size: 9px;
+  font-size:12px;
   font-weight: 700;
   line-height: 14px;
   border-radius: 8px;
@@ -971,7 +971,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-scope-chip {
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 8px;
   padding: 4px 8px;
   background: var(--bg);
@@ -991,7 +991,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   width: 100%;
   box-sizing: border-box;
   padding: 6px 8px;
-  font-size: 11px;
+  font-size:12px;
   border: 1px solid var(--border);
   border-radius: 4px;
 }
@@ -1017,7 +1017,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   align-items: center;
   gap: 4px;
   margin: 0 0 8px;
-  font-size: 11px;
+  font-size:12px;
   font-weight: 600;
   padding: 4px 0;
 }
@@ -1036,7 +1036,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 .help-details summary {
   cursor: pointer;
   font-weight: 700;
-  font-size: 11px;
+  font-size:12px;
   color: var(--primary);
   margin-bottom: 4px;
 }
@@ -1055,7 +1055,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .btn-api-opt {
-  font-size: 11px;
+  font-size:12px;
   opacity: 0.95;
 }
 
@@ -1076,7 +1076,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .audit-pins-label {
-  font-size: 10px;
+  font-size:12px;
   font-weight: 700;
   color: var(--text-muted);
   flex: 0 0 100%;
@@ -1086,7 +1086,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   flex: 1 1 30%;
   min-width: 0;
   margin-bottom: 0;
-  font-size: 10px;
+  font-size:12px;
   padding: 4px;
 }
 
@@ -1109,7 +1109,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   background: var(--surface);
   padding: 4px 8px;
   border-radius: 12px;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -1135,7 +1135,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 .audit-actions-row .btn-secondary {
   width: auto;
   padding: 6px 10px;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .summary-report {
@@ -1158,7 +1158,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .audit-empty p {
   margin: 6px 0;
-  font-size: 11px;
+  font-size:12px;
   line-height: 1.45;
 }
 
@@ -1175,7 +1175,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .overview-panel summary {
@@ -1186,18 +1186,18 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .overview-panel h4 {
   margin: 8px 0 4px;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .overview-lead {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 6px;
 }
 
 .overview-warn {
   color: var(--pe-warning-text);
-  font-size: 10px;
+  font-size:12px;
 }
 
 .audit-actions-row {
@@ -1211,7 +1211,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 6px;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 600;
 }
 
@@ -1253,7 +1253,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   align-items: center;
   gap: 4px;
   margin: 4px 0;
-  font-size: 10px;
+  font-size:12px;
 }
 
 .hm-label {
@@ -1273,7 +1273,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .hm-meta {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size:12px;
 }
 
 .chrono-timeline-wrap,
@@ -1294,7 +1294,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
   align-items: center;
   gap: 6px;
   margin: 4px 0;
-  font-size: 10px;
+  font-size:12px;
 }
 
 .cite-sample-raw {
@@ -1315,13 +1315,13 @@ body.pe-narrow-pane .btn-tool-icon-label {
   align-items: center;
   gap: 6px;
   margin: 4px 0;
-  font-size: 10px;
+  font-size:12px;
 }
 
 .chrono-idx {
   flex: 0 0 2.5em;
   color: var(--text-muted);
-  font-size: 9px;
+  font-size:12px;
 }
 
 .chrono-label {
@@ -1333,7 +1333,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .btn-go-compact {
   padding: 2px 6px;
-  font-size: 9px;
+  font-size:12px;
   flex-shrink: 0;
 }
 
@@ -1344,7 +1344,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-workflow-status-line {
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 6px;
   padding: 4px 6px;
   line-height: 1.35;
@@ -1353,7 +1353,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-workflow-next-step {
-  font-size: 10px;
+  font-size:12px;
   margin: -4px 0 8px;
   padding: 0 4px;
   line-height: 1.35;
@@ -1361,7 +1361,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-full-ms-tip {
-  font-size: 10px;
+  font-size:12px;
   margin: 6px 0 0;
   padding: 6px 8px;
   border-left: 3px solid var(--pe-primary-indigo);
@@ -1378,7 +1378,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-audit-scope-footnote {
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 8px;
   padding: 6px 8px;
   line-height: 1.4;
@@ -1432,7 +1432,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .pe-onboarding-tour-progress {
   margin: 0 0 4px;
-  font-size: 10px;
+  font-size:12px;
 }
 
 .pe-tour-anchor-highlight {
@@ -1484,7 +1484,7 @@ body.pe-onboarding-tour-open {
 
 .pe-top-banner-links {
   margin: 0 0 6px;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .pe-top-banner-actions {
@@ -1496,7 +1496,7 @@ body.pe-onboarding-tour-open {
 
 .pe-prior-session-lines {
   margin: 4px 0 8px;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .pe-session-tips {
@@ -1506,18 +1506,18 @@ body.pe-onboarding-tour-open {
 
 .pe-settings-reset {
   width: 100%;
-  font-size: 10px;
+  font-size:12px;
 }
 
 .pe-session-tips-list {
   margin: 6px 0 8px;
   padding-left: 18px;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .pe-session-tips-lead {
   margin: 0 0 4px;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .pe-session-tips-dismiss {
@@ -1597,7 +1597,7 @@ body.pe-onboarding-tour-open {
 }
 
 .pe-doc-scope-trust-line {
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 6px;
   line-height: 1.35;
 }
@@ -1634,7 +1634,7 @@ body.pe-onboarding-tour-open {
 }
 
 .pe-settings-back {
-  font-size: 11px;
+  font-size:12px;
   font-weight: 600;
   flex-shrink: 0;
   display: inline-flex;
@@ -1653,7 +1653,7 @@ body.pe-onboarding-tour-open {
 }
 
 .pe-settings-close {
-  font-size: 11px;
+  font-size:12px;
   flex-shrink: 0;
   justify-self: end;
 }
@@ -1699,7 +1699,7 @@ body.pe-onboarding-tour-open {
 
 .pe-settings-group > summary::before {
   content: "▸ ";
-  font-size: 10px;
+  font-size:12px;
   color: var(--text-muted);
 }
 
@@ -1742,7 +1742,7 @@ body.pe-simple-first-run-active .pe-first-audit-checklist {
 .pe-shaper-label {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 600;
   margin-bottom: 4px;
 }
@@ -1758,14 +1758,14 @@ body.pe-simple-first-run-active .pe-first-audit-checklist {
 }
 
 .chip-sort {
-  font-size: 9px;
+  font-size:12px;
   padding: 3px 6px;
 }
 
 .audit-share summary {
   cursor: pointer;
   font-weight: 600;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .pe-workflow-cross-nav {
@@ -1773,7 +1773,7 @@ body.pe-simple-first-run-active .pe-first-audit-checklist {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 6px;
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 6px;
   padding: 6px 8px;
   background: var(--surface);
@@ -1795,17 +1795,17 @@ body.pe-simple-first-run-active .pe-first-audit-checklist {
 }
 
 .pe-pipeline-hint {
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 6px;
 }
 
 .pe-post-run-nav {
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 8px;
 }
 
 .card-footer-trust {
-  font-size: 10px;
+  font-size:12px;
   margin: 8px 0 0;
   padding-top: 6px;
   border-top: 1px dashed var(--border);
@@ -1856,7 +1856,7 @@ body.pe-simple-first-run-active .pe-first-audit-checklist {
 
 .tab-btn .pe-tab-hint {
   display: none;
-  font-size: 9px;
+  font-size:12px;
   font-weight: 400;
   line-height: 1.25;
   opacity: 0.88;
@@ -1868,12 +1868,12 @@ body.pe-simple-mode .tab-btn .pe-tab-hint:not(.hidden) {
 }
 
 .pe-audit-severity-legend {
-  font-size: 10px;
+  font-size:12px;
   margin: 0 0 6px;
 }
 
 .pe-checks-depth-plain {
-  font-size: 10px;
+  font-size:12px;
   margin: 4px 0 0;
 }
 
@@ -1944,7 +1944,7 @@ textarea:focus {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size:12px;
   cursor: pointer;
 }
 
@@ -1961,7 +1961,7 @@ textarea:focus {
   justify-content: space-between;
   align-items: center;
   margin: 5px 0;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .btn-main {
@@ -2019,7 +2019,7 @@ textarea:focus {
   padding: 4px 8px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 600;
 }
 
@@ -2034,7 +2034,7 @@ textarea:focus {
 .dict-list { margin-top: 6px; }
 .dict-list .tag { margin: 2px; }
 .pe-dict-count-badge {
-  font-size: 10px;
+  font-size:12px;
   font-weight: 600;
   margin-left: 6px;
   padding: 1px 6px;
@@ -2066,8 +2066,8 @@ textarea:focus {
 .traffic-yellow { background: var(--orange-bg); color: var(--pe-warning-text); border: 1px solid var(--orange); }
 .traffic-red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
 
-.token-estimate { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
-.mic-status { font-size: 10px; color: var(--primary); min-height: 14px; font-weight: 600; }
+.token-estimate { font-size:12px; color: var(--text-muted); margin-top: 4px; }
+.mic-status { font-size:12px; color: var(--primary); min-height: 14px; font-weight: 600; }
 .chat-log {
   height: 160px;
   overflow-y: auto;
@@ -2085,7 +2085,7 @@ textarea:focus {
   padding: 4px 8px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 600;
 }
 
@@ -2096,7 +2096,7 @@ textarea:focus {
   padding: 4px 8px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 600;
 }
 
@@ -2107,7 +2107,7 @@ textarea:focus {
   padding: 4px 8px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 10px;
+  font-size:12px;
 }
 
 .card {
@@ -2130,7 +2130,7 @@ textarea:focus {
 
 .pe-cloud-disclosure {
   margin: 6px 0;
-  font-size: 10px;
+  font-size:12px;
   line-height: 1.4;
 }
 
@@ -2139,7 +2139,7 @@ textarea:focus {
   z-index: 10000;
   max-width: min(280px, calc(100vw - 16px));
   padding: 8px 10px;
-  font-size: 11px;
+  font-size:12px;
   line-height: 1.35;
   color: var(--pe-tooltip-fg);
   background: var(--pe-tooltip-bg);
@@ -2179,7 +2179,7 @@ textarea:focus {
   min-width: 0;
   text-align: center;
   padding: 6px 10px;
-  font-size: 11px;
+  font-size:12px;
   font-weight: 600;
 }
 
@@ -2222,7 +2222,7 @@ textarea:focus {
 }
 
 .pe-severity-legend {
-  font-size: 10px;
+  font-size:12px;
   margin: 6px 0 0;
   line-height: 1.45;
 }
@@ -2233,7 +2233,7 @@ textarea:focus {
   border-radius: 3px;
   margin: 0 2px;
   font-weight: 600;
-  font-size: 10px;
+  font-size:12px;
 }
 
 .pe-legend-critical {
@@ -2285,7 +2285,7 @@ textarea:focus {
 .badge {
   display: inline-block;
   padding: 2px 6px;
-  font-size: 9px;
+  font-size:12px;
   font-weight: bold;
   color: var(--pe-on-accent);
   border-radius: 3px;
@@ -2310,7 +2310,7 @@ textarea:focus {
   padding: 3px 7px;
   border-radius: 3px;
   margin: 2px;
-  font-size: 10px;
+  font-size:12px;
   cursor: pointer;
   border: 1px solid var(--pe-tag-border);
 }
@@ -2333,7 +2333,7 @@ textarea:focus {
   margin-bottom: 6px;
   padding: 6px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size:12px;
   line-height: 1.4;
 }
 
@@ -2496,3 +2496,5 @@ textarea:focus {
   outline: 2px solid var(--pe-focus-ring);
   outline-offset: 1px;
 }
+
+.pe-mci-none { color: var(--text-muted); }

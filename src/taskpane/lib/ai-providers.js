@@ -15,7 +15,9 @@
 (function (global) {
   const root = (global.ProzaEdit = global.ProzaEdit || {});
 
-  const MODEL_NOTE = "Prices are approximate (USD per million tokens) and change; check the provider's pricing page.";
+  /* MODEL CATALOGUE — edit only this block when vendors retire or add models. Ids/prices taken from vendor pages by the
+   PE-86 review on 2026-11-01 (not re-verified with live keys by the code worker; the "Custom model id" box is the escape hatch). */
+const MODEL_NOTE = "Prices are approximate (USD per million tokens) and change; check the provider's pricing page. Model list last reviewed 2026-11-01.";
 
   const PROVIDERS = {
     gemini: {
@@ -23,20 +25,21 @@
       short: "Gemini",
       label: "Google Gemini",
       keyUrl: "https://aistudio.google.com/apikey",
-      keyHelp: "Free-tier keys from Google AI Studio work (rate-limited). A Gemini Advanced / Google One subscription does not include an API key.",
+      keyHelp: "Free-tier keys from Google AI Studio work (rate-limited). A Gemini Advanced / Google One subscription does not include an API key. Free-tier prompts may be used by Google to improve its products; paid keys are not.",
       browser: { ok: true, note: "CORS allowed with a key." },
-      defaultModel: "gemini-2.5-flash",
+      defaultModel: "gemini-3.8-flash",
       models: [
-        { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", tier: "low", inUsdPerM: 0.1, outUsdPerM: 0.4 },
-        { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", tier: "mid", inUsdPerM: 0.3, outUsdPerM: 2.5 },
-        { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", tier: "high", inUsdPerM: 1.25, outUsdPerM: 10 },
+        { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash-Lite", tier: "low", inUsdPerM: 0.25, outUsdPerM: 1.5 },
+        { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash", tier: "mid", inUsdPerM: 0.75, outUsdPerM: 3.75 },
+        { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash", tier: "mid", inUsdPerM: 0.75, outUsdPerM: 3.75 },
+        { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash (legacy; existing accounts only)", tier: "mid", inUsdPerM: 0.3, outUsdPerM: 2.5 },
       ],
       buildRequest({ apiKey, model, prompt, maxOutputTokens, temperature }) {
         return {
-          url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+          url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
           init: {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
             body: JSON.stringify({
               contents: [{ role: "user", parts: [{ text: prompt }] }],
               generationConfig: { maxOutputTokens, temperature },
@@ -68,6 +71,8 @@
         { id: "gpt-4o-mini", label: "GPT-4o mini", tier: "low", inUsdPerM: 0.15, outUsdPerM: 0.6 },
         { id: "gpt-4.1-mini", label: "GPT-4.1 mini", tier: "mid", inUsdPerM: 0.4, outUsdPerM: 1.6 },
         { id: "gpt-4.1", label: "GPT-4.1", tier: "high", inUsdPerM: 2, outUsdPerM: 8 },
+        { id: "gpt-6-luna", label: "GPT-6 Luna (newer; if your account has it)", tier: "low", inUsdPerM: 0.1, outUsdPerM: 0.5 },
+        { id: "gpt-6.1-terra", label: "GPT-6.1 Terra (newer)", tier: "mid", inUsdPerM: 1, outUsdPerM: 5 },
       ],
       buildRequest(o) {
         return chatCompletionsRequest("https://api.openai.com/v1/chat/completions", o);
@@ -82,12 +87,13 @@
       keyUrl: "https://console.anthropic.com/settings/keys",
       keyHelp: "Needs an API key with credits at console.anthropic.com. A Claude Pro/Max subscription does not include API access.",
       browser: { ok: true, note: "Browser calls require the anthropic-dangerous-direct-browser-access header (sent automatically)." },
-      defaultModel: "claude-3-5-haiku-latest",
+      defaultModel: "claude-haiku-5-5",
       models: [
-        { id: "claude-3-5-haiku-latest", label: "Claude 3.5 Haiku", tier: "low", inUsdPerM: 0.8, outUsdPerM: 4 },
-        { id: "claude-sonnet-4-0", label: "Claude Sonnet 4", tier: "high", inUsdPerM: 3, outUsdPerM: 15 },
+        { id: "claude-haiku-5-5", label: "Claude Haiku 5.5", tier: "low", inUsdPerM: 0.1, outUsdPerM: 0.5 },
+        { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5", tier: "high", inUsdPerM: 2, outUsdPerM: 10 },
+        { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5 (older; may be retired)", tier: "mid", inUsdPerM: 1, outUsdPerM: 5 },
       ],
-      buildRequest({ apiKey, model, prompt, maxOutputTokens, temperature }) {
+      buildRequest({ apiKey, model, prompt, maxOutputTokens }) {
         return {
           url: "https://api.anthropic.com/v1/messages",
           init: {
@@ -98,7 +104,7 @@
               "anthropic-version": "2023-06-01",
               "anthropic-dangerous-direct-browser-access": "true",
             },
-            body: JSON.stringify({ model, max_tokens: maxOutputTokens, temperature, messages: [{ role: "user", content: prompt }] }),
+            body: JSON.stringify({ model, max_tokens: maxOutputTokens, messages: [{ role: "user", content: prompt }] }),
           },
         };
       },
@@ -121,7 +127,7 @@
       models: [
         { id: "openai/gpt-4o-mini", label: "GPT-4o mini (via OpenRouter)", tier: "low", inUsdPerM: 0.15, outUsdPerM: 0.6 },
         { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (via OpenRouter)", tier: "mid", inUsdPerM: 0.3, outUsdPerM: 2.5 },
-        { id: "anthropic/claude-3.5-haiku", label: "Claude 3.5 Haiku (via OpenRouter)", tier: "mid", inUsdPerM: 0.8, outUsdPerM: 4 },
+        { id: "anthropic/claude-haiku-4.5", label: "Claude Haiku 4.5 (via OpenRouter)", tier: "mid", inUsdPerM: 1, outUsdPerM: 5 },
       ],
       buildRequest(o) {
         return chatCompletionsRequest("https://openrouter.ai/api/v1/chat/completions", o);
@@ -138,7 +144,7 @@
   ];
 
   function usesNewOpenAiParams(model) {
-    return /^(o\d|gpt-5)/i.test(String(model || "").replace(/^openai\//, ""));
+    return /^(o\d|gpt-[5-9])/i.test(String(model || "").replace(/^openai\//, ""));
   }
 
   function chatCompletionsRequest(url, { apiKey, model, prompt, maxOutputTokens, temperature }) {
@@ -243,7 +249,7 @@
         friendly = `${label} says the account has no credit (HTTP 402).`;
       } else if (status === 404) {
         code = "model";
-        friendly = `${label} could not find that model (HTTP 404). Pick another model.`;
+        friendly = `${label}: model unavailable (HTTP 404) — it may have been retired or your account lacks access. Pick another model in Settings → AI help, or type a current model id under Custom model.`;
       } else if (status === 408) {
         code = "timeout";
         friendly = `${label} HTTP 408 — request timed out.`;
@@ -337,7 +343,14 @@
             throw err;
           }
           const msg = redact(e && e.message ? e.message : "Network error");
-          throw makeError("network", msg || "Network error", { cause: undefined });
+          const hint = /failed to fetch|networkerror|load failed/i.test(msg)
+            ? provider.id === "openai"
+              ? " Couldn't reach OpenAI. Most often this is a mistyped or revoked key (OpenAI hides its error from browsers); otherwise check your connection."
+              : provider.id === "anthropic"
+                ? " If your connection is fine, your Anthropic organization may block browser (CORS) requests — check the key and organization settings."
+                : " Check your connection and that the key is correct."
+            : "";
+          throw makeError("network", (msg || "Network error") + hint, { cause: undefined });
         } finally {
           clearTimeout(timer);
           if (external && typeof external.removeEventListener === "function") external.removeEventListener("abort", onAbort);

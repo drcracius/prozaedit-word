@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.19";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.20";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1527,6 +1527,13 @@ function onProzaEditOfficeReady(info) {
     showBootProblem("Open ProzaEdit inside Microsoft Word.");
     return;
   }
+  try {
+    const req = Office.context && Office.context.requirements;
+    if (req && typeof req.isSetSupported === "function" && !req.isSetSupported("WordApi", "1.3")) {
+      showBootProblem("This version of Word is too old for ProzaEdit (needs Word 2019 or Microsoft 365, WordApi 1.3). Update Word or use Word on the web.");
+      return;
+    }
+  } catch (_) {}
   try {
     loadSavedSettings();
     migrateLegacySessionTipsOnInit();
