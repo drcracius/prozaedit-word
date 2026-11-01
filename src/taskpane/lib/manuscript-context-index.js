@@ -854,6 +854,7 @@ ProzaEdit.ManuscriptContextIndex = {
       const { start, end } = batches[bi];
       for (let i = start; i <= end; i++) items[i].load(["text", "styleBuiltIn"]);
       await context.sync();
+      try {
       for (let i = start; i <= end; i++) {
         const item = items[i];
         const text = item.text || "";
@@ -894,6 +895,10 @@ ProzaEdit.ManuscriptContextIndex = {
           this.scanTimeSignals(trimmed, timeSignals);
         }
         sampler.offer(i, trimmed);
+      }
+      } catch (err) {
+        if (opts.checkpointStore) opts.checkpointStore.state = null;
+        throw err;
       }
       st.frontMatter = frontMatter;
       st.current = current;
@@ -955,10 +960,7 @@ ProzaEdit.ManuscriptContextIndex = {
       if (!st || st.version !== this.CHECKPOINT_VERSION || st.paragraphTotal !== paragraphTotal) return false;
       if (Date.now() - (st.createdAt || 0) > this.CHECKPOINT_MAX_AGE_MS) return false;
       if (!(st.nextBatch > 0 && st.nextBatch < batchCount) || !Array.isArray(st.checks) || st.checks.length !== st.nextBatch) return false;
-      const step = Math.max(1, Math.floor(st.checks.length / 12));
-      const picks = [];
-      for (let k = 0; k < st.checks.length; k += step) picks.push(st.checks[k]);
-      picks.push(st.checks[st.checks.length - 1]);
+      const picks = st.checks;
       picks.forEach(([idx]) => items[idx] && items[idx].load("text"));
       await context.sync();
       return picks.every(([idx, h]) => items[idx] && this.hashString(this.normalizeParagraphText(items[idx].text || "")) === h);
