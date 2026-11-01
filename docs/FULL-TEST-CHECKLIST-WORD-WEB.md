@@ -16,8 +16,9 @@
 ## 2. Target and scope
 
 - [ ] Set manuscript type, scope modes: selection, page range, selected chapters (reload list), full manuscript.
-- [ ] **Refresh count** updates Target preview and the **sticky scope line** under the toolbar.
+- [ ] **Refresh count** updates Target preview and the **sticky scope line** under the toolbar (PE-57: line includes **Guide:** + **Scope:**).
 - [ ] Change scope without refresh — line updates label; count refreshes when applicable.
+- [ ] Change **Preferred style guide** on Target — sticky line **Guide:** label updates (custom house name when applicable).
 
 ## 3. Settings groups
 
@@ -26,8 +27,8 @@
 - [ ] Help **Open Settings → Privacy** and Target **Custom rules → manage** land in the right group.
 - [ ] Bookmark `#pe-settings-privacy` on reload opens Privacy group.
 - [ ] Each group **Reset … to defaults** (confirm) — Safety, Onboarding, Appearance, Audit, Privacy, Dictionary, Custom style; Reference shows info only.
-- [ ] **Onboarding** group: **Show new-session tips**, **Show What's new**, **Show prior-session recap**, **Warn before long operations** (all default on); **Reset Onboarding** restores defaults.
-- [ ] **Appearance** group: **Light** / **Dark** / **Match system** — pane updates immediately; **Save & close** persists `themePreference` in `PROZAEDIT_CONFIG` (default **Light** on fresh docs). **Reset Appearance** returns to Light. Reopen pane — theme restores from document settings. With **Match system**, change OS light/dark and confirm pane follows (CONFIG stays `system`). Spot-check dark: top banners, audit cards, Settings modal, long-op banner, workflow strip, focus rings on tabs/buttons.
+- [ ] **Onboarding** group: **Show new-session tips**, **Show What's new**, **Show prior-session recap**, **Warn before long operations**, **Show dark-appearance tip** (all default on); **Reset Onboarding** restores defaults.
+- [ ] **Appearance** group: **Light** / **Dark** / **Match system** — pane updates immediately; **Save & close** persists `themePreference` in `PROZAEDIT_CONFIG` (default **Light** on fresh docs). **Reset Appearance** returns to Light. Reopen pane — theme restores from document settings. With **Match system**, change OS light/dark and confirm pane follows (CONFIG stays `system`). Spot-check dark: top banners, audit cards, Settings modal, long-op banner, workflow strip, focus rings on tabs/buttons. **PE-57:** first dark session shows **Dark appearance** banner; **Got it** hides for session; links in help copy are white/muted (not green); primary buttons/tab still green.
 - [ ] Settings **Filter settings** box hides non-matching groups (e.g. type `audit`).
 - [ ] Toolbar status line: message auto-clears ~6s; **×** dismisses immediately.
 - [ ] **Got it** on session tips banner hides `#peSessionTips` until next browser session (global `.hidden` utility).
@@ -53,7 +54,8 @@
 - [ ] Audit: filter chips, sort; read-only **Report depth** and **Default filter** hints match Settings → Audit.
 - [ ] Change report depth / default filter in Settings — hints update on Audit tab.
 - [ ] Empty Audit state: **Run audit from Checks** CTA.
-- [ ] **Apply fix** on a card → **Undo** → **Last edit**.
+- [ ] **Apply fix** on a card → card **Undo** / toolbar **Undo** → **Last edit** (PE-57: Undo + Apply same row on card).
+- [ ] **Academic** or **Business** type (or built-in style guide on Target): Audit tab **Review profile** hint; default filter chip **Style guide** when no saved filter (unless Simple mode).
 - [ ] Optional: **Verify citations** / **Scan timeline** on large scope — warning banner; Cancel during scan.
 - [ ] Optional: **Batch section audits** — warning; **Cancel batch** or hub Cancel stops between sections.
 - [ ] **Rewrite → Advanced lexical shaper:** change Complexity / Intensity / Density → save document → reopen pane → sliders restored; **Reset** in panel → defaults **3 / 4 / 2** (PE-45 CONFIG persistence).
@@ -61,7 +63,7 @@
 ## 6. Help, About, and diagnostics
 
 - [ ] **Help → About ProzaEdit**: build version, manifest version, add-in ID, GitHub repo, **Check for updates** (matches manifest **2.0.0.15** when current).
-- [ ] Help copy mentions scope line, last tab, Settings shortcuts.
+- [ ] Help copy mentions scope line, last tab, Settings shortcuts; **PE-57** severity legend row (Critical / Style / OK).
 - [ ] Settings → Privacy: opt-in off by default; **Report a problem** copies redacted JSON (no document text in clipboard JSON).
 
 ## 7. Narrow pane & typography (PE-52)

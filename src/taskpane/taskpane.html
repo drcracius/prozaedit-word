@@ -31,6 +31,15 @@
       <button type="button" class="btn-linkish" id="btnLongOpDontShowAgain">Don&apos;t show again</button>
     </div>
   </div>
+  <div id="peDarkAppearanceBanner" class="pe-top-banner help-box hidden" role="region" aria-label="Dark appearance tip">
+    <p class="pe-top-banner-lead"><strong>Dark appearance</strong></p>
+    <p id="peDarkAppearanceBannerBody" class="pe-top-banner-body">Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.</p>
+    <div class="pe-top-banner-actions">
+      <button type="button" class="btn-secondary" onclick="dismissDarkAppearanceTip(false)">Got it</button>
+      <button type="button" class="btn-linkish" onclick="dismissDarkAppearanceTip(true)">Don&apos;t show again</button>
+      <button type="button" class="btn-linkish" onclick="openSettingsModal('appearance')">Settings → Appearance</button>
+    </div>
+  </div>
   <div id="pePriorSessionBanner" class="pe-top-banner help-box hidden" role="region" aria-label="Prior session summary">
     <p class="pe-top-banner-lead"><strong>Welcome back</strong></p>
     <ul id="pePriorSessionLines" class="help-list pe-prior-session-lines"></ul>
@@ -366,6 +375,7 @@
     </div>
     <p id="auditReportDepthHint" class="audit-report-depth-hint help-muted" style="font-size:10px;margin:4px 0 8px;" aria-live="polite">Report depth: Balanced (change in Settings)</p>
     <p id="auditDefaultFilterHint" class="audit-default-filter-hint help-muted" style="font-size:10px;margin:0 0 8px;" aria-live="polite">Default filter: All (change in Settings)</p>
+    <p id="peReviewModeAuditHint" class="pe-review-mode-audit-hint help-muted hidden" style="font-size:10px;margin:0 0 8px;" aria-live="polite"></p>
     <details class="help-box help-muted audit-share">
       <summary>Share report</summary>
       <div class="audit-actions-row">
@@ -441,7 +451,8 @@
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
       <p><strong>Settings (toolbar gear):</strong> Simple mode, safety toggles (confirm before apply, hover tips, FK lock, continuity slider), audit defaults (report depth, default filter, extended checks), privacy &amp; diagnostics, per-document dictionary, capture reference style, citation scan shortcut, Gemini session ceiling (when Simple mode is off), and custom style rules (add/edit/bulk import). <strong>Target</strong> keeps manuscript profile, analysis scope, and preferred style guide.</p>
       <p><strong>Keyboard shortcuts:</strong> Open Settings — <strong>Ctrl+Shift+,</strong> or <strong>Alt+Shift+S</strong> (when focus is not in a text field). Undo / Redo — toolbar buttons (Word undo still applies to all edits). See checklist §8 for banner and control sync tests.</p>
-      <p><strong>Look &amp; navigation:</strong> Single light theme (indigo actions, green accents for active steps and OK hints). The line under the toolbar shows your <strong>scope</strong> and character estimate after <strong>Refresh count</strong>. ProzaEdit remembers your <strong>last tab</strong> per document. Deep links: Help → Privacy, Target → Custom rules, or bookmark <code>#pe-settings-privacy</code>. Settings and Rewrite (from an audit card) offer <strong>Back</strong> when you need to return without hunting tabs.</p>
+      <p><strong>Look &amp; navigation:</strong> <strong>Light</strong> (indigo primary) or <strong>Dark</strong> / <strong>Match system</strong> (Settings → Appearance). In dark mode, light green marks primary actions, the active tab, and workflow step — not finding severity. The sticky line under the toolbar shows your active <strong>style guide</strong>, <strong>scope</strong>, and character estimate after <strong>Refresh count</strong>. ProzaEdit remembers your <strong>last tab</strong> per document. Deep links: Help → Privacy, Target → Custom rules, or bookmark <code>#pe-settings-privacy</code>. Settings and Rewrite (from an audit card) offer <strong>Back</strong> when you need to return without hunting tabs.</p>
+      <p class="pe-severity-legend help-muted" aria-label="Severity and action color legend"><strong>Color legend:</strong> <span class="pe-legend-swatch pe-legend-critical">Critical</span> · <span class="pe-legend-swatch pe-legend-style">Style</span> · <span class="pe-legend-swatch pe-legend-ok">OK / primary action</span> (card left border and badges = severity; green/indigo buttons = actions).</p>
       <p><strong>Hover tips:</strong> Settings → <em>Show hover tips</em> toggles ProzaEdit guidance bubbles (off restores normal browser titles).</p>
       <p><strong>Apply fix:</strong> Uses first match in the document (not selection-only). Turn off “Confirm before Apply” in Settings for speed.</p>
       <p><strong>Rewrite (audit card):</strong> Selects the finding in Word, opens Rewrite, clears stale preview — run <em>Local paraphrase</em> and apply manually (0 tokens).</p>
@@ -575,6 +586,7 @@
           <div class="toggle-row"><span>Show What&apos;s new banner (once per release)</span><input type="checkbox" id="showWhatsNew" checked></div>
           <div class="toggle-row"><span>Show prior-session recap banner</span><input type="checkbox" id="showPriorSessionSummary" checked></div>
           <div class="toggle-row"><span>Warn before long operations (audit, scans)</span><input type="checkbox" id="showLongOperationWarnings" checked></div>
+          <div class="toggle-row"><span>Show dark-appearance tip when the pane is dark</span><input type="checkbox" id="showDarkAppearanceTip" checked></div>
           <p class="help-muted" style="font-size:10px;margin:4px 0 0;">Banners appear at the top of the pane. “Got it” hides until the next browser session; What&apos;s new can be dismissed per release. Long-operation warnings can be dismissed per action without turning this off.</p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="onboarding" style="margin-top:10px;">Reset Onboarding to defaults</button>
         </details>

@@ -37,7 +37,22 @@ test("UiPrefs.getDefaultsPatchForGroup", () => {
   assert.equal(onboarding.showWhatsNew, true);
   assert.equal(onboarding.showPriorSessionSummary, true);
   assert.equal(onboarding.showLongOperationWarnings, true);
+  assert.equal(onboarding.showDarkAppearanceTip, true);
   assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showLongOperationWarnings, true);
+  assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showDarkAppearanceTip, true);
+});
+
+test("UiPrefs review-mode profile and filter default", () => {
+  const { UiPrefs } = loadLib("src/taskpane/lib/ui-prefs-helpers.js");
+  assert.equal(UiPrefs.isReviewModeManuscriptType("Academic Paper / Journal"), true);
+  assert.equal(UiPrefs.isReviewModeManuscriptType("Fiction (Thriller/Mystery/Crime)"), false);
+  assert.equal(UiPrefs.isReviewModeStyleGuide("govuk"), true);
+  assert.equal(UiPrefs.isReviewModeStyleGuide("auto"), false);
+  assert.equal(
+    UiPrefs.isReviewModeProfile("Business / Corporate Report", "auto"),
+    true
+  );
+  assert.equal(UiPrefs.reviewModeDefaultAuditFilter(), "styleguide");
 });
 
 test("UiPrefs themePreference default and round-trip", () => {

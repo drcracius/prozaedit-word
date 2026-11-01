@@ -34,4 +34,32 @@ test("Onboarding session dismiss key map covers tips and prior session", () => {
     Onboarding.ONBOARDING_PREF_SESSION_KEYS.showPriorSessionSummary,
     Onboarding.PRIOR_BANNER_SESSION_KEY
   );
+  assert.equal(
+    Onboarding.ONBOARDING_PREF_SESSION_KEYS.showDarkAppearanceTip,
+    Onboarding.DARK_APPEARANCE_TIP_DISMISSED_KEY
+  );
+});
+
+test("Onboarding.shouldShowDarkAppearanceTip", () => {
+  const { Onboarding } = loadLib("src/taskpane/lib/onboarding-helpers.js");
+  assert.equal(
+    Onboarding.shouldShowDarkAppearanceTip({ showDarkAppearanceTip: false, effectiveTheme: "dark" }),
+    false
+  );
+  assert.equal(
+    Onboarding.shouldShowDarkAppearanceTip({ showDarkAppearanceTip: true, effectiveTheme: "light" }),
+    false
+  );
+  assert.equal(
+    Onboarding.shouldShowDarkAppearanceTip({
+      showDarkAppearanceTip: true,
+      effectiveTheme: "dark",
+      storageGet: () => "1",
+    }),
+    false
+  );
+  assert.equal(
+    Onboarding.shouldShowDarkAppearanceTip({ showDarkAppearanceTip: true, effectiveTheme: "dark" }),
+    true
+  );
 });

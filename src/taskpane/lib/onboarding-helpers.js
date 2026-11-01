@@ -7,14 +7,19 @@ ProzaEdit.Onboarding = {
   /** localStorage permanent hide (legacy; migrated to CONFIG showSessionTips). */
   LEGACY_TIPS_PERMANENT_LOCAL_KEY: "pe-session-tips-dismissed",
   PRIOR_BANNER_SESSION_KEY: "pe-prior-session-banner-dismissed",
+  DARK_APPEARANCE_TIP_DISMISSED_KEY: "pe-dark-appearance-tip-dismissed",
 
   /** sessionStorage keys cleared when CONFIG re-enables a banner (must match dismiss handlers). */
   ONBOARDING_PREF_SESSION_KEYS: {
     showSessionTips: "pe-session-tips-dismissed",
     showPriorSessionSummary: "pe-prior-session-banner-dismissed",
+    showDarkAppearanceTip: "pe-dark-appearance-tip-dismissed",
   },
 
-  ONBOARDING_CONFIG_KEYS: ["showSessionTips", "showWhatsNew", "showPriorSessionSummary"],
+  ONBOARDING_CONFIG_KEYS: ["showSessionTips", "showWhatsNew", "showPriorSessionSummary", "showDarkAppearanceTip"],
+
+  DARK_APPEARANCE_TIP_COPY:
+    "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
     version: "2.0.0.15",
@@ -128,7 +133,26 @@ ProzaEdit.Onboarding = {
       showSessionTips: p.showSessionTips !== false,
       showWhatsNew: p.showWhatsNew !== false,
       showPriorSessionSummary: p.showPriorSessionSummary !== false,
+      showDarkAppearanceTip: p.showDarkAppearanceTip !== false,
     };
+  },
+
+  shouldShowDarkAppearanceTip(options) {
+    options = options || {};
+    if (options.showDarkAppearanceTip === false) return false;
+    if (options.effectiveTheme !== "dark") return false;
+    if (options.sessionDismissed) return false;
+    try {
+      if (options.storageGet) {
+        if (options.storageGet(ProzaEdit.Onboarding.DARK_APPEARANCE_TIP_DISMISSED_KEY) === "1") return false;
+      } else if (
+        typeof sessionStorage !== "undefined" &&
+        sessionStorage.getItem(ProzaEdit.Onboarding.DARK_APPEARANCE_TIP_DISMISSED_KEY) === "1"
+      ) {
+        return false;
+      }
+    } catch (_) {}
+    return true;
   },
 
   clearSessionDismissForPref(prefKey) {
@@ -153,6 +177,7 @@ ProzaEdit.Onboarding = {
     if (prefKey === "showSessionTips") c.showSessionTips = false;
     else if (prefKey === "showWhatsNew") c.showWhatsNew = false;
     else if (prefKey === "showPriorSessionSummary") c.showPriorSessionSummary = false;
+    else if (prefKey === "showDarkAppearanceTip") c.showDarkAppearanceTip = false;
     return c;
   },
 };

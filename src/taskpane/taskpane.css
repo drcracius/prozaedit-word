@@ -26,6 +26,7 @@
 
 :root,
 [data-pe-theme="light"] {
+  --pe-link: var(--primary);
   color-scheme: light;
   --pe-primary-indigo: #4338ca;
   --pe-primary-indigo-hover: #3730a3;
@@ -132,6 +133,8 @@
   --pe-tooltip-bg: #141414;
   --pe-tooltip-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
   --pe-focus-ring: #6ee7a0;
+  --pe-link: var(--text);
+  --pe-link-hover: #ffffff;
 }
 
 body {
@@ -708,7 +711,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 .btn-linkish {
   background: none;
   border: none;
-  color: var(--primary);
+  color: var(--pe-link, var(--primary));
   font-size: 11px;
   cursor: pointer;
   padding: 4px 0;
@@ -1705,6 +1708,27 @@ textarea:focus {
   border-top: 1px solid var(--border);
 }
 
+.card-actions-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 1 100%;
+  margin-bottom: 4px;
+}
+
+.card-actions-trust .btn-trust {
+  flex: 1 1 120px;
+  min-width: 0;
+  text-align: center;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.card-actions-trust .btn-with-icon {
+  justify-content: center;
+}
+
 .card-actions-primary {
   display: flex;
   flex-wrap: wrap;
@@ -1737,6 +1761,45 @@ textarea:focus {
 
 .pe-audit-scope-chip {
   margin: 0 0 8px;
+}
+
+.pe-severity-legend {
+  font-size: 10px;
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+.pe-legend-swatch {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin: 0 2px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.pe-legend-critical {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--red);
+}
+
+.pe-legend-style {
+  background: var(--orange-bg);
+  color: var(--orange);
+  border: 1px solid var(--orange);
+}
+
+.pe-legend-ok {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
+.pe-review-mode-audit-hint {
+  padding: 6px 8px;
+  border-left: 3px solid var(--primary);
+  background: var(--pe-help-box-bg, var(--bg));
 }
 
 .card-target {
@@ -1889,9 +1952,26 @@ textarea:focus {
 }
 
 [data-pe-theme="dark"] .help-box a,
-[data-pe-theme="dark"] .pe-top-banner a {
-  color: var(--primary);
+[data-pe-theme="dark"] .pe-top-banner a,
+[data-pe-theme="dark"] .help-muted a,
+[data-pe-theme="dark"] .audit-report-depth-hint a,
+[data-pe-theme="dark"] .audit-default-filter-hint a {
+  color: var(--pe-link);
   font-weight: 600;
+}
+
+[data-pe-theme="dark"] .help-box a:hover,
+[data-pe-theme="dark"] .pe-top-banner a:hover,
+[data-pe-theme="dark"] .btn-linkish:hover {
+  color: var(--pe-link-hover);
+}
+
+[data-pe-theme="dark"] .btn-linkish {
+  color: var(--pe-link);
+}
+
+[data-pe-theme="dark"] .card-replacement {
+  color: var(--text-muted);
 }
 
 [data-pe-theme="dark"] .pe-settings-dialog {
