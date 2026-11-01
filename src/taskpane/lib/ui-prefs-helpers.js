@@ -39,6 +39,36 @@ ProzaEdit.UiPrefs = {
     showWhatsNew: true,
     showPriorSessionSummary: true,
     showLongOperationWarnings: true,
+    shaperComplexity: 3,
+    shaperIntensity: 4,
+    shaperDensity: 2,
+  },
+
+  SHAPER_KEYS: ["shaperComplexity", "shaperIntensity", "shaperDensity"],
+
+  clampShaperValue(n, fallback) {
+    const v = parseInt(n, 10);
+    if (isNaN(v)) return fallback;
+    return Math.min(5, Math.max(1, v));
+  },
+
+  normalizeShaperFields(raw) {
+    const base = ProzaEdit.UiPrefs.UI_CONFIG_DEFAULTS;
+    const src = raw && typeof raw === "object" ? raw : {};
+    return {
+      shaperComplexity: ProzaEdit.UiPrefs.clampShaperValue(src.shaperComplexity, base.shaperComplexity),
+      shaperIntensity: ProzaEdit.UiPrefs.clampShaperValue(src.shaperIntensity, base.shaperIntensity),
+      shaperDensity: ProzaEdit.UiPrefs.clampShaperValue(src.shaperDensity, base.shaperDensity),
+    };
+  },
+
+  getShaperDefaultsPatch() {
+    const base = ProzaEdit.UiPrefs.UI_CONFIG_DEFAULTS;
+    return {
+      shaperComplexity: base.shaperComplexity,
+      shaperIntensity: base.shaperIntensity,
+      shaperDensity: base.shaperDensity,
+    };
   },
 
   validateLastActiveTab(tabId, options) {

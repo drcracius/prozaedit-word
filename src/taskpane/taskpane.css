@@ -1540,6 +1540,7 @@ select:focus, input[type="text"]:focus, input[type="password"]:focus {
   flex-wrap: wrap;
   gap: 4px;
   flex: 1 1 100%;
+  margin-bottom: 2px;
 }
 
 .card-actions-secondary {
@@ -1547,6 +1548,25 @@ select:focus, input[type="text"]:focus, input[type="password"]:focus {
   flex-wrap: wrap;
   gap: 4px;
   flex: 1 1 100%;
+  margin-top: 2px;
+}
+
+.btn-main-hub.btn-with-icon {
+  justify-content: center;
+}
+
+.pe-simple-audit-banner {
+  font-size: 10px;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  background: #e8f0fe;
+  border: 1px solid #c2d7f7;
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+.pe-audit-scope-chip {
+  margin: 0 0 8px;
 }
 
 .card-target {
