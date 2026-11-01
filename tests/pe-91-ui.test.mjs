@@ -95,3 +95,22 @@ test("PE-91: 'fresh reply' bypasses the AI cache once, then returns to caching",
     await settleClose(t);
   }
 });
+
+test("PE-91: build version is identical in code, both manifests and the what's-new record", () => {
+  const js = fs.readFileSync("src/taskpane/taskpane.js", "utf8").match(/PROZAEDIT_BUILD_VERSION = "([\d.]+)"/)[1];
+  for (const f of ["manifest.xml", "manifest.hosted.xml"]) {
+    assert.equal(fs.readFileSync(f, "utf8").match(/<Version>([\d.]+)<\/Version>/)[1], js, f);
+  }
+  assert.match(fs.readFileSync("src/taskpane/lib/onboarding-helpers.js", "utf8"), new RegExp(`version: "${js.replace(/\./g, "\\.")}"`));
+});
+
+test("PE-91: genre profiles state their provenance", async () => {
+  const t = await bootTaskpane({ word: {} });
+  try {
+    t.peval(`adaptModules()`);
+    assert.match(t.el("peGenreBlurb").textContent, /rules of thumb/);
+    assert.match(t.peval(`ProzaEdit.Genres.PROVENANCE`), /Editorial rules of thumb/);
+  } finally {
+    await settleClose(t);
+  }
+});

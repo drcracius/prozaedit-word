@@ -6,6 +6,11 @@
  * Calibration rule: "thriller-suspense" and "general-fiction" reproduce the pre-PE-81 fiction behaviour exactly
  * (dialogue band 22–48 %, long sentence 38/45 words, passive cluster 5). Other profiles only move numbers where
  * the genre's conventions clearly differ; every profile documents why in `rationale`.
+ *
+ * Provenance (PE-91): NONE of these numbers is a published standard. The fiction baseline (dialogue 22–48 %,
+ * long sentence 38/45) is the pre-PE-81 editorial rule of thumb; per-genre offsets are author-side editorial
+ * judgment about genre conventions, not measurements of a corpus. They only drive low-confidence or
+ * threshold-scaled hints (see PROVENANCE) and are never presented as rules. Treat them as defaults to tune.
  */
 (function (global) {
   const root = (global.ProzaEdit = global.ProzaEdit || {});
@@ -273,6 +278,7 @@
   ];
 
   const Genres = {
+    PROVENANCE: "Editorial rules of thumb (no published standard); tune to taste.",
     REGISTRY,
     isFiction(type) {
       const t = String(type || "");

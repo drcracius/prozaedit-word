@@ -1,6 +1,6 @@
 # Privacy and data (ProzaEdit Word)
 
-**Build:** 2.0.0.21 hosted task pane · **Owner-editable** summary for Help and Settings.
+**Build:** 2.0.0.22 hosted task pane · **Owner-editable** summary for Help and Settings.
 
 ---
 

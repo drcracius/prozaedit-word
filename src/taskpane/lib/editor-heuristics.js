@@ -12,6 +12,8 @@ ProzaEdit.EditorHeuristics = {
     let n = 0;
     const re = /\b(a|an)\s+([A-Za-z][\w'-]*)/gi;
     let m;
+    // Heuristic by spelling, not a pronunciation dictionary (no cited source): the exception lists below cover
+    // common cases only, so the card is low confidence, hidden in Simple view, and never auto-replaces.
     const anBeforeConsonantSound = /^(b|c(d|f|g|h|j|k|l|m|n|p|q|r|s|t|v|w|x|y|z)|uni(?!t)|one|once|u[bcdefghjkpqwxyz])/i;
     const aBeforeVowelSound = /^(a|e|i|o|u)/i;
     const useAn = /^(hour|honest|honor|heir|html|hmi|mba|mri|nlp|ngo|fbi|fda|eu|uk|un|us|ufo|mp|lp|rt|hr)\b/i;
