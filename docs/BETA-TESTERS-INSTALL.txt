@@ -22,4 +22,8 @@ DAILY USE
 
 If Upload is missing on desktop Word, use https://office.com in a browser for step 2–4.
 
+OWNER / VALIDATION (not for testers)
+  Final mile plan: docs/FINAL-MILE-PLAN-WEB.md (repo)
+  Phase 1 log template: docs/templates/VALIDATION-LOG.md (repo)
+
 Questions: contact the person who sent you this file.

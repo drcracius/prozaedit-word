@@ -11,10 +11,11 @@
 
 | Phase | Status | Gate / artifact |
 |-------|--------|-----------------|
-| **1 — Word web validation** | **START** (owner) | [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · log in [templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md) or [GitHub issue form](../.github/ISSUE_TEMPLATE/word-web-validation.yml) |
-| **2 — UX-4 beta feedback** | Pending | After Phase 1 **GO beta** · [templates/BETA-FEEDBACK.md](./templates/BETA-FEEDBACK.md) |
-| **3 — Diagnostics ingest** | Optional | [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) when Worker URL exists |
-| **4 — Release comms** | Pending | After Phase 1 validation (Phase 2 in parallel if desired) · [BETA-TESTERS-INSTALL.txt](./BETA-TESTERS-INSTALL.txt) |
+| **Agent prep (PE-48)** | **Done** | [HOSTED-SMOKE-LAST-RUN.md](./HOSTED-SMOKE-LAST-RUN.md) · [BETA-INVITE.md](./BETA-INVITE.md) · [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) · [DIAGNOSTICS-2.0.0.16-MERGE-CHECKLIST.md](./DIAGNOSTICS-2.0.0.16-MERGE-CHECKLIST.md) |
+| **1 — Word web validation** | **START** (owner) | [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) · log in [templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md) or [GitHub issue form](../.github/ISSUE_TEMPLATE/word-web-validation.yml) |
+| **2 — UX-4 beta feedback** | Pending | After Phase 1 **GO beta** · [templates/BETA-FEEDBACK.md](./templates/BETA-FEEDBACK.md) (scoring rubric) · optional [beta-feedback issue](../.github/ISSUE_TEMPLATE/beta-feedback.yml) |
+| **3 — Diagnostics ingest** | Optional | [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) · [DIAGNOSTICS-2.0.0.16-MERGE-CHECKLIST.md](./DIAGNOSTICS-2.0.0.16-MERGE-CHECKLIST.md) when Worker URL exists |
+| **4 — Release comms** | **Draft ready** | [BETA-INVITE.md](./BETA-INVITE.md) · [BETA-TESTERS-INSTALL.txt](./BETA-TESTERS-INSTALL.txt) — send after Phase 1 **GO beta** |
 
 *Update this table when phases complete (owner or agent doc pass).*
 
