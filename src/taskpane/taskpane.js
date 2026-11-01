@@ -484,10 +484,45 @@ function expandSettingsGroup(key) {
   if (el && el.tagName === "DETAILS") el.open = true;
 }
 
+function syncOnboardingTogglesFromPersistedConfig() {
+  const flags = ProzaEdit.Onboarding?.readOnboardingFlagsFromConfig?.(
+    ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG)
+  );
+  if (!flags) return;
+  ProzaEdit.Onboarding?.ONBOARDING_CONFIG_KEYS?.forEach((key) => {
+    if (typeof flags[key] !== "boolean") return;
+    const el = getEl(key);
+    if (el) el.checked = flags[key];
+  });
+}
+
+function refreshSettingsLinkedHints() {
+  applySimpleMode();
+  updateAuditReportDepthHint();
+  updateAuditDefaultFilterHint();
+  updateCustomRulesSummary();
+  applyHoverTips();
+}
+
+function hideOnboardingBanner(bannerId) {
+  const el = bannerId ? getEl(bannerId) : null;
+  if (el) el.classList.add("hidden");
+}
+
+function permanentOffOnboardingPref(prefKey, bannerId) {
+  const cb = getEl(prefKey);
+  if (cb) cb.checked = false;
+  hideOnboardingBanner(bannerId);
+  ProzaEdit.Onboarding?.clearSessionDismissForPref?.(prefKey);
+  return persistSettings(false);
+}
+
 function openSettingsModal(focusGroup) {
   const modal = getEl("pe-settings-modal");
   if (!modal) return;
   decorateSettingsBackIcon();
+  syncOnboardingTogglesFromPersistedConfig();
+  refreshSettingsLinkedHints();
   settingsModalReturnFocus = document.activeElement;
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
@@ -1028,6 +1063,10 @@ function setupAutoSaveHandlers() {
       else updateActiveChecksHint();
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
       if (el.id === "showHoverTips") applyHoverTips();
+      if (el.id === "simpleMode") {
+        applySimpleMode();
+        if (isChecked("simpleMode", false)) applySimpleModeAuditFilterDefault();
+      }
       if (el.id === "reportDensity") updateAuditReportDepthHint();
       if (el.id === "settingsDefaultAuditFilter") {
         applyDefaultAuditFilterFromSettings();
@@ -1072,11 +1111,12 @@ function setupAutoSaveHandlers() {
     showTipsEl.dataset.peOnboardingFx = "1";
     showTipsEl.addEventListener("change", () => {
       if (!isChecked("showSessionTips", true)) {
-        const el = getEl("peSessionTips");
-        if (el) el.classList.add("hidden");
+        hideOnboardingBanner("peSessionTips");
       } else {
+        ProzaEdit.Onboarding?.clearSessionDismissForPref?.("showSessionTips");
         initSessionTips();
       }
+      schedulePersistSettings();
     });
   }
   const showWhatsNewEl = getEl("showWhatsNew");
@@ -1084,11 +1124,11 @@ function setupAutoSaveHandlers() {
     showWhatsNewEl.dataset.peOnboardingFx = "1";
     showWhatsNewEl.addEventListener("change", () => {
       if (!isChecked("showWhatsNew", true)) {
-        const el = getEl("peWhatsNewBanner");
-        if (el) el.classList.add("hidden");
+        hideOnboardingBanner("peWhatsNewBanner");
       } else {
         initWhatsNewBanner();
       }
+      schedulePersistSettings();
     });
   }
   const showPriorEl = getEl("showPriorSessionSummary");
@@ -1096,11 +1136,12 @@ function setupAutoSaveHandlers() {
     showPriorEl.dataset.peOnboardingFx = "1";
     showPriorEl.addEventListener("change", () => {
       if (!isChecked("showPriorSessionSummary", true)) {
-        const el = getEl("pePriorSessionBanner");
-        if (el) el.classList.add("hidden");
+        hideOnboardingBanner("pePriorSessionBanner");
       } else {
+        ProzaEdit.Onboarding?.clearSessionDismissForPref?.("showPriorSessionSummary");
         initPriorSessionBanner();
       }
+      schedulePersistSettings();
     });
   }
   MODULE_IDS.forEach((id) => bind(getEl(id)));
@@ -1327,14 +1368,9 @@ function initWhatsNewBanner() {
 }
 
 function dismissWhatsNewBanner(dontShowAgain) {
-  const el = getEl("peWhatsNewBanner");
-  if (el) el.classList.add("hidden");
+  hideOnboardingBanner("peWhatsNewBanner");
   markWhatsNewVersionSeen();
-  if (dontShowAgain) {
-    const cb = getEl("showWhatsNew");
-    if (cb) cb.checked = false;
-    persistSettings(false);
-  }
+  if (dontShowAgain) permanentOffOnboardingPref("showWhatsNew", "peWhatsNewBanner");
 }
 
 function initPriorSessionBanner() {
@@ -1369,9 +1405,12 @@ function initPriorSessionBanner() {
   el.classList.remove("hidden");
 }
 
-function dismissPriorSessionBanner() {
-  const el = getEl("pePriorSessionBanner");
-  if (el) el.classList.add("hidden");
+function dismissPriorSessionBanner(dontShowAgain) {
+  hideOnboardingBanner("pePriorSessionBanner");
+  if (dontShowAgain) {
+    permanentOffOnboardingPref("showPriorSessionSummary", "pePriorSessionBanner");
+    return;
+  }
   try {
     sessionStorage.setItem(ProzaEdit.Onboarding?.PRIOR_BANNER_SESSION_KEY || "pe-prior-session-banner-dismissed", "1");
   } catch (_) {}
@@ -1416,9 +1455,12 @@ function initSessionTips() {
   }
 }
 
-function dismissSessionTips() {
-  const el = getEl("peSessionTips");
-  if (el) el.classList.add("hidden");
+function dismissSessionTips(dontShowAgain) {
+  hideOnboardingBanner("peSessionTips");
+  if (dontShowAgain) {
+    permanentOffOnboardingPref("showSessionTips", "peSessionTips");
+    return;
+  }
   try {
     sessionStorage.setItem(ProzaEdit.Onboarding?.SESSION_TIPS_DISMISSED_KEY || "pe-session-tips-dismissed", "1");
   } catch (_) {}
@@ -1506,6 +1548,7 @@ function resetSettingsGroup(groupKey) {
   }
   if (norm === "safety") applySimpleMode();
   if (norm === "onboarding") {
+    ProzaEdit.Onboarding?.clearAllSessionBannerDismissals?.();
     initWhatsNewBanner();
     initPriorSessionBanner();
     initSessionTips();

@@ -53,6 +53,19 @@
 
 - [ ] Drag pane divider narrow (&lt;360px): tabs wrap; controls remain usable (`pe-narrow-pane`).
 
+## 8. Interactive controls & banners (UI ↔ Settings sync)
+
+- [ ] Every `onclick` / `onchange` / `oninput` in `taskpane.html` resolves to a handler in `taskpane.js` (no console “is not defined”).
+- [ ] Toolbar **Settings** opens with Onboarding toggles matching saved `PROZAEDIT_CONFIG` (reopen modal after permanent dismiss — checkbox off).
+- [ ] **Simple mode** (Settings → Safety): Target **Simple mode: On/Off** line updates live; Thesaurus tab hides/shows without reload.
+- [ ] **Show hover tips** toggle: ProzaEdit bubbles on/off without reload.
+- [ ] **Report depth** / **Default audit filter** (Settings → Audit): Audit tab hint lines update live while modal open or after close.
+- [ ] `#peSessionTips`: **Got it** → hidden for browser session (`sessionStorage`); **Don't show again** → `#showSessionTips` off in CONFIG, banner hidden, persists with document.
+- [ ] `#peWhatsNewBanner`: **Got it** → hidden + release marked seen; **Don't show again** → `#showWhatsNew` off in CONFIG.
+- [ ] `#pePriorSessionBanner`: **Got it** → hidden for session; **Don't show again** → `#showPriorSessionSummary` off in CONFIG; **Turn off in Settings** opens Onboarding group.
+- [ ] Re-enable each Onboarding toggle in Settings → **Reset Onboarding** clears session dismiss keys → banner can show again (What's new still respects per-release seen key).
+- [ ] After Settings **Close** / **Escape** / backdrop click: no invisible overlay; toolbar and tabs remain clickable (`pe-settings-modal.hidden`).
+
 ---
 
-*Automated coverage:* `npm test` (includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).
+*Automated coverage:* `npm test` (includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`, `onboarding-banners.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).

@@ -26,7 +26,8 @@
     <p class="pe-top-banner-lead"><strong>Welcome back</strong></p>
     <ul id="pePriorSessionLines" class="help-list pe-prior-session-lines"></ul>
     <div class="pe-top-banner-actions">
-      <button type="button" class="btn-secondary" onclick="dismissPriorSessionBanner()">Got it</button>
+      <button type="button" class="btn-secondary" onclick="dismissPriorSessionBanner(false)">Got it</button>
+      <button type="button" class="btn-linkish" onclick="dismissPriorSessionBanner(true)">Don&apos;t show again</button>
       <button type="button" class="btn-linkish" onclick="openSettingsModal('onboarding')">Turn off in Settings</button>
     </div>
   </div>
@@ -55,7 +56,10 @@
       <li><strong>Simple mode</strong> (Settings → Safety) hides Thesaurus and optional Gemini blocks; other persistent prefs are under toolbar <strong>Settings</strong>.</li>
       <li>After GitHub updates, close and reopen the pane; re-upload <code>manifest.hosted.xml</code> only when the manifest version bumps.</li>
     </ul>
-    <button type="button" class="btn-secondary pe-session-tips-dismiss" onclick="dismissSessionTips()" data-pe-tip="btn-session-tips-got-it">Got it</button>
+    <div class="pe-top-banner-actions">
+      <button type="button" class="btn-secondary pe-session-tips-dismiss" onclick="dismissSessionTips(false)" data-pe-tip="btn-session-tips-got-it">Got it</button>
+      <button type="button" class="btn-linkish" onclick="dismissSessionTips(true)">Don&apos;t show again</button>
+    </div>
   </div>
   <div class="pe-toolbar pe-toolbar-sticky" role="toolbar" aria-label="ProzaEdit actions">
     <button type="button" id="btnUndo" class="btn-tool btn-tool-icon" disabled onclick="prozaEditUndo()" aria-label="Undo last ProzaEdit replace" data-pe-tip="btn-undo">

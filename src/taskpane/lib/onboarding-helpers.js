@@ -8,6 +8,14 @@ ProzaEdit.Onboarding = {
   LEGACY_TIPS_PERMANENT_LOCAL_KEY: "pe-session-tips-dismissed",
   PRIOR_BANNER_SESSION_KEY: "pe-prior-session-banner-dismissed",
 
+  /** sessionStorage keys cleared when CONFIG re-enables a banner (must match dismiss handlers). */
+  ONBOARDING_PREF_SESSION_KEYS: {
+    showSessionTips: "pe-session-tips-dismissed",
+    showPriorSessionSummary: "pe-prior-session-banner-dismissed",
+  },
+
+  ONBOARDING_CONFIG_KEYS: ["showSessionTips", "showWhatsNew", "showPriorSessionSummary"],
+
   WHATS_NEW_RELEASE: {
     version: "2.0.0.15",
     bullet:
@@ -104,6 +112,47 @@ ProzaEdit.Onboarding = {
     if (typeof c.showSessionTips === "boolean") return c;
     if (legacyPermanentHidden) c.showSessionTips = false;
     else c.showSessionTips = true;
+    return c;
+  },
+
+  readOnboardingFlagsFromConfig(raw) {
+    if (raw == null || raw === "") return null;
+    let p;
+    try {
+      p = typeof raw === "string" ? JSON.parse(raw) : raw;
+    } catch (_) {
+      return null;
+    }
+    if (!p || typeof p !== "object") return null;
+    return {
+      showSessionTips: p.showSessionTips !== false,
+      showWhatsNew: p.showWhatsNew !== false,
+      showPriorSessionSummary: p.showPriorSessionSummary !== false,
+    };
+  },
+
+  clearSessionDismissForPref(prefKey) {
+    const key = ProzaEdit.Onboarding.ONBOARDING_PREF_SESSION_KEYS[prefKey];
+    if (!key) return;
+    try {
+      if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(key);
+    } catch (_) {}
+  },
+
+  clearAllSessionBannerDismissals() {
+    Object.values(ProzaEdit.Onboarding.ONBOARDING_PREF_SESSION_KEYS).forEach((key) => {
+      try {
+        if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(key);
+      } catch (_) {}
+    });
+  },
+
+  /** Permanent off: patch document CONFIG onboarding flags (for tests). */
+  applyPermanentOffPatch(config, prefKey) {
+    const c = config && typeof config === "object" ? { ...config } : {};
+    if (prefKey === "showSessionTips") c.showSessionTips = false;
+    else if (prefKey === "showWhatsNew") c.showWhatsNew = false;
+    else if (prefKey === "showPriorSessionSummary") c.showPriorSessionSummary = false;
     return c;
   },
 };
