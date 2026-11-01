@@ -18,6 +18,64 @@ ProzaEdit.ScopeReader = {
     return this.LIMITS[mode] || this.LIMITS.selection;
   },
 
+  /** Fraction of scope char cap at which we warn before hard truncate (audit read). */
+  SOFT_CAP_RATIO: 0.85,
+
+  softCapThreshold(charCap) {
+    const cap = Math.max(1, Math.floor(Number(charCap) || 0));
+    return Math.floor(cap * this.SOFT_CAP_RATIO);
+  },
+
+  /**
+   * Status line for long reads (audit / index). Pure — safe for unit tests.
+   * @param {{ phase?: string, paragraphsLoaded?: number, paragraphTotal?: number, charCount?: number, charCap?: number, scopeLabel?: string }} info
+   */
+  formatReadStatus(info) {
+    info = info || {};
+    const phase = String(info.phase || "Reading");
+    const parts = [phase];
+    const pl = Number(info.paragraphsLoaded);
+    const pt = Number(info.paragraphTotal);
+    if (pt > 0 && pl >= 0) parts.push(`~${pl}/${pt} paragraphs`);
+    const cc = Number(info.charCount);
+    const cap = Number(info.charCap);
+    if (cc > 0) {
+      parts.push(`~${cc.toLocaleString()} chars`);
+      if (cap > 0 && cc >= this.softCapThreshold(cap)) {
+        parts.push(`(approaching ${cap.toLocaleString()} cap — try Selected chapters)`);
+      }
+    }
+    if (info.scopeLabel) parts.push(`— ${info.scopeLabel}`);
+    return parts.join(" ");
+  },
+
+  /** Session key for last completed paragraph index during a cancelled scope read (Help documents this). */
+  SCOPE_READ_RESUME_KEY: "pe-scope-read-resume",
+
+  readScopeResumeSnapshot() {
+    try {
+      const raw = typeof sessionStorage !== "undefined" ? sessionStorage.getItem(this.SCOPE_READ_RESUME_KEY) : null;
+      if (!raw) return null;
+      const p = JSON.parse(raw);
+      return p && typeof p === "object" ? p : null;
+    } catch (_) {
+      return null;
+    }
+  },
+
+  writeScopeResumeSnapshot(data) {
+    try {
+      if (typeof sessionStorage === "undefined") return;
+      sessionStorage.setItem(this.SCOPE_READ_RESUME_KEY, JSON.stringify(data));
+    } catch (_) {}
+  },
+
+  clearScopeResumeSnapshot() {
+    try {
+      if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(this.SCOPE_READ_RESUME_KEY);
+    } catch (_) {}
+  },
+
   /** Contiguous chapter numbers (1-based) inclusive. */
   expandRangeToIndices(fromNum, toNum) {
     const a = Math.min(parseInt(fromNum, 10) || 1, parseInt(toNum, 10) || 1);
@@ -181,6 +239,13 @@ ProzaEdit.ScopeReader = {
       for (let i = blockStart; i <= blockEnd; i++) paras.items[i].load("text");
       await context.sync();
       for (let i = blockStart; i <= blockEnd; i++) text += (paras.items[i].text || "") + "\n";
+      if (typeof opts.onProgress === "function") {
+        opts.onProgress({
+          paragraphsLoaded: blockEnd - startPara + 1,
+          paragraphTotal: endPara - startPara + 1,
+          charCount: text.length,
+        });
+      }
       if (blockEnd < endPara) await this.microYield();
     }
     return text;
@@ -188,20 +253,8 @@ ProzaEdit.ScopeReader = {
 
   async readFullManuscriptChunked(context, opts) {
     opts = opts || {};
-    const paras = context.document.body.paragraphs;
-    paras.load("items");
-    await context.sync();
-    const total = paras.items.length;
-    const CHUNK = 40;
-    let text = "";
-    for (let start = 0; start < total; start += CHUNK) {
-      this._cancelCheck(opts);
-      const end = Math.min(start + CHUNK - 1, total - 1);
-      for (let i = start; i <= end; i++) paras.items[i].load("text");
-      await context.sync();
-      for (let i = start; i <= end; i++) text += (paras.items[i].text || "") + "\n";
-      if (end < total - 1) await this.microYield();
-    }
+    const maxChars = opts.maxChars != null ? Number(opts.maxChars) : this.getLimit("full");
+    const text = await this.readBodyTextChunked(context, { ...opts, maxChars });
     return { text, label: "full manuscript" };
   },
 
@@ -276,6 +329,14 @@ ProzaEdit.ScopeReader = {
       const ch = list.find((c) => c.index === normalized[i]);
       if (!ch) continue;
       text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts);
+      if (typeof opts.onProgress === "function") {
+        opts.onProgress({
+          paragraphsLoaded: i + 1,
+          paragraphTotal: normalized.length,
+          charCount: text.length,
+          scopeLabel: `chapter ${normalized[i]}`,
+        });
+      }
     }
     if (!text.trim()) throw new Error("Selected chapters contain no text.");
     const label = this.formatSelectedChaptersLabel(normalized, list);
@@ -294,8 +355,9 @@ ProzaEdit.ScopeReader = {
       return { text: sel.text || "", label: "selection" };
     }
     if (mode === "full") {
-      if (typeof opts.cancelCheck === "function") {
-        return this.readFullManuscriptChunked(context, opts);
+      if (typeof opts.cancelCheck === "function" || typeof opts.onProgress === "function") {
+        const merged = { ...opts, maxChars: opts.maxChars != null ? opts.maxChars : this.getLimit("full") };
+        return this.readFullManuscriptChunked(context, merged);
       }
       const body = context.document.body;
       body.load("text");

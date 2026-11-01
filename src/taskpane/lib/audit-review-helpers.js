@@ -33,6 +33,18 @@ ProzaEdit.AuditReview = {
   },
 
   LOAD_MORE_STEP: 100,
+  CARD_RENDER_BATCH: 25,
+
+  /** Inclusive slice indices for cooperative cancel during large card renders. */
+  planCardRenderBatches(itemCount, batchSize) {
+    const n = Math.max(0, Math.floor(Number(itemCount) || 0));
+    const size = Math.max(1, Math.floor(Number(batchSize) || ProzaEdit.AuditReview.CARD_RENDER_BATCH));
+    const batches = [];
+    for (let start = 0; start < n; start += size) {
+      batches.push({ start, end: Math.min(start + size - 1, n - 1) });
+    }
+    return batches;
+  },
 
   /** Strip API keys and cap length before any error text is shown to the user. */
   sanitizeDetail(text, maxLen) {

@@ -528,6 +528,16 @@
       <p><strong>Rewrite:</strong> Local paraphrase preview → <em>Apply preview to selection</em> writes into Word; use Undo or Last edit if you need to find the change.</p>
       <p><strong>Audit → Rewrite:</strong> Card <em>Rewrite</em> selects the finding and opens the Rewrite tab (preview only until you apply).</p>
       <p><strong>Mute / Dismiss / Dictionary:</strong> <strong>Dictionary</strong> terms are saved in <strong>this Word document</strong> (Office document settings, not just this browser tab). <strong>Mute</strong> saves the rule in this document and in <strong>this browser</strong> (same PC profile — not other computers or Word accounts). <strong>Dismiss</strong> silences that exact wording in <strong>this browser only</strong>. ProzaEdit does not sync ignores across documents or devices yet. Use <strong>Dict</strong> on a card for one-click dictionary adds.</p>
+      <details class="help-box help-details">
+        <summary>Dictionary — add character names (persists in this document)</summary>
+        <ol class="help-list">
+          <li>Run audit; when a proper-noun check flags a real name, click <strong>Dict</strong> on the card <em>or</em> open Settings → Dictionary and type the name.</li>
+          <li>After <strong>Mute</strong>, use <strong>Add from last Mute</strong> in Settings if the name is still worth allowing everywhere.</li>
+          <li>Re-run audit — dictionary terms and muted rules apply before cards are built (no need to reload the pane).</li>
+          <li>Backup: Settings → Dictionary → <strong>Copy dictionary JSON</strong>; restore with Import on this or another <code>.docx</code>.</li>
+        </ol>
+      </details>
+      <p><strong>Long documents:</strong> Prefer <strong>Selected chapters</strong> or <strong>Page range</strong> on Target. The status bar shows read progress (~paragraphs). <strong>Cancel</strong> stops after the current Word batch; use <strong>Run audit</strong> again without reloading. If you cancel mid-read, the pane remembers the last paragraph progress for this browser tab only (see status hint on the next run).</p>
       <details class="help-box help-details" id="peHelpGotoTroubleshoot">
         <summary>Go to troubleshooting</summary>
         <ul class="help-list">
@@ -791,15 +801,27 @@
           <p class="help-muted" style="font-size:10px;margin:8px 0 0;">Reference capture is per document; use Capture when you want a new baseline.</p>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-dictionary">
-          <summary>Advanced — Dictionary</summary>
+          <summary>Advanced — Dictionary <span id="dictCountBadge" class="pe-dict-count-badge hidden" aria-label="Dictionary term count">0</span></summary>
+          <p class="help-muted" style="font-size:10px;margin:6px 0 4px;">Terms are saved in <strong>this Word document</strong> (Office document settings), not only this browser tab.</p>
           <div class="form-group" style="margin-top:6px;">
             <label for="dictInput">Custom Dictionary (per document)</label>
             <div style="display:flex;gap:4px;">
               <input type="text" id="dictInput" placeholder="Name, place, jargon..." style="margin-bottom:0;flex:1;">
               <button type="button" class="btn-go" onclick="addDictionaryWord()">Add</button>
             </div>
+            <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">
+              <input type="search" id="dictFilter" placeholder="Filter list…" style="margin-bottom:0;flex:1;min-width:120px;" aria-label="Filter dictionary">
+              <button type="button" class="btn-secondary" id="btnDictFromLastMute" onclick="addDictionaryFromLastMute()" disabled>Add from last Mute</button>
+            </div>
             <div id="dictList" class="dict-list"></div>
           </div>
+          <details class="help-box help-muted" style="margin-top:8px;">
+            <summary>Backup / move dictionary (JSON)</summary>
+            <p style="font-size:10px;margin:4px 0;">Copy JSON to a notes file, or paste a JSON array into another document.</p>
+            <button type="button" class="btn-secondary" onclick="copyDictionaryExport()">Copy dictionary JSON</button>
+            <textarea id="dictImportArea" rows="4" style="width:100%;font-size:10px;margin-top:6px;" placeholder='["McGuffin","Arrakis"]'></textarea>
+            <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="importDictionaryFromTextarea()">Import JSON</button>
+          </details>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="dictionary" style="margin-top:10px;">Clear dictionary for this document</button>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-custom-style">
