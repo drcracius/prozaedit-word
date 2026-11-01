@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const LIBS = ["long-operation-controller", "settings-store", "text-metrics", "proper-noun-analyse", "genre-profiles", "lexical-banks", "editor-heuristics", "style-guide-rules", "audit-engine", "manuscript-overview", "local-coach"];
+const LIBS = ["long-operation-controller", "settings-store", "text-metrics", "proper-noun-analyse", "genre-profiles", "lexical-banks", "editor-heuristics", "style-guide-rules", "audit-engine", "genre-checks", "manuscript-overview", "local-coach"];
 
 export function loadEngine() {
   const store = new Map();
@@ -36,13 +36,15 @@ export function simpleFindings(P, text, ctx) {
  * A visible finding is a true positive iff its ruleId starts with an expected prefix of that case;
  * every other visible finding counts as a false positive.
  */
-export function scoreCorpus(P, cases, ctxExtra = {}) {
+export function scoreCorpus(P, cases, ctxExtra = {}, { includeLow = false, only = null } = {}) {
   let tp = 0, fp = 0, fn = 0;
   const fpList = [], fnList = [];
   for (const c of cases) {
     const profile = P.Genres.REGISTRY.find((g) => g.id === c.genre);
-    const found = simpleFindings(P, c.text, ctxFor(profile.value, { ...ctxExtra, ...(c.ctx || {}) }));
+    const cx = ctxFor(profile.value, { ...ctxExtra, ...(c.ctx || {}) });
+    let found = includeLow ? P.Audit.run(c.text, cx).suggestions : simpleFindings(P, c.text, cx);
     const used = new Set();
+    if (only) found = found.filter((f) => only.some((o) => String(f.ruleId).startsWith(o)));
     for (const f of found) {
       const hit = (c.expect || []).find((e) => String(f.ruleId).startsWith(e));
       if (hit) { tp++; used.add(hit); } else { fp++; fpList.push(`${c.id}: ${f.ruleId}`); }

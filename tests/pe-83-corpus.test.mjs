@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEngine, ctxFor, scoreCorpus } from "./helpers/corpus-harness.mjs";
 import { buildCases, buildStressCases } from "./corpus/passages.mjs";
+import * as GC from "./corpus/genre-checks.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PRECISION_GATE = 0.85;
@@ -51,12 +52,66 @@ test("hidden-in-Simple rules stay low confidence (repeated pair, pov hint, spars
   assert.equal(P.Audit.confidenceFor({ ruleId: "spell:double_space", type: "confirmed" }), "high");
 });
 
-test("pov:slip ignores quoted dialogue; function-word pairs are not flagged as repetition", () => {
+test("pov:drift ignores quoted dialogue; function-word pairs are not flagged as repetition", () => {
   const dlg = `Ana walked home alone that evening and thought about the letter. "I told you I would, and I meant it, my love," he said to her, and she said "I know, but I wish you had told me, I really do," and they both laughed in the dark.`;
   const r = P.Audit.run(dlg, ctxFor("Fiction (General)"));
-  assert.ok(!r.suggestions.some((s) => s.ruleId.startsWith("pov:slip")));
+  assert.ok(!r.suggestions.some((s) => s.ruleId.startsWith("pov:")));
   const rep = P.Audit.run("On the hill in the rain. In the barn on the hill in the dark.", ctxFor("Fiction (General)"));
   assert.ok(!rep.suggestions.some((s) => s.ruleId.startsWith("rep:pair")));
+});
+
+// ---- PE-83 M10: genre-aware checks (tense, POV, content notes) ----
+const GENRE_RULES = ["tense:", "pov:", "content:"];
+
+test(`genre checks (Simple view): precision >= ${PRECISION_GATE} and recall >= ${RECALL_GATE} on ${GC.SIMPLE_VISIBLE.length} cases`, () => {
+  const r = scoreCorpus(P, GC.SIMPLE_VISIBLE, {}, { only: GENRE_RULES });
+  console.log(`# genre-checks simple tp=${r.tp} fp=${r.fp} fn=${r.fn} precision=${r.precision.toFixed(3)} recall=${r.recall.toFixed(3)}`);
+  assert.ok(r.precision >= PRECISION_GATE, r.fpList.join("; "));
+  assert.ok(r.recall >= RECALL_GATE, r.fnList.join("; "));
+});
+
+test("genre checks (Advanced view, low-confidence included): no false positives, all planted found", () => {
+  const cases = [...GC.ADVANCED_ONLY, ...GC.TENSE_POS, ...GC.TENSE_NEG, ...GC.TENSE_NONFICTION_NEG, ...GC.POV_NEG];
+  const r = scoreCorpus(P, cases, {}, { includeLow: true, only: GENRE_RULES });
+  console.log(`# genre-checks advanced tp=${r.tp} fp=${r.fp} fn=${r.fn} precision=${r.precision.toFixed(3)} recall=${r.recall.toFixed(3)}`);
+  assert.equal(r.fp, 0, r.fpList.join("; "));
+  assert.equal(r.fn, 0, r.fnList.join("; "));
+});
+
+test("tense drift: high confidence only for a pure, clear shift; literary never high; POV and content notes never visible in Simple", () => {
+  const find = (g, text, extra) => P.Audit.run(text, ctxFor(P.Genres.REGISTRY.find((x) => x.id === g).value, extra)).suggestions;
+  const shift = GC.TENSE_POS[0].text;
+  const t = find("general-fiction", shift).find((s) => s.ruleId.startsWith("tense:"));
+  assert.equal(t.confidence, "high");
+  assert.equal(t.type, "preference");
+  const lit = find("literary-drama", shift).find((s) => s.ruleId.startsWith("tense:"));
+  assert.ok(lit && lit.confidence === "low");
+  const adv = [...find("general-fiction", GC.POV_POS[0].text), ...find("thriller-suspense", GC.CONTENT_POS[0].text, { contentNotes: true })];
+  assert.ok(adv.filter((s) => /^(pov|content):/.test(s.ruleId)).every((s) => s.confidence === "low"));
+});
+
+test("content notes: opt-in only, informational wording, excluded from score, apply placeholder never replaces text", () => {
+  const text = GC.CONTENT_POS[0].text;
+  const ctx = ctxFor("Fiction (Thriller/Mystery/Crime)");
+  assert.ok(!P.Audit.run(text, ctx).suggestions.some((s) => s.ruleId.startsWith("content:")));
+  const on = P.Audit.run(text, { ...ctx, contentNotes: true });
+  const note = on.suggestions.find((s) => s.ruleId === "content:profanity");
+  assert.ok(note);
+  assert.match(note.explanation, /informational/i);
+  assert.match(note.replacementText, /^\(/);
+  const off = P.Audit.run(text, ctx);
+  const onPref = on.suggestions.filter((s) => s.type === "preference" && !s.ruleId.startsWith("content:")).length;
+  assert.equal(on.prefCount, onPref);
+  assert.equal(on.score, off.score);
+});
+
+test("genre checks: pathological inputs finish quickly and never throw", () => {
+  const inputs = ["", "\n\n\n", "\"".repeat(50000), "I ".repeat(60000), "was ".repeat(60000) + "is ".repeat(60000), ("He said, \"" + "x ".repeat(2000)).repeat(20)];
+  for (const g of profiles) for (const i of inputs) {
+    const t0 = Date.now();
+    P.Audit.run(i, ctxFor(g.value, { contentNotes: true }));
+    assert.ok(Date.now() - t0 < 4000, `${g.id} slow`);
+  }
 });
 
 // ---- Perf budgets (generous: mocked host, loaded CI) ----

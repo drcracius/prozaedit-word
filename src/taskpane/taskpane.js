@@ -1791,6 +1791,7 @@ function collectUiConfig() {
     simpleMode: isChecked("simpleMode", false),
     showHoverTips: isChecked("showHoverTips", true),
     fkLock: isChecked("fkLock", false),
+    contentNotes: isChecked("contentNotes", false),
     remindVersionHistory: isChecked("remindVersionHistory", true),
     fictionScopeReminder: isChecked("fictionScopeReminder", true),
     continuityWarnLevel: parseInt(getEl("continuityWarnLevel")?.value, 10) || 3,
@@ -1905,6 +1906,7 @@ function applyUiConfig(p) {
   if (typeof p.onboardingTourComplete === "boolean") configOnboardingTourComplete = p.onboardingTourComplete;
   setC("showHoverTips", p.showHoverTips !== false);
   setC("fkLock", p.fkLock);
+  setC("contentNotes", p.contentNotes === true);
   setC("remindVersionHistory", p.remindVersionHistory);
   setC("fictionScopeReminder", p.fictionScopeReminder !== false);
   setC("showSessionTips", p.showSessionTips !== false);
@@ -2179,6 +2181,7 @@ function setupAutoSaveHandlers() {
     "chatSelectionOnly",
     "confirmBeforeApply",
     "fkLock",
+    "contentNotes",
     "remindVersionHistory",
     "fictionScopeReminder",
     "showHoverTips",
@@ -3468,6 +3471,7 @@ function buildAuditContext(options) {
   return {
     extendedLocal: !!options.extendedLocal,
     fkLock: isChecked("fkLock", false),
+    contentNotes: isChecked("contentNotes", false),
     scopeSelection: scopeVal === "selection",
     manuscriptType: getEl("manuscriptType")?.value || "Fiction (General)",
     genreJargon: getEl("genreJargon")?.value || "none",

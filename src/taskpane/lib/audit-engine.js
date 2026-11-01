@@ -80,7 +80,7 @@ ProzaEdit.Audit = {
     const anyFiction =
       fiction &&
       (ctx.mPlot || ctx.mMotivation || ctx.mDialogue || ctx.mContinuity || ctx.mPlausibility || ctx.mPacing || ctx.mSpoiler);
-    const anyCore = ctx.chkRep || ctx.chkProp || ctx.chkSpell || ctx.chkAI || ctx.extendedLocal || anyFiction;
+    const anyCore = ctx.contentNotes || ctx.chkRep || ctx.chkProp || ctx.chkSpell || ctx.chkAI || ctx.extendedLocal || anyFiction;
     if (!anyCore && !ctx.fkLock) {
       return {
         suggestions: [],
@@ -125,6 +125,11 @@ ProzaEdit.Audit = {
         ProzaEdit.EditorHeuristics.runStandardChecks(text, push, ctx);
       }
     }
+    if (fiction && ctx.mDialogue && ProzaEdit.GenreChecks) {
+      ProzaEdit.GenreChecks.tense(text, push, ctx);
+      ProzaEdit.GenreChecks.pov(text, push, ctx);
+    }
+    if (ctx.contentNotes && ProzaEdit.GenreChecks) ProzaEdit.GenreChecks.contentNotes(text, push, ctx);
     if (ctx.extendedLocal) this._extendedLocalPass(text, lower, push, ctx);
     if ((fiction && ctx.mPacing) || ctx.chkRep) this._rhythmMonotony(text, push);
     if (ctx.fkLock) this._fkLockFlag(text, push, ctx);
@@ -159,7 +164,7 @@ ProzaEdit.Audit = {
     const deduped = this._dedupe(suggestions).slice(0, maxCards).map((x) => ({ ...x, confidence: this.confidenceFor(x) }));
     const persona = this.PERSONA_WEIGHTS[ctx.criticPersona] || this.PERSONA_WEIGHTS["Average Reader"];
     const criticalCount = deduped.filter((s) => s.type === "confirmed").length;
-    const prefCount = deduped.filter((s) => s.type === "preference").length;
+    const prefCount = deduped.filter((s) => s.type === "preference" && !String(s.ruleId).startsWith("content:")).length;
     let score = 10 - criticalCount * persona.c - prefCount * persona.p;
     if (score < 5) score = 5;
     score = Math.round(score * 10) / 10;
@@ -168,7 +173,7 @@ ProzaEdit.Audit = {
     return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext, genre };
   },
 
-  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "plot:weak_hook", "pov:slip", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
+  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "plot:weak_hook", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
 
   /** high = objective (typo-class); medium = style judgment; low = noisy heuristic (hidden in Simple view by default). */
   confidenceFor(item) {
@@ -400,23 +405,6 @@ ProzaEdit.Audit = {
           explanation: "Long dialogue block—possible exposition dump.",
           targetText: line.trim().substring(0, 100),
           replacementText: "(break with beats)",
-        });
-      }
-    });
-    const paras = text.split(/\n\n+/);
-    paras.forEach((p, idx) => {
-      if (idx > 8) return;
-      const narration = p.replace(/["\u201c][^"\u201d]*["\u201d]?/g, " ");
-      const hasI = (narration.match(/\b(I|me|my)\b/g) || []).length >= 2;
-      const hasHeShe = (narration.match(/\b(he|she|him|her)\b/gi) || []).length >= 2;
-      if (hasI && hasHeShe && narration.length > 120) {
-        push({
-          ruleId: `pov:slip:${idx}`,
-          module: "Dialogue & Viewpoint (POV)",
-          type: "preference",
-          explanation: "Possible POV slip (first + third person in same paragraph).",
-          targetText: p.substring(0, 100),
-          replacementText: "(align POV)",
         });
       }
     });
