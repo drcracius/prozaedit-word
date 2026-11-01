@@ -320,7 +320,7 @@
     <details class="help-box pe-chapter-walk" id="peChapterWalk">
       <summary>Long book? Audit one chapter at a time</summary>
       <p class="help-inline" style="margin:6px 0 0;">Whole-book audits stop at about 450,000 characters (roughly 75,000 words). This goes through your chapters (Heading 1–3) one at a time, keeps your place, and adds each result to one combined summary. You can cancel any chapter and carry on later.</p>
-      <p id="peChapterWalkProgress" class="pe-chapter-walk-progress" role="status" aria-live="polite">Needs Heading 1–3 on chapter titles. Click the button to start.</p>
+      <p id="peChapterWalkProgress" class="pe-chapter-walk-progress" role="status" aria-live="polite" aria-atomic="true">Needs Heading 1–3 on chapter titles. Click the button to start.</p>
       <button type="button" class="btn-secondary pe-btn" id="btnAuditNextChapter" onclick="auditNextChapter()">Audit first chapter</button>
       <button type="button" class="btn-linkish pe-btn hidden" id="btnSkipChapter" onclick="skipChapterWalkChapter()">Skip this chapter</button>
       <button type="button" class="btn-linkish pe-btn hidden" id="btnRestartChapterWalk" onclick="restartChapterWalk()">Start over</button>

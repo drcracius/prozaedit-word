@@ -896,8 +896,7 @@ ProzaEdit.ManuscriptContextIndex = {
           current.third += pc.third;
           chunkAccs[chunkIdx].first += pc.first;
           chunkAccs[chunkIdx].third += pc.third;
-          this.accumulateNames(trimmed, names);
-          this.scanTimeSignals(trimmed, timeSignals);
+          (current.texts || (current.texts = [])).push(trimmed);
         }
         sampler.offer(i, trimmed);
       }
@@ -929,6 +928,7 @@ ProzaEdit.ManuscriptContextIndex = {
     }
 
     if (opts.checkpointStore) opts.checkpointStore.state = null;
+    this.deriveWholeDocumentData([...(frontMatter ? [frontMatter] : []), ...chapterAccs], names, timeSignals, opts.derivedCache, opts.statsOut);
     let accs = chapterAccs.length ? [...(frontMatter && frontMatter.wordCount > 0 ? [frontMatter] : []), ...chapterAccs] : chunkAccs.filter(Boolean);
     accs = accs.map((a) => ({ ...a, hash: a.hasher ? a.hasher.digest() : a.hash }));
     accs = this.mergeSectionAccs(accs, this.MAX_SECTIONS);
@@ -953,6 +953,45 @@ ProzaEdit.ManuscriptContextIndex = {
         fiction: !!opts.fiction,
       })
     );
+  },
+
+  DERIVED_CACHE_MAX: 600,
+
+  /**
+   * Whole-document names and time cues, built by merging per-unit (chapter / front matter) partials. A unit whose title,
+   * paragraph count and text hash are unchanged reuses its cached partial (memory only, never stored); everything else is
+   * computed fresh. Addition and set-union are order-independent, so the merged result equals a full single pass.
+   * opts.derivedCache: { map: Map }.
+   */
+  deriveWholeDocumentData(units, names, timeSignals, cache, statsOut) {
+    const stats = { reused: 0, computed: 0 };
+    const useCache = !!(cache && Object.prototype.toString.call(cache.map) === "[object Map]");
+    const keep = new Map();
+    units.forEach((u) => {
+      const texts = u.texts || [];
+      const key = useCache ? `${u.title}|${texts.length}|${this.hashString(texts.join("\n"))}` : "";
+      let part = useCache ? cache.map.get(key) : null;
+      if (part) stats.reused++;
+      else {
+        const nm = this.newNameAccumulator();
+        const ts = this.newTimeSignals();
+        texts.forEach((t) => {
+          this.accumulateNames(t, nm);
+          this.scanTimeSignals(t, ts);
+        });
+        part = { names: nm, time: ts };
+        stats.computed++;
+      }
+      if (useCache) keep.set(key, part);
+      part.names.counts.forEach((c, k) => names.counts.set(k, (names.counts.get(k) || 0) + c));
+      part.names.lower.forEach((c, k) => names.lower.set(k, (names.lower.get(k) || 0) + c));
+      part.time.phrases.forEach((x) => timeSignals.phrases.add(x));
+      part.time.years.forEach((x) => timeSignals.years.add(x));
+      delete u.texts;
+    });
+    if (useCache) cache.map = keep.size <= this.DERIVED_CACHE_MAX ? keep : new Map();
+    if (statsOut && typeof statsOut === "object") Object.assign(statsOut, stats);
+    return stats;
   },
 
   CHECKPOINT_VERSION: 2,

@@ -450,13 +450,22 @@ ProzaEdit.Audit = {
     const lines = text.split(/\n/);
     let longDlg = 0;
     lines.forEach((line) => {
-      if (new RegExp(`^["\\u201c].{${longChars},}["\\u201d]?$`).test(line.trim()) && longDlg < 3) {
+      const trimmedLine = line.trim();
+      let spoken = 0;
+      if (/^["\u201c]/.test(trimmedLine)) {
+        const spans = trimmedLine.match(/["\u201c][^"\u201c\u201d]*["\u201d]/g);
+        const closed = spans ? spans.join("").length : 0;
+        const openTail = trimmedLine.slice(closed ? trimmedLine.lastIndexOf(spans[spans.length - 1]) + spans[spans.length - 1].length : 0);
+        spoken = spans ? closed : 0;
+        if (!spans || (/^["\u201c]/.test(openTail.trim()) && !/["\u201d]/.test(openTail))) spoken += openTail.length;
+      }
+      if (spoken >= longChars && longDlg < 3) {
         longDlg++;
         push({
           ruleId: `dlg:long:${longDlg}`,
           module: "Dialogue & Viewpoint (POV)",
           type: "preference",
-          confidence: line.trim().length >= longChars * 2 ? "medium" : "low",
+          confidence: spoken >= longChars * 2 ? "medium" : "low",
           explanation: "Long dialogue block—possible exposition dump.",
           targetText: line.trim().substring(0, 100),
           replacementText: "(break with beats)",

@@ -22,6 +22,26 @@ ProzaEdit.EditApply = {
     return { ok: true };
   },
 
+  /**
+   * Track Changes state from Word (WordApi 1.4). Never throws: "off" | "on" | "unknown" (API missing or unreadable).
+   * deps.trackingSupported === false short-circuits to "unknown" without touching the API.
+   */
+  async detectTracking(ctx, deps) {
+    if (deps && deps.trackingSupported === false) return "unknown";
+    try {
+      const doc = ctx && ctx.document;
+      if (!doc || typeof doc.load !== "function") return "unknown";
+      doc.load("changeTrackingMode");
+      await ctx.sync();
+      const m = String(doc.changeTrackingMode || "");
+      if (m === "Off") return "off";
+      if (m === "TrackAll" || m === "TrackMineOnly") return "on";
+      return "unknown";
+    } catch (_) {
+      return "unknown";
+    }
+  },
+
   _norm(s) {
     return String(s == null ? "" : s).replace(/[\r\n\u000b\u2028\u2029]+/g, " ").replace(/\s+/g, " ").trim();
   },
@@ -184,6 +204,8 @@ ProzaEdit.EditApply = {
       hit = group[occ.indexOf(at)];
       expectedPara = P.slice(0, at) + this._norm(toText) + P.slice(at + want.length);
     }
+    const tracking = await this.detectTracking(ctx, deps);
+    const tracked = tracking === "on";
     let inserted;
     try {
       inserted = hit.insertText(String(toText), deps.replaceLocation);
@@ -203,11 +225,14 @@ ProzaEdit.EditApply = {
       } catch (e) {
         throw tag(new Error("Word applied the change but it could not be re-read to confirm. Use Go to to check the text."), "uncertain");
       }
-      if (this._norm(inserted.text) !== this._norm(toText)) {
-        throw tag(new Error("Word reported a different result than expected after the edit. Use Undo in Word (Ctrl+Z) and check the text."), "uncertain");
+      const gotText = this._norm(inserted.text);
+      const wantText = this._norm(toText);
+      const matches = tracked ? gotText.includes(wantText) : gotText === wantText;
+      if (!matches) {
+        throw tag(new Error(tracked ? "Track Changes is on and Word's tracked result could not be confirmed. Open the Review tab to check the change, or reject it and try again." : "Word reported a different result than expected after the edit. Use Undo in Word (Ctrl+Z) and check the text."), "uncertain");
       }
       verified = true;
-      if (expectedPara !== null && typeof inserted.paragraphs?.getFirst === "function") {
+      if (!tracked && expectedPara !== null && typeof inserted.paragraphs?.getFirst === "function") {
         try {
           const pp = inserted.paragraphs.getFirst();
           pp.load("text");
@@ -222,7 +247,7 @@ ProzaEdit.EditApply = {
     }
     let undoAnchor = null;
     let redoAnchor = null;
-    if (anchor && expectedPara !== null && verified && this._norm(toText)) {
+    if (!tracked && anchor && expectedPara !== null && verified && this._norm(toText)) {
       redoAnchor = anchor;
       undoAnchor = {
         paraIndex: anchor.paraIndex,
@@ -232,7 +257,7 @@ ProzaEdit.EditApply = {
         target: this._norm(toText),
       };
     }
-    return { occurrences: exact.length, verified, undoAnchor, redoAnchor };
+    return { occurrences: exact.length, verified, undoAnchor, redoAnchor, tracked, tracking };
   },
 
   MAX_SPACE_FIXES: 5000,

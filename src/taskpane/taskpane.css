@@ -884,9 +884,9 @@ body.pe-narrow-pane .btn-tool-icon-label {
   color: var(--text-muted);
   min-height: 14px;
   padding: 0 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .pe-status-dismiss {
@@ -1590,6 +1590,9 @@ body.pe-onboarding-tour-open {
   font-size: 12px;
   line-height: 1.45;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-height: 0;
+  overflow-y: auto;
   color: var(--text);
 }
 
@@ -1962,6 +1965,7 @@ textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   margin: 5px 0;
   font-size:12px;
 }
@@ -2505,4 +2509,17 @@ textarea:focus {
 :where(button, [role="button"], a[href], summary, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
   outline: 2px solid var(--pe-focus-ring, var(--primary));
   outline-offset: 2px;
+}
+
+.toggle-row > span { min-width: 0; overflow-wrap: anywhere; }
+.toggle-row > input[type="checkbox"] { flex: 0 0 auto; }
+
+.pe-chapter-walk .pe-btn { margin: 4px 6px 0 0; max-width: 100%; white-space: normal; }
+.pe-chapter-walk-progress { margin: 6px 0; font-size: 12px; overflow-wrap: anywhere; color: var(--text); }
+.pe-chapter-walk summary { overflow-wrap: anywhere; }
+
+@media (max-width: 340px) {
+  .pe-confirm-actions { flex-direction: column; align-items: stretch; }
+  .pe-confirm-dialog, .pe-settings-dialog { width: 100%; }
+  .pe-onboarding-tour-panel { max-width: 100%; }
 }

@@ -62,6 +62,7 @@ let mciCache = null;
 let mciLoaded = false;
 let mciLegacyPending = null;
 const mciCheckpoint = { state: null };
+const mciDerivedCache = { map: new Map() };
 let mciBuildBusy = false;
 let mciFreshness = { state: "unknown", reason: "", changedSections: [] };
 let mciFreshnessAt = 0;
@@ -788,6 +789,7 @@ async function runBuildFullManuscriptContext(userInitiated, buildOptions) {
     const index = await wordRun("mci-build", async (ctx) => {
       return ProzaEdit.ManuscriptContextIndex.buildFromDocument(ctx, {
         checkpointStore: mciCheckpoint,
+        derivedCache: mciDerivedCache,
         cancelCheck: () => longOp.throwIfCancelled(),
         onProgress: (partial) => {
           longOp.setStatus(ProzaEdit.ManuscriptContextIndex.formatBuildProgress(partial));
@@ -3659,6 +3661,15 @@ function getEditLock() {
   return peEditLock;
 }
 
+function wordApiSupported(ver) {
+  try {
+    const req = Office.context && Office.context.requirements;
+    return !!(req && typeof req.isSetSupported === "function" && req.isSetSupported("WordApi", ver));
+  } catch (_) {
+    return false;
+  }
+}
+
 async function swapTextInScope(fromText, toText, options) {
   const result = await wordRun("pe-swap", (ctx) =>
     ProzaEdit.EditApply.swapText(ctx, fromText, toText, {
@@ -3668,6 +3679,7 @@ async function swapTextInScope(fromText, toText, options) {
           selectionOnly: useSelectionEdits(),
         }),
       anchor: options && options.anchor ? options.anchor : null,
+      trackingSupported: wordApiSupported("1.4"),
       replaceLocation: Word.InsertLocation.replace,
       sanitize: (t) => ProzaEdit.WordSafeNavigator.sanitizeSearch(t),
     })
@@ -3770,8 +3782,11 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
       });
       return false;
     }
-    ProzaEdit.EditHistory.record(before, after, label, swapInfo);
+    if (!(swapInfo && swapInfo.tracked)) ProzaEdit.EditHistory.record(before, after, label, swapInfo);
     clearRetry();
+    if (swapInfo && swapInfo.tracked) {
+      showPeStatus(`Applied as a tracked change: ${label}. Accept or reject it in the Review tab (ProzaEdit Undo is off while Track Changes is on).`, "ok");
+    } else
     showPeStatus(
       swapInfo && swapInfo.occurrences > 1
         ? `Applied: ${label}. This text appears ${swapInfo.occurrences} times; the one that matched this card's surrounding text was changed — use Go to to check the others.`
@@ -5768,6 +5783,8 @@ function renderChapterWalkPanel(openIt) {
   if (skip) skip.classList.toggle("hidden", !next);
   if (reset) reset.classList.toggle("hidden", !done);
   if (openIt || (done && next)) box.open = true;
+  const act = document.activeElement;
+  if (act && act !== btn && act.classList && act.classList.contains("hidden") && btn) btn.focus();
 }
 
 async function auditNextChapter() {

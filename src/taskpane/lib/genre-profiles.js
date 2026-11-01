@@ -40,7 +40,7 @@
       label: "Fiction — General",
       blurb: "Any fiction, or not sure yet. Balanced, conservative checks.",
       rationale: "Catch-all. Uses the long-standing commercial-fiction numbers so nothing is stricter than before.",
-      cliches: ["heart pounded in his chest", "heart pounded in her chest", "let out a breath she didn't know she was holding", "let out a breath he didn't know he was holding"],
+      cliches: ["heart pounded in his chest", "heart pounded in her chest", "let out a breath she didn't know she was holding", "let out a breath he didn't know he was holding", "breath she didn't know she'd been holding", "breath he didn't know he'd been holding", "breath i didn't know i was holding", "heart skipped a beat", "blood ran cold", "took her breath away", "took his breath away"],
       aiNote: "General fiction: respect the author's voice; do not push genre conventions.",
     },
     {
@@ -56,7 +56,7 @@
       filterPer1k: 24,
       tagAdverbMax: 5,
       fkSlack: -1,
-      cliches: ["electricity shot through", "butterflies in her stomach", "butterflies in his stomach", "smoldering eyes", "orbs", "released a breath she didn't know", "heart skipped a beat", "sparks flew", "drowning in his eyes", "drowning in her eyes"],
+      cliches: ["electricity shot through", "butterflies in her stomach", "butterflies in his stomach", "smoldering eyes", "orbs", "released a breath she didn't know", "heart skipped a beat", "took her breath away", "took his breath away", "sparks flew", "drowning in his eyes", "drowning in her eyes"],
       coachTips: ["Keep the emotional beat on the page: show the body reaction, then the thought, then the choice.", "Let tension between the leads come from conflicting wants, not misunderstandings that one sentence would solve."],
       aiNote: "Romance: warm, emotionally specific; keep interior emotion and banter; avoid purple clichés.",
     },
@@ -82,7 +82,7 @@
       blurb: "Fast, tense, short beats. (Matches the previous default.)",
       rationale:
         "Top-three fiction category and the previous app default, so its numbers are the unchanged baseline. Short sentences and quick scene exits are the convention; 'suddenly' stays flagged as a weak tension cue.",
-      cliches: ["heart pounded in his chest", "heart pounded in her chest", "time seemed to slow", "the silence was deafening", "a shiver ran down his spine", "a shiver ran down her spine", "little did he know", "little did she know"],
+      cliches: ["heart pounded in his chest", "heart pounded in her chest", "time seemed to slow", "blood ran cold", "his blood ran cold", "her blood ran cold", "the silence was deafening", "a shiver ran down his spine", "a shiver ran down her spine", "little did he know", "little did she know"],
       coachTips: ["End scenes on a question, reversal or unfinished action.", "Cut the beat before the answer: leave readers one step behind the danger."],
       aiNote: "Thriller/suspense: preserve pace and tension; prefer shorter beats; do not soften stakes.",
     },
