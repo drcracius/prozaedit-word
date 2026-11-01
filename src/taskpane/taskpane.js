@@ -3662,7 +3662,7 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
       });
       return false;
     }
-    ProzaEdit.EditHistory.record(before, after, label);
+    ProzaEdit.EditHistory.record(before, after, label, swapInfo);
     clearRetry();
     showPeStatus(
       swapInfo && swapInfo.occurrences > 1
@@ -3686,7 +3686,7 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
   }
 }
 
-async function runHistoryEdit(popFn, revertFn, from, to, doneLabel, action) {
+async function runHistoryEdit(popFn, revertFn, from, to, doneLabel, action, anchorKey) {
   if (historyBusy || !popFn.can()) return;
   const release = getEditLock().tryAcquire();
   if (!release) return;
@@ -3698,7 +3698,7 @@ async function runHistoryEdit(popFn, revertFn, from, to, doneLabel, action) {
   historyBusy = true;
   updateUndoRedoUi();
   try {
-    await swapTextInScope(entry[from], entry[to]);
+    await swapTextInScope(entry[from], entry[to], entry[anchorKey] ? { anchor: entry[anchorKey] } : undefined);
     showPeStatus(`${doneLabel}: ${entry.label}`, "ok");
   } catch (e) {
     revertFn(entry);
@@ -3718,7 +3718,8 @@ function prozaEditUndo() {
     "after",
     "before",
     "Undid",
-    "undo this edit"
+    "undo this edit",
+    "undoAnchor"
   );
 }
 
@@ -3730,7 +3731,8 @@ function prozaEditRedo() {
     "before",
     "after",
     "Redid",
-    "redo this edit"
+    "redo this edit",
+    "redoAnchor"
   );
 }
 
@@ -4633,16 +4635,28 @@ async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, sign
     lastCallAt: ProzaEdit.AIProviders._lastCallAt,
   });
   if (!gate.ok) throw new Error(gate.message || "AI limit reached.");
-  const res = await ProzaEdit.AIProviders.complete({
-    providerId: aiProviderId(),
-    apiKey: getApiKey(),
-    model: aiModelId(),
-    prompt,
-    maxOutputTokens: maxOut,
-    temperature: generationConfig?.temperature,
-    signal,
-    retries: 1,
-  });
+  let res;
+  const abortedBeforeSend = !!(signal && signal.aborted);
+  try {
+    res = await ProzaEdit.AIProviders.complete({
+      providerId: aiProviderId(),
+      apiKey: getApiKey(),
+      model: aiModelId(),
+      prompt,
+      maxOutputTokens: maxOut,
+      temperature: generationConfig?.temperature,
+      signal,
+      retries: 1,
+    });
+  } catch (e) {
+    // A request that was sent but timed out, was cancelled mid-flight, dropped or came back empty may still have been billed.
+    const code = e && e.code;
+    if (!abortedBeforeSend && (code === "PE_TIMEOUT" || code === "PE_CANCELLED" || code === "network" || code === "empty")) {
+      ProzaEdit.AIQuotaManager.recordUsage(est.totalTokens);
+      updateAiMeter();
+    }
+    throw e;
+  }
   const used = res.usage ? res.usage.inputTokens + res.usage.outputTokens : est.totalTokens;
   ProzaEdit.AIQuotaManager.recordUsage(used || est.totalTokens);
   aiLastCallNote = `${(used || est.totalTokens).toLocaleString()} tokens`;

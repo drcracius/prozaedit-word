@@ -217,6 +217,18 @@ ProzaEdit.EditApply = {
         }
       }
     }
-    return { occurrences: exact.length, verified };
+    let undoAnchor = null;
+    let redoAnchor = null;
+    if (anchor && expectedPara !== null && verified && this._norm(toText)) {
+      redoAnchor = anchor;
+      undoAnchor = {
+        paraIndex: anchor.paraIndex,
+        paraHash: this._hash(expectedPara),
+        before: anchor.before,
+        after: anchor.after,
+        target: this._norm(toText),
+      };
+    }
+    return { occurrences: exact.length, verified, undoAnchor, redoAnchor };
   },
 };
