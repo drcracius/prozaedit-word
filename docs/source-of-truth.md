@@ -21,18 +21,18 @@ Principles and authoritative references on GitHub `main`. Project Context may mi
 
 **Current hosted release:** **2.0.0.15** (testers re-upload `manifest.hosted.xml` once per manifest bump).
 
-Verify: `bash scripts/verify-version-sync.sh` · **34** tests: `npm test`.
+Verify: `bash scripts/verify-version-sync.sh` · **36** tests: `npm test`.
 
 ---
 
-## Web 1.0 RC status (PE-49 → PE-58)
+## Web 1.0 RC status (PE-49 → PE-59)
 
 | Item | Status |
 |------|--------|
-| Web 1.0 RC on `main` | Build **2.0.0.15**; **34** unit tests (PE-58) |
+| Web 1.0 RC on `main` | Build **2.0.0.15**; **36** unit tests (PE-59) |
 | Agent prep | **PE-48** merged ([#5](https://github.com/drcracius/prozaedit-word/pull/5)) |
 | Final audit / doc sync | **PE-49** — [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md) |
-| Full app review | **PE-58** — [FULL-APP-REVIEW-PE-58.md](./FULL-APP-REVIEW-PE-58.md) |
+| Full app review (current) | **PE-59** — [FULL-APP-REVIEW-PE-59.md](./FULL-APP-REVIEW-PE-59.md) · prior [PE-58](./FULL-APP-REVIEW-PE-58.md) |
 | Owner Phase 1 validation | **PE-47** open — [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) |
 | Desktop install | **PE-2** optional/deferred — not a web 1.0 blocker |
 | Merged PRs (agent milestones) | [#2](https://github.com/drcracius/prozaedit-word/pull/2)–[#13](https://github.com/drcracius/prozaedit-word/pull/13) (UX/theme through PE-57) |
