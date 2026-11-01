@@ -164,6 +164,34 @@ ProzaEdit.Settings = {
     await this.setAsync(this.KEYS.DICTIONARY, JSON.stringify(next));
   },
 
+  /** JSON array export for author backup (Settings copy/paste). */
+  exportDictionaryJson() {
+    return JSON.stringify(this.getDictionary(), null, 2);
+  },
+
+  /**
+   * Merge unique terms from JSON (array of strings). Returns { ok, added, total }.
+   */
+  async importDictionaryJson(raw) {
+    const parsed = this._parse(raw, null);
+    if (!Array.isArray(parsed)) return { ok: false, added: 0, total: this.getDictionary().length };
+    const list = this.getDictionary();
+    const seen = new Set(list.map((x) => x.toLowerCase()));
+    let added = 0;
+    for (const item of parsed) {
+      const w = String(item || "").trim();
+      if (!w || w.length > 80) continue;
+      const low = w.toLowerCase();
+      if (seen.has(low)) continue;
+      seen.add(low);
+      list.push(w);
+      added += 1;
+    }
+    const next = list.slice(-500);
+    const ok = await this.setAsync(this.KEYS.DICTIONARY, JSON.stringify(next));
+    return { ok: !!ok, added, total: next.length };
+  },
+
   getCustomStyleGuide() {
     const raw = this.get(this.KEYS.CUSTOM_STYLE, null);
     const data = this._parse(raw, null);

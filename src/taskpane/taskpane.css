@@ -1997,6 +1997,26 @@ textarea:focus {
 
 .dict-list { margin-top: 6px; }
 .dict-list .tag { margin: 2px; }
+.pe-dict-count-badge {
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--pe-muted-surface);
+  color: var(--text-muted);
+}
+.pe-dict-tag { display: inline-flex; align-items: center; gap: 2px; }
+.pe-dict-remove {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.pe-dict-remove:hover { color: var(--red, #c5221f); }
 
 .traffic-bar {
   padding: 8px;

@@ -68,6 +68,8 @@ let lastAuditHadTruncation = false;
 let lastAuditScopeModeAtRun = "";
 let sessionAuditCompletedThisSession = false;
 let muteDictionaryNudgeShownThisSession = false;
+/** First word from last Mute action — Settings → Add from last Mute. */
+let lastMutedDictionaryCandidate = "";
 
 const AUDIT_PIN_FIELDS = [
   ["manuscriptType", "pinManuscriptType", true],
@@ -148,7 +150,13 @@ function setupSafeHandlers() {
         refreshScopeCharPreview();
       }
       schedulePersistSettings();
+      scheduleManuscriptIndexBuild(true);
     });
+  }
+  const dictFilter = getEl("dictFilter");
+  if (dictFilter && !dictFilter.dataset.peBound) {
+    dictFilter.dataset.peBound = "1";
+    dictFilter.addEventListener("input", () => renderDictionaryList());
   }
 }
 
@@ -480,24 +488,42 @@ function buildManuscriptIndexNow() {
   msIndexBusy = true;
   const statusEl = getEl("peWorkflowStatusLine");
   const priorStatus = statusEl?.textContent || "";
+  const scopeMode = getScopeMode();
+  const indexScoped = scopeMode !== "full";
   wordRun("ms-index", async (ctx) => {
-    return ProzaEdit.ScopeReader.readBodyTextChunked(ctx, {
-      maxChars: 600000,
-      cancelCheck: () => {
-        if (token !== msIndexBuildToken) {
-          const err = new Error("Cancelled.");
-          err.code = "PE_CANCELLED";
-          err.name = "ProzaEditCancelledError";
-          throw err;
-        }
-      },
-      onProgress: ({ paragraphsLoaded, paragraphTotal }) => {
-        if (token !== msIndexBuildToken || activeLongOp) return;
-        if (statusEl) {
-          statusEl.textContent = `Building manuscript index… ${paragraphsLoaded}/${paragraphTotal} paragraphs`;
-        }
-      },
-    });
+    const cancelCheck = () => {
+      if (token !== msIndexBuildToken) {
+        const err = new Error("Cancelled.");
+        err.code = "PE_CANCELLED";
+        err.name = "ProzaEditCancelledError";
+        throw err;
+      }
+    };
+    const onProgress = (partial) => {
+      if (token !== msIndexBuildToken || activeLongOp) return;
+      if (statusEl) {
+        statusEl.textContent = ProzaEdit.ScopeReader.formatReadStatus({
+          phase: indexScoped ? "Building scoped index" : "Building manuscript index",
+          ...partial,
+        });
+      }
+    };
+    if (scopeMode === "full") {
+      return ProzaEdit.ScopeReader.readBodyTextChunked(ctx, {
+        maxChars: 600000,
+        cancelCheck,
+        onProgress,
+      });
+    }
+    const opts = getScopeOptions();
+    if (opts.mode === "selected-chapters" || opts.mode === "chapter" || opts.mode === "chapter-range") {
+      opts.chapters = scopeChapterListCache;
+    }
+    opts.cancelCheck = cancelCheck;
+    opts.onProgress = onProgress;
+    opts.maxChars = 600000;
+    const measured = await ProzaEdit.ScopeReader.measureScope(ctx, opts);
+    return measured.text || "";
   })
     .then((text) => {
       if (token !== msIndexBuildToken) return;
@@ -3291,8 +3317,37 @@ function setupUndoRedoShortcuts() {
 async function readScopeText(context, longOpController) {
   const mode = getScopeMode();
   const opts = getScopeOptions();
+  const cap = getScopeCharLimit(mode);
+  if (opts.mode === "selected-chapters" || opts.mode === "chapter" || opts.mode === "chapter-range") {
+    opts.chapters = scopeChapterListCache;
+  }
+  const resumeHint = ProzaEdit.ScopeReader.readScopeResumeSnapshot?.();
   if (longOpController) {
     opts.cancelCheck = () => longOpController.throwIfCancelled();
+    opts.maxChars = cap;
+    opts.onProgress = (partial) => {
+      longOpController.setStatus(
+        ProzaEdit.ScopeReader.formatReadStatus({
+          phase: "Reading document",
+          scopeLabel: partial.scopeLabel || measuredLabel(mode),
+          charCap: cap,
+          ...partial,
+        })
+      );
+      if (partial.paragraphTotal > 0) {
+        ProzaEdit.ScopeReader.writeScopeResumeSnapshot({
+          mode,
+          paragraphsLoaded: partial.paragraphsLoaded,
+          paragraphTotal: partial.paragraphTotal,
+          at: Date.now(),
+        });
+      }
+    };
+    if (resumeHint && resumeHint.mode === mode && resumeHint.paragraphsLoaded > 0) {
+      longOpController.setStatus(
+        `Reading document — last run stopped near paragraph ${resumeHint.paragraphsLoaded}/${resumeHint.paragraphTotal || "?"}.`
+      );
+    }
   }
   const measured = await ProzaEdit.ScopeReader.measureScope(context, opts);
   const text = measured.text || "";
@@ -3300,12 +3355,29 @@ async function readScopeText(context, longOpController) {
     if (mode === "selection") throw new Error("Highlight text in Word, or choose page/chapter/full scope.");
     throw new Error("No text for this scope.");
   }
-  const cap = getScopeCharLimit(mode);
   if (text.length > MAX_BODY && mode === "full") throw new Error("Document too large—use chapter range or section loop.");
+  const soft = ProzaEdit.ScopeReader.softCapThreshold(cap);
+  if (longOpController && text.length >= soft && text.length <= cap) {
+    longOpController.setStatus(
+      ProzaEdit.ScopeReader.formatReadStatus({
+        phase: "Reading document",
+        charCount: text.length,
+        charCap: cap,
+        scopeLabel: measured.label || measuredLabel(mode),
+      })
+    );
+  }
   if (text.length > cap) {
     throw new Error(`Scope ~${text.length.toLocaleString()} chars exceeds limit ${cap.toLocaleString()}. Narrow the range.`);
   }
   return text;
+}
+
+function measuredLabel(mode) {
+  const m = String(mode || getScopeMode());
+  if (m === "full") return "full manuscript";
+  if (m === "selection") return "selection";
+  return m;
 }
 
 async function readChatContext(context) {
@@ -3360,20 +3432,90 @@ async function removeDictionaryWord(word) {
   renderDictionaryList();
 }
 
+function updateDictionaryCountBadge() {
+  const badge = getEl("dictCountBadge");
+  if (!badge) return;
+  const n = ProzaEdit.Settings.getDictionary().length;
+  badge.textContent = String(n);
+  badge.classList.toggle("hidden", n === 0);
+}
+
 function renderDictionaryList() {
   const el = document.getElementById("dictList");
   if (!el) return;
+  const filter = String(getEl("dictFilter")?.value || "")
+    .trim()
+    .toLowerCase();
   const words = ProzaEdit.Settings.getDictionary();
+  updateDictionaryCountBadge();
+  const addFromMute = getEl("btnDictFromLastMute");
+  if (addFromMute) {
+    addFromMute.disabled = !lastMutedDictionaryCandidate;
+    addFromMute.title = lastMutedDictionaryCandidate
+      ? `Add “${lastMutedDictionaryCandidate}” from your last Mute`
+      : "Mute a finding first to enable this shortcut";
+  }
+  const filtered = filter ? words.filter((w) => w.toLowerCase().includes(filter)) : words;
   if (!words.length) {
     el.innerHTML = "<span style='color:var(--text-muted);font-size:10px;'>No custom terms yet.</span>";
     return;
   }
-  el.innerHTML = words
-    .map((w) => `<span class="tag" data-dict="${escapeAttr(w)}">${escapeHtml(w)} ×</span>`)
+  if (!filtered.length) {
+    el.innerHTML = "<span style='color:var(--text-muted);font-size:10px;'>No matches for this filter.</span>";
+    return;
+  }
+  el.innerHTML = filtered
+    .map(
+      (w) =>
+        `<span class="tag pe-dict-tag" data-dict="${escapeAttr(w)}">${escapeHtml(w)}` +
+        `<button type="button" class="pe-dict-remove" data-dict-remove="${escapeAttr(w)}" aria-label="Remove ${escapeAttr(w)}">×</button></span>`
+    )
     .join("");
-  el.querySelectorAll(".tag[data-dict]").forEach((tag) => {
-    tag.addEventListener("click", () => removeDictionaryWord(tag.dataset.dict));
+  el.querySelectorAll("[data-dict-remove]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeDictionaryWord(btn.getAttribute("data-dict-remove"));
+    });
   });
+}
+
+async function addDictionaryFromLastMute() {
+  const w = String(lastMutedDictionaryCandidate || "").trim();
+  if (!w) {
+    showPeStatus("Mute a name-like finding first, then use Add from last Mute.", "warn");
+    return;
+  }
+  const ok = await ProzaEdit.Settings.addDictionaryWord(w);
+  if (ok) {
+    renderDictionaryList();
+    persistSettings(false);
+    showPeStatus(`Added “${w}” to dictionary (saved in this document).`, "ok");
+  }
+}
+
+async function copyDictionaryExport() {
+  const json = ProzaEdit.Settings.exportDictionaryJson();
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(json);
+    else if (!fallbackCopyText(json)) throw new Error("copy blocked");
+    showPeStatus("Dictionary JSON copied — paste into a backup file or another document’s Import box.", "ok");
+  } catch (_) {
+    showPeStatus("Copy failed. Select the Import/Export textarea manually.", "warn");
+  }
+}
+
+async function importDictionaryFromTextarea() {
+  const ta = getEl("dictImportArea");
+  if (!ta) return;
+  const result = await ProzaEdit.Settings.importDictionaryJson(ta.value);
+  if (!result.ok) {
+    showPeStatus("Import failed — use a JSON array of strings, e.g. [\"McGuffin\",\"Arrakis\"].", "warn");
+    return;
+  }
+  ta.value = "";
+  renderDictionaryList();
+  persistSettings(false);
+  showPeStatus(`Dictionary import: ${result.added} new term(s); ${result.total} total in this document.`, "ok");
 }
 
 async function resetMutedRules() {
@@ -4195,7 +4337,11 @@ function runAuditInternalCore(opts) {
   const handleFailure = (e) => {
     if (isLongOpCancelledError(e)) {
       cancelled = true;
-      if (sumEl) sumEl.textContent = "Cancelled.";
+      clearRetry();
+      resetAuditCardDisplayLimit();
+      lastAuditExcerpt = "";
+      currentAuditSuggestions = [];
+      if (sumEl) sumEl.textContent = "Cancelled. Run audit again when ready.";
       showAuditEmptyIfNeeded();
       return false;
     }
@@ -4280,6 +4426,7 @@ function runAuditInternalCore(opts) {
       });
     }
     lastAuditExcerpt = text;
+    ProzaEdit.ScopeReader.clearScopeResumeSnapshot?.();
     finalizeAudit(result, opts.label || "Full audit (local)");
     timing.mark("render");
     sessionAuditCompletedThisSession = true;
@@ -4321,7 +4468,7 @@ function renderAuditCards(list) {
     return;
   }
   const capped = ProzaEdit.AuditReview?.capCards?.(list, auditCardDisplayLimit) || { shown: list, hiddenCount: 0 };
-  capped.shown.forEach((item, i) => {
+  const renderOne = (item, i) => {
     if (!item || typeof item !== "object") return;
     const id = String(item.id || `c${i}`).replace(/[^a-zA-Z0-9_-]/g, "_");
     item.id = id;
@@ -4386,7 +4533,15 @@ function renderAuditCards(list) {
     div.querySelector('[data-a="mute"]').onclick = () => muteRule(item);
     div.querySelector('[data-a="dismiss"]').onclick = () => dismissCard(item);
     box.appendChild(div);
-  });
+  };
+  const batches =
+    ProzaEdit.AuditReview?.planCardRenderBatches?.(capped.shown.length, ProzaEdit.AuditReview.CARD_RENDER_BATCH) ||
+    [{ start: 0, end: capped.shown.length - 1 }];
+  for (let b = 0; b < batches.length; b++) {
+    activeLongOp?.throwIfCancelled?.();
+    const batch = batches[b];
+    for (let i = batch.start; i <= batch.end; i++) renderOne(capped.shown[i], i);
+  }
   if (capped.hiddenCount > 0) {
     const note = document.createElement("p");
     note.className = "pe-card-cap-note";
@@ -4427,7 +4582,14 @@ function muteRule(item) {
   if (!item || !item.ruleId) return Promise.resolve();
   return withCardActionLock(`mute:${item.id}`, "mute this rule", async () => {
     await ProzaEdit.Settings.muteRule(item.ruleId);
-    if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
+    if (item.targetText) {
+      await ProzaEdit.Settings.dismissTarget(item.targetText);
+      const candidate = String(item.targetText).trim().split(/\s+/)[0];
+      if (candidate && !candidate.startsWith("(") && candidate.length <= 80) {
+        lastMutedDictionaryCandidate = candidate;
+        updateDictionaryCountBadge();
+      }
+    }
     removeAuditCard(item.id);
     const showDictNudge = ProzaEdit.PlainLanguage?.shouldShowMuteDictionaryNudge?.(
       item,
