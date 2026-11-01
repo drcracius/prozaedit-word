@@ -55,7 +55,47 @@ test("Onboarding.shouldDeferOnboardingTour when banners visible", () => {
     true
   );
   assert.equal(Onboarding.shouldDeferOnboardingTour({ sessionTipsVisible: true }), true);
+  assert.equal(Onboarding.shouldDeferOnboardingTour({ firstAuditChecklistExpanded: true }), true);
+  assert.equal(Onboarding.shouldDeferOnboardingTour({ onboardingTourOpen: true }), true);
   assert.equal(Onboarding.shouldDeferOnboardingTour({}), false);
+});
+
+test("Onboarding PE-64 session tips and checklist gating", () => {
+  const { Onboarding } = loadLib("src/taskpane/lib/onboarding-helpers.js");
+  assert.equal(
+    Onboarding.shouldShowSessionTipsOnLoad({
+      showSessionTips: true,
+      firstRunComplete: false,
+      simpleMode: true,
+    }),
+    false
+  );
+  assert.equal(
+    Onboarding.shouldShowSessionTipsOnLoad({
+      showSessionTips: true,
+      firstRunComplete: true,
+      simpleMode: true,
+    }),
+    true
+  );
+  assert.equal(
+    Onboarding.shouldShowFirstAuditChecklist({
+      simpleModeFirstRunBannerVisible: true,
+      onboardingTourOpen: false,
+      onboardingTourPending: false,
+      checklistDismissed: false,
+    }),
+    false
+  );
+  assert.equal(
+    Onboarding.shouldShowFirstAuditChecklist({
+      simpleModeFirstRunBannerVisible: false,
+      onboardingTourOpen: false,
+      onboardingTourPending: false,
+      checklistDismissed: false,
+    }),
+    true
+  );
 });
 
 test("Onboarding tour stops and complete patch", () => {

@@ -134,14 +134,17 @@ function getScopeCharLimit(mode) {
 }
 
 function getScopeOptions() {
+  const indices = getSelectedChapterIndicesFromUi();
+  const chapterFrom = indices.length ? indices[0] : 1;
+  const chapterTo = indices.length ? indices[indices.length - 1] : 1;
   return {
     mode: getScopeMode(),
     pageFrom: getEl("scopePageFrom")?.value || 1,
     pageTo: getEl("scopePageTo")?.value || 5,
-    chapterSingle: getEl("scopeChapterSingle")?.value || 1,
-    chapterFrom: getEl("scopeChapterFrom")?.value || 1,
-    chapterTo: getEl("scopeChapterTo")?.value || 1,
-    selectedChapterIndices: getSelectedChapterIndicesFromUi(),
+    chapterSingle: chapterFrom,
+    chapterFrom,
+    chapterTo,
+    selectedChapterIndices: indices,
     chapters: scopeChapterListCache,
   };
 }
@@ -260,7 +263,7 @@ function setupScopeUi() {
       schedulePersistSettings();
     });
   }
-  ["scopePageFrom", "scopePageTo", "scopeChapterSingle", "scopeChapterFrom", "scopeChapterTo"].forEach((id) => {
+  ["scopePageFrom", "scopePageTo"].forEach((id) => {
     const el = getEl(id);
     if (el && !el.dataset.scopeBound) {
       el.dataset.scopeBound = "1";
@@ -277,24 +280,6 @@ function setupScopeUi() {
 
 function fillChapterSelects(list) {
   scopeChapterListCache = list || [];
-  const opts = (n) => {
-    const sel = getEl(n);
-    if (!sel) return;
-    sel.innerHTML = "";
-    if (!list.length) {
-      sel.innerHTML = '<option value="1">No Heading 1–3 chapters found</option>';
-      return;
-    }
-    list.forEach((c) => {
-      const o = document.createElement("option");
-      o.value = String(c.index);
-      o.textContent = `${c.index}. ${c.title.substring(0, 48)}`;
-      sel.appendChild(o);
-    });
-  };
-  opts("scopeChapterSingle");
-  opts("scopeChapterFrom");
-  opts("scopeChapterTo");
   renderChapterChecklist(list, pendingSelectedChapterIndices);
   pendingSelectedChapterIndices = null;
   updateScopeChapterEmptyState();
@@ -471,11 +456,6 @@ function scopeCoversFullManuscript() {
     const all = scopeChapterListCache.map((c) => c.index);
     return sel.length === all.length && sel.every((v, i) => v === all[i]);
   }
-  if (mode === "chapter-range") {
-    const from = parseInt(getEl("scopeChapterFrom")?.value, 10) || 1;
-    const to = parseInt(getEl("scopeChapterTo")?.value, 10) || 1;
-    return from <= 1 && to >= scopeChapterListCache.length;
-  }
   return false;
 }
 
@@ -601,6 +581,7 @@ function setupThemePreference() {
 }
 
 const PE_SETTINGS_GROUP_IDS = {
+  essentials: "pe-settings-group-essentials",
   safety: "pe-settings-group-safety",
   onboarding: "pe-settings-group-onboarding",
   appearance: "pe-settings-group-appearance",
@@ -613,9 +594,16 @@ const PE_SETTINGS_GROUP_IDS = {
 
 function expandSettingsGroup(key) {
   const norm = ProzaEdit.UiPrefs?.normalizeSettingsSection?.(key) || key;
+  if (norm === "appearance") expandSettingsGroup("essentials");
   const id = PE_SETTINGS_GROUP_IDS[norm];
   const el = id ? getEl(id) : null;
   if (el && el.tagName === "DETAILS") el.open = true;
+}
+
+function collapseSettingsGroupsToEssentials() {
+  document.querySelectorAll(".pe-settings-group").forEach((group) => {
+    group.open = group.id === "pe-settings-group-essentials";
+  });
 }
 
 function syncOnboardingTogglesFromPersistedConfig() {
@@ -808,6 +796,7 @@ function openSettingsModal(focusGroup) {
     if (n > 0 || isCustomStyleGuideMode()) customGroup.open = true;
   }
   if (norm) expandSettingsGroup(norm);
+  else collapseSettingsGroupsToEssentials();
   try {
     const hash = ProzaEdit.UiPrefs?.settingsHashForSection?.(norm || focusGroup);
     if (hash) history.replaceState(null, "", hash);
@@ -907,6 +896,7 @@ Office.onReady((info) => {
     initSimpleModeFirstRunBanner();
     initDarkAppearanceTip();
     setupFirstAuditChecklistDismissTracking();
+    syncFirstAuditChecklistVisibility();
     setTimeout(() => maybeInitOnboardingTour(), 600);
     setupSettingsKeyboardShortcut();
     tryOpenSettingsFromLocationHash();
@@ -1079,9 +1069,6 @@ function collectUiConfig() {
     continuityWarnLevel: parseInt(getEl("continuityWarnLevel")?.value, 10) || 3,
     scopePageFrom: getEl("scopePageFrom")?.value || "1",
     scopePageTo: getEl("scopePageTo")?.value || "5",
-    scopeChapterSingle: getEl("scopeChapterSingle")?.value || "1",
-    scopeChapterFrom: getEl("scopeChapterFrom")?.value || "1",
-    scopeChapterTo: getEl("scopeChapterTo")?.value || "1",
     selectedChapterIndices: getSelectedChapterIndicesFromUi(),
     auditExtended: isAuditExtended(),
     reportDensity: getEl("reportDensity")?.value || "balanced",
@@ -1608,8 +1595,11 @@ function applySimpleMode() {
   if (label) label.textContent = on ? "On" : "Off";
   const banner = getEl("peSimpleModeAuditBanner");
   if (banner) banner.classList.toggle("hidden", !on);
+  const targetHint = getEl("peTargetRecommendedHint");
+  if (targetHint) targetHint.classList.toggle("hidden", !on);
   updateAuditDefaultFilterHint();
   if (on && getCurrentActiveTabId() === "tab2") showTab("tab1");
+  syncFirstAuditChecklistVisibility();
 }
 
 function decorateRunAuditHubButton(btn) {
@@ -1926,8 +1916,36 @@ function writeLastSessionSummary(extra) {
   } catch (_) {}
 }
 
+function isOnboardingTourShellOpen() {
+  const shell = getEl("peOnboardingTour");
+  return !!shell && !shell.classList.contains("hidden");
+}
+
+function syncFirstAuditChecklistVisibility() {
+  const el = getEl("peFirstAuditChecklist");
+  if (!el) return;
+  const show = ProzaEdit.Onboarding?.shouldShowFirstAuditChecklist?.({
+    simpleModeFirstRunBannerVisible:
+      !!getEl("peSimpleModeFirstRunBanner") && !getEl("peSimpleModeFirstRunBanner").classList.contains("hidden"),
+    onboardingTourOpen: isOnboardingTourShellOpen(),
+    onboardingTourPending: shouldOfferOnboardingTourNow(),
+    checklistDismissed: isFirstAuditChecklistDismissed(),
+  });
+  if (!show) {
+    el.open = false;
+    el.classList.add("hidden");
+    return;
+  }
+  el.classList.remove("hidden");
+}
+
 function initSessionTips() {
-  if (!isChecked("showSessionTips", true)) return;
+  const show = ProzaEdit.Onboarding?.shouldShowSessionTipsOnLoad?.({
+    showSessionTips: isChecked("showSessionTips", true),
+    firstRunComplete: configFirstRunComplete,
+    simpleMode: isChecked("simpleMode", false),
+  });
+  if (!show) return;
   const dismissedKey = ProzaEdit.Onboarding?.SESSION_TIPS_DISMISSED_KEY || "pe-session-tips-dismissed";
   try {
     if (sessionStorage.getItem(dismissedKey) === "1") return;
@@ -1969,12 +1987,17 @@ function initSimpleModeFirstRunBanner() {
     body.textContent = ProzaEdit.Onboarding.SIMPLE_MODE_FIRST_RUN_BANNER_LEAD;
   }
   el.classList.remove("hidden");
+  document.body.classList.add("pe-simple-first-run-active");
+  syncFirstAuditChecklistVisibility();
 }
 
 function dismissSimpleModeFirstRunBanner(dontShowAgain) {
   hideOnboardingBanner("peSimpleModeFirstRunBanner");
+  document.body.classList.remove("pe-simple-first-run-active");
+  syncFirstAuditChecklistVisibility();
   if (dontShowAgain) {
     markFirstRunCompleteAndPersist();
+    maybeInitOnboardingTour();
     return;
   }
   try {
@@ -1998,10 +2021,13 @@ function isFirstAuditChecklistDismissed() {
 function onboardingTourUiBlockingBanners() {
   const simpleEl = getEl("peSimpleModeFirstRunBanner");
   const tipsEl = getEl("peSessionTips");
+  const checklist = getEl("peFirstAuditChecklist");
   return {
     simpleModeFirstRunBannerVisible:
       !!simpleEl && !simpleEl.classList.contains("hidden"),
     sessionTipsVisible: !!tipsEl && !tipsEl.classList.contains("hidden"),
+    firstAuditChecklistExpanded: !!checklist && checklist.open && !checklist.classList.contains("hidden"),
+    onboardingTourOpen: isOnboardingTourShellOpen(),
   };
 }
 
@@ -2037,6 +2063,7 @@ function closeOnboardingTourShell() {
     document.removeEventListener("keydown", onboardingTourKeydownHandler);
     delete document.body.dataset.peTourKeydown;
   }
+  syncFirstAuditChecklistVisibility();
   const prev = onboardingTourPreviousFocus;
   onboardingTourPreviousFocus = null;
   if (prev && typeof prev.focus === "function") prev.focus();
@@ -2089,6 +2116,7 @@ function openOnboardingTour(stepIndex) {
   shell.classList.remove("hidden");
   shell.setAttribute("aria-hidden", "false");
   document.body.classList.add("pe-onboarding-tour-open");
+  syncFirstAuditChecklistVisibility();
   if (!document.body.dataset.peTourKeydown) {
     document.body.dataset.peTourKeydown = "1";
     document.addEventListener("keydown", onboardingTourKeydownHandler);
@@ -2135,6 +2163,7 @@ function setupFirstAuditChecklistDismissTracking() {
         );
       } catch (_) {}
     }
+    maybeInitOnboardingTour();
   });
 }
 

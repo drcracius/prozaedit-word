@@ -1496,6 +1496,16 @@ body.pe-settings-open {
   display: none !important;
 }
 
+.pe-simple-mode [data-simple-deemphasize] {
+  opacity: 0.72;
+  font-weight: 500;
+}
+
+body.pe-onboarding-tour-open .pe-first-audit-checklist,
+body.pe-simple-first-run-active .pe-first-audit-checklist {
+  display: none !important;
+}
+
 .pe-simple-mode .pe-gemini-block {
   display: none !important;
 }

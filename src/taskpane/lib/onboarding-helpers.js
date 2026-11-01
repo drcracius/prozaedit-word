@@ -126,7 +126,26 @@ ProzaEdit.Onboarding = {
     options = options || {};
     if (options.simpleModeFirstRunBannerVisible) return true;
     if (options.sessionTipsVisible) return true;
+    if (options.firstAuditChecklistExpanded) return true;
+    if (options.onboardingTourOpen) return true;
     return false;
+  },
+
+  /** Skip session tips while Simple-mode first-run banner sequence is active (PE-64). */
+  shouldShowSessionTipsOnLoad(options) {
+    options = options || {};
+    if (options.showSessionTips === false) return false;
+    if (options.firstRunComplete === true) return true;
+    if (options.simpleMode) return false;
+    return true;
+  },
+
+  shouldShowFirstAuditChecklist(options) {
+    options = options || {};
+    if (options.simpleModeFirstRunBannerVisible) return false;
+    if (options.onboardingTourOpen) return false;
+    if (options.onboardingTourPending && !options.checklistDismissed) return false;
+    return true;
   },
 
   /**
