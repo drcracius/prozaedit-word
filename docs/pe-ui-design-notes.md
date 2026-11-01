@@ -47,7 +47,7 @@ Collapsible `<details class="pe-settings-group">`:
 | **Safety** | Simple mode, selection-only edits, confirm Apply, hover tips, FK lock, Version History reminder, continuity slider, fiction scope reminder, hide session tips permanently, Gemini session ceiling; **Reset Safety to defaults** | yes |
 | **Onboarding** | Session tips, What's new, prior-session recap, long-operation warnings; **Reset Onboarding** | no |
 | **Appearance** | Light / Dark / Match system; **Reset Appearance** | no |
-| **Audit & reports** | Report depth, default audit filter, extended checks default; **Reset Audit & reports**; Audit tab hints read Settings selects | no |
+| **Audit & reports** | Report depth, default audit filter, deeper checks default; **Reset Audit & reports**; Audit tab hints read Settings selects | no |
 | **Privacy & diagnostics** | Crash opt-in, problem report note + button, GitHub fallback; **Reset Privacy** | no |
 | **Reference & citations** | Capture reference style, verify citations shortcut | no |
 | **Dictionary** | Per-document word list; **Clear dictionary** | no |

@@ -74,7 +74,7 @@ ProzaEdit.ProperNoun = {
             ruleId: `prop:roster:${fl}`,
             module: "Proper noun consistency",
             type: "preference",
-            explanation: `Possible spelling variant: "${form}" is very close to "${r}", a recurring name elsewhere in your manuscript (from your full-manuscript context index). Check which spelling you intend.`,
+            explanation: `Possible spelling variant: "${form}" is very close to "${r}", a recurring name elsewhere in your manuscript (from your book outline). Check which spelling you intend.`,
             targetText: form,
             replacementText: r,
           });

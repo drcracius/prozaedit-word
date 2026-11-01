@@ -1,6 +1,6 @@
 # ProzaEdit Word — Quick start (~2 min)
 
-**Hosted build:** 2.0.0.15 · **Live pane:** [taskpane.html](https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html)  
+**Hosted build:** 2.0.0.25 · **Live pane:** [taskpane.html](https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html)  
 **Web 1.0 RC:** owner validation — [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) · [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · desktop **PE-2** deferred.
 
 ## Install once

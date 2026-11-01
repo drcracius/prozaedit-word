@@ -2,14 +2,15 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.16";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.25";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
 const GUARDRAILS = `OPERATIONAL MANDATES:
 Zero plagiarism; original suggestions only.
 Ban AI tropes: delve, tapestry, testament, beacon, nestled, moreover, furthermore, "it is important to note".
-Natural human cadence; active voice.`;
+Natural human cadence; active voice.
+${ProzaEdit.AISafety.UNTRUSTED_RULE}`;
 
 const MAX_BODY = 1000000;
 const MAX_CHAT = 3500;
@@ -23,7 +24,8 @@ const MODULE_IDS = ["chkRep", "chkProp", "chkSpell", "chkAI", "mPlot", "mMotivat
 const FICTION_MODULE_IDS = ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"];
 
 function isFictionManuscriptType(type) {
-  return String(type != null ? type : getEl("manuscriptType")?.value || "").includes("Fiction");
+  const t = String(type != null ? type : getEl("manuscriptType")?.value || "");
+  return ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(t) : t.includes("Fiction") && !/non-?fiction/i.test(t);
 }
 const TAB_IDS = ["tab1", "tab2", "tab3", "tab4", "tab5", "tab6", "tab7"];
 
@@ -39,6 +41,8 @@ let historyBusy = false;
 let peStatusTimer = null;
 let currentAuditSuggestions = [];
 let auditCardFilter = "all";
+let auditShowLowConfidence = false;
+let auditLowConfidenceHidden = 0;
 let auditCardDisplayLimit = 300;
 let auditCardSort = "priority";
 let batchCancel = false;
@@ -57,6 +61,8 @@ let msIndexBusy = false;
 let mciCache = null;
 let mciLoaded = false;
 let mciLegacyPending = null;
+const mciCheckpoint = { state: null };
+const mciDerivedCache = { map: new Map() };
 let mciBuildBusy = false;
 let mciFreshness = { state: "unknown", reason: "", changedSections: [] };
 let mciFreshnessAt = 0;
@@ -126,28 +132,48 @@ async function confirmBeforeApply(actionLabel) {
 }
 
 function setupSafeHandlers() {
+  populateAiProviderOptions();
   const remember = document.getElementById("rememberApiKey");
   if (remember) {
     remember.addEventListener("change", () => {
       if (remember.checked) {
-        showPeStatus("API key will be stored inside this Word document. Use only on your private PC.", "warn");
-        try {
-          alert("API key will be stored inside this Word document. Use only on your private PC.");
-        } catch (_) {}
+        const key = getApiKey();
+        if (key && ProzaEdit.AIKeys?.set(aiProviderId(), key) === false) {
+          showPeStatus("This browser blocks local storage, so the key cannot be remembered. It stays for this session only.", "warn");
+          remember.checked = false;
+          return;
+        }
+        showPeStatus("Key remembered on this device only (browser storage). It is never saved in the document. Avoid on shared PCs.", "warn");
         schedulePersistSettings();
       } else {
-        const keyEl = getEl("apiKey");
-        if (keyEl) keyEl.value = "";
+        ProzaEdit.AIKeys?.clearAll();
+        showPeStatus("Saved API keys removed from this device. The key you typed stays until you close the pane.", "ok");
         persistSettings(false);
       }
+      updateAiHelpAvailability();
     });
   }
   const keyEl = getEl("apiKey");
   if (keyEl && !keyEl.dataset.peAutosave) {
     keyEl.dataset.peAutosave = "1";
     keyEl.addEventListener("input", () => {
+      aiSessionKeys[aiProviderId()] = keyEl.value.trim();
+      if (isChecked("rememberApiKey", false)) ProzaEdit.AIKeys?.set(aiProviderId(), keyEl.value.trim());
       updateAiHelpAvailability();
-      if (isChecked("rememberApiKey", false)) schedulePersistSettings();
+      updateTokenEstimate();
+    });
+  }
+  const providerEl = getEl("aiProvider");
+  if (providerEl && !providerEl.dataset.peWired) {
+    providerEl.dataset.peWired = "1";
+    providerEl.addEventListener("change", onAiProviderChange);
+  }
+  const modelEl = getEl("aiModel");
+  if (modelEl && !modelEl.dataset.peWired) {
+    modelEl.dataset.peWired = "1";
+    modelEl.addEventListener("change", () => {
+      updateAiModelHint();
+      updateAiHelpAvailability();
     });
   }
   const scope = document.getElementById("scope");
@@ -357,7 +383,7 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
   const fmt = charCount.toLocaleString();
   const lim = limit.toLocaleString();
   el.textContent = over
-    ? `${label}: ~${fmt} characters — over limit (${lim}). Narrow scope or use section loop.`
+    ? `${label}: ~${fmt} characters — over limit (${lim}). Choose a smaller scope, or audit one chapter at a time.`
     : `${label}: ~${fmt} characters (limit ${lim}).`;
   lastScopePreviewSummary =
     charCount > 0
@@ -379,7 +405,7 @@ function getScopeModeLabel(mode) {
   if (m === "selected-chapters" || m === "chapter" || m === "chapter-range") {
     const n = getSelectedChapterIndicesFromUi().length;
     if (m === "selected-chapters" && n) return `${n} chapter(s) selected`;
-    return "Selected chapters";
+    return "Chosen chapters";
   }
   if (m === "full") return "Full manuscript";
   return m;
@@ -443,7 +469,10 @@ function updateAuditTabBadge() {
   badge.setAttribute("aria-label", `${n} open issue${n === 1 ? "" : "s"}`);
 }
 
+let scopePreviewSeq = 0;
+
 function refreshScopeCharPreview() {
+  const seq = ++scopePreviewSeq;
   if (auditBusy) {
     showPeStatus("Wait for audit to finish.", "warn");
     return Promise.resolve();
@@ -465,8 +494,11 @@ function refreshScopeCharPreview() {
     const result = await ProzaEdit.ScopeReader.measureScope(ctx, opts);
     return { len: (result.text || "").length, label: result.label || mode };
   })
-    .then(({ len, label }) => updateScopeCharPreviewDisplay(len, label, mode))
+    .then(({ len, label }) => {
+      if (seq === scopePreviewSeq) updateScopeCharPreviewDisplay(len, label, mode);
+    })
     .catch((e) => {
+      if (seq !== scopePreviewSeq) return;
       const el = getEl("scopeCharPreview");
       if (el) {
         el.textContent = wordRecoveryMessage(e, "measure this scope");
@@ -500,7 +532,6 @@ function buildManuscriptIndexNow() {
   const token = ++msIndexBuildToken;
   msIndexBusy = true;
   const statusEl = getEl("peWorkflowStatusLine");
-  const priorStatus = statusEl?.textContent || "";
   const scopeMode = getScopeMode();
   const indexScoped = scopeMode !== "full";
   wordRun("ms-index", async (ctx) => {
@@ -516,7 +547,7 @@ function buildManuscriptIndexNow() {
       if (token !== msIndexBuildToken || activeLongOp) return;
       if (statusEl) {
         statusEl.textContent = ProzaEdit.ScopeReader.formatReadStatus({
-          phase: indexScoped ? "Building scoped index" : "Building manuscript index",
+          phase: indexScoped ? "Building chapter outline" : "Building book outline",
           ...partial,
         });
       }
@@ -549,8 +580,8 @@ function buildManuscriptIndexNow() {
     })
     .finally(() => {
       if (token === msIndexBuildToken) msIndexBusy = false;
-      if (statusEl && !activeLongOp && String(statusEl.textContent || "").includes("Building manuscript index")) {
-        statusEl.textContent = priorStatus;
+      if (token === msIndexBuildToken && statusEl && !activeLongOp && /^Building (book|chapter) outline/.test(String(statusEl.textContent || ""))) {
+        updateWorkflowStatusLine();
       }
     });
 }
@@ -670,7 +701,7 @@ async function refreshManuscriptContextFreshness(options) {
   const recent = Date.now() - mciFreshnessAt < MCI_FRESHNESS_THROTTLE_MS;
   if (!options.force && recent && mciFreshness.state !== "unknown") return mciFreshness;
   if (mciBuildBusy || (!options.ignoreBusy && isOperationBusy())) return mciFreshness;
-  mciFreshnessPromise = wordRun("mci-fresh-check", (ctx) => MCI.checkFreshness(ctx, index))
+  mciFreshnessPromise = wordRun("mci-fresh-check", (ctx) => MCI.checkFreshness(ctx, index, { fiction: isFictionManuscriptType() }))
     .then((res) => {
       mciFreshness = { state: res.state, reason: res.reason, changedSections: res.changedSections || [] };
       mciFreshnessAt = Date.now();
@@ -729,18 +760,18 @@ async function confirmBuildManuscriptContext() {
   const index = getManuscriptContextIndex();
   const storageHint = ProzaEdit.ManuscriptContextIndex?.formatStorageBlurb?.(index) || "local document settings";
   return peConfirm({
-    title: "Build full manuscript context?",
+    title: "Build book outline?",
     message:
       `ProzaEdit will read your whole document in chunks to build a local outline for continuity checks and chapter-scoped audits: chapter list, word counts, first/last lines, recurring names, and time cues. It is rule-based, not an AI summary.\n\n` +
       `This may take several minutes on long manuscripts. You can Cancel from the banner, and Word stays usable.\n\n` +
-      `The index stays in this document's settings (${storageHint}). It is only sent to Google if you use a Gemini action (Coach chat or Rewrite via Gemini), where it is included in that request.`,
+      `The index stays in this document's settings (${storageHint}). It is only sent to your chosen AI provider if you use an AI action (Coach chat, Deep audit, or AI rewrite), where it is included in that request.`,
     confirmLabel: "Start background read",
     cancelLabel: "Cancel",
   });
 }
 
-async function runBuildFullManuscriptContext(userInitiated) {
-  if (mciBuildBusy || isOperationBusy()) {
+async function runBuildFullManuscriptContext(userInitiated, buildOptions) {
+  if (mciBuildBusy || isOperationBusy(false, !!buildOptions?.fromAuditStart)) {
     warnOperationBusy();
     return false;
   }
@@ -757,6 +788,8 @@ async function runBuildFullManuscriptContext(userInitiated) {
     const previous = getManuscriptContextIndex();
     const index = await wordRun("mci-build", async (ctx) => {
       return ProzaEdit.ManuscriptContextIndex.buildFromDocument(ctx, {
+        checkpointStore: mciCheckpoint,
+        derivedCache: mciDerivedCache,
         cancelCheck: () => longOp.throwIfCancelled(),
         onProgress: (partial) => {
           longOp.setStatus(ProzaEdit.ManuscriptContextIndex.formatBuildProgress(partial));
@@ -766,7 +799,7 @@ async function runBuildFullManuscriptContext(userInitiated) {
         yieldFn: () => ProzaEdit.ScopeReader.microYield(),
       });
     });
-    if (!index) throw new Error("Could not build manuscript context.");
+    if (!index) throw new Error("Could not build book outline.");
     const diff = ProzaEdit.ManuscriptContextIndex.diffSections(previous, index);
     setManuscriptContextIndex(index);
     mciLegacyPending = null;
@@ -779,7 +812,7 @@ async function runBuildFullManuscriptContext(userInitiated) {
       mciSaveWarned = false;
       await persistSettings(false);
     }
-    let msg = index.truncated ? "Full MS context ready (names and cues sampled across the whole book)." : "Full MS context ready.";
+    let msg = index.truncated ? "Book outline ready (names and cues sampled across the whole book)." : "Book outline ready.";
     if (diff.comparable) msg += diff.changed ? ` ${diff.changed} of ${diff.total} chapters changed since the last build.` : " No chapter text changed since the last build.";
     if (!saved.ok) {
       mciSaveWarned = true;
@@ -796,10 +829,10 @@ async function runBuildFullManuscriptContext(userInitiated) {
   } catch (e) {
     if (isLongOpCancelledError(e)) {
       cancelled = true;
-      showPeStatus("Manuscript context build cancelled.", "warn");
+      showPeStatus(mciCheckpoint.state ? "Book outline build cancelled. Progress is kept: run it again to resume where it stopped." : "Book outline build cancelled.", "warn");
       return false;
     }
-    reportActionError(e, "build full manuscript context");
+    reportActionError(e, "build book outline");
     return false;
   } finally {
     mciBuildBusy = false;
@@ -814,26 +847,30 @@ async function maybeAutoRefreshManuscriptContextBeforeAudit() {
   if (index) await refreshManuscriptContextFreshness({});
   if (!isChecked("autoRefreshManuscriptContext", false)) return true;
   if (index && mciIsFresh()) return true;
+  let warned = false;
   try {
-    if (localStorage.getItem(MCI_AUTO_WARN_KEY) !== "1") {
-      const ok = await peConfirm({
-        title: "Refresh manuscript context?",
-        message:
-          "Auto-refresh is on and your full-manuscript context is stale or missing.\n\nProzaEdit will run a background read before this audit. Cancel to skip the audit.",
-        confirmLabel: "Refresh & continue",
-        cancelLabel: "Cancel audit",
-      });
-      if (!ok) return false;
-      localStorage.setItem(MCI_AUTO_WARN_KEY, "1");
-    }
+    warned = localStorage.getItem(MCI_AUTO_WARN_KEY) === "1";
   } catch (_) {}
-  return runBuildFullManuscriptContext(false);
+  if (!warned) {
+    const ok = await peConfirm({
+      title: "Refresh book outline?",
+      message:
+        "Auto-refresh is on and your book outline is stale or missing.\n\nProzaEdit will run a background read before this audit. Cancel to skip the audit.",
+      confirmLabel: "Refresh & continue",
+      cancelLabel: "Cancel audit",
+    });
+    if (!ok) return false;
+    try {
+      localStorage.setItem(MCI_AUTO_WARN_KEY, "1");
+    } catch (_) {}
+  }
+  return runBuildFullManuscriptContext(false, { fromAuditStart: true });
 }
 
 function geminiIndexDisclosure() {
   const index = getManuscriptContextIndex();
   if (!index || index.invalid) return "";
-  return "\n\nYour manuscript index (a heuristic outline: chapter titles, first/last lines, recurring names, time cues) is included in this request because you built it.";
+  return "\n\nYour book outline (a heuristic outline: chapter titles, first/last lines, recurring names, time cues) is included in this request because you built it.";
 }
 
 /** Heuristic index block for prompts. Stale/unverified indexes are included but flagged, never silently dropped. */
@@ -845,6 +882,7 @@ function getManuscriptContextBlock(options) {
     freshness: mciFreshness,
     scopeMode: getScopeMode(),
     destination: options.destination || "local",
+    genre: ProzaEdit.Genres ? ProzaEdit.Genres.describe(collectUiConfig()) : "",
   });
 }
 
@@ -852,8 +890,8 @@ function manuscriptContextStatusLine() {
   const index = getManuscriptContextIndex();
   if (!index || index.invalid) return "";
   return mciIsFresh()
-    ? "Manuscript index: ready (heuristic outline, local)."
-    : "Manuscript index: may be out of date — refresh it from Checks or Settings.";
+    ? "Book outline: ready (heuristic outline, local)."
+    : "Book outline: may be out of date — refresh it from Checks or Settings.";
 }
 
 function fictionModulesActive() {
@@ -1148,6 +1186,7 @@ function runAfterLongOperationWarning(actionId, runner) {
     const body = getEl("peLongOpWarningBody");
     if (body) body.textContent = ProzaEdit.LongOp?.warningCopyForAction?.(actionId) || "";
     if (banner) banner.classList.remove("hidden");
+    showPeStatus("Waiting for you: choose Continue in the notice above to start (nothing has been sent yet).", "warn");
   });
 }
 
@@ -1160,6 +1199,7 @@ function setupLongOpWarningBanner() {
   getEl("btnLongOpNotNow")?.addEventListener("click", () => {
     if (pendingLongOpActionId) sessionDismissLongOpAction(pendingLongOpActionId);
     dismissLongOpWarningBanner();
+    showPeStatus("Not started. Nothing was read or sent.", "ok");
   });
   getEl("btnLongOpDontShowAgain")?.addEventListener("click", () => {
     const cb = getEl("showLongOperationWarnings");
@@ -1174,8 +1214,9 @@ let batchRunning = false;
 let auditStarting = false;
 let settingsSaveWarned = false;
 
-function isOperationBusy(ignoreBatch) {
+function isOperationBusy(ignoreBatch, ignoreStarting) {
   return !!(
+    mciBuildBusy ||
     auditBusy ||
     deepBusy ||
     heatmapBusy ||
@@ -1184,7 +1225,7 @@ function isOperationBusy(ignoreBatch) {
     chatBusy ||
     rewriteBusy ||
     (batchRunning && !ignoreBatch) ||
-    auditStarting
+    (auditStarting && !ignoreStarting)
   );
 }
 
@@ -1501,6 +1542,13 @@ function onProzaEditOfficeReady(info) {
     return;
   }
   try {
+    const req = Office.context && Office.context.requirements;
+    if (req && typeof req.isSetSupported === "function" && !req.isSetSupported("WordApi", "1.3")) {
+      showBootProblem("This version of Word is too old for ProzaEdit (needs Word 2019 or Microsoft 365, WordApi 1.3). Update Word or use Word on the web.");
+      return;
+    }
+  } catch (_) {}
+  try {
     loadSavedSettings();
     migrateLegacySessionTipsOnInit();
     adaptModules();
@@ -1550,18 +1598,20 @@ function onProzaEditOfficeReady(info) {
       sm.dataset.bound = "1";
       sm.addEventListener("change", () => {
         applySimpleMode();
+        auditShowLowConfidence = false;
         if (isChecked("simpleMode", false)) applySimpleModeAuditFilterDefault();
         else markFirstRunCompleteAndPersist();
+        refreshAuditSummaryForMode();
         persistSettings(false);
         initSimpleModeFirstRunBanner();
       });
     }
     showAuditEmptyIfNeeded();
     initAboutSection();
+    initSimpleModeFirstRunBanner();
     initWhatsNewBanner();
     initPriorSessionBanner();
     initSessionTips();
-    initSimpleModeFirstRunBanner();
     initHelpNewToEditingList();
     initDarkAppearanceTip();
     setupFirstAuditChecklistDismissTracking();
@@ -1675,6 +1725,12 @@ function showTab(tabId) {
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-selected", on ? "true" : "false");
   });
+  if (tabId !== "tab5" && isRecording) {
+    try {
+      recognition?.stop();
+    } catch (_) {}
+    stopMic();
+  }
   updateWorkflowStepper(tabId);
   schedulePersistLastActiveTab(tabId);
   scheduleLastSessionSummaryPersist();
@@ -1699,14 +1755,33 @@ function bindWorkflowStepper() {
   });
 }
 
+function updateGenreBlurb() {
+  const el = getEl("peGenreBlurb");
+  if (!el || !ProzaEdit.Genres) return;
+  const p = ProzaEdit.Genres.resolve(getEl("manuscriptType")?.value);
+  el.textContent = `${p.label}: ${p.blurb} Checks, thresholds and AI prompts follow this choice; it is saved with this document. Numbers are editorial rules of thumb, not published standards.`;
+}
+
+let fictionModuleMemo = null;
+
 function adaptModules() {
+  updateGenreBlurb();
   const fiction = isFictionManuscriptType();
+  if (!fiction && !fictionModuleMemo) {
+    fictionModuleMemo = {};
+    FICTION_MODULE_IDS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && !el.disabled) fictionModuleMemo[id] = !!el.checked;
+    });
+  }
   FICTION_MODULE_IDS.forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.disabled = !fiction;
     if (!fiction) el.checked = false;
+    else if (fictionModuleMemo && id in fictionModuleMemo) el.checked = fictionModuleMemo[id];
   });
+  if (fiction) fictionModuleMemo = null;
   const chronoPanel = getEl("peChronoPanel");
   if (chronoPanel) {
     chronoPanel.hidden = !fiction;
@@ -1756,6 +1831,7 @@ function collectUiConfig() {
     simpleMode: isChecked("simpleMode", false),
     showHoverTips: isChecked("showHoverTips", true),
     fkLock: isChecked("fkLock", false),
+    contentNotes: isChecked("contentNotes", false),
     remindVersionHistory: isChecked("remindVersionHistory", true),
     fictionScopeReminder: isChecked("fictionScopeReminder", true),
     continuityWarnLevel: parseInt(getEl("continuityWarnLevel")?.value, 10) || 3,
@@ -1769,8 +1845,14 @@ function collectUiConfig() {
     citationScan: isChecked("chkCitationScan", false),
     citationStyle: getEl("selCitationStyle")?.value || "auto",
     citationReconcileBiblio: isChecked("chkCitationReconcile", true),
-    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", false),
+    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", true),
+    aiBudgetV2: true,
     aiMaxSessionTokens: getEl("aiMaxSessionTokens")?.value || "50000",
+    aiMaxDayTokens: getEl("aiMaxDayTokens")?.value || "150000",
+    aiProvider: aiProviderId(),
+    aiModel: getEl("aiModel")?.value || "",
+    aiModelCustom: getEl("aiModelCustom")?.value.trim() || "",
+    genreJargon: getEl("genreJargon")?.value || "none",
     showSessionTips: isChecked("showSessionTips", true),
     showWhatsNew: isChecked("showWhatsNew", true),
     showPriorSessionSummary: isChecked("showPriorSessionSummary", true),
@@ -1799,11 +1881,7 @@ function collectUiConfig() {
     if (!el) return;
     cfg.modules[id] = FICTION_MODULE_IDS.includes(id) ? isModuleEnabled(id) : !!el.checked;
   });
-  if (cfg.rememberApiKey) {
-    cfg.apiKey = getEl("apiKey")?.value.trim() || "";
-  } else {
-    delete cfg.apiKey;
-  }
+  delete cfg.apiKey;
   return cfg;
 }
 
@@ -1837,8 +1915,18 @@ function applyUiConfig(p) {
   setC("confirmBeforeApply", p.confirmBeforeApply);
   setC("rememberApiKey", p.rememberApiKey);
   if (p.modules) MODULE_IDS.forEach((id) => setC(id, p.modules[id]));
-  if (p.rememberApiKey && p.apiKey) setV("apiKey", p.apiKey);
-  else setV("apiKey", "");
+  const keyMove = ProzaEdit.AIKeys?.migrateFromDocumentConfig?.(p) || { hadDocumentKey: false };
+  loadAiKeyIntoField();
+  if (keyMove.hadDocumentKey) {
+    if (keyMove.migrated || ProzaEdit.AIKeys?.has("gemini")) {
+      showPeStatus("An API key stored in this document by an older version was moved to this device and removed from the document.", "ok");
+    } else {
+      showPeStatus("An older version saved an API key inside this document. It has been removed from the document, but this browser blocked device storage, so please paste the key again.", "warn");
+    }
+    setTimeout(() => persistSettings(false), 0);
+  } else if (!isChecked("rememberApiKey", false) && ProzaEdit.AIKeys?.hasAny?.()) {
+    showPeStatus("A key remembered from another document is still stored on this device (not used here). Tick then untick 'Remember' to remove it.", "warn");
+  }
   if (p.sectionParagraphCount) setV("sectionParagraphCount", p.sectionParagraphCount);
   if (p.batchSectionCount != null) {
     setV("batchSectionCount", Math.min(8, Math.max(1, parseInt(p.batchSectionCount, 10) || 3)));
@@ -1864,6 +1952,7 @@ function applyUiConfig(p) {
   if (typeof p.onboardingTourComplete === "boolean") configOnboardingTourComplete = p.onboardingTourComplete;
   setC("showHoverTips", p.showHoverTips !== false);
   setC("fkLock", p.fkLock);
+  setC("contentNotes", p.contentNotes === true);
   setC("remindVersionHistory", p.remindVersionHistory);
   setC("fictionScopeReminder", p.fictionScopeReminder !== false);
   setC("showSessionTips", p.showSessionTips !== false);
@@ -1884,8 +1973,14 @@ function applyUiConfig(p) {
   setC("chkCitationScan", !!p.citationScan);
   if (p.citationStyle) setV("selCitationStyle", p.citationStyle);
   setC("chkCitationReconcile", p.citationReconcileBiblio !== false);
-  setC("aiEnforceSessionCeiling", !!p.aiEnforceSessionCeiling);
+  setC("aiEnforceSessionCeiling", p.aiBudgetV2 ? !!p.aiEnforceSessionCeiling : true);
   if (p.aiMaxSessionTokens != null) setV("aiMaxSessionTokens", p.aiMaxSessionTokens);
+  if (p.aiMaxDayTokens != null) setV("aiMaxDayTokens", p.aiMaxDayTokens);
+  setV("genreJargon", p.genreJargon || "none");
+  if (p.aiProvider && ProzaEdit.AIProviders?.get(p.aiProvider)) setV("aiProvider", p.aiProvider);
+  populateAiModelOptions();
+  if (p.aiModel) setV("aiModel", p.aiModel);
+  setV("aiModelCustom", p.aiModelCustom || "");
   const shaper = ProzaEdit.UiPrefs?.normalizeShaperFields?.(p);
   if (shaper) {
     setV("slider-shaper-complexity", shaper.shaperComplexity);
@@ -2059,7 +2154,7 @@ function setAuditExtended(on) {
 
 function shortManuscriptTypeLabel(type) {
   const t = String(type || "");
-  if (t.includes("Fiction")) return "Fiction";
+  if (isFictionManuscriptType(t)) return ProzaEdit.Genres ? `Fiction · ${ProzaEdit.Genres.resolve(t).label.replace(/^Fiction — /, "")}` : "Fiction";
   if (t.includes("Academic")) return "Academic";
   if (t.includes("Business")) return "Business";
   if (t.includes("Memoir")) return "Memoir";
@@ -2081,7 +2176,7 @@ function updateActiveChecksHint() {
   const fiction = isFictionManuscriptType(ctx.manuscriptType);
   if (fiction) {
     const mods = FICTION_MODULE_IDS.filter((id) => isModuleEnabled(id));
-    if (mods.length === 7) parts.push("fiction×7");
+    if (mods.length === 7) parts.push("7 fiction checks");
     else if (mods.length) parts.push(`fiction ${mods.length}/7`);
   }
   const citeEligible = ProzaEdit.CitationEngine?.isEligibleManuscript?.(ctx.manuscriptType || "");
@@ -2099,8 +2194,10 @@ function setupAutoSaveHandlers() {
     if (!el || el.dataset.peAutosave) return;
     el.dataset.peAutosave = "1";
     el.addEventListener("change", () => {
-      if (el.id === "manuscriptType") adaptModules();
-      else if (el.id === "chkCitationScan") adaptModules();
+      if (el.id === "manuscriptType") {
+        adaptModules();
+        refreshManuscriptContextFreshness({ force: true }).catch(() => {});
+      } else if (el.id === "chkCitationScan") adaptModules();
       else updateActiveChecksHint();
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
       if (el.id === "manuscriptType" || el.id === "styleGuideRef") {
@@ -2110,7 +2207,9 @@ function setupAutoSaveHandlers() {
       if (el.id === "showHoverTips") applyHoverTips();
       if (el.id === "simpleMode") {
         applySimpleMode();
+        auditShowLowConfidence = false;
         if (isChecked("simpleMode", false)) applySimpleModeAuditFilterDefault();
+        refreshAuditSummaryForMode();
       }
       if (el.id === "reportDensity") updateAuditReportDepthHint();
       if (el.id === "settingsDefaultAuditFilter") {
@@ -2132,6 +2231,7 @@ function setupAutoSaveHandlers() {
     "chatSelectionOnly",
     "confirmBeforeApply",
     "fkLock",
+    "contentNotes",
     "remindVersionHistory",
     "fictionScopeReminder",
     "showHoverTips",
@@ -2149,6 +2249,10 @@ function setupAutoSaveHandlers() {
     "chkCitationReconcile",
     "aiEnforceSessionCeiling",
     "aiMaxSessionTokens",
+    "aiMaxDayTokens",
+    "aiModel",
+    "aiModelCustom",
+    "genreJargon",
     "settingsDefaultAuditFilter",
     "showSessionTips",
     "showWhatsNew",
@@ -2226,15 +2330,15 @@ async function prepareScopeForAudit(retryOpts) {
   if (scope !== "selection") {
     if (scope === "selected-chapters" || scope === "chapter" || scope === "chapter-range") {
       if (!scopeChapterListCache.length) {
-        try {
-          await refreshChapterScopeLists();
-        } catch (e) {
-          reportActionError(e, "read the chapter list");
+        await refreshChapterScopeLists();
+        if (!scopeChapterListCache.length) {
+          showPeStatus("No chapter list yet. Apply Heading 1–3 to chapter titles, then Reload the chapter list on Target.", "warn");
+          showTab("tab1");
           return false;
         }
       }
       if (scope === "selected-chapters" && !getSelectedChapterIndicesFromUi().length) {
-        showPeStatus("Select at least one chapter on Target (checklist under Selected chapters), or reload the chapter list.", "warn");
+        showPeStatus("Select at least one chapter on Target (checklist under Chosen chapters), or reload the chapter list.", "warn");
         showTab("tab1");
         return false;
       }
@@ -2242,7 +2346,8 @@ async function prepareScopeForAudit(retryOpts) {
     await refreshScopeCharPreview();
     const prev = getEl("scopeCharPreview");
     if (prev?.classList.contains("over-limit")) {
-      showPeStatus("Scope exceeds character limit. Narrow pages/chapters or use section loop.", "warn");
+      showPeStatus("Scope exceeds character limit. Use Audit next chapter (Checks tab) to go chapter by chapter, or narrow pages/chapters.", "warn");
+      renderChapterWalkPanel(true);
       return false;
     }
     return true;
@@ -2303,7 +2408,8 @@ function runPrimaryAudit() {
 function buildManuscriptProfile(options) {
   options = options || {};
   const c = collectUiConfig();
-  const base = `Type: ${c.manuscriptType}\nAudience: ${c.targetAudience}\nSetting: ${c.settingAnchor}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
+  const genreNote = ProzaEdit.Genres && !options.noGenreNote ? `\n${ProzaEdit.Genres.promptNote(c)}` : "";
+  const base = `Type: ${c.manuscriptType}${genreNote}\nAudience: ${c.targetAudience}\nSetting: ${c.settingAnchor}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
   if (options.baseOnly) return base;
   const block = getManuscriptContextBlock({ destination: options.destination || "local" });
   return block ? `${base}\n\n${block}` : base;
@@ -2324,12 +2430,13 @@ async function prepareGeminiPrompt(makeSections) {
   const notes = [];
   if (built.note) notes.push(built.note);
   if (indexKept && !mciIsFresh()) {
-    notes.push("A manuscript index that may be out of date was included (flagged as such). Refresh it from Checks or Settings.");
+    notes.push("A book outline that may be out of date was included (flagged as such). Refresh it from Checks or Settings.");
   }
   return { text: built.text, note: notes.join(" "), trimmed: built.trimmed, indexIncluded: indexKept };
 }
 
 function updateAiHelpAvailability() {
+  updateAiMeter();
   const hasKey = !!getApiKey();
   const simple = isChecked("simpleMode", false);
   document.querySelectorAll(".pe-ai-help").forEach((box) => {
@@ -2339,7 +2446,7 @@ function updateAiHelpAvailability() {
     if (!title) return;
     if (!title.dataset.peDefault) title.dataset.peDefault = title.textContent;
     title.textContent = simple
-      ? `AI help (optional) — ${hasKey ? "Gemini, uses tokens" : "off until you add a key"}`
+      ? `AI help (optional) — ${hasKey ? `${aiLabel()}, uses tokens` : "off until you add a key"}`
       : title.dataset.peDefault;
   });
 }
@@ -2351,7 +2458,7 @@ function openAiHelpSetup() {
       getEl("apiKey")?.focus();
     } catch (_) {}
   }, 60);
-  showPeStatus("AI help is off until you add a Gemini API key (Settings → Essentials). Local Coach and Rewrite work without it.", "ok");
+  showPeStatus("AI help is off until you add an AI provider API key (Settings → AI help). Local Coach and Rewrite work without it.", "ok");
 }
 
 function applySimpleMode() {
@@ -2907,6 +3014,13 @@ function initWhatsNewBanner() {
     el.classList.add("hidden");
     return;
   }
+  const firstRun = getEl("peSimpleModeFirstRunBanner");
+  if (firstRun && !firstRun.classList.contains("hidden")) {
+    // A brand-new user has nothing "new" to read; one banner at a time.
+    el.classList.add("hidden");
+    markWhatsNewVersionSeen();
+    return;
+  }
   el.classList.remove("hidden");
 }
 
@@ -3335,7 +3449,7 @@ async function resetSettingsGroup(groupKey) {
     audit: "Audit & reports",
     privacy: "Privacy & diagnostics",
     dictionary: "Dictionary",
-    manuscript: "Manuscript context",
+    manuscript: "Book outline",
     "custom-style": "Custom style",
   };
   const label = labels[norm] || norm;
@@ -3407,16 +3521,21 @@ function applyHoverTips() {
   }
 }
 
+let auditCtxSnapshot = null;
+
 function buildAuditContext(options) {
   options = options || {};
+  if (auditCtxSnapshot) return { ...auditCtxSnapshot, extendedLocal: !!options.extendedLocal };
   const scopeVal = getEl("scope")?.value || "selection";
   const fiction = isFictionManuscriptType();
   const fictionOn = (id) => fiction && isModuleEnabled(id);
   return {
     extendedLocal: !!options.extendedLocal,
     fkLock: isChecked("fkLock", false),
+    contentNotes: isChecked("contentNotes", false),
     scopeSelection: scopeVal === "selection",
-    manuscriptType: getEl("manuscriptType")?.value || "Fiction (Thriller/Mystery/Crime)",
+    manuscriptType: getEl("manuscriptType")?.value || "Fiction (General)",
+    genreJargon: getEl("genreJargon")?.value || "none",
     targetAudience: getEl("targetAudience")?.value || "Adult",
     settingAnchor: getEl("settingAnchor")?.value || "",
     criticPersona: getEl("criticPersona")?.value || "Average Reader",
@@ -3542,6 +3661,15 @@ function getEditLock() {
   return peEditLock;
 }
 
+function wordApiSupported(ver) {
+  try {
+    const req = Office.context && Office.context.requirements;
+    return !!(req && typeof req.isSetSupported === "function" && req.isSetSupported("WordApi", ver));
+  } catch (_) {
+    return false;
+  }
+}
+
 async function swapTextInScope(fromText, toText, options) {
   const result = await wordRun("pe-swap", (ctx) =>
     ProzaEdit.EditApply.swapText(ctx, fromText, toText, {
@@ -3550,11 +3678,63 @@ async function swapTextInScope(fromText, toText, options) {
           ...options,
           selectionOnly: useSelectionEdits(),
         }),
+      anchor: options && options.anchor ? options.anchor : null,
+      trackingSupported: wordApiSupported("1.4"),
       replaceLocation: Word.InsertLocation.replace,
+      sanitize: (t) => ProzaEdit.WordSafeNavigator.sanitizeSearch(t),
     })
   );
   markManuscriptContextDirty();
   return result;
+}
+
+async function collapseDoubleSpacesInScope() {
+  const release = getEditLock().tryAcquire();
+  if (!release) {
+    showPeStatus("Another edit is still being applied. Wait a moment, then try again.", "warn");
+    return false;
+  }
+  historyBusy = true;
+  updateUndoRedoUi();
+  try {
+    const deps = {
+      replaceLocation: Word.InsertLocation.replace,
+      searchScope: async (c, text) => {
+        if (useSelectionEdits()) {
+          const sel = c.document.getSelection();
+          sel.load("text");
+          await c.sync();
+          if (!String(sel.text || "").trim()) throw new Error("Select text in Word (selection-only edits on), or turn that off to fix the whole document.");
+          const r = sel.search(text, { matchCase: false, matchWildcards: false });
+          r.load("items");
+          await c.sync();
+          return r.items;
+        }
+        const r = c.document.body.search(text, { matchCase: false, matchWildcards: false });
+        r.load("items");
+        await c.sync();
+        return r.items;
+      },
+    };
+    const plan = await wordRun("pe-spaces-count", (c) => ProzaEdit.EditApply.collapseDoubleSpaces(c, deps, true));
+    if (!plan.found) {
+      showPeStatus(plan.skippedIndent ? "No double spaces to fix (indented paragraphs are left alone)." : "No double spaces found in this scope.", "ok");
+      return false;
+    }
+    const ok = await confirmBeforeApply(`Replace ${plan.found} run(s) of two or more spaces with one space? Indented paragraphs (${plan.skippedIndent}) are skipped. This cannot be undone from ProzaEdit — use Ctrl+Z in Word.`);
+    if (!ok) return false;
+    const res = await wordRun("pe-spaces-fix", (c) => ProzaEdit.EditApply.collapseDoubleSpaces(c, deps, false));
+    markManuscriptContextDirty();
+    showPeStatus(`Fixed ${res.fixed} double-space spot(s). Use Ctrl+Z in Word to undo. Run the check again to refresh cards.`, "ok");
+    return true;
+  } catch (e) {
+    reportActionError(e, "fix double spaces");
+    return false;
+  } finally {
+    release();
+    historyBusy = false;
+    updateUndoRedoUi();
+  }
 }
 
 async function applyDocumentEdit(beforeText, afterText, label, options) {
@@ -3592,17 +3772,27 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
     }
     if (!(await confirmBeforeApply(`Replace "${before}" with "${after}"?`))) return false;
     const searchOpts = options && options.forceDocument ? { forceDocument: true } : {};
+    if (options && options.anchor) searchOpts.anchor = options.anchor;
+    let swapInfo = null;
     try {
-      await swapTextInScope(before, after, searchOpts);
+      swapInfo = await swapTextInScope(before, after, searchOpts);
     } catch (e) {
       reportActionError(e, "apply this edit", {
         retry: { label: "Apply", run: () => applyDocumentEdit(before, after, label, options) },
       });
       return false;
     }
-    ProzaEdit.EditHistory.record(before, after, label);
+    if (!(swapInfo && swapInfo.tracked)) ProzaEdit.EditHistory.record(before, after, label, swapInfo);
     clearRetry();
-    showPeStatus(`Applied: ${label}`, "ok");
+    if (swapInfo && swapInfo.tracked) {
+      showPeStatus(`Applied as a tracked change: ${label}. Accept or reject it in the Review tab (ProzaEdit Undo is off while Track Changes is on).`, "ok");
+    } else
+    showPeStatus(
+      swapInfo && swapInfo.occurrences > 1
+        ? `Applied: ${label}. This text appears ${swapInfo.occurrences} times; the one that matched this card's surrounding text was changed — use Go to to check the others.`
+        : `Applied: ${label}`,
+      swapInfo && swapInfo.occurrences > 1 ? "warn" : "ok"
+    );
     try {
       options?.onSuccess?.();
     } catch (e) {
@@ -3619,7 +3809,7 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
   }
 }
 
-async function runHistoryEdit(popFn, revertFn, from, to, doneLabel, action) {
+async function runHistoryEdit(popFn, revertFn, from, to, doneLabel, action, anchorKey) {
   if (historyBusy || !popFn.can()) return;
   const release = getEditLock().tryAcquire();
   if (!release) return;
@@ -3631,7 +3821,7 @@ async function runHistoryEdit(popFn, revertFn, from, to, doneLabel, action) {
   historyBusy = true;
   updateUndoRedoUi();
   try {
-    await swapTextInScope(entry[from], entry[to]);
+    await swapTextInScope(entry[from], entry[to], entry[anchorKey] ? { anchor: entry[anchorKey] } : undefined);
     showPeStatus(`${doneLabel}: ${entry.label}`, "ok");
   } catch (e) {
     revertFn(entry);
@@ -3651,7 +3841,8 @@ function prozaEditUndo() {
     "after",
     "before",
     "Undid",
-    "undo this edit"
+    "undo this edit",
+    "undoAnchor"
   );
 }
 
@@ -3663,7 +3854,8 @@ function prozaEditRedo() {
     "before",
     "after",
     "Redid",
-    "redo this edit"
+    "redo this edit",
+    "redoAnchor"
   );
 }
 
@@ -3723,7 +3915,7 @@ async function readScopeText(context, longOpController) {
     if (mode === "selection") throw new Error("Highlight text in Word, or choose page/chapter/full scope.");
     throw new Error("No text for this scope.");
   }
-  if (text.length > MAX_BODY && mode === "full") throw new Error("Document too large—use chapter range or section loop.");
+  if (text.length > MAX_BODY && mode === "full") throw new Error("This document is too long to read at once. Choose a page range or chosen chapters instead.");
   const soft = ProzaEdit.ScopeReader.softCapThreshold(cap);
   if (longOpController && text.length >= soft && text.length <= cap) {
     longOpController.setStatus(
@@ -3781,6 +3973,8 @@ async function addDictionaryWordFromCard(raw) {
   if (ok) {
     renderDictionaryList();
     showPeStatus(`Added “${w}” to dictionary.`, "ok");
+  } else {
+    showPeStatus("Could not save the dictionary entry (storage full or blocked).", "warn");
   }
 }
 
@@ -3825,11 +4019,11 @@ function renderDictionaryList() {
   }
   const filtered = filter ? words.filter((w) => w.toLowerCase().includes(filter)) : words;
   if (!words.length) {
-    el.innerHTML = "<span style='color:var(--text-muted);font-size:10px;'>No custom terms yet.</span>";
+    el.innerHTML = "<span style='color:var(--text-muted);font-size:12px;'>No custom terms yet.</span>";
     return;
   }
   if (!filtered.length) {
-    el.innerHTML = "<span style='color:var(--text-muted);font-size:10px;'>No matches for this filter.</span>";
+    el.innerHTML = "<span style='color:var(--text-muted);font-size:12px;'>No matches for this filter.</span>";
     return;
   }
   el.innerHTML = filtered
@@ -3858,6 +4052,8 @@ async function addDictionaryFromLastMute() {
     renderDictionaryList();
     persistSettings(false);
     showPeStatus(`Added “${w}” to dictionary (saved in this document).`, "ok");
+  } else {
+    showPeStatus("Could not save the dictionary entry (storage full or blocked).", "warn");
   }
 }
 
@@ -3933,17 +4129,23 @@ function renderCustomStyleRulesList() {
   if (!el) return;
   const data = ProzaEdit.Settings.getCustomStyleGuide();
   if (!data.rules.length) {
-    el.innerHTML = "<span style='color:var(--text-muted);font-size:10px;'>No custom rules yet. Add phrases your house style avoids.</span>";
+    el.innerHTML = "<span style='color:var(--text-muted);font-size:12px;'>No custom rules yet. Add phrases your house style avoids.</span>";
     return;
   }
   el.innerHTML = data.rules
     .map((r) => {
       const label = r.replace ? `${r.find} → ${r.replace}` : r.find;
-      return `<span class="tag" data-custom-rule="${escapeAttr(r.id)}" title="${escapeAttr(r.hint || "")}">${escapeHtml(label)} ×</span>`;
+      return `<span class="tag" role="button" tabindex="0" data-custom-rule="${escapeAttr(r.id)}" title="${escapeAttr(r.hint || "")}" aria-label="Remove rule ${escapeAttr(label)}">${escapeHtml(label)} ×</span>`;
     })
     .join("");
   el.querySelectorAll("[data-custom-rule]").forEach((tag) => {
     tag.addEventListener("click", () => removeCustomStyleRule(tag.dataset.customRule));
+    tag.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        removeCustomStyleRule(tag.dataset.customRule);
+      }
+    });
   });
   updateCustomRulesSummary();
 }
@@ -4007,7 +4209,10 @@ async function addCustomStyleFromCard(item) {
   });
   if (!rule) return;
   const data = ProzaEdit.CustomStyleGuide.mergeRules(ProzaEdit.Settings.getCustomStyleGuide(), [rule]);
-  await ProzaEdit.Settings.setCustomStyleGuide(data);
+  if (!(await ProzaEdit.Settings.setCustomStyleGuide(data))) {
+    showPeStatus("Could not save the house rule (limit reached or storage blocked).", "warn");
+    return;
+  }
   renderCustomStyleRulesList();
   if (!isCustomStyleGuideMode()) {
     getEl("styleGuideRef").value = "custom-plus-auto";
@@ -4038,7 +4243,10 @@ async function loadCustomStylePreset(presetId) {
   if (!preset) return;
   const data = ProzaEdit.CustomStyleGuide.mergeRules(ProzaEdit.Settings.getCustomStyleGuide(), preset.rules);
   data.name = preset.name;
-  await ProzaEdit.Settings.setCustomStyleGuide(data);
+  if (!(await ProzaEdit.Settings.setCustomStyleGuide(data))) {
+    showPeStatus("Could not load that preset (rule limit reached or storage blocked).", "warn");
+    return;
+  }
   getEl("customStyleName").value = preset.name;
   renderCustomStyleRulesList();
   if (!isCustomStyleGuideMode()) {
@@ -4052,8 +4260,13 @@ async function loadCustomStylePreset(presetId) {
 async function removeCustomStyleRule(ruleId) {
   const data = ProzaEdit.Settings.getCustomStyleGuide();
   data.rules = data.rules.filter((r) => r.id !== ruleId);
-  await ProzaEdit.Settings.setCustomStyleGuide(data);
+  if (!(await ProzaEdit.Settings.setCustomStyleGuide(data))) {
+    showPeStatus("Could not remove the rule (storage blocked).", "warn");
+    renderCustomStyleRulesList();
+    return;
+  }
   renderCustomStyleRulesList();
+  schedulePersistSettings();
   showPeStatus("Rule removed.", "ok");
 }
 
@@ -4112,38 +4325,72 @@ function setupThesaurusDelegation() {
     const tag = e.target.closest(".tag[data-target][data-replacement]");
     if (tag) replaceWithWord(tag.dataset.target, tag.dataset.replacement);
   });
+  box.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tag = e.target.closest?.(".tag[data-target][data-replacement]");
+    if (!tag) return;
+    e.preventDefault();
+    replaceWithWord(tag.dataset.target, tag.dataset.replacement);
+  });
+}
+
+let thesaurusLookupSeq = 0;
+
+function matchWordCase(original, replacement) {
+  const o = String(original || "");
+  const r = String(replacement || "");
+  if (!o || !r) return r;
+  if (o.length > 1 && o === o.toUpperCase() && o !== o.toLowerCase()) return r.toUpperCase();
+  const first = o.charAt(0);
+  if (first !== first.toLowerCase() && first === first.toUpperCase()) return r.charAt(0).toUpperCase() + r.slice(1);
+  return r;
 }
 
 async function renderThesaurus(word, box) {
   if (!box) return;
   box.innerHTML = "Searching…";
-  const token = word.trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z'-]/gi, "");
+  const words = word.trim().split(/\s+/);
+  const original = (words[0] || "").replace(/[^\p{L}'’-]/gu, "");
+  const token = original.toLowerCase();
   if (!token) {
     box.innerText = "Invalid word.";
     return;
   }
   let syn = [];
   let ant = [];
+  let abortTimer = null;
+  let failed = false;
+  const myLookup = (thesaurusLookupSeq = (thesaurusLookupSeq || 0) + 1);
   try {
     const ctrl = new AbortController();
-    setTimeout(() => ctrl.abort(), 8000);
+    abortTimer = setTimeout(() => ctrl.abort(), 8000);
     const [rs, ra] = await Promise.all([
       fetch(`https://api.datamuse.com/words?rel_syn=${encodeURIComponent(token)}&max=10`, { signal: ctrl.signal }),
       fetch(`https://api.datamuse.com/words?rel_ant=${encodeURIComponent(token)}&max=8`, { signal: ctrl.signal }),
     ]);
-    if (rs.ok) syn = (await rs.json()).map((x) => x.word);
-    if (ra.ok) ant = (await ra.json()).map((x) => x.word);
-  } catch (_) {}
-  if (!syn.length) syn = ["sharp", "direct", "plain"].map((x) => `${x} ${token}`);
-  let html = `<strong>${escapeHtml(token)}</strong><br/><em>Synonyms</em><br/>`;
-  syn.forEach((s) => {
-    html += `<span class="tag" data-target="${escapeAttr(token)}" data-replacement="${escapeAttr(s)}">${escapeHtml(s)}</span>`;
-  });
+    if (rs.ok) syn = (await rs.json()).map((x) => String(x.word || "")).filter(Boolean);
+    else failed = true;
+    if (ra.ok) ant = (await ra.json()).map((x) => String(x.word || "")).filter(Boolean);
+  } catch (_) {
+    failed = true;
+  } finally {
+    if (abortTimer) clearTimeout(abortTimer);
+  }
+  if (myLookup !== thesaurusLookupSeq) return;
+  const tagHtml = (s) =>
+    `<span class="tag" role="button" tabindex="0" data-target="${escapeAttr(original)}" data-replacement="${escapeAttr(matchWordCase(original, s))}" aria-label="Replace ${escapeAttr(original)} with ${escapeAttr(s)}">${escapeHtml(s)}</span>`;
+  let html = `<strong>${escapeHtml(original)}</strong>`;
+  if (words.length > 1) html += ` <span class="help-muted">(first word of your selection; English only)</span>`;
+  html += `<br/><em>Synonyms</em><br/>`;
+  if (syn.length) syn.forEach((s) => (html += tagHtml(s)));
+  else {
+    html += failed
+      ? `<span class="help-muted">Could not reach the Datamuse word service. Check your connection and try again.</span>`
+      : `<span class="help-muted">No synonyms found (English words only).</span>`;
+  }
   if (ant.length) {
     html += `<br/><em>Antonyms</em><br/>`;
-    ant.forEach((a) => {
-      html += `<span class="tag" data-target="${escapeAttr(token)}" data-replacement="${escapeAttr(a)}">${escapeHtml(a)}</span>`;
-    });
+    ant.forEach((a) => (html += tagHtml(a)));
   }
   box.innerHTML = html;
 }
@@ -4206,19 +4453,19 @@ function updateAuditFilterChips() {
   document.querySelectorAll(".chip[data-audit-filter]").forEach((btn) => {
     btn.classList.toggle("chip-active", btn.dataset.auditFilter === auditCardFilter);
     if (btn.dataset.auditFilter === "all" && currentAuditSuggestions.length) {
-      btn.textContent = `All (${currentAuditSuggestions.length})`;
+      btn.textContent = `All (${modeVisibleSuggestions().length})`;
     } else if (btn.dataset.auditFilter === "confirmed") {
-      const n = currentAuditSuggestions.filter((s) => s.type === "confirmed").length;
+      const n = modeVisibleSuggestions().filter((s) => s.type === "confirmed").length;
       btn.textContent = ProzaEdit.PlainLanguage?.auditFilterChipText
         ? ProzaEdit.PlainLanguage.auditFilterChipText("confirmed", n, isChecked("simpleMode", false))
         : n
           ? `Critical (${n})`
           : "Critical";
     } else if (btn.dataset.auditFilter === "preference") {
-      const n = currentAuditSuggestions.filter((s) => s.type !== "confirmed").length;
+      const n = modeVisibleSuggestions().filter((s) => s.type !== "confirmed").length;
       btn.textContent = n ? `Style (${n})` : "Style";
     } else if (btn.dataset.auditFilter === "styleguide") {
-      const n = currentAuditSuggestions.filter((s) => isStyleGuideFinding(s)).length;
+      const n = modeVisibleSuggestions().filter((s) => isStyleGuideFinding(s)).length;
       btn.textContent = n ? `Style guide (${n})` : "Style guide";
     }
   });
@@ -4264,11 +4511,30 @@ function sortAuditList(list) {
   return arr;
 }
 
+function isSimpleCountMode() {
+  return isChecked("simpleMode", false) && !auditShowLowConfidence;
+}
+
+function modeVisibleSuggestions(list) {
+  const src = Array.isArray(list) ? list : currentAuditSuggestions;
+  return isSimpleCountMode() ? src.filter((s) => s && s.confidence !== "low") : src.slice();
+}
+
+function scoreCountsPref(s) {
+  return s.type === "preference" && !String(s.ruleId || "").startsWith("content:");
+}
+
 function filteredAuditSuggestions() {
   let list = currentAuditSuggestions;
   if (auditCardFilter === "confirmed") list = list.filter((s) => s.type === "confirmed");
   else if (auditCardFilter === "preference") list = list.filter((s) => s.type !== "confirmed");
   else if (auditCardFilter === "styleguide") list = list.filter((s) => isStyleGuideFinding(s));
+  auditLowConfidenceHidden = 0;
+  if (isChecked("simpleMode", false) && !auditShowLowConfidence) {
+    const kept = list.filter((s) => s.confidence !== "low");
+    auditLowConfidenceHidden = list.length - kept.length;
+    list = kept;
+  }
   return sortAuditList(list);
 }
 
@@ -4317,7 +4583,7 @@ function buildCopilotAuditText() {
   if (summary) lines.push(summary.innerText.trim());
   lines.push("");
   lines.push("Findings (prioritize in my voice; avoid AI clichés):");
-  const src = filteredAuditSuggestions().length ? filteredAuditSuggestions() : currentAuditSuggestions;
+  const src = filteredAuditSuggestions().length ? filteredAuditSuggestions() : modeVisibleSuggestions();
   src.slice(0, 30).forEach((s, i) => {
     lines.push(`${i + 1}. [${s.type}] ${s.module}: ${s.explanation}`);
     if (s.targetText && s.targetText !== "(truncated)") lines.push(`   Passage: "${s.targetText}"`);
@@ -4358,7 +4624,7 @@ async function copyFeedbackLetter() {
           lastAuditExcerpt,
           buildAuditContext(),
           lastAuditMeta,
-          currentAuditSuggestions
+          modeVisibleSuggestions()
         )
       : "");
   if (!text) return;
@@ -4374,7 +4640,7 @@ async function copyFeedbackLetter() {
 
 function auditReportInput() {
   return {
-    suggestions: currentAuditSuggestions,
+    suggestions: modeVisibleSuggestions(),
     excerpt: lastAuditExcerpt,
     feedbackLetter: lastFeedbackLetter,
     meta: lastAuditMeta,
@@ -4408,30 +4674,193 @@ function exportAuditReportPdfGuide() {
 
 function readAiQuotaLimitsFromDom() {
   return ProzaEdit.AIQuotaManager.readLimitsFromConfig({
-    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", false),
+    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", true),
     aiMaxSessionTokens: getEl("aiMaxSessionTokens")?.value,
+    aiMaxDayTokens: getEl("aiMaxDayTokens")?.value,
   });
 }
 
 function resetAiSessionTokens() {
   ProzaEdit.AIQuotaManager.resetSessionTokens();
-  showPeStatus("Gemini session token counter reset (this browser tab).", "ok");
+  updateAiMeter();
+  showPeStatus("AI session usage counter reset.", "ok");
 }
 
-async function geminiGenerateWithQuota(prompt, generationConfig, outputReserve, signal) {
-  const reserve = outputReserve != null ? outputReserve : generationConfig?.maxOutputTokens || 1024;
-  const estimated = ProzaEdit.AIQuotaManager.estimateTokens(prompt) + reserve;
-  const gate = ProzaEdit.AIQuotaManager.canExecute(estimated, readAiQuotaLimitsFromDom());
-  if (!gate.ok) {
-    const hint = isChecked("simpleMode", false)
-      ? " The ceiling is set under Settings → Safety (switch Simple mode off there to raise or turn it off)."
-      : "";
-    throw new Error(`${gate.message || "Session token ceiling reached."}${hint}`);
-  }
-  const reply = await ProzaEdit.Gemini.generate(getApiKey(), prompt, generationConfig, { signal });
-  ProzaEdit.AIQuotaManager.recordUsage(estimated);
-  return reply;
+const aiSessionKeys = {};
+
+function aiProviderId() {
+  const v = getEl("aiProvider")?.value;
+  return ProzaEdit.AIProviders?.get(v) ? v : ProzaEdit.AIProviders?.DEFAULT_PROVIDER || "gemini";
 }
+
+function aiProviderInfo() {
+  return ProzaEdit.AIProviders.get(aiProviderId());
+}
+
+function aiLabel() {
+  return aiProviderInfo()?.short || "AI";
+}
+
+function aiModelId() {
+  const custom = getEl("aiModelCustom")?.value.trim();
+  return ProzaEdit.AIProviders.normalizeModel(aiProviderId(), custom || getEl("aiModel")?.value);
+}
+
+function getApiKey() {
+  return getEl("apiKey")?.value.trim() || "";
+}
+
+function populateAiProviderOptions() {
+  const sel = getEl("aiProvider");
+  if (!sel || !ProzaEdit.AIProviders) return;
+  if (!sel.options.length) {
+    ProzaEdit.AIProviders.list().forEach((p) => {
+      const o = document.createElement("option");
+      o.value = p.id;
+      o.textContent = p.label;
+      sel.appendChild(o);
+    });
+    sel.value = ProzaEdit.AIProviders.DEFAULT_PROVIDER;
+  }
+  sel.dataset.prev = sel.value;
+  populateAiModelOptions();
+  loadAiKeyIntoField();
+}
+
+function populateAiModelOptions() {
+  const sel = getEl("aiModel");
+  if (!sel || !ProzaEdit.AIProviders) return;
+  const p = aiProviderInfo();
+  const keep = sel.value;
+  sel.innerHTML = "";
+  p.models.forEach((m) => {
+    const o = document.createElement("option");
+    o.value = m.id;
+    o.textContent = `${m.label} — ${m.tier === "low" ? "cheapest" : m.tier === "mid" ? "balanced" : "most capable"}`;
+    sel.appendChild(o);
+  });
+  sel.value = p.models.some((m) => m.id === keep) ? keep : p.defaultModel;
+  updateAiModelHint();
+}
+
+function updateAiModelHint() {
+  const hint = getEl("aiProviderHint");
+  const p = aiProviderInfo();
+  if (!hint || !p) return;
+  const m = ProzaEdit.AIProviders.findModel(p.id, getEl("aiModelCustom")?.value.trim() || getEl("aiModel")?.value);
+  const price = m ? ` ${m.label}: about $${m.inUsdPerM} in / $${m.outUsdPerM} out per million tokens.` : "";
+  hint.textContent = `${p.keyHelp}${price} ${ProzaEdit.AIProviders.MODEL_NOTE}`;
+}
+
+function loadAiKeyIntoField() {
+  const keyEl = getEl("apiKey");
+  if (!keyEl) return;
+  const id = aiProviderId();
+  keyEl.value = aiSessionKeys[id] || (isChecked("rememberApiKey", false) ? ProzaEdit.AIKeys?.get(id) || "" : "");
+  const label = getEl("apiKeyLabel");
+  if (label) label.textContent = `${aiProviderInfo()?.label || "AI"} API key (optional)`;
+  updateAiHelpAvailability();
+}
+
+function onAiProviderChange() {
+  const sel = getEl("aiProvider");
+  const prev = sel?.dataset.prev;
+  if (prev) aiSessionKeys[prev] = getApiKey();
+  if (sel) sel.dataset.prev = sel.value;
+  const custom = getEl("aiModelCustom");
+  if (custom) custom.value = "";
+  populateAiModelOptions();
+  loadAiKeyIntoField();
+  updateTokenEstimate();
+  schedulePersistSettings();
+}
+
+let aiLastCallNote = "";
+
+function updateAiMeter() {
+  const el = getEl("aiUsageMeter");
+  if (el) el.textContent = ProzaEdit.AIQuotaManager.meterText(readAiQuotaLimitsFromDom()) + (aiLastCallNote ? ` · last: ${aiLastCallNote}` : "");
+}
+
+function clearAiCache() {
+  const ok = ProzaEdit.AICache?.clear?.();
+  aiLastCallNote = "";
+  const info = getEl("aiCacheInfo");
+  if (info) info.textContent = ok ? "Saved AI replies cleared." : "Could not clear (browser storage is blocked).";
+  showPeStatus(ok ? "Saved AI replies cleared." : "Could not clear saved AI replies.", ok ? "ok" : "warn");
+  updateAiMeter();
+}
+
+/** One-line estimate shown in every AI confirm. maxInputChars is an upper bound; the real prompt may be smaller. */
+function aiEstimateLine(maxInputChars, maxOutputTokens) {
+  const limits = readAiQuotaLimitsFromDom();
+  const chars = Math.min(maxInputChars, ProzaEdit.AIProviders.MAX_PROMPT_CHARS);
+  const est = ProzaEdit.AIProviders.estimate(aiProviderId(), aiModelId(), "x".repeat(chars), Math.min(maxOutputTokens, limits.maxOutputTokens));
+  return `Estimate: up to ~${est.totalTokens.toLocaleString()} tokens (${ProzaEdit.AIProviders.formatUsd(est.usd)}) with ${aiProviderInfo().label}, model ${aiModelId()}.\n${ProzaEdit.AIQuotaManager.meterText(limits)}.`;
+}
+
+function aiIndexChars() {
+  return getManuscriptContextBlock({ destination: "gemini" }).length;
+}
+
+async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, signal) {
+  const cacheKey = ProzaEdit.AICache?.makeKey({
+    providerId: aiProviderId(),
+    model: aiModelId(),
+    genre: getEl("manuscriptType")?.value || "",
+    temperature: generationConfig?.temperature,
+    prompt,
+  });
+  const freshReply = isChecked("aiFreshReply", false);
+  const cached = cacheKey && !freshReply ? ProzaEdit.AICache.get(cacheKey) : null;
+  if (cached) {
+    aiLastCallNote = "cached, 0 tokens";
+    updateAiMeter();
+    return cached.text;
+  }
+  const limits = readAiQuotaLimitsFromDom();
+  const maxOut = Math.min(limits.maxOutputTokens, outputReserve != null ? outputReserve : generationConfig?.maxOutputTokens || 1024);
+  const est = ProzaEdit.AIProviders.estimate(aiProviderId(), aiModelId(), prompt, maxOut);
+  const gate = ProzaEdit.AIQuotaManager.canExecute(est.totalTokens, limits, {
+    promptChars: String(prompt || "").length,
+    now: Date.now(),
+    lastCallAt: ProzaEdit.AIProviders._lastCallAt,
+  });
+  if (!gate.ok) throw new Error(gate.message || "AI limit reached.");
+  let res;
+  const abortedBeforeSend = !!(signal && signal.aborted);
+  const freshBoxOnce = getEl("aiFreshReply");
+  if (freshBoxOnce) freshBoxOnce.checked = false;
+  try {
+    res = await ProzaEdit.AIProviders.complete({
+      providerId: aiProviderId(),
+      apiKey: getApiKey(),
+      model: aiModelId(),
+      prompt,
+      maxOutputTokens: maxOut,
+      temperature: generationConfig?.temperature,
+      signal,
+      retries: 1,
+    });
+  } catch (e) {
+    // A request that was sent but timed out, was cancelled mid-flight, dropped or came back empty may still have been billed.
+    const code = e && e.code;
+    if (!abortedBeforeSend && (code === "PE_TIMEOUT" || code === "PE_CANCELLED" || code === "network" || code === "empty")) {
+      ProzaEdit.AIQuotaManager.recordUsage(est.totalTokens);
+      updateAiMeter();
+    }
+    throw e;
+  }
+  const used = res.usage ? res.usage.inputTokens + res.usage.outputTokens : est.totalTokens;
+  ProzaEdit.AIQuotaManager.recordUsage(used || est.totalTokens);
+  aiLastCallNote = `${(used || est.totalTokens).toLocaleString()} tokens`;
+  updateAiMeter();
+  const clean = String(res.text).split(ProzaEdit.AISafety.OPEN).join("").split(ProzaEdit.AISafety.CLOSE).join("").trim();
+  if (cacheKey) ProzaEdit.AICache.set(cacheKey, clean, [getApiKey()]);
+  return clean;
+}
+
+const geminiGenerateWithQuota = aiGenerateWithQuota;
 
 async function copyAuditForCopilotFromAnywhere() {
   if (!currentAuditSuggestions.length) {
@@ -4474,6 +4903,14 @@ function renderTraffic(traffic, score) {
   bar.textContent = `${traffic.label} — Score ${score} / 10`;
 }
 
+function resetStaleAuditSummaryState() {
+  lastAuditResultForMode = null;
+  lastAuditMeta = {};
+  lastFeedbackLetter = "";
+  getEl("trafficBar")?.classList.add("hidden");
+  getEl("miniScores")?.classList.add("hidden");
+}
+
 function renderMiniScores(scores) {
   const el = getEl("miniScores");
   if (!el || !scores) return;
@@ -4481,28 +4918,48 @@ function renderMiniScores(scores) {
   el.innerHTML = `<span>Correctness ${scores.correctness}/10</span><span>Clarity ${scores.clarity}/10</span><span>Engagement ${scores.engagement}/10</span>`;
 }
 
-function finalizeAudit(result, label) {
+let lastAuditResultForMode = null;
+
+function refreshAuditSummaryForMode(extra) {
+  if (!lastAuditResultForMode || auditBusy || deepBusy) return;
+  const { result, label } = lastAuditResultForMode;
+  const keep = currentAuditSuggestions;
+  finalizeAudit({ ...result, suggestions: keep }, label, { rerender: true, ...(extra || {}) });
+}
+
+function finalizeAudit(result, label, fopts) {
+  fopts = fopts || {};
   const suggestions = result.suggestions || [];
   const metrics = result.metrics || ProzaEdit.Metrics.analyze("");
-  const criticalCount = suggestions.filter((s) => s.type === "confirmed").length;
-  const prefCount = suggestions.filter((s) => s.type === "preference").length;
+  const visible = modeVisibleSuggestions(suggestions);
+  const hiddenLow = suggestions.length - visible.length;
+  const criticalCount = visible.filter((s) => s.type === "confirmed").length;
+  const prefCount = visible.filter(scoreCountsPref).length;
+  const isDeep = label === "Deep audit";
   let score = result.score;
-  if (score == null) {
+  if (score == null || hiddenLow > 0 || fopts.rerender) {
     const w =
-      ProzaEdit.Audit.PERSONA_WEIGHTS[getEl("criticPersona")?.value] || ProzaEdit.Audit.PERSONA_WEIGHTS["Average Reader"];
-    score = Math.max(5, Math.round((10 - criticalCount * w.c - prefCount * w.p) * 10) / 10);
+      ProzaEdit.Audit.PERSONA_WEIGHTS[auditCtxSnapshot?.criticPersona || getEl("criticPersona")?.value] || ProzaEdit.Audit.PERSONA_WEIGHTS["Average Reader"];
+    const raw = isDeep ? 10 - criticalCount * 0.45 : 10 - criticalCount * w.c - prefCount * w.p;
+    score = Math.max(5, Math.round(raw * 10) / 10);
   }
-  const traffic = result.traffic || ProzaEdit.Metrics.trafficLight(score);
+  const traffic = ProzaEdit.Metrics.trafficLight(score);
+  const modeNote = isChecked("simpleMode", false)
+    ? hiddenLow > 0
+      ? `Counts and score cover the ${visible.length} findings shown in Simple view (${hiddenLow} lower-confidence hidden).`
+      : "Counts and score cover the findings shown in Simple view."
+    : "Counts and score cover all findings (Advanced view).";
+  lastAuditResultForMode = { result, label };
   renderTraffic(traffic, score);
   if (getReportDensity() !== "light" && ProzaEdit.DocAnalytics?.computeMiniScores) {
-    lastMiniScores = ProzaEdit.DocAnalytics.computeMiniScores(suggestions, metrics, lastAuditExcerpt);
+    lastMiniScores = ProzaEdit.DocAnalytics.computeMiniScores(visible, metrics, lastAuditExcerpt);
     renderMiniScores(lastMiniScores);
   } else {
     lastMiniScores = null;
     getEl("miniScores")?.classList.add("hidden");
   }
-  let compareLine = "";
-  try {
+  let compareLine = fopts.rerender ? lastAuditMeta.compareLine || "" : "";
+  if (!fopts.rerender && !result.summaryNote) try {
     const prevRaw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.LAST_AUDIT_STATS);
     const prev = prevRaw ? (typeof prevRaw === "string" ? JSON.parse(prevRaw) : prevRaw) : null;
     if (prev && prev.critical != null) {
@@ -4520,17 +4977,20 @@ function finalizeAudit(result, label) {
     }
   } catch (_) {}
   let html = `<h3>${escapeHtml(label)}</h3>`;
+  if (result.summaryNote) html += `<p class="help-muted" style="font-size:12px;">${escapeHtml(result.summaryNote)}</p>`;
   html += `<p>Words: ${metrics.wordCount} · FK grade ~${metrics.fleschKincaidGrade} · FRE ~${metrics.fleschReadingEase}</p>`;
   const sevLabel = auditFilterDisplayLabel("confirmed");
   html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
+  html += `<p class="help-muted audit-mode-note" style="font-size:12px;">${escapeHtml(modeNote)}</p>`;
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
-  html += `<p>${escapeHtml(buildManuscriptProfile({ baseOnly: true }))}</p>`;
+  if (ProzaEdit.Genres) html += `<p><strong>Genre profile applied:</strong> ${escapeHtml(ProzaEdit.Genres.describe(buildAuditContext()))}</p>`;
+  html += `<p>${escapeHtml(buildManuscriptProfile({ baseOnly: true, noGenreNote: true }))}</p>`;
   const mc = result.manuscriptContext;
   if (mc?.used) {
-    html += `<p class="help-muted" style="font-size:11px;">Manuscript index used: ${mc.namesUsed} recurring names checked for spelling variants.</p>`;
+    html += `<p class="help-muted" style="font-size:12px;">Book outline used: ${mc.namesUsed} recurring names checked for spelling variants.</p>`;
   } else if (mc?.indexPresent) {
-    html += `<p class="help-muted" style="font-size:11px;">Manuscript index is out of date, so name checks used this text only. Refresh it on Checks or in Settings.</p>`;
+    html += `<p class="help-muted" style="font-size:12px;">Book outline is out of date, so name checks used this text only. Refresh it on Checks or in Settings.</p>`;
   }
   const typeHint = getManuscriptTypeAwareHint();
   if (typeHint) html += `<p class="audit-type-hint">${escapeHtml(typeHint)}</p>`;
@@ -4538,7 +4998,7 @@ function finalizeAudit(result, label) {
     html += `<p style="color:#c5221f;font-weight:600;">Fiction/plot checks are running on a partial scope. Review the full manuscript (or a wide chapter range) before applying changes that affect names, facts, or continuity.</p>`;
   }
   const ctx = buildAuditContext();
-  lastAuditMeta = { label, score, criticalCount, prefCount, metrics, traffic, compareLine, refLine };
+  lastAuditMeta = { label, score, criticalCount, prefCount, metrics, traffic, compareLine, refLine, simpleView: isChecked("simpleMode", false), hiddenLow };
   if (window.ProzaEdit?.ManuscriptOverview?.buildHtml && lastAuditExcerpt) {
     let heatmapHtml = "";
     try {
@@ -4554,26 +5014,28 @@ function finalizeAudit(result, label) {
     });
   }
   lastFeedbackLetter = ProzaEdit.ManuscriptOverview?.buildFeedbackLetter
-    ? ProzaEdit.ManuscriptOverview.buildFeedbackLetter(lastAuditExcerpt, ctx, { ...lastAuditMeta, label }, suggestions)
+    ? ProzaEdit.ManuscriptOverview.buildFeedbackLetter(lastAuditExcerpt, ctx, { ...lastAuditMeta, label }, visible)
     : "";
   const summary = getEl("summaryReport");
   if (summary) summary.innerHTML = html;
+  if (fopts.summaryOnly) return;
   setAuditSuggestions(suggestions);
   updateWorkflowCrossNav(getCurrentActiveTabId() || "tab4");
   updateChecksPostRunNav();
-  cacheAudit(label, html, suggestions, traffic, score);
+  if (fopts.rerender) return;
+  cacheAudit(label, html, suggestions, traffic, score, !!result.summaryNote);
   lastAuditHadTruncation = suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated");
   lastAuditScopeModeAtRun = getScopeMode();
   updateAuditScopeFootnote();
   if (lastAuditHadTruncation) {
     showPeStatus(
-      "Scope hit the character cap — open the Truncated scope card below, or try Selected chapters / Page range.",
+      "Scope hit the character cap — open the Truncated scope card below, or try Chosen chapters / Page range.",
       "warn"
     );
   }
 }
 
-function cacheAudit(label, html, suggestions, traffic, score) {
+function cacheAudit(label, html, suggestions, traffic, score, partialWalk) {
   const safeList = Array.isArray(suggestions) ? suggestions.slice(0, 80) : [];
   const json = JSON.stringify({
     label,
@@ -4582,15 +5044,17 @@ function cacheAudit(label, html, suggestions, traffic, score) {
     traffic,
     score,
     miniScores: lastMiniScores,
+    simpleView: isChecked("simpleMode", false),
     at: new Date().toISOString(),
   });
   if (json.length <= MAX_AUDIT_CACHE_CHARS) {
     ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.LAST_AUDIT, json);
-    ProzaEdit.Settings.setAsync(
+    if (!partialWalk) ProzaEdit.Settings.setAsync(
       ProzaEdit.Settings.KEYS.LAST_AUDIT_STATS,
       JSON.stringify({
-        critical: safeList.filter((s) => s.type === "confirmed").length,
-        pref: safeList.filter((s) => s.type !== "confirmed").length,
+        critical: modeVisibleSuggestions(safeList).filter((s) => s.type === "confirmed").length,
+        pref: modeVisibleSuggestions(safeList).filter(scoreCountsPref).length,
+        simpleView: isChecked("simpleMode", false),
         score,
         at: new Date().toISOString(),
       })
@@ -4615,6 +5079,12 @@ function restoreCachedAuditIfEmpty() {
     } else {
       getEl("miniScores")?.classList.add("hidden");
     }
+    if (!!d.simpleView !== isChecked("simpleMode", false)) {
+      const note = document.createElement("p");
+      note.className = "help-muted audit-mode-note";
+      note.textContent = `Counts and score above were saved in ${d.simpleView ? "Simple" : "Advanced"} view. Run the audit again to refresh them for the current view.`;
+      getEl("summaryReport")?.appendChild(note);
+    }
     setAuditSuggestions(d.suggestions);
     lastAuditHadTruncation = (d.suggestions || []).some(
       (s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated"
@@ -4631,8 +5101,8 @@ function runProzaEditAudit() {
 function runExtendedLocalAudit() {
   runAuditInternal({
     extendedLocal: true,
-    label: "Extended local audit",
-    status: "Running extended local audit (0 tokens)…",
+    label: "Deeper local audit",
+    status: "Running deeper local audit (0 tokens)…",
     btnId: "btnRunAudit",
     btnDone: "Run audit",
   });
@@ -4692,6 +5162,12 @@ function runAuditInternal(opts) {
 function runAuditInternalCore(opts) {
   if (auditBusy || deepBusy) return Promise.resolve(false);
   auditBusy = true;
+  auditCtxSnapshot = null;
+  try {
+    auditCtxSnapshot = buildAuditContext({});
+  } catch (_) {
+    auditCtxSnapshot = null;
+  }
   lastDocStats = null;
   clearRetry();
   const timing = createPhaseTiming();
@@ -4706,6 +5182,7 @@ function runAuditInternalCore(opts) {
 
   const finish = () => {
     auditBusy = false;
+    auditCtxSnapshot = null;
     setModuleButtonsDisabled(false);
     endLongOperation(longOp);
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, auditBtnDefault);
@@ -4754,6 +5231,7 @@ function runAuditInternalCore(opts) {
     persistSettings(false);
     showTab("tab4");
     currentAuditSuggestions = [];
+    resetStaleAuditSummaryState();
     const cardBox = getEl("cardContainer");
     if (cardBox) cardBox.innerHTML = "";
     if (sumEl) sumEl.textContent = opts.status || "Reading document…";
@@ -4773,7 +5251,7 @@ function runAuditInternalCore(opts) {
       longOp.throwIfCancelled();
       const pn = paras.items.length;
       if (pn <= MAX_PARAS) lastDocStats = { paragraphs: pn, estWords: Math.round(pn * 42) };
-      else lastDocStats = { paragraphs: pn, estWords: "(use section loop)" };
+      else lastDocStats = { paragraphs: pn, estWords: "(not counted for a very long document)" };
     }
     let text = await readScopeText(ctx, longOp);
     longOp.throwIfCancelled();
@@ -4799,14 +5277,15 @@ function runAuditInternalCore(opts) {
         ruleId: "sys:truncated",
         module: "ProzaEdit",
         type: "preference",
-        explanation: "Excerpt truncated for performance. Use selection or section loop for full coverage.",
+        explanation: "Excerpt truncated for performance. Select a smaller part, or audit one chapter at a time, to cover everything.",
         targetText: "(truncated)",
         replacementText: "(smaller scope)",
       });
     }
     lastAuditExcerpt = text;
     ProzaEdit.ScopeReader.clearScopeResumeSnapshot?.();
-    finalizeAudit(result, opts.label || "Full audit (local)");
+    const shown = typeof opts.onResult === "function" ? opts.onResult(result, text, truncated) || result : result;
+    finalizeAudit(shown, opts.label || "Full audit (local)");
     timing.mark("render");
     sessionAuditCompletedThisSession = true;
     updateWorkflowNextStepHint();
@@ -4830,6 +5309,20 @@ function runAuditInternalCore(opts) {
     .then((v) => v !== false);
 }
 
+function appendLowConfidenceNote(box) {
+  if (auditLowConfidenceHidden > 0) {
+    const note = document.createElement("p");
+    note.className = "help-muted audit-hidden-note";
+    note.innerHTML = `${auditLowConfidenceHidden} lower-confidence suggestion${auditLowConfidenceHidden === 1 ? " is" : "s are"} hidden in Simple view. <button type="button" class="btn-linkish" data-a="show-low">Show them</button>`;
+    note.querySelector("button").addEventListener("click", () => {
+      auditShowLowConfidence = true;
+      applyAuditCardFilter();
+      refreshAuditSummaryForMode();
+    });
+    box.appendChild(note);
+  }
+}
+
 function renderAuditCards(list) {
   const box = document.getElementById("cardContainer");
   if (!box) return;
@@ -4837,6 +5330,10 @@ function renderAuditCards(list) {
   list = Array.isArray(list) ? list : [];
   const ic = (name) => (window.ProzaEdit?.PeIcons?.svg ? ProzaEdit.PeIcons.svg(name) : "");
   if (!list.length) {
+    if (auditLowConfidenceHidden > 0) {
+      appendLowConfidenceNote(box);
+      return;
+    }
     if (currentAuditSuggestions.length && auditCardFilter !== "all") {
       box.innerHTML = "<p class=\"audit-empty\">No items in this filter. Try <strong>All</strong>.</p>";
     } else if (currentAuditSuggestions.length) {
@@ -4846,6 +5343,7 @@ function renderAuditCards(list) {
     }
     return;
   }
+  appendLowConfidenceNote(box);
   const capped = ProzaEdit.AuditReview?.capCards?.(list, auditCardDisplayLimit) || { shown: list, hiddenCount: 0 };
   const renderOne = (item, i) => {
     if (!item || typeof item !== "object") return;
@@ -4869,6 +5367,7 @@ function renderAuditCards(list) {
       <span class="badge ${item.type === "confirmed" ? "badge-confirmed" : "badge-pref"}">${escapeHtml(item.type)}</span>
       <strong>${escapeHtml(item.module)}</strong>
       <p class="card-explanation">${escapeHtml(item.explanation)}</p>
+      ${item.source === "ai" ? '<p class="help-muted card-ai-note">AI suggestion — it quotes your text, but check it before applying.</p>' : ""}
       <p class="card-target">"${escapeHtml(item.targetText)}"</p>
       <p class="card-replacement">"${escapeHtml(item.replacementText)}"</p>
       <div class="card-actions">
@@ -4879,13 +5378,14 @@ function renderAuditCards(list) {
         <div class="card-actions-primary">
           <button type="button" class="btn-go btn-with-icon" data-a="goto" data-pe-tip="btn-card-goto" aria-label="Go to finding in Word">${ic("locate")} Go to</button>
           ${canRewrite ? `<button type="button" class="btn-go btn-with-icon" data-a="rewrite" data-pe-tip="btn-card-rewrite" aria-label="Rewrite finding">${ic("edit")} Rewrite</button>` : ""}
+          ${item.ruleId === "spell:double_space" ? '<button type="button" class="btn-go" data-a="fixspaces">Replace all double spaces</button>' : ""}
           <button type="button" class="btn-go" data-a="localtip">Local tip</button>
         </div>
         <div class="card-actions-secondary">
           <button type="button" class="btn-go" data-a="dict">Dict</button>
           ${showHouse ? '<button type="button" class="btn-go" data-a="house">House rule</button>' : ""}
           <button type="button" class="btn-go btn-with-icon" data-a="mute" data-pe-tip="btn-card-mute" aria-label="Mute rule">${ic("bell-off")} Mute</button>
-          <button type="button" class="btn-go" data-a="chat" title="Optional Gemini">Gemini</button>
+          <button type="button" class="btn-go" data-a="chat" title="Optional AI help (uses your API key)">AI</button>
           <button type="button" class="btn-dismiss btn-with-icon" data-a="dismiss" data-pe-tip="btn-card-dismiss" aria-label="Dismiss finding">${ic("eye-off")} Dismiss</button>
         </div>
         ${
@@ -4902,6 +5402,8 @@ function renderAuditCards(list) {
     if (undoBtn) undoBtn.onclick = () => prozaEditUndo();
     const rewriteBtn = div.querySelector('[data-a="rewrite"]');
     if (rewriteBtn) rewriteBtn.onclick = () => sendIssueToRewrite(item);
+    const fixSpacesBtn = div.querySelector('[data-a="fixspaces"]');
+    if (fixSpacesBtn) fixSpacesBtn.onclick = () => collapseDoubleSpacesInScope();
     div.querySelector('[data-a="localtip"]').onclick = () => showLocalTipForIssue(item);
     div.querySelector('[data-a="chat"]').onclick = () => sendIssueToChat(item);
     if (canApply) div.querySelector('[data-a="apply"]').onclick = () => applyFix(id, item.targetText, item.replacementText);
@@ -4960,7 +5462,7 @@ async function withCardActionLock(key, action, fn) {
 function muteRule(item) {
   if (!item || !item.ruleId) return Promise.resolve();
   return withCardActionLock(`mute:${item.id}`, "mute this rule", async () => {
-    await ProzaEdit.Settings.muteRule(item.ruleId);
+    const muteSaved = (await ProzaEdit.Settings.muteRule(item.ruleId)) !== false;
     if (item.targetText) {
       await ProzaEdit.Settings.dismissTarget(item.targetText);
       const candidate = String(item.targetText).trim().split(/\s+/)[0];
@@ -4969,6 +5471,7 @@ function muteRule(item) {
         updateDictionaryCountBadge();
       }
     }
+    dropSameRuleFindings(item);
     removeAuditCard(item.id);
     const showDictNudge = ProzaEdit.PlainLanguage?.shouldShowMuteDictionaryNudge?.(
       item,
@@ -4977,6 +5480,8 @@ function muteRule(item) {
     if (showDictNudge) {
       muteDictionaryNudgeShownThisSession = true;
       showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok");
+    } else if (!muteSaved) {
+      showPeStatus("Rule muted in this browser, but Word could not save it in this document. It may return after reopening the file.", "warn");
     } else {
       showPeStatus("Rule muted — saved in this document and this browser (not other PCs or files).", "ok");
     }
@@ -4986,10 +5491,18 @@ function muteRule(item) {
 function dismissCard(item) {
   if (!item) return Promise.resolve();
   return withCardActionLock(`dismiss:${item.id}`, "dismiss this finding", async () => {
-    if (item.ruleId) await ProzaEdit.Settings.muteRule(item.ruleId);
+    let saved = true;
+    if (item.ruleId) saved = (await ProzaEdit.Settings.muteRule(item.ruleId)) !== false;
     if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
+    dropSameRuleFindings(item);
     removeAuditCard(item.id);
+    if (!saved) showPeStatus("Dismissed in this browser, but Word could not save it in this document.", "warn");
   });
+}
+
+function dropSameRuleFindings(item) {
+  if (!item || !item.ruleId) return;
+  currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id === item.id || x.ruleId !== item.ruleId);
 }
 
 function removeAuditCard(id) {
@@ -5006,7 +5519,8 @@ function removeAuditCard(id) {
   currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id !== id);
   updateAuditFilterChips();
   updateAuditTabBadge();
-  applyAuditCardFilter();
+  applyAuditCardFilter({ preserveDisplayLimit: true });
+  refreshAuditSummaryForMode({ summaryOnly: true });
   const nextCard = nextId ? getEl(`card_${nextId}`) : null;
   if (nextCard && Number.isFinite(oldTop)) {
     const newTop = nextCard.getBoundingClientRect?.().top;
@@ -5027,6 +5541,7 @@ function clearAuditReport() {
   lastAuditHadTruncation = false;
   lastAuditScopeModeAtRun = "";
   lastAuditMeta = {};
+  lastAuditResultForMode = null;
   lastFeedbackLetter = "";
   auditCardFilter = isChecked("simpleMode", false) ? "confirmed" : "all";
   updateAuditFilterChips();
@@ -5047,7 +5562,7 @@ let peGotoLock = null;
 
 function goToIssue(target) {
   if (!target || String(target).startsWith("(")) {
-    showPeStatus("Cannot locate this item.", "warn");
+    showPeStatus("Could not find this item in the document. Run the check again.", "warn");
     return Promise.resolve(false);
   }
   if (!peGotoLock) peGotoLock = ProzaEdit.Recovery.createLock();
@@ -5082,9 +5597,13 @@ function applyFix(cardId, target, replacement) {
     showPeStatus("This card has no automatic replacement.", "warn");
     return Promise.resolve(false);
   }
+  const built = ProzaEdit.EditApply.buildAnchor(lastAuditExcerpt, target);
   return applyDocumentEdit(target, replacement, "Audit fix", {
     forceDocument: true,
+    anchor: built.anchor,
     onSuccess: () => {
+      const at = lastAuditExcerpt.indexOf(target);
+      if (at >= 0) lastAuditExcerpt = lastAuditExcerpt.slice(0, at) + replacement + lastAuditExcerpt.slice(at + target.length);
       removeAuditCard(cardId);
       scheduleManuscriptIndexBuild(true);
       scheduleLastSessionSummaryPersist();
@@ -5166,7 +5685,7 @@ function appendCoachMessage(text, isUser) {
 
 function showLocalTipForIssue(item) {
   showTab("tab5");
-  const reply = ProzaEdit.LocalCoach.forIssue(item);
+  const reply = ProzaEdit.LocalCoach.forIssue(item, collectUiConfig());
   appendCoachMessage(`Tip for: ${item.module}`, true);
   appendCoachMessage(reply, false);
   showPeStatus("Local tip (0 tokens).", "ok");
@@ -5192,7 +5711,7 @@ async function sendLocalCoachMessage() {
   } catch (_) {}
   const statusLine = manuscriptContextStatusLine();
   const profile = [buildManuscriptProfile({ baseOnly: true }), statusLine].filter(Boolean).join("\n");
-  const reply = ProzaEdit.LocalCoach.answer(prompt, snippet ? `${profile}\n\nSelection excerpt:\n${snippet}` : profile);
+  const reply = ProzaEdit.LocalCoach.answer(prompt, snippet ? `${profile}\n\nSelection excerpt:\n${snippet}` : profile, collectUiConfig());
   appendCoachMessage(reply, false);
   showPeStatus("Local Coach (0 tokens).", "ok");
 }
@@ -5215,6 +5734,162 @@ async function selectNextChapterAndAudit() {
   } catch (e) {
     reportActionError(e, "select the next chapter");
   }
+}
+
+let chapterWalkState = null;
+let chapterWalkMemory = {};
+
+function chapterWalkStoredState() {
+  return ProzaEdit.ChapterWalk.parse(ProzaEdit.Settings.get(ProzaEdit.ChapterWalk.STORAGE_KEY, null));
+}
+
+function persistChapterWalk() {
+  if (!chapterWalkState) return Promise.resolve(false);
+  return ProzaEdit.Settings.setAsync(ProzaEdit.ChapterWalk.STORAGE_KEY, ProzaEdit.ChapterWalk.serialize(chapterWalkState)).catch(() => false);
+}
+
+function syncChapterWalkState() {
+  const CW = ProzaEdit.ChapterWalk;
+  const r = CW.reconcile(chapterWalkState || chapterWalkStoredState(), scopeChapterListCache);
+  if (r.reset) {
+    chapterWalkMemory = {};
+    showPeStatus("Your chapter list changed, so chapter-by-chapter progress started over.", "warn");
+  }
+  chapterWalkState = r.state;
+  return chapterWalkState;
+}
+
+function renderChapterWalkPanel(openIt) {
+  const box = getEl("peChapterWalk");
+  const line = getEl("peChapterWalkProgress");
+  const btn = getEl("btnAuditNextChapter");
+  const skip = getEl("btnSkipChapter");
+  const reset = getEl("btnRestartChapterWalk");
+  if (!box || !line || !ProzaEdit.ChapterWalk) return;
+  const CW = ProzaEdit.ChapterWalk;
+  const list = scopeChapterListCache;
+  const st = list.length ? syncChapterWalkState() : chapterWalkState || CW.reconcile(chapterWalkStoredState(), list).state;
+  const done = CW.doneCount(st);
+  const next = list.length ? CW.nextIndex(st, list) : 0;
+  const nextCh = list.find((c) => c.index === next);
+  if (!list.length) {
+    line.textContent = done ? `${done} chapter(s) audited earlier. Reload the chapter list to continue.` : "Needs Heading 1–3 on chapter titles. Click the button to start.";
+  } else if (!next) {
+    line.textContent = `${CW.progressLabel(st, list)}. ${CW.summaryLines(st, list).join(" · ")}`;
+  } else {
+    line.textContent = `${CW.progressLabel(st, list)} — next: ${nextCh ? nextCh.title : ""}${done ? ` · ${CW.summaryLines(st, list).join(" · ")}` : ""}`;
+  }
+  if (btn) btn.textContent = !list.length ? "Audit first chapter" : !next ? "Audit again from the start" : done ? "Audit next chapter" : "Audit first chapter";
+  if (skip) skip.classList.toggle("hidden", !next);
+  if (reset) reset.classList.toggle("hidden", !done);
+  if (openIt || (done && next)) box.open = true;
+  const act = document.activeElement;
+  if (act && act !== btn && act.classList && act.classList.contains("hidden") && btn) btn.focus();
+}
+
+async function auditNextChapter() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
+  const CW = ProzaEdit.ChapterWalk;
+  if (!scopeChapterListCache.length) {
+    await refreshChapterScopeLists();
+    renderChapterWalkPanel(true);
+    if (!scopeChapterListCache.length) return;
+  }
+  let st = syncChapterWalkState();
+  let next = CW.nextIndex(st, scopeChapterListCache);
+  if (!next) {
+    chapterWalkState = CW.create(scopeChapterListCache);
+    chapterWalkMemory = {};
+    st = chapterWalkState;
+    next = CW.nextIndex(st, scopeChapterListCache);
+  }
+  const ch = scopeChapterListCache.find((c) => c.index === next);
+  if (!ch) return;
+  const total = scopeChapterListCache.length;
+  const position = CW.doneCount(st) + 1;
+  const prevScope = getScopeMode();
+  const scopeEl = getEl("scope");
+  if (scopeEl) {
+    scopeEl.value = "selected-chapters";
+    syncScopePanels();
+  }
+  document.querySelectorAll("#scopeChapterChecklist input[type=checkbox]").forEach((cb) => {
+    cb.checked = cb.value === String(ch.index);
+  });
+  const snapshotState = st;
+  const ok = await runAuditInternal({
+    label: `Chapter ${position} of ${total}: ${ch.title}`,
+    status: `Chapter ${position} of ${total}: ${ch.title}…`,
+    skipLongOpWarning: true,
+    onResult: (result, text, truncated) => {
+      if (chapterWalkState !== snapshotState) return result;
+      const list = result.suggestions || [];
+      CW.record(snapshotState, ch, {
+        words: result.metrics?.wordCount || 0,
+        critical: list.filter((s) => s.type === "confirmed").length,
+        style: list.filter(scoreCountsPref).length,
+        truncated,
+        at: Date.now(),
+      });
+      chapterWalkMemory[ch.index] = list;
+      persistChapterWalk();
+      const merged = CW.mergedSuggestions(chapterWalkMemory, scopeChapterListCache);
+      const totals = CW.totals(snapshotState);
+      return {
+        ...result,
+        suggestions: merged,
+        score: undefined,
+        metrics: { ...(result.metrics || {}), wordCount: totals.words },
+        summaryNote: `Combined results for ${totals.chapters} of ${total} chapters. The word count is the total so far; reading grade, dialogue share and the overview panel describe the latest chapter ("${ch.title}").`,
+      };
+    },
+  });
+  if (ok) {
+    await persistChapterWalk();
+    const after = CW.nextIndex(chapterWalkState, scopeChapterListCache);
+    showPeStatus(
+      after
+        ? `${CW.doneCount(chapterWalkState)} of ${total} chapters audited. Click Audit next chapter to continue — your place is saved.`
+        : `All ${total} chapters audited. Results are merged below.`,
+      "ok"
+    );
+  } else {
+    showPeStatus("That chapter was not audited, so your place is unchanged. Click Audit next chapter to try again" + (getEl("scopeCharPreview")?.classList.contains("over-limit") ? ", or Skip this chapter if it is longer than the limit." : "."), "warn");
+  }
+  restoreScopeModeIfChanged(prevScope);
+  renderChapterWalkPanel(true);
+}
+
+async function skipChapterWalkChapter() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
+  const CW = ProzaEdit.ChapterWalk;
+  if (!scopeChapterListCache.length) return;
+  const st = syncChapterWalkState();
+  const next = CW.nextIndex(st, scopeChapterListCache);
+  const ch = scopeChapterListCache.find((c) => c.index === next);
+  if (!ch) return;
+  CW.record(st, ch, { skipped: true, at: Date.now() });
+  await persistChapterWalk();
+  renderChapterWalkPanel(true);
+  showPeStatus(`Skipped "${ch.title}".`, "ok");
+}
+
+async function restartChapterWalk() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
+  chapterWalkState = ProzaEdit.ChapterWalk.create(scopeChapterListCache);
+  chapterWalkMemory = {};
+  await persistChapterWalk();
+  renderChapterWalkPanel(true);
+  showPeStatus("Chapter-by-chapter progress cleared.", "ok");
 }
 
 function cancelBatchAudit() {
@@ -5258,7 +5933,10 @@ async function runBatchSectionAuditCore() {
           skipLongOpWarning: true,
           fromBatch: true,
         });
-        if (!ok) break;
+        if (!ok) {
+          failed = !(batchCancel || batchOp.isCancelled());
+          break;
+        }
       } catch (e) {
         failed = true;
         reportActionError(e, "run the batch audit");
@@ -5417,6 +6095,8 @@ async function runCitationScanCore() {
     }
     if (result.findings.length) {
       currentAuditSuggestions = ProzaEdit.CitationEngine.mergeFindings(currentAuditSuggestions, result.findings);
+      updateAuditFilterChips();
+      updateAuditTabBadge();
       applyAuditCardFilter();
       showPeStatus(`${result.findings.length} citation finding(s) added to Audit cards.`, "ok");
     } else {
@@ -5452,7 +6132,7 @@ function runTimelineScan() {
     warnOperationBusy();
     return;
   }
-  const fiction = (getEl("manuscriptType")?.value || "").includes("Fiction");
+  const fiction = isFictionManuscriptType();
   if (!fiction) {
     showPeStatus("Timeline scan is for fiction manuscripts. Set Manuscript type to Fiction on Target.", "warn");
     return;
@@ -5502,6 +6182,8 @@ async function runTimelineScanCore() {
     }
     if (result.findings.length) {
       currentAuditSuggestions = ProzaEdit.ChronologyEngine.mergeFindings(currentAuditSuggestions, result.findings);
+      updateAuditFilterChips();
+      updateAuditTabBadge();
       applyAuditCardFilter();
       showPeStatus(`${result.findings.length} timeline finding(s) added to Audit cards.`, "ok");
     } else {
@@ -5543,7 +6225,7 @@ async function scanChapterHeatmap() {
     const entries = await wordRun("heatmap", (ctx) => ProzaEdit.ChapterHeatmap.scanDocument(ctx));
     if (!entries?.length) throw new Error("No Heading 1–3 chapters found. Apply heading styles first.");
     const payload = JSON.stringify(entries.slice(0, 40));
-    if (payload.length > 48000) throw new Error("Heatmap too large to store; use fewer chapters.");
+    if (payload.length > 48000) throw new Error("The chapter chart is too large to save. Use fewer chapters.");
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CHAPTER_HEATMAP, payload);
     showPeStatus(`Heatmap saved (${entries.length} chapters). Re-run audit to view.`, "ok");
   } catch (e) {
@@ -5583,14 +6265,24 @@ async function captureReferenceStyle() {
   }
 }
 
+function forceScopeToSelection() {
+  const scopeEl = getEl("scope");
+  if (scopeEl) scopeEl.value = "selection";
+  const pinScope = getEl("pinScope");
+  if (pinScope) pinScope.value = "selection";
+  syncScopePanels();
+  updateActiveChecksHint();
+  updateWorkflowStatusLine();
+}
+
 function selectNextChapter() {
   return wordRun("chapter", async (ctx) => {
     const paras = ctx.document.body.paragraphs;
     paras.load("items");
     await ctx.sync();
     const total = paras.items.length;
-    if (!total) throw new Error("No paragraphs.");
-    if (total > MAX_PARAS) throw new Error("Document too large—use section loop.");
+    if (!total) throw new Error("The document has no text to check.");
+    if (total > MAX_PARAS) throw new Error("This document is too long to read at once. Choose a page range or chosen chapters instead.");
     for (let i = 0; i < total; i++) paras.items[i].load("styleBuiltIn");
     await ctx.sync();
     const headingIdx = [];
@@ -5599,7 +6291,7 @@ function selectNextChapter() {
       if (s === Word.Style.heading1 || s === Word.Style.heading2 || s === Word.Style.heading3) headingIdx.push(i);
     }
     if (!headingIdx.length) {
-      throw new Error("No Heading 1–3 paragraphs. Apply Word heading styles to chapter titles (PMAT-style splits).");
+      throw new Error("No chapter headings found. Give your chapter titles a Heading 1, 2 or 3 style in Word.");
     }
     let ptr = getChapterIndex();
     if (ptr >= headingIdx.length) {
@@ -5611,10 +6303,7 @@ function selectNextChapter() {
     paras.items[start].getRange("Start").expandTo(paras.items[endPara].getRange("End")).select();
     await ctx.sync();
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CHAPTER_IDX, ptr + 1);
-    const scopeEl = getEl("scope");
-    if (scopeEl) scopeEl.value = "selection";
-    const pinScope = getEl("pinScope");
-    if (pinScope) pinScope.value = "selection";
+    forceScopeToSelection();
   });
 }
 
@@ -5663,9 +6352,7 @@ async function sendIssueToRewrite(item) {
     });
     const scopeEl = getEl("scope");
     if (scopeEl && scopeEl.value !== "selection") {
-      scopeEl.value = "selection";
-      const pinScope = getEl("pinScope");
-      if (pinScope) pinScope.value = "selection";
+      forceScopeToSelection();
       await persistSettings(false);
     }
     const snippet = String(target).length > 120 ? `${String(target).slice(0, 117)}…` : target;
@@ -5698,8 +6385,8 @@ function selectNextSection() {
     paras.load("items");
     await ctx.sync();
     const total = paras.items.length;
-    if (!total) throw new Error("No paragraphs.");
-    if (total > MAX_PARAS) throw new Error("Too many paragraphs—select manually.");
+    if (!total) throw new Error("The document has no text to check.");
+    if (total > MAX_PARAS) throw new Error("This document is too long to read at once. Select the text yourself.");
     let idx = getSectionIndex();
     if (idx >= total) {
       idx = 0;
@@ -5709,10 +6396,7 @@ function selectNextSection() {
     paras.items[idx].getRange("Start").expandTo(paras.items[end].getRange("End")).select();
     await ctx.sync();
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.SECTION_IDX, end + 1);
-    const scopeEl = getEl("scope");
-    if (scopeEl) scopeEl.value = "selection";
-    const pinScope = getEl("pinScope");
-    if (pinScope) pinScope.value = "selection";
+    forceScopeToSelection();
     await persistSettings(false);
   });
 }
@@ -5735,9 +6419,19 @@ function openWordProofing() {
   showPeStatus("In Word: press F7 or Review → Editor (M365).", "ok");
 }
 
-/* Gemini */
-function getApiKey() {
-  return getEl("apiKey")?.value.trim() || "";
+/* Optional AI help (bring-your-own key; provider chosen in Settings) */
+
+let aiConfirmPending = false;
+
+/** One AI confirm dialog at a time: a double click must not stack two dialogs (and two paid calls). */
+async function aiConfirmOnce(options) {
+  if (aiConfirmPending) return false;
+  aiConfirmPending = true;
+  try {
+    return await peConfirm(options);
+  } finally {
+    aiConfirmPending = false;
+  }
 }
 
 async function runDeepAuditAI() {
@@ -5747,15 +6441,15 @@ async function runDeepAuditAI() {
   }
   const key = getApiKey();
   if (!key) {
-    showPeStatus("Add a Gemini API key under Settings → Essentials (optional Gemini), or use the free local audit.", "warn");
+    showPeStatus("Add an AI provider API key under Settings → AI help (optional), or use the free local audit.", "warn");
     openAiHelpSetup();
     return;
   }
   if (
-    !(await peConfirm({
-      title: "Deep audit via Gemini",
+    !(await aiConfirmOnce({
+      title: `Deep audit via ${aiLabel()}`,
       message:
-        `Deep Audit uses 1 Gemini API call and sends the scoped text to Google.\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue with Gemini?`,
+        `Deep Audit uses 1 ${aiLabel()} API call and sends up to ${MAX_DEEP.toLocaleString()} characters of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry Deeper local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -5782,6 +6476,7 @@ async function runDeepAuditAICore() {
     longOp = beginLongOperation({ initialStatus: "Reading for deep audit…" });
     showTab("tab4");
     currentAuditSuggestions = [];
+    resetStaleAuditSummaryState();
     const cardD = getEl("cardContainer");
     if (sumD) sumD.textContent = "Deep audit…";
     if (cardD) cardD.innerHTML = "";
@@ -5806,7 +6501,7 @@ async function runDeepAuditAICore() {
     }
     timing.mark("read");
     longOp.throwIfCancelled();
-    longOp.setStatus("Waiting for Gemini…");
+    longOp.setStatus(`Waiting for ${aiLabel()}…`);
 
     const prep = await prepareGeminiPrompt(({ profile, index }) => [
       { id: "guardrails", text: GUARDRAILS },
@@ -5814,9 +6509,9 @@ async function runDeepAuditAICore() {
       { id: "index", role: "index", text: index },
       {
         id: "instruction",
-        text: `Return ONLY JSON array (max 6):\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":"","ruleId":""}]`,
+        text: `Return ONLY JSON array (max 6). targetText must be copied EXACTLY from the excerpt:\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":""}]`,
       },
-      { id: "excerpt", role: "excerpt", label: "EXCERPT:", text: excerpt },
+      { id: "excerpt", role: "excerpt", label: "EXCERPT:", text: ProzaEdit.AISafety.wrapUntrusted(excerpt) },
     ]);
     longOp.throwIfCancelled();
     if (prep.note) showPeStatus(prep.note, "warn");
@@ -5824,29 +6519,16 @@ async function runDeepAuditAICore() {
     timing.mark("gemini");
     longOp.throwIfCancelled();
     let ai = [];
+    let aiDropped = null;
     try {
-      const start = reply.indexOf("[");
-      const end = reply.lastIndexOf("]");
-      if (start < 0 || end <= start) throw new Error("Bad AI JSON—use local audit.");
-      const t = reply.substring(start, end + 1);
-      const parsed = JSON.parse(t);
-      if (!Array.isArray(parsed)) throw new Error("Bad AI JSON—use local audit.");
-      ai = parsed
-        .slice(0, 8)
-        .filter((x) => x && typeof x === "object")
-        .map((x, i) => ({
-          id: `ai_${i}`,
-          ruleId: x.ruleId || `ai:${i}`,
-          module: x.module || "Deep audit",
-          type: x.type === "confirmed" ? "confirmed" : "preference",
-          explanation: String(x.explanation || ""),
-          targetText: String(x.targetText || ""),
-          replacementText: String(x.replacementText || ""),
-        }))
-        .filter((x) => x.targetText && x.explanation);
+      const checked = ProzaEdit.AISafety.parseFindings(reply, excerpt, { max: 8 });
+      ai = checked.findings;
+      aiDropped = checked.dropped;
     } catch (_) {
-      throw new Error("Bad AI JSON—use local audit.");
+      throw new Error("The AI reply could not be read. Nothing was changed — use the local audit.");
     }
+    const droppedN = aiDropped ? aiDropped.notInSource + aiDropped.unsafe + aiDropped.malformed : 0;
+    if (droppedN) showPeStatus(`${droppedN} AI suggestion(s) were ignored because they did not quote your text exactly or looked unsafe.`, "warn");
     lastAuditExcerpt = excerpt;
     const local = ProzaEdit.Audit.run(excerpt, buildAuditContext());
     const merged = ProzaEdit.Audit._dedupe([...local.suggestions, ...ai]).slice(0, 60);
@@ -5892,10 +6574,11 @@ function updateTokenEstimate() {
   if (!el) return;
   const key = getApiKey();
   if (!key) {
-    el.textContent = "Local Coach: 0 tokens (add API key only for Gemini)";
+    el.textContent = "Local Coach: 0 tokens (add an API key only for optional AI help)";
     return;
   }
-  el.textContent = `Gemini est.: ~${ProzaEdit.Gemini.estimateTokens(chat) + 400} tokens if you use Send via Gemini`;
+  const est = ProzaEdit.AIProviders.estimate(aiProviderId(), aiModelId(), chat, 400);
+  el.textContent = `${aiLabel()} est.: ~${est.totalTokens.toLocaleString()} tokens (${ProzaEdit.AIProviders.formatUsd(est.usd)}) if you use Send via AI`;
 }
 
 function appendChatMessage(log, text, cls, isError) {
@@ -5920,9 +6603,9 @@ async function sendChatMessage() {
   }
   if (!key) {
     if (
-      await peConfirm({
+      await aiConfirmOnce({
         title: "No API key",
-        message: "No Gemini API key. Use free Local Coach instead?",
+        message: "No AI API key set. Use free Local Coach instead?",
         confirmLabel: "Use Local Coach",
         cancelLabel: "Cancel",
       })
@@ -5931,17 +6614,17 @@ async function sendChatMessage() {
     return;
   }
   if (
-    !(await peConfirm({
-      title: "Send via Gemini",
-      message: `Send via Gemini (uses API tokens)? Your question and the chosen context are sent to Google.${geminiIndexDisclosure()}`,
+    !(await aiConfirmOnce({
+      title: `Send via ${aiLabel()}`,
+      message: `Send via ${aiLabel()} (uses API tokens)? Your question and the chosen context are sent to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_CHAT * 2 + 1500 + aiIndexChars(), 1024)}${geminiIndexDisclosure()}`,
       confirmLabel: "Send",
       cancelLabel: "Cancel",
     }))
   )
     return;
   if (
-    ProzaEdit.Gemini.estimateTokens(prompt) > 2000 &&
-    !(await peConfirm({
+    ProzaEdit.AIProviders.estimateTokens(prompt) > 2000 &&
+    !(await aiConfirmOnce({
       title: "Large prompt",
       message: "Large prompt—continue?",
       confirmLabel: "Continue",
@@ -5968,13 +6651,20 @@ async function sendChatMessage() {
   } finally {
     auditStarting = false;
   }
-  const prep = await prepareGeminiPrompt(({ profile, index }) => [
+  let prep;
+  try {
+    prep = await prepareGeminiPrompt(({ profile, index }) => [
     { id: "guardrails", text: GUARDRAILS },
     { id: "profile", text: profile },
     { id: "index", role: "index", text: index },
-    { id: "context", role: "context", label: "Context:", text: context },
+    { id: "context", role: "context", label: "Context (untrusted manuscript text):", text: ProzaEdit.AISafety.wrapUntrusted(context) },
     { id: "question", label: "Question:", text: prompt },
-  ]);
+    ]);
+  } catch (e) {
+    const result = reportActionError(e, "prepare the AI message");
+    appendChatMessage(log, result.message, "chat-ai", true);
+    return;
+  }
   if (prep.note) appendChatMessage(log, `Note: ${prep.note}`, "chat-ai");
   await runChatGeminiCall(prep.text);
 }
@@ -5990,15 +6680,15 @@ async function runChatGeminiCall(text) {
   chatBusy = true;
   clearRetry();
   if (sendBtn) sendBtn.disabled = true;
-  const op = beginLongOperation({ initialStatus: "Waiting for Gemini…" });
+  const op = beginLongOperation({ initialStatus: `Waiting for ${aiLabel()}…` });
   try {
     const reply = await geminiGenerateWithQuota(text, { maxOutputTokens: 1024, temperature: 0.5 }, null, op.abortSignal);
     op.throwIfCancelled();
     appendChatMessage(log, reply, "chat-ai");
     return true;
   } catch (e) {
-    const result = reportActionError(e, "get a Gemini reply", {
-      retry: { label: "Gemini chat", run: () => runChatGeminiCall(text) },
+    const result = reportActionError(e, `get a ${aiLabel()} reply`, {
+      retry: { label: "AI chat", run: () => runChatGeminiCall(text) },
     });
     appendChatMessage(log, result.message, "chat-ai", !result.cancelled);
     return false;
@@ -6084,14 +6774,14 @@ async function runSmartRewrite() {
   }
   const key = getApiKey();
   if (!key) {
-    showPeStatus("Add a Gemini API key under Settings → Essentials, or use Local paraphrase (free).", "warn");
+    showPeStatus("Add an AI provider API key under Settings → AI help, or use Local paraphrase (free).", "warn");
     openAiHelpSetup();
     return;
   }
   if (
-    !(await peConfirm({
-      title: "Rewrite via Gemini",
-      message: `Rewrite via Gemini uses API tokens and sends your selected text to Google. Continue?${geminiIndexDisclosure()}`,
+    !(await aiConfirmOnce({
+      title: `Rewrite via ${aiLabel()}`,
+      message: `Rewrite via ${aiLabel()} uses API tokens and sends your selected text (up to ${MAX_CHAT.toLocaleString()} characters) to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_CHAT + 1500 + aiIndexChars(), 1024)}${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -6122,10 +6812,17 @@ async function runSmartRewrite() {
     rewriteBusy = false;
   }
   const est = getEl("rewriteTokenEstimate");
-  if (est) est.textContent = `Est. tokens: ~${ProzaEdit.Gemini.estimateTokens(excerpt) + 200}`;
-  const prep = await prepareGeminiPrompt(({ profile, index }) =>
-    ProzaEdit.Gemini.buildRewritePromptDetailed(mode, excerpt, profile, GUARDRAILS, index)
-  );
+  if (est) est.textContent = `Est. tokens: ~${ProzaEdit.AIProviders.estimateTokens(excerpt) + 200}`;
+  let prep;
+  try {
+    prep = await prepareGeminiPrompt(({ profile, index }) =>
+      ProzaEdit.Gemini.buildRewritePromptDetailed(mode, ProzaEdit.AISafety.wrapUntrusted(excerpt), profile, GUARDRAILS, index)
+    );
+  } catch (e) {
+    const result = reportActionError(e, "prepare the AI rewrite");
+    preview.innerText = result.message;
+    return;
+  }
   if (prep.note) showPeStatus(prep.note, "warn");
   await runRewriteGeminiCall(prep.text);
 }
@@ -6140,18 +6837,18 @@ async function runRewriteGeminiCall(prompt) {
   rewriteBusy = true;
   clearRetry();
   preview.innerText = "Rewriting…";
-  const op = beginLongOperation({ initialStatus: "Waiting for Gemini…" });
+  const op = beginLongOperation({ initialStatus: `Waiting for ${aiLabel()}…` });
   try {
     const text = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1024, temperature: 0.55 }, null, op.abortSignal);
     op.throwIfCancelled();
     lastRewritePreview = text;
     preview.innerText = text;
-    showPeStatus("Gemini rewrite ready.", "ok");
+    showPeStatus("AI rewrite ready. Review it before applying; nothing was changed in Word.", "ok");
     return true;
   } catch (e) {
     lastRewritePreview = "";
-    const result = reportActionError(e, "get a Gemini rewrite", {
-      retry: { label: "Gemini rewrite", run: () => runRewriteGeminiCall(prompt) },
+    const result = reportActionError(e, `get a ${aiLabel()} rewrite`, {
+      retry: { label: "AI rewrite", run: () => runRewriteGeminiCall(prompt) },
     });
     preview.innerText = result.cancelled ? "Cancelled. Nothing was changed in Word." : result.message;
     return false;
@@ -6204,7 +6901,7 @@ function toggleVoiceDictation() {
     try {
       recognition.start();
       isRecording = true;
-      document.getElementById("micStatus").innerText = "Listening…";
+      document.getElementById("micStatus").innerText = "Listening… (your browser may send audio to its speech service)";
     } catch (_) {}
   }
 }

@@ -28,11 +28,19 @@ ProzaEdit.LocalRewrite = {
     return text.replace(re, repl);
   },
 
+  /** Whole-word, case-preserving replace ("bandit's" is not "it's"; "Don't" becomes "Do not"). */
+  _replaceWord(text, find, repl) {
+    if (!find) return text;
+    const esc = find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(^|[^A-Za-z0-9_\\u00C0-\\u024F])(${esc})(?![A-Za-z0-9_\\u00C0-\\u024F])`, "gi");
+    return text.replace(re, (m, pre, hit) => pre + (/^[A-Z]/.test(hit) && /^[a-z]/.test(repl) ? repl[0].toUpperCase() + repl.slice(1) : repl));
+  },
+
   _applyPleonasms(text) {
     let t = text;
     const list = ProzaEdit.LexicalBanks?.PLEONASMS || ProzaEdit.Audit?.PLEONASMS || [];
     list.forEach(([target, replacement]) => {
-      t = this._replaceAllInsensitive(t, target, replacement);
+      t = this._replaceWord(t, target, replacement);
     });
     return t;
   },
@@ -40,7 +48,7 @@ ProzaEdit.LocalRewrite = {
   fluency(text) {
     let t = this._normalize(text);
     this.WORDINESS.forEach(([a, b]) => {
-      t = this._replaceAllInsensitive(t, a, b);
+      t = this._replaceWord(t, a, b);
     });
     t = this._applyPleonasms(t);
     t = t.replace(/\b(in fact|as a matter of fact),?\s*/gi, "");
@@ -49,8 +57,9 @@ ProzaEdit.LocalRewrite = {
 
   formal(text) {
     let t = this.fluency(text);
+    t = t.replace(/[\u2018\u2019]/g, "'");
     Object.entries(this.CONTRACTIONS).forEach(([c, exp]) => {
-      t = this._replaceAllInsensitive(t, c, exp);
+      t = this._replaceWord(t, c, exp);
     });
     this.INFORMAL_TO_FORMAL.forEach(([a, b]) => {
       t = this._replaceAllInsensitive(t, ` ${a} `, ` ${b} `);

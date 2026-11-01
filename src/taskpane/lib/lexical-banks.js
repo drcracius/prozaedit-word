@@ -9,16 +9,39 @@
     ["final outcome", "outcome"],
     ["absolutely essential", "essential"],
     ["past history", "history"],
-    ["future plans", "plans"],
     ["completely eliminate", "eliminate"],
     ["repeat again", "repeat"],
-    ["each and every", "each"],
     ["exact same", "same"],
     ["free gift", "gift"],
     ["honest truth", "truth"],
-    ["null and void", "void"],
     ["true facts", "facts"],
-    ["whether or not", "whether"],
+    ["two twins", "twins"],
+    ["new innovation", "innovation"],
+    ["added bonus", "bonus"],
+    ["join together", "join"],
+    ["return back", "return"],
+    ["returned back", "returned"],
+    ["revert back", "revert"],
+    ["basic fundamentals", "fundamentals"],
+    ["advance planning", "planning"],
+    ["advance warning", "warning"],
+    ["blend together", "blend"],
+    ["collaborate together", "collaborate"],
+    ["connect together", "connect"],
+    ["merge together", "merge"],
+    ["general consensus", "consensus"],
+    ["past experience", "experience"],
+    ["sum total", "total"],
+    ["very unique", "unique"],
+    ["foreign imports", "imports"],
+  ];
+
+  /** Idiomatic doublets: usually deliberate, so shown only in Advanced (low confidence) and never auto-rewritten. */
+  const PLEONASMS_SOFT = [
+    ["future plans", "plans"],
+    ["each and every", "each"],
+    ["null and void", "void"],
+    ["reason why", "reason"],
   ];
 
   const AI_PHRASES = [
@@ -170,6 +193,7 @@
 
   root.LexicalBanks = {
     PLEONASMS,
+    PLEONASMS_SOFT,
     AI_PHRASES,
     SPOILER_PHRASES,
     WORDINESS,

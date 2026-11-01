@@ -1,6 +1,6 @@
 # Privacy and data (ProzaEdit Word)
 
-**Build:** 2.0.0.15 hosted task pane · **Owner-editable** summary for Help and Settings.
+**Build:** 2.0.0.25 hosted task pane · **Owner-editable** summary for Help and Settings.
 
 ---
 
@@ -20,23 +20,23 @@
 
 | Service | When | What is sent |
 |---------|------|----------------|
-| **Google Gemini** | Coach **Send via Gemini**, **Deep audit**, **Rewrite via Gemini** | Your prompt plus the context ProzaEdit attaches (selection-only by default for Coach). **If you built a manuscript context index, that local heuristic outline — chapter titles, word counts, first/last lines, recurring names, frequent words and time cues — is included in the request too** (flagged if it may be out of date). Over-long prompts are trimmed with a visible note; the instruction, your question and the end of the excerpt are kept. |
+| **Your chosen AI provider** (Google Gemini, OpenAI, Anthropic Claude or OpenRouter — only if you add your own API key under Settings → AI help) | Coach **Send via AI**, **Deep audit**, **AI rewrite** — each asks first and shows an estimate | Your prompt plus the context ProzaEdit attaches (selection-only by default for Coach). **If you built a manuscript context index, that local heuristic outline — chapter titles, word counts, first/last lines, recurring names, frequent words and time cues — is included in the request too** (flagged if it may be out of date). Over-long prompts are trimmed with a visible note; the instruction, your question and the end of the excerpt are kept. |
 | **Datamuse** | **Thesaurus** lookup | The single word you search. |
 
-The manuscript context index itself is **not AI-generated** and building it sends nothing anywhere; it is stored in this document's own settings key (`PROZAEDIT_MCI_V2`). Local audit, local Coach and local Rewrite never contact Gemini.
+The manuscript context index itself is **not AI-generated** and building it sends nothing anywhere; it is stored in this document's own settings key (`PROZAEDIT_MCI_V2`). Local audit, local Coach and local Rewrite never contact any AI provider. Offline is the default: with no API key, nothing about your manuscript leaves the PC. Three things contact the internet besides your own AI clicks: the **Thesaurus** lookup (only when you click Search), optional **voice dictation** (🎤 on the Coach tab, only when you click it; the browser's built-in speech recognition may send audio to its vendor's service, outside ProzaEdit's control) and an **automatic update check** (once per browser session, about 4 seconds after the pane opens): it downloads the public `manifest.hosted.xml` from GitHub to compare version numbers and sends no document data. Loading the pane itself fetches the add-in files from GitHub Pages and Office.js from Microsoft, as any hosted Office add-in does.
 
-No ProzaEdit-hosted model training pipeline exists in this build; third-party terms apply when you use Gemini or Datamuse.
+No ProzaEdit-hosted model training pipeline exists in this build; third-party terms apply when you use an AI provider or Datamuse. Consumer subscriptions (ChatGPT Plus, Claude Pro, Gemini Advanced, Copilot) do not include API access; AI help needs an API key from the provider.
 
 ---
 
 ## Stored on this Word document
 
-- **`PROZAEDIT_CONFIG`** — UI preferences, optional **Remember API key** (off by default).
+- **`PROZAEDIT_CONFIG`** — UI preferences, the genre profile and the AI provider/model/limits choice. **API keys are never stored in the document.**
 - **Custom dictionary** — terms you add in Settings → Dictionary.
 - **Muted rules (document copy)** — rule IDs muted during audits on this file.
 - **Custom style rules**, last audit snapshot, and similar document-scoped keys.
 
-**Remember API key:** when enabled, the Gemini key is stored inside the document. Use only on files you control on a private PC.
+**Remember on this device:** when enabled, the key is kept in this browser profile's local storage only (never in the document, never in diagnostics, never in logs). Leave it off on shared PCs. Documents saved by older versions that still contain a key have it moved to the device and removed from the document the first time they open. AI replies are only shown as suggestions; nothing is applied automatically, and findings that do not quote your text exactly are discarded.
 
 ---
 
@@ -44,6 +44,7 @@ No ProzaEdit-hosted model training pipeline exists in this build; third-party te
 
 - **Global mute list** — merged with per-document mutes for future audits in this browser profile.
 - **Dismissed exact wordings** — browser `localStorage` on this PC.
+- **Saved AI replies (cache)** — to avoid paying twice for the same request, the reply text of an AI request is kept in this browser profile's `localStorage` (up to 40 replies / 400k characters, 7 days, least-recently-used removed first). It holds the reply only: never the document, the prompt, or any API key. It is never written to the Word document or sent anywhere. Clear it with **Settings → AI → Clear saved AI replies** or by clearing site data. A repeated request shows "cached, 0 tokens" in the usage meter.
 - **Session banners**, tour progress flags, optional diagnostics note draft.
 
 Clearing site data for the add-in host may reset browser-side mutes and dismissals.
@@ -62,3 +63,6 @@ Clearing site data for the add-in host may reset browser-side mutes and dismissa
 ## Owner updates
 
 Edit this file on `main` when policy changes. Help tab and Settings → Privacy link here.
+
+## Track Changes (2.0.0.25)
+Apply reads one document setting (whether Track Changes is on) from Word. Nothing is sent anywhere; ProzaEdit never turns Track Changes on or off.

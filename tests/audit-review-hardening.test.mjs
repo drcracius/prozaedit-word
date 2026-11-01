@@ -36,7 +36,7 @@ test("audit card state, cancel accessibility, and Gemini disclosure are wired", 
   assert.match(js, /if \(e\.key === "Tab"\) trapFocusWithin\(e, shell\.querySelector\("\.pe-onboarding-tour-panel"\)\)/);
   assert.match(html, /audit-review-helpers\.js/);
   assert.match(html, /role="status" aria-live="polite" aria-atomic="true"/);
-  assert.match(html, /Remember” stores the key in this Word document/);
+  assert.match(html, /Remember on this device only \(not in the document\)/);
   assert.match(html, /Context is selection-only by default/);
   assert.match(html, /only the search word is sent to Datamuse/);
 });

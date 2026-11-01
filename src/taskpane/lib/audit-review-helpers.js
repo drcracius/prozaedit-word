@@ -51,6 +51,8 @@ ProzaEdit.AuditReview = {
     const limit = Math.max(20, Number(maxLen) || 200);
     let s = String(text == null ? "" : text)
       .replace(/AIza[0-9A-Za-z_-]{20,}/g, "[redacted]")
+      .replace(/\bsk-[0-9A-Za-z_-]{16,}/g, "[redacted]")
+      .replace(/\bBearer\s+[0-9A-Za-z._~+\/-]{12,}=*/gi, "Bearer [redacted]")
       .replace(/([?&]key=)[^&\s"']+/gi, "$1[redacted]")
       .replace(/\s+/g, " ")
       .trim();
@@ -104,7 +106,8 @@ ProzaEdit.AuditReview = {
     }
     const info = R.classifyError(error);
     const raw = R.sanitizeDetail(error?.message || error || "");
-    const viaGemini = /gemini/i.test(task) || /gemini/i.test(raw);
+    const viaGemini = /gemini|openai|claude|anthropic|openrouter|\bAI\b/i.test(task) || /gemini|openai|claude|anthropic|openrouter/i.test(raw);
+    const ai = /openai/i.test(task + raw) ? "OpenAI" : /claude|anthropic/i.test(task + raw) ? "Claude" : /openrouter/i.test(task + raw) ? "OpenRouter" : /gemini/i.test(task + raw) ? "Gemini" : "The AI provider";
     switch (info.kind) {
       case "cancelled":
         return "Cancelled.";
@@ -112,16 +115,16 @@ ProzaEdit.AuditReview = {
         return raw;
       case "timeout":
         if (!viaGemini) return `Word took too long to respond. Nothing was changed. Try again, or use a smaller scope.`;
-        return `Gemini request timed out. Nothing was changed in Word. Try again, or use the free local tools.`;
+        return `${ai} request timed out. Nothing was changed in Word. Try again, or use the free local tools.`;
       case "network":
         if (!viaGemini) return `The connection to Word was interrupted. Nothing was changed. Check your connection, then Try again.`;
-        return `Could not reach Gemini (network problem). Nothing was changed in Word. Check your connection, then Try again.`;
+        return `Could not reach ${ai} (network problem). Nothing was changed in Word. Check your connection, then Try again.`;
       case "auth":
         if (!viaGemini) return `Word refused that action (permission). Nothing was changed. Check that the document is not protected, then retry.`;
-        return `Gemini rejected the API key. Check it under Settings → Essentials, or use the free local tools.`;
+        return `${ai} rejected the API key. Check it under Settings → AI help, or use the free local tools.`;
       case "quota":
         if (!viaGemini) return `Word is busy or rate-limited. Wait a moment, then Try again.`;
-        return `Gemini rate limit or quota reached. Wait a minute, then Try again, or use the free local tools.`;
+        return `${ai} rate limit or quota reached. Wait a minute, then Try again, or use the free local tools.`;
       case "office-missing":
         return `Word could not find that text or object (the document may have changed). Use Go to to locate it, then retry.`;
       case "office-unsupported":
@@ -144,7 +147,7 @@ ProzaEdit.AuditReview = {
     "dict-footer": "Manage dictionary",
     house: "Add house rule",
     mute: "Mute rule",
-    chat: "Ask Gemini about finding",
+    chat: "Ask AI about finding",
     dismiss: "Dismiss finding",
     undo: "Undo last ProzaEdit replace",
   },

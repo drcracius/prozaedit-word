@@ -49,6 +49,10 @@ ProzaEdit.LocalCoach = {
       "a/an and duplicate-word flags are heuristics — read in context before Apply.",
       "For batch find/replace at scale, use Word with your own macros or external editor tools.",
     ],
+    "Genre craft": [
+      "Genre flags compare your excerpt with the usual range for the genre you picked (Target tab); change the genre if it does not fit.",
+      "Clichés are suggestions: keep one if it is deliberate (a parody, a character's voice).",
+    ],
     "Style guide": [
       "Cards cite Plain Language, Strunk (1920), GOV.UK, or Microsoft/Google — see Target → Style basis.",
       "These are suggestions, not legal or Chicago/AP rules; mute noisy rules per document.",
@@ -67,7 +71,7 @@ ProzaEdit.LocalCoach = {
       re: /\b(pacing|slow|drag|boring|flat)\b/i,
       tips: [
         "Shorten the middle: add a complication every 500–800 words in thriller pacing.",
-        "Use section loop + local audit to scan one chunk at a time (no API cost).",
+        "Audit one chapter at a time with the local audit (no AI cost).",
       ],
     },
     {
@@ -87,15 +91,15 @@ ProzaEdit.LocalCoach = {
     {
       re: /\b(copilot|gemini|ai|rewrite)\b/i,
       tips: [
-        "Default order: ProzaEdit local audit → Word Copilot for prose → Gemini only if you need API prompts.",
-        "Use ‘Copy for Copilot’ on the Audit tab to paste findings without Deep Audit tokens.",
+        "Suggested order: ProzaEdit local audit, then Word Copilot for prose, then your own AI key only if you want it.",
+        "Use ‘Copy for Copilot’ on the Audit tab to paste findings without using AI tokens.",
       ],
     },
     {
       re: /\b(plot|chapter|structure|arc|midpoint|climax)\b/i,
       tips: [
         "End chapters on unresolved tension; logistics-only endings often flag in local audit.",
-        "Use Select next chapter (Heading) + audit to PMAT-style chunk long manuscripts (0 tokens).",
+        "Audit one chapter at a time (Target → Chosen chapters) to keep long manuscripts manageable (0 tokens).",
       ],
     },
     {
@@ -113,7 +117,7 @@ ProzaEdit.LocalCoach = {
       ],
     },
     {
-      re: /\b(setting|world|dialect|idiom|geography|austin|texas)\b/i,
+      re: /\b(setting|world|dialect|idiom|geography)\b/i,
       tips: [
         "Set Setting Anchor on Target tab; long excerpts without anchor terms flag drift.",
         "Sensory counts in overview are heuristic—boost weak senses in action scenes.",
@@ -130,11 +134,18 @@ ProzaEdit.LocalCoach = {
 
   GENERAL: [
     "Highlight the passage in Word, run **Run Full Audit (local)**—zero tokens.",
-    "Use **Extended local audit** for an extra rule pass before any paid/API step.",
+    "Use **Deeper local audit** for an extra rule pass before any paid/API step.",
     "Apply fixes with undo available (toolbar ↶ Undo).",
   ],
 
-  forIssue(item) {
+  genreTips(ctx) {
+    const G = ProzaEdit.Genres;
+    if (!G) return [];
+    const p = G.resolve(ctx && ctx.manuscriptType);
+    return p.coachTips || [];
+  },
+
+  forIssue(item, ctx) {
     const mod = item?.module || "";
     let tips = this.MODULE_TIPS[mod];
     if (!tips && mod.startsWith("Style guide")) tips = this.MODULE_TIPS["Style guide"];
@@ -145,24 +156,27 @@ ProzaEdit.LocalCoach = {
     if (item?.targetText && !String(item.targetText).startsWith("(")) {
       lines.push(`Passage: “${String(item.targetText).substring(0, 120)}”`);
     }
+    const gt = this.genreTips(ctx);
+    if (gt.length) lines.push("", `For ${ProzaEdit.Genres.resolve(ctx.manuscriptType).label}:`, ...gt.map((t) => `• ${t}`));
     lines.push("", "Try: local paraphrase (Rewrite tab) or Word Copilot for a full rewrite.");
     return lines.join("\n");
   },
 
-  answer(question, profileText) {
+  answer(question, profileText, ctx) {
     const q = String(question || "").trim();
     const lines = ["**ProzaEdit Local Coach** (0 tokens)", ""];
     if (profileText) lines.push(profileText, "");
     for (const block of this.INTENT_TIPS) {
       if (block.re.test(q)) {
         block.tips.forEach((t) => lines.push(`• ${t}`));
+        this.genreTips(ctx).slice(0, 2).forEach((t) => lines.push(`• (${ProzaEdit.Genres.resolve(ctx.manuscriptType).label}) ${t}`));
         lines.push("");
         lines.push("Need generative prose? Use Word Copilot on the selection.");
         return lines.join("\n");
       }
     }
     this.GENERAL.forEach((t) => lines.push(`• ${t}`));
-    lines.push("", "Ask about: POV, pacing, dialogue, show/tell, or Copilot vs Gemini.");
+    lines.push("", "Ask about: POV, pacing, dialogue, or show vs tell.");
     return lines.join("\n");
   },
 };

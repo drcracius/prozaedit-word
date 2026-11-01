@@ -23,14 +23,14 @@ There is **no supported Office JavaScript API** to programmatically set, maximiz
 |----------|------------|
 | Horizontal scroll / wrapped tab bar | Yes — narrow breakpoints |
 | Collapsible `<details>` on heavy Target sections | Yes — Manuscript profile (default open); Safety moved to Settings modal |
-| Chapter checklist with vertical scroll | Yes — Selected chapters scope |
+| Chapter checklist with vertical scroll | Yes — Chosen chapters scope |
 | iframe breakout / hiding Word chrome | **No** — unsupported and brittle |
 
 ## Practical tips for authors
 
 1. On **Word on the web**, drag the pane divider until ProzaEdit is comfortable (~350px+ if your monitor allows).
 2. Use **Simple mode** (**Settings → Safety**) to hide the Thesaurus and extra tuning in a thin pane (the optional AI help block stays, collapsed, and is off until you add a key).
-3. Use **Selected chapters** scope instead of full manuscript when fiction/plot checks need a smaller read.
+3. Use **Chosen chapters** scope instead of full manuscript when fiction/plot checks need a smaller read.
 4. Re-upload `manifest.hosted.xml` only when the manifest **version** bumps — UI/CSS updates load from GitHub Pages without a manifest change.
 
 ## Related docs

@@ -81,31 +81,35 @@ ProzaEdit.ManuscriptOverview = {
   genreBenchmarks(manuscriptType, metrics, dialoguePct, targetAudience) {
     const flags = [];
     const t = String(manuscriptType || "");
-    const fiction = t.includes("Fiction");
+    const fiction = ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(t) : t.includes("Fiction") && !/non-?fiction/i.test(t);
     const narrativePct = Math.round((100 - dialoguePct) * 10) / 10;
+    const gp = ProzaEdit.Genres?.resolve(t);
     if (fiction) {
-      const dLo = 22;
-      const dHi = 48;
+      const dLo = gp ? gp.bands.dialogue[0] : 22;
+      const dHi = gp ? gp.bands.dialogue[1] : 48;
+      const aslHi = gp ? gp.bands.aslHigh : 22;
+      const aslLo = gp ? gp.bands.aslLow : 8;
+      const gl = gp ? gp.label : "thriller";
       if (dialoguePct < dLo) {
-        flags.push({ level: "orange", text: `Dialogue ~${dialoguePct}% (typical thriller band ~${dLo}–${dHi}%).` });
+        flags.push({ level: "orange", text: `Dialogue ~${dialoguePct}% (typical ${gl} band ~${dLo}–${dHi}%).` });
       } else if (dialoguePct > dHi) {
-        flags.push({ level: "yellow", text: `Dialogue ~${dialoguePct}% — above common thriller ratio; check exposition in tags.` });
+        flags.push({ level: "yellow", text: `Dialogue ~${dialoguePct}% — above the usual ${gl} range; check exposition in tags.` });
       } else {
-        flags.push({ level: "green", text: `Dialogue ~${dialoguePct}% within typical commercial fiction band.` });
+        flags.push({ level: "green", text: `Dialogue ~${dialoguePct}% within the typical ${gl} band.` });
       }
       const asl = metrics.sentenceCount ? metrics.wordCount / metrics.sentenceCount : 0;
-      if (asl > 22) flags.push({ level: "orange", text: `Avg sentence ~${Math.round(asl)} words — consider shorter beats for tension.` });
-      else if (asl < 8) flags.push({ level: "yellow", text: `Avg sentence ~${Math.round(asl)} words — may feel choppy; vary rhythm.` });
+      if (asl > aslHi) flags.push({ level: "orange", text: `Avg sentence ~${Math.round(asl)} words — consider shorter beats for ${gl}.` });
+      else if (asl < aslLo) flags.push({ level: "yellow", text: `Avg sentence ~${Math.round(asl)} words — may feel choppy; vary rhythm.` });
       else flags.push({ level: "green", text: `Avg sentence length ~${Math.round(asl)} words — reasonable variety target.` });
       flags.push({ level: "green", text: `Narrative ~${narrativePct}% · Dialogue ~${dialoguePct}% (action–dialogue radar).` });
     } else if (t.includes("Academic")) {
       const asl = metrics.sentenceCount ? metrics.wordCount / metrics.sentenceCount : 0;
-      if (asl > 28) flags.push({ level: "orange", text: `Long sentences (~${Math.round(asl)} w) — clarity risk in academic prose.` });
+      if (asl > (gp ? gp.bands.aslHigh : 28)) flags.push({ level: "orange", text: `Long sentences (~${Math.round(asl)} w) — clarity risk in academic prose.` });
       if (dialoguePct > 5) flags.push({ level: "yellow", text: `Dialogue ~${dialoguePct}% — unusual for formal academic excerpt.` });
       else flags.push({ level: "green", text: "Low dialogue ratio fits academic register." });
     } else if (t.includes("Business")) {
       const asl = metrics.sentenceCount ? metrics.wordCount / metrics.sentenceCount : 0;
-      if (asl > 25) flags.push({ level: "orange", text: "Shorten sentences for executive readability." });
+      if (asl > (gp ? gp.bands.aslHigh : 25)) flags.push({ level: "orange", text: "Shorten sentences for executive readability." });
       else flags.push({ level: "green", text: `Avg sentence ~${Math.round(asl)} — concise business target.` });
     } else if (t.includes("Journalism")) {
       const asl = metrics.sentenceCount ? metrics.wordCount / metrics.sentenceCount : 0;
@@ -124,9 +128,9 @@ ProzaEdit.ManuscriptOverview = {
     }
     const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(targetAudience);
     const fk = metrics.fleschKincaidGrade;
-    if (fk > gMax + 1.5) flags.push({ level: "orange", text: `FK ~${fk} above target band (${gMin}–${gMax}) for ${targetAudience}.` });
-    else if (fk < gMin - 2) flags.push({ level: "yellow", text: `FK ~${fk} below target band for ${targetAudience}.` });
-    else flags.push({ level: "green", text: `FK ~${fk} aligns with ${targetAudience} target (~${gMin}–${gMax}).` });
+    if (fk > gMax + 1.5) flags.push({ level: "orange", text: `Reading grade ~${fk} above target band (${gMin}–${gMax}) for ${targetAudience}.` });
+    else if (fk < gMin - 2) flags.push({ level: "yellow", text: `Reading grade ~${fk} below target band for ${targetAudience}.` });
+    else flags.push({ level: "green", text: `Reading grade ~${fk} aligns with ${targetAudience} target (~${gMin}–${gMax}).` });
     return flags;
   },
 
@@ -136,7 +140,7 @@ ProzaEdit.ManuscriptOverview = {
     const metrics = meta.metrics || ProzaEdit.Metrics.analyze(text || "");
     if (mode === "minimal") {
       const dialoguePct = this.dialogueRatioPercent(text);
-      return `<details class="overview-panel"><summary>Summary (light report)</summary><p>Words ${metrics.wordCount} · FK ~${metrics.fleschKincaidGrade} · Dialogue ~${dialoguePct}% · Critical ${meta.criticalCount || 0} · Style ${meta.prefCount || 0}</p></details>`;
+      return `<details class="overview-panel"><summary>Summary (light report)</summary><p>Words ${metrics.wordCount} · Reading grade ~${metrics.fleschKincaidGrade} · Dialogue ~${dialoguePct}% · Critical ${meta.criticalCount || 0} · Style ${meta.prefCount || 0}</p></details>`;
     }
     const dialoguePct = this.dialogueRatioPercent(text);
     const narrativePct = Math.round((100 - dialoguePct) * 10) / 10;
@@ -146,17 +150,19 @@ ProzaEdit.ManuscriptOverview = {
     const senses = this.sensoryCounts(text);
     const namePairs = this.similarNamePairs(text, 4);
     const benchmarks = this.genreBenchmarks(ctx.manuscriptType, metrics, dialoguePct, ctx.targetAudience);
-    const fiction = String(ctx.manuscriptType || "").includes("Fiction");
+    const fiction = ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(ctx.manuscriptType) : (String(ctx.manuscriptType || "").includes("Fiction") && !/non-?fiction/i.test(String(ctx.manuscriptType)));
     const setting = ctx.settingAnchor || "(not set)";
 
     let html = `<details class="overview-panel" open><summary>Manuscript overview (local)</summary>`;
-    html += `<p class="overview-lead">PMAT-style snapshot — rules &amp; stats only, no API.</p>`;
+    html += `<p class="overview-lead">Quick snapshot — built-in rules &amp; stats only; nothing is sent anywhere.</p>`;
 
     html += `<h4>About this excerpt</h4><ul>`;
+    html += `<li><strong>Genre profile applied:</strong> ${this._esc(ProzaEdit.Genres ? ProzaEdit.Genres.describe(ctx) : ctx.manuscriptType)}</li>`;
     html += `<li><strong>Type:</strong> ${this._esc(ctx.manuscriptType)} · <strong>Reader:</strong> ${this._esc(ctx.targetAudience)} · <strong>Style basis:</strong> ${this._esc(this.styleGuideLabel(ctx.styleGuideRef, ctx))}</li>`;
     html += `<li><strong>Words:</strong> ${metrics.wordCount} · <strong>Sentences:</strong> ${metrics.sentenceCount} · <strong>Dialogue:</strong> ~${dialoguePct}% · <strong>Narrative:</strong> ~${narrativePct}%</li>`;
     if (extras.docStats) {
-      html += `<li><strong>Document:</strong> ~${extras.docStats.paragraphs} paragraphs · ~${extras.docStats.estWords} words (estimate)</li>`;
+      const ew = extras.docStats.estWords;
+      html += `<li><strong>Document:</strong> ~${extras.docStats.paragraphs} paragraphs${typeof ew === "number" ? ` · ~${ew} words (estimate)` : " (too long to estimate words here)"}</li>`;
     }
     if (ProzaEdit.EditorHeuristics?.docFormalTally && /Academic|Business|Technical/.test(String(ctx.manuscriptType || ""))) {
       const ft = ProzaEdit.EditorHeuristics.docFormalTally(text);
@@ -257,7 +263,8 @@ ProzaEdit.ManuscriptOverview = {
 
   buildManuscriptProfileLine(ctx) {
     const sg = this.styleGuideLabel(ctx.styleGuideRef, ctx);
-    return `Profile: ${ctx.manuscriptType} | ${ctx.targetAudience} | ${ctx.criticPersona} | ${ctx.language} | Style: ${sg} | Setting: ${ctx.settingAnchor || "—"}`;
+    const genre = ProzaEdit.Genres ? ` | Genre profile: ${ProzaEdit.Genres.describe(ctx)}` : "";
+    return `Profile: ${ctx.manuscriptType}${genre} | ${ctx.targetAudience} | ${ctx.criticPersona} | ${ctx.language} | Style: ${sg} | Setting: ${ctx.settingAnchor || "—"}`;
   },
 
   _esc(s) {

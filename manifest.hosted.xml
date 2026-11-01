@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xsi:type="TaskPaneApp">
   <Id>d1829e3a-4931-4122-b911-37f22941aa99</Id>
-  <Version>2.0.0.16</Version>
+  <Version>2.0.0.25</Version>
   <ProviderName>ProzaEdit Publishing Tools</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="ProzaEdit"/>
@@ -16,6 +16,11 @@
   <Hosts>
     <Host Name="Document"/>
   </Hosts>
+  <Requirements>
+    <Sets>
+      <Set Name="WordApi" MinVersion="1.3"/>
+    </Sets>
+  </Requirements>
   <DefaultSettings>
     <SourceLocation DefaultValue="https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html"/>
   </DefaultSettings>

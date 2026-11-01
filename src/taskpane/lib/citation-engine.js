@@ -58,6 +58,12 @@
     return m ? m[1] : s.split(/\s+/)[0] || "";
   }
 
+  /* Sentence-start words and parenthetical labels that look like author names to a capital-letter pattern. */
+  const NOT_AUTHOR = new Set(
+    "results participants data analysis analyses researchers authors respondents students patients scholars findings evidence studies reviewers critics experts teachers employees managers surveys interviews children adults users people many some several most others both all they he she we it i this these those the a an new control group groups table figure fig phase study experiment appendix chapter section part case note notes treatment sample samples trial baseline summary overview method methods discussion conclusion".split(" ")
+  );
+  const startsWithNonAuthor = (s) => NOT_AUTHOR.has(String(s || "").trim().split(/[\s,]+/)[0].toLowerCase());
+
   function auditApa(text, push, inText) {
     APA_PAREN.lastIndex = 0;
     let match;
@@ -97,6 +103,7 @@
     APA_PAREN_NO_YEAR.lastIndex = 0;
     while ((match = APA_PAREN_NO_YEAR.exec(text)) !== null) {
       const snippet = match[0];
+      if (startsWithNonAuthor(match[1])) continue;
       if (/\d{4}/.test(text.substring(match.index, match.index + 40))) continue;
       if (/^(?:e\.g|i\.e|cf|see|cf\.)/i.test(text.substring(Math.max(0, match.index - 6), match.index))) continue;
       push({
@@ -111,6 +118,7 @@
 
     const narrativeYearGap = /\b([A-Z][A-Za-z''\-]+(?:\s+(?:&|and)\s+[A-Z][A-Za-z''\-]+)?)\s+(?!et\s+al\.)(?:found|reported|argued|showed|noted|claimed|wrote)\b/gi;
     while ((match = narrativeYearGap.exec(text)) !== null) {
+      if (startsWithNonAuthor(match[1])) continue;
       const after = text.substring(match.index, match.index + 120);
       if (/\(\d{4}[a-z]?\)/.test(after) || /\(\d{4}[a-z]?/.test(after)) continue;
       push({
