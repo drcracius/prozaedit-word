@@ -1,6 +1,6 @@
 # Phase 1 quickstart (~15 min critical path)
 
-**Web 1.0 RC:** build **2.0.0.15**, **120** tests (PE-72 hardening merged), UX bundle PE-63–67 merged; desktop **PE-2** deferred.  
+**Web 1.0 RC:** build **2.0.0.16**, **168** tests (PE-79 Word fixes merged), UX bundle PE-63–67 merged; desktop **PE-2** deferred.  
 **Owner:** Word on the web only.  
 **Full checklist:** [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) (~90 min)  
 **Log results:** [templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md) or [Word web validation issue](https://github.com/drcracius/prozaedit-word/issues/new?template=word-web-validation.yml)  
@@ -26,7 +26,7 @@ Skim [HOSTED-SMOKE-LAST-RUN.md](./HOSTED-SMOKE-LAST-RUN.md) — last automated p
 
 | Step | What to do | Pass if |
 |------|------------|---------|
-| **A. Install** | New blank doc → Upload `manifest.hosted.xml` → open test doc → **Home → ProzaEdit** | Pane loads; Help → About shows **2.0.0.15** |
+| **A. Install** | New blank doc → Upload `manifest.hosted.xml` → open test doc → **Home → ProzaEdit** | Pane loads; Help → About shows **2.0.0.16** |
 | **B. Target** | Set manuscript type + one scope mode; **Refresh count** | Sticky scope line updates |
 | **C. Settings** | Open Settings (toolbar); toggle one Onboarding flag; close with Escape | Modal opens/closes; no console errors |
 | **D. One audit** | Checks → enable a module → **Run audit** → **Apply fix** → **Undo** | Completes or **Cancelled.** cleanly |

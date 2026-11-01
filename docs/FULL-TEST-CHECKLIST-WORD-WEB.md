@@ -1,7 +1,7 @@
 # ProzaEdit Word — full manual test checklist (Word on the web)
 
 **Audience:** D Cracius beta validation on **Word online** (narrow task pane).  
-**Build:** UI **2.0.0.15** (no manifest re-upload for UX bundle PE-63–67).  
+**Build:** UI **2.0.0.16** (manifest bump: re-upload once for PE-79).  
 **Pane URL:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html  
 **Final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **120** automated tests on `main` · UX bundle [#18](https://github.com/drcracius/prozaedit-word/pull/18) · desktop **PE-2** not required.
 
@@ -11,7 +11,7 @@
 
 - [ ] New blank document → **Insert** → **Add-ins** → **Upload My Add-in** → `manifest.hosted.xml` from GitHub raw.
 - [ ] Open a test manuscript → **Home** → **ProzaEdit** task pane loads (brand header, workflow strip, toolbar).
-- [ ] **Help → About ProzaEdit → Check for updates** reports manifest/UI **2.0.0.15**.
+- [ ] **Help → About ProzaEdit → Check for updates** reports manifest/UI **2.0.0.16**.
 
 ## 2. Target and scope
 
@@ -66,7 +66,7 @@
 
 ## 6. Help, About, and diagnostics
 
-- [ ] **Help → About ProzaEdit**: build version, manifest version, add-in ID, GitHub repo, **Check for updates** (matches manifest **2.0.0.15** when current).
+- [ ] **Help → About ProzaEdit**: build version, manifest version, add-in ID, GitHub repo, **Check for updates** (matches manifest **2.0.0.16** when current).
 - [ ] Help copy mentions scope line, last tab, Settings shortcuts; **PE-57** severity legend row (Critical / Style / OK).
 - [ ] Settings → Privacy: opt-in off by default; **Report a problem** copies redacted JSON (no document text in clipboard JSON).
 
@@ -118,5 +118,5 @@ Track progress in [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md). Log result
 |------|----------------|------------------------|
 | **Pass/fail log** | Copy template from final-mile plan Phase 1 | **Yes** |
 | **UX-4 beta prompts** | Five questions in [UX rating](./prozaedit-ux-rating-and-recommendations.md) | **Yes** (or owner diary) |
-| **Diagnostics ingest live** | Deploy worker ([DIAGNOSTICS.md](./DIAGNOSTICS.md)); URL + AppDomain + **2.0.0.16** | **Optional** |
+| **Diagnostics ingest live** | Deploy worker ([DIAGNOSTICS.md](./DIAGNOSTICS.md)); URL + AppDomain + **2.0.0.17** | **Optional** |
 | **PE-2 Shared Folder (desktop)** | [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md) — **deferred**; use web upload if skipped | **No** |

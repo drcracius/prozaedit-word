@@ -1,6 +1,6 @@
 # Beta invite — copy-paste comms (Phase 4 draft)
 
-**Build:** 2.0.0.15 · **Web 1.0 RC** on `main` (PE-48 prep merged; owner Phase 1 **PE-47** open) · **Install path:** Word on the web upload only (desktop **PE-2** deferred).
+**Build:** 2.0.0.16 · **Web 1.0 RC** on `main` (PE-48 prep merged; owner Phase 1 **PE-47** open) · **Install path:** Word on the web upload only (desktop **PE-2** deferred).
 
 Owner: send with [BETA-TESTERS-INSTALL.txt](./BETA-TESTERS-INSTALL.txt) and raw manifest link below.
 
@@ -39,5 +39,5 @@ Owner: send with [BETA-TESTERS-INSTALL.txt](./BETA-TESTERS-INSTALL.txt) and raw 
 |-----|-----|
 | [BETA-TESTERS-INSTALL.txt](./BETA-TESTERS-INSTALL.txt) | Plain-text handout |
 | [BETA-SETUP-GITHUB.md](./BETA-SETUP-GITHUB.md) | Pages + manifest owner notes |
-| [RELEASE-NOTES-2.0.0.15.md](./RELEASE-NOTES-2.0.0.15.md) | What shipped |
+| [RELEASE-NOTES-PE-79-WORD-FIXES.md](./RELEASE-NOTES-PE-79-WORD-FIXES.md) | What shipped |
 | [HOSTED-SMOKE-LAST-RUN.md](./HOSTED-SMOKE-LAST-RUN.md) | Last automated URL/version smoke |

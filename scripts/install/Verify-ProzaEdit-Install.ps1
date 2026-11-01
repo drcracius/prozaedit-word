@@ -4,7 +4,7 @@
   Read-only PE-2 install verification for ProzaEdit Shared Folder (Windows).
 
 .DESCRIPTION
-  Checks local catalog manifest, Version 2.0.0.15, manifest URL patterns, and
+  Checks local catalog manifest, Version 2.0.0.16, manifest URL patterns, and
   TrustedCatalog registry keys. Prints PASS/FAIL lines for the PE-2 checklist.
   Does not modify registry or download files.
 
@@ -14,7 +14,7 @@
 [CmdletBinding()]
 param(
   [string] $CatalogDir = "",
-  [string] $ExpectedVersion = "2.0.0.15"
+  [string] $ExpectedVersion = "2.0.0.16"
 )
 
 $ErrorActionPreference = "Continue"

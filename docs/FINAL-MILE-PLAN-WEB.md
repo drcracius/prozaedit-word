@@ -29,7 +29,7 @@
 | **Web 1.0 RC validated** | Owner completes [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) on Word online; pass/fail log recorded; no P0 regressions |
 | **Beta-ready comms** | Testers have [BETA-TESTERS-INSTALL.txt](./BETA-TESTERS-INSTALL.txt); owner can explain web upload in one paragraph |
 | **UX-4 measured** | Five beta prompts answered (or owner solo walkthrough documented); PE-47 fix list only if data warrants |
-| **Optional ingest** | Either deployed with **2.0.0.16** + AppDomain, **or** explicitly deferred with clipboard/GitHub issue path documented |
+| **Optional ingest** | Either deployed with **2.0.0.17** + AppDomain, **or** explicitly deferred with clipboard/GitHub issue path documented |
 | **Docs aligned** | No doc still treats **PE-2 desktop Shared Folder** as a blocker for web 1.0 |
 
 **Not required for web 1.0 done:** Windows Shared Folder (PE-2), desktop `.bat` sideload proof, vNext IA.
@@ -74,7 +74,7 @@ Use **[templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md)** (§1–8 ch
 
 ```bash
 npm test   # expect 29 pass
-bash scripts/verify-version-sync.sh   # 2.0.0.15 aligned
+bash scripts/verify-version-sync.sh   # 2.0.0.16 aligned
 ```
 
 ---
@@ -117,7 +117,7 @@ bash scripts/verify-version-sync.sh   # 2.0.0.15 aligned
 
 **When to do this:** After Phase 1 pass; only if owner wants automatic crash reports.
 
-**Runbook (2.0.0.16):** [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) — step checklist once Worker URL exists (no placeholder URL in repo).
+**Runbook (next build 2.0.0.17):** [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) — step checklist once Worker URL exists (no placeholder URL in repo).
 
 | Step | Owner | Agent |
 |------|-------|-------|
@@ -128,7 +128,7 @@ bash scripts/verify-version-sync.sh   # 2.0.0.15 aligned
 
 ### Rollback
 
-- Revert `DIAGNOSTICS_INGEST_URL` to empty; remove AppDomain if needed; bump **2.0.0.17** only if manifest was already published to testers (otherwise stay on **2.0.0.15**).
+- Revert `DIAGNOSTICS_INGEST_URL` to empty; remove AppDomain if needed; bump **2.0.0.18** only if manifest was already published to testers (otherwise stay on **2.0.0.16**).
 
 ---
 

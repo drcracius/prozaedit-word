@@ -229,11 +229,11 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.15",
+    version: "2.0.0.16",
     bullet:
-      "Phases 2–7: hover tips, Rewrite lexical shaper, timeline & citation scans, audit report export, optional Gemini session quota (off by default).",
+      "Whole-book names and cues, edit-aware “index may be out of date” notice, safer index storage, AI help reachable from Simple mode, and a Gemini prompt that never loses your question.",
     releaseNotesUrl:
-      "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-2.0.0.15.md",
+      "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-79-WORD-FIXES.md",
   },
 
   TAB_LABELS: {

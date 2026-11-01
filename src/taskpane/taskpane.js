@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.15";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.16";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -55,8 +55,16 @@ let skipFullScanConfirm = false;
 let msIndexCache = null;
 let msIndexBusy = false;
 let mciCache = null;
+let mciLoaded = false;
+let mciLegacyPending = null;
 let mciBuildBusy = false;
+let mciFreshness = { state: "unknown", reason: "", changedSections: [] };
+let mciFreshnessAt = 0;
+let mciFreshnessPromise = null;
+let mciDirtyTimer = null;
+let mciSaveWarned = false;
 let lastKnownParagraphTotal = null;
+const MCI_FRESHNESS_THROTTLE_MS = 20000;
 const MCI_AUTO_WARN_KEY = "pe-mci-auto-refresh-warn-ok";
 let scopeChapterListCache = [];
 let pendingSelectedChapterIndices = null;
@@ -138,6 +146,7 @@ function setupSafeHandlers() {
   if (keyEl && !keyEl.dataset.peAutosave) {
     keyEl.dataset.peAutosave = "1";
     keyEl.addEventListener("input", () => {
+      updateAiHelpAvailability();
       if (isChecked("rememberApiKey", false)) schedulePersistSettings();
     });
   }
@@ -566,21 +575,63 @@ function getManuscriptIndex() {
   return msIndexCache;
 }
 
-function getManuscriptContextIndex() {
-  if (mciCache) return mciCache;
+function readLegacyManuscriptContextFromConfig() {
   try {
     const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
     const cfg = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
-    if (cfg?.manuscriptContext && ProzaEdit.ManuscriptContextIndex?.normalizeStored) {
-      mciCache = ProzaEdit.ManuscriptContextIndex.normalizeStored(cfg.manuscriptContext);
+    if (cfg?.manuscriptContext) return ProzaEdit.ManuscriptContextIndex.parseStored(cfg.manuscriptContext).index;
+  } catch (_) {}
+  return null;
+}
+
+function getManuscriptContextIndex() {
+  if (mciLoaded) return mciCache;
+  const MCI = ProzaEdit.ManuscriptContextIndex;
+  if (!MCI?.parseStored) return null;
+  mciLoaded = true;
+  try {
+    const parsed = MCI.parseStored(ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.MCI));
+    if (parsed.index) {
+      mciCache = parsed.index;
+      return mciCache;
+    }
+    const legacy = readLegacyManuscriptContextFromConfig();
+    if (legacy) {
+      mciCache = legacy;
+      mciLegacyPending = legacy;
     }
   } catch (_) {}
   return mciCache;
 }
 
 function setManuscriptContextIndex(index) {
+  mciLoaded = true;
   mciCache = ProzaEdit.ManuscriptContextIndex?.normalizeStored?.(index) || null;
   refreshManuscriptContextStatusUi();
+}
+
+/** Writes the index to its OWN versioned settings key (never the main config blob). Never throws. */
+async function saveManuscriptContextIndex(index) {
+  const MCI = ProzaEdit.ManuscriptContextIndex;
+  try {
+    const ser = MCI.serializeForStorage(index);
+    if (!ser.index) return { ok: false, trimmed: false, note: "" };
+    const ok = await ProzaEdit.Settings.setAsyncGuarded(ProzaEdit.Settings.KEYS.MCI, ser.json);
+    return { ok, trimmed: ser.trimmed, note: ser.index.storageNote || "", dropped: ser.index.droppedSections || 0 };
+  } catch (e) {
+    console.warn(e);
+    return { ok: false, trimmed: false, note: "" };
+  }
+}
+
+async function migrateLegacyManuscriptContext() {
+  getManuscriptContextIndex();
+  if (!mciLegacyPending) return false;
+  const res = await saveManuscriptContextIndex(mciLegacyPending);
+  if (!res.ok) return false;
+  mciLegacyPending = null;
+  await persistSettings(false);
+  return true;
 }
 
 async function refreshDocumentParagraphCount() {
@@ -598,12 +649,60 @@ async function refreshDocumentParagraphCount() {
   }
 }
 
+function mciIsFresh() {
+  return mciFreshness.state === "fresh";
+}
+
+/**
+ * Compares the stored index to the live document (paragraph count + probe paragraphs).
+ * Cheap (a few Word syncs); throttled; skipped while another operation owns Word. Never throws.
+ */
+async function refreshManuscriptContextFreshness(options) {
+  options = options || {};
+  const MCI = ProzaEdit.ManuscriptContextIndex;
+  const index = getManuscriptContextIndex();
+  if (!MCI?.checkFreshness || !index || index.invalid) {
+    mciFreshness = { state: "none", reason: "no-index", changedSections: [] };
+    refreshManuscriptContextStatusUi();
+    return mciFreshness;
+  }
+  if (mciFreshnessPromise) return mciFreshnessPromise;
+  const recent = Date.now() - mciFreshnessAt < MCI_FRESHNESS_THROTTLE_MS;
+  if (!options.force && recent && mciFreshness.state !== "unknown") return mciFreshness;
+  if (mciBuildBusy || (!options.ignoreBusy && isOperationBusy())) return mciFreshness;
+  mciFreshnessPromise = wordRun("mci-fresh-check", (ctx) => MCI.checkFreshness(ctx, index))
+    .then((res) => {
+      mciFreshness = { state: res.state, reason: res.reason, changedSections: res.changedSections || [] };
+      mciFreshnessAt = Date.now();
+      lastKnownParagraphTotal = res.paragraphTotal;
+      return mciFreshness;
+    })
+    .catch(() => mciFreshness)
+    .finally(() => {
+      mciFreshnessPromise = null;
+      refreshManuscriptContextStatusUi();
+    });
+  return mciFreshnessPromise;
+}
+
+/** The document changed (our own Apply/Undo/Redo): re-verify soon, and stop claiming "fresh" meanwhile. */
+function markManuscriptContextDirty() {
+  if (!getManuscriptContextIndex()) return;
+  if (mciFreshness.state === "fresh") mciFreshness = { state: "unknown", reason: "edited-here", changedSections: [] };
+  mciFreshnessAt = 0;
+  if (mciDirtyTimer) clearTimeout(mciDirtyTimer);
+  mciDirtyTimer = setTimeout(() => {
+    mciDirtyTimer = null;
+    refreshManuscriptContextFreshness({ force: true });
+  }, 1800);
+}
+
 function refreshManuscriptContextStatusUi() {
   const MCI = ProzaEdit.ManuscriptContextIndex;
   if (!MCI?.formatStatusBadge) return;
-  const pt = lastKnownParagraphTotal;
-  const badge = MCI.formatStatusBadge(getManuscriptContextIndex(), pt);
-  const storage = MCI.formatStorageBlurb(getManuscriptContextIndex());
+  const index = getManuscriptContextIndex();
+  const badge = MCI.formatStatusBadge(index, index ? mciFreshness : null);
+  const storage = MCI.formatStorageBlurb(index);
   ["peMciStatusTarget", "peMciStatusChecks", "peMciStatusSimple", "peMciStatusSettings"].forEach((id) => {
     const el = getEl(id);
     if (!el) return;
@@ -615,16 +714,26 @@ function refreshManuscriptContextStatusUi() {
   if (hintTarget) hintTarget.textContent = storage;
   const hintSettings = getEl("peMciStorageHintSettings");
   if (hintSettings) hintSettings.textContent = storage;
+  const stale = badge.state === "stale";
+  document.querySelectorAll(".pe-mci-stale-notice").forEach((el) => {
+    el.classList.toggle("hidden", !stale);
+    const why = el.querySelector("[data-pe-mci-stale-why]");
+    if (why) {
+      const reason = MCI.formatStaleReason(mciFreshness);
+      why.textContent = reason ? ` (${reason})` : "";
+    }
+  });
 }
 
 async function confirmBuildManuscriptContext() {
-  const storageHint = ProzaEdit.ManuscriptContextIndex?.formatStorageBlurb?.(getManuscriptContextIndex()) || "local document settings";
+  const index = getManuscriptContextIndex();
+  const storageHint = ProzaEdit.ManuscriptContextIndex?.formatStorageBlurb?.(index) || "local document settings";
   return peConfirm({
     title: "Build full manuscript context?",
     message:
-      `ProzaEdit will read your document in the background (chunked sections) to build a lightweight story-arc and continuity index for Coach, Rewrite, and chapter-scoped audits.\n\n` +
-      `This may take several minutes on long manuscripts. You can Cancel, keep using Word, or stop anytime from the banner.\n\n` +
-      `Nothing is sent to the cloud unless you use Gemini. Index size: ${storageHint}.`,
+      `ProzaEdit will read your whole document in chunks to build a local outline for continuity checks and chapter-scoped audits: chapter list, word counts, first/last lines, recurring names, and time cues. It is rule-based, not an AI summary.\n\n` +
+      `This may take several minutes on long manuscripts. You can Cancel from the banner, and Word stays usable.\n\n` +
+      `The index stays in this document's settings (${storageHint}). It is only sent to Google if you use a Gemini action (Coach chat or Rewrite via Gemini), where it is included in that request.`,
     confirmLabel: "Start background read",
     cancelLabel: "Cancel",
   });
@@ -645,6 +754,7 @@ async function runBuildFullManuscriptContext(userInitiated) {
       initialStatus: "Reading manuscript for context…",
       setStatus: (msg) => showPeStatus(msg),
     });
+    const previous = getManuscriptContextIndex();
     const index = await wordRun("mci-build", async (ctx) => {
       return ProzaEdit.ManuscriptContextIndex.buildFromDocument(ctx, {
         cancelCheck: () => longOp.throwIfCancelled(),
@@ -657,14 +767,31 @@ async function runBuildFullManuscriptContext(userInitiated) {
       });
     });
     if (!index) throw new Error("Could not build manuscript context.");
+    const diff = ProzaEdit.ManuscriptContextIndex.diffSections(previous, index);
     setManuscriptContextIndex(index);
+    mciLegacyPending = null;
     lastKnownParagraphTotal = index.paragraphTotal;
-    applyUiConfig({ ...collectUiConfig(), manuscriptContext: index });
-    await persistSettings(false);
-    const msg = index.truncated
-      ? "Full MS context ready (sampled — very long document)."
-      : "Full MS context ready.";
-    showPeStatus(msg, "ok");
+    mciFreshness = { state: "fresh", reason: "ok", changedSections: [] };
+    mciFreshnessAt = Date.now();
+    const saved = await saveManuscriptContextIndex(index);
+    refreshManuscriptContextStatusUi();
+    if (saved.ok) {
+      mciSaveWarned = false;
+      await persistSettings(false);
+    }
+    let msg = index.truncated ? "Full MS context ready (names and cues sampled across the whole book)." : "Full MS context ready.";
+    if (diff.comparable) msg += diff.changed ? ` ${diff.changed} of ${diff.total} chapters changed since the last build.` : " No chapter text changed since the last build.";
+    if (!saved.ok) {
+      mciSaveWarned = true;
+      showPeStatus(
+        `${msg} It could not be saved with this document (storage full or read-only), so it works until you close the pane. Your other settings were not touched.`,
+        "warn"
+      );
+    } else if (saved.trimmed) {
+      showPeStatus(`${msg} ${saved.note}`, "warn");
+    } else {
+      showPeStatus(msg, "ok");
+    }
     return true;
   } catch (e) {
     if (isLongOpCancelledError(e)) {
@@ -683,10 +810,10 @@ async function runBuildFullManuscriptContext(userInitiated) {
 }
 
 async function maybeAutoRefreshManuscriptContextBeforeAudit() {
+  const index = getManuscriptContextIndex();
+  if (index) await refreshManuscriptContextFreshness({});
   if (!isChecked("autoRefreshManuscriptContext", false)) return true;
-  const pt = (await refreshDocumentParagraphCount()) ?? lastKnownParagraphTotal;
-  const MCI = ProzaEdit.ManuscriptContextIndex;
-  if (!MCI?.isStale?.(getManuscriptContextIndex(), pt)) return true;
+  if (index && mciIsFresh()) return true;
   try {
     if (localStorage.getItem(MCI_AUTO_WARN_KEY) !== "1") {
       const ok = await peConfirm({
@@ -703,16 +830,30 @@ async function maybeAutoRefreshManuscriptContextBeforeAudit() {
   return runBuildFullManuscriptContext(false);
 }
 
-function appendManuscriptContextToProfile(baseProfile) {
+function geminiIndexDisclosure() {
+  const index = getManuscriptContextIndex();
+  if (!index || index.invalid) return "";
+  return "\n\nYour manuscript index (a heuristic outline: chapter titles, first/last lines, recurring names, time cues) is included in this request because you built it.";
+}
+
+/** Heuristic index block for prompts. Stale/unverified indexes are included but flagged, never silently dropped. */
+function getManuscriptContextBlock(options) {
+  options = options || {};
   const MCI = ProzaEdit.ManuscriptContextIndex;
-  if (!MCI?.injectPromptBlock) return baseProfile;
-  const block = MCI.injectPromptBlock(getManuscriptContextIndex(), {
-    paragraphTotal: lastKnownParagraphTotal,
+  if (!MCI?.injectPromptBlock) return "";
+  return MCI.injectPromptBlock(getManuscriptContextIndex(), {
+    freshness: mciFreshness,
     scopeMode: getScopeMode(),
-    allowStale: false,
+    destination: options.destination || "local",
   });
-  if (!block) return baseProfile;
-  return `${baseProfile}\n\n${block}`;
+}
+
+function manuscriptContextStatusLine() {
+  const index = getManuscriptContextIndex();
+  if (!index || index.invalid) return "";
+  return mciIsFresh()
+    ? "Manuscript index: ready (heuristic outline, local)."
+    : "Manuscript index: may be out of date — refresh it from Checks or Settings.";
 }
 
 function fictionModulesActive() {
@@ -1438,7 +1579,13 @@ function onProzaEditOfficeReady(info) {
     ProzaEdit.Diagnostics?.initDiagnosticsUi?.();
     ProzaEdit.Diagnostics?.flushRetryQueue?.();
     setTimeout(() => scheduleManuscriptIndexBuild(false), 2500);
-    refreshDocumentParagraphCount().then(() => refreshManuscriptContextStatusUi());
+    migrateLegacyManuscriptContext()
+      .catch(() => false)
+      .then(() => refreshManuscriptContextFreshness({ force: true }))
+      .finally(() => refreshManuscriptContextStatusUi());
+    window.addEventListener("focus", () => {
+      refreshManuscriptContextFreshness({});
+    });
     try {
       if (sessionStorage.getItem("PROZAEDIT_UPDATE_CHECK") !== PROZAEDIT_BUILD_VERSION) {
         sessionStorage.setItem("PROZAEDIT_UPDATE_CHECK", PROZAEDIT_BUILD_VERSION);
@@ -1632,7 +1779,7 @@ function collectUiConfig() {
     autoRefreshManuscriptContext: isChecked("autoRefreshManuscriptContext", false),
     themePreference: getThemePreferenceFromUi(),
     lastActiveTab: getCurrentActiveTabId(),
-    manuscriptContext: mciCache && !mciCache.invalid ? mciCache : undefined,
+    manuscriptContext: mciLegacyPending && !mciLegacyPending.invalid ? mciLegacyPending : undefined,
     batchSectionCount: Math.min(8, Math.max(1, parseInt(getEl("batchSectionCount")?.value, 10) || 3)),
     firstRunComplete: configFirstRunComplete,
     onboardingTourComplete: configOnboardingTourComplete,
@@ -1728,9 +1875,6 @@ function applyUiConfig(p) {
   applyPeTheme(getThemePreferenceFromUi());
   if (p.continuityWarnLevel) setV("continuityWarnLevel", p.continuityWarnLevel);
   setC("autoRefreshManuscriptContext", !!p.autoRefreshManuscriptContext);
-  if (p.manuscriptContext && ProzaEdit.ManuscriptContextIndex?.normalizeStored) {
-    setManuscriptContextIndex(p.manuscriptContext);
-  }
   if (p.scopePageFrom) setV("scopePageFrom", p.scopePageFrom);
   if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
   setC("auditExtended", p.auditExtended);
@@ -1756,6 +1900,7 @@ function applyUiConfig(p) {
   toggleCustomStylePanel();
   updateActiveChecksHint();
   updateAuditDefaultFilterHint();
+  updateAiHelpAvailability();
   if (p.lastActiveTab) pendingLastActiveTab = p.lastActiveTab;
 }
 
@@ -2155,17 +2300,66 @@ function runPrimaryAudit() {
   }
 }
 
-function buildManuscriptProfile() {
+function buildManuscriptProfile(options) {
+  options = options || {};
   const c = collectUiConfig();
   const base = `Type: ${c.manuscriptType}\nAudience: ${c.targetAudience}\nSetting: ${c.settingAnchor}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
-  return appendManuscriptContextToProfile(base);
+  if (options.baseOnly) return base;
+  const block = getManuscriptContextBlock({ destination: options.destination || "local" });
+  return block ? `${base}\n\n${block}` : base;
+}
+
+/**
+ * Budgeted Gemini prompt: instruction, question and the start/end of the excerpt are always kept; the manuscript
+ * index is trimmed first. A stale index is included and flagged (never silently dropped).
+ * `makeSections(parts)` receives { profile, index } and returns Gemini.buildBudgetedPrompt sections.
+ */
+async function prepareGeminiPrompt(makeSections) {
+  await refreshManuscriptContextFreshness({ force: true, ignoreBusy: true });
+  const profile = buildManuscriptProfile({ baseOnly: true });
+  const index = getManuscriptContextBlock({ destination: "gemini" });
+  const made = makeSections({ profile, index });
+  const built = Array.isArray(made) ? ProzaEdit.Gemini.buildBudgetedPrompt(made) : made;
+  const indexKept = !!index && !built.trimmed.some((t) => t.role === "index" && t.to === 0);
+  const notes = [];
+  if (built.note) notes.push(built.note);
+  if (indexKept && !mciIsFresh()) {
+    notes.push("A manuscript index that may be out of date was included (flagged as such). Refresh it from Checks or Settings.");
+  }
+  return { text: built.text, note: notes.join(" "), trimmed: built.trimmed, indexIncluded: indexKept };
+}
+
+function updateAiHelpAvailability() {
+  const hasKey = !!getApiKey();
+  const simple = isChecked("simpleMode", false);
+  document.querySelectorAll(".pe-ai-help").forEach((box) => {
+    box.querySelector("[data-pe-ai-help-setup]")?.classList.toggle("hidden", hasKey);
+    box.querySelector("[data-pe-ai-help-ready]")?.classList.toggle("hidden", !hasKey);
+    const title = box.querySelector("[data-pe-ai-help-title]");
+    if (!title) return;
+    if (!title.dataset.peDefault) title.dataset.peDefault = title.textContent;
+    title.textContent = simple
+      ? `AI help (optional) — ${hasKey ? "Gemini, uses tokens" : "off until you add a key"}`
+      : title.dataset.peDefault;
+  });
+}
+
+function openAiHelpSetup() {
+  openSettingsModal("essentials");
+  setTimeout(() => {
+    try {
+      getEl("apiKey")?.focus();
+    } catch (_) {}
+  }, 60);
+  showPeStatus("AI help is off until you add a Gemini API key (Settings → Essentials). Local Coach and Rewrite work without it.", "ok");
 }
 
 function applySimpleMode() {
   const on = isChecked("simpleMode", false);
   document.body.classList.toggle("pe-simple-mode", on);
+  updateAiHelpAvailability();
   const label = getEl("targetSimpleModeLabel");
-  if (label) label.textContent = on ? "On" : "Off";
+  if (label) label.textContent = on ? "Simple" : "Advanced";
   const targetHint = getEl("peTargetRecommendedHint");
   if (targetHint) targetHint.classList.toggle("hidden", !on);
   updateAuditDefaultFilterHint();
@@ -2320,7 +2514,7 @@ function updateSimpleModeAdvancedTabsList() {
   const on = isChecked("simpleMode", false);
   el.classList.toggle("hidden", !on);
   if (on) {
-    el.innerHTML = `<strong>All features:</strong> ${escapeHtml(ProzaEdit.WorkflowNav.ADVANCED_TABS_WHEN_SIMPLE_OFF)} Turn off Simple mode above.`;
+    el.innerHTML = `<strong>All features:</strong> ${escapeHtml(ProzaEdit.WorkflowNav.ADVANCED_TABS_WHEN_SIMPLE_OFF)} Switch to Advanced above to see them.`;
   }
 }
 
@@ -2453,7 +2647,7 @@ function turnOffSimpleModeFromEssentials() {
   if (!isReviewModeProfileActive()) markFirstRunCompleteAndPersist();
   persistSettings(false);
   initSimpleModeFirstRunBanner();
-  showPeStatus("Simple mode off — Coach, Rewrite, and Thesaurus tabs are back.", "ok");
+  showPeStatus("Advanced view on — Thesaurus, the lexical shaper, and extra tuning are back.", "ok");
 }
 
 function initHelpNewToEditingList() {
@@ -3245,10 +3439,7 @@ function buildAuditContext(options) {
     mSpoiler: fictionOn("mSpoiler"),
     reportDensity: getEl("reportDensity")?.value || "balanced",
     manuscriptContextIndex: getManuscriptContextIndex(),
-    manuscriptContextFresh: ProzaEdit.ManuscriptContextIndex?.isFresh?.(
-      getManuscriptContextIndex(),
-      lastKnownParagraphTotal
-    ),
+    manuscriptContextFresh: mciIsFresh(),
   };
 }
 
@@ -3352,7 +3543,7 @@ function getEditLock() {
 }
 
 async function swapTextInScope(fromText, toText, options) {
-  return wordRun("pe-swap", (ctx) =>
+  const result = await wordRun("pe-swap", (ctx) =>
     ProzaEdit.EditApply.swapText(ctx, fromText, toText, {
       searchInScope: (c, text) =>
         ProzaEdit.WordSafeNavigator.searchInScope(c, text, {
@@ -3362,6 +3553,8 @@ async function swapTextInScope(fromText, toText, options) {
       replaceLocation: Word.InsertLocation.replace,
     })
   );
+  markManuscriptContextDirty();
+  return result;
 }
 
 async function applyDocumentEdit(beforeText, afterText, label, options) {
@@ -4133,7 +4326,7 @@ function buildCopilotAuditText() {
     }
   });
   lines.push("");
-  lines.push(buildManuscriptProfile());
+  lines.push(buildManuscriptProfile({ destination: "copilot" }));
   return lines.join("\n").substring(0, 14000);
 }
 
@@ -4229,7 +4422,12 @@ async function geminiGenerateWithQuota(prompt, generationConfig, outputReserve, 
   const reserve = outputReserve != null ? outputReserve : generationConfig?.maxOutputTokens || 1024;
   const estimated = ProzaEdit.AIQuotaManager.estimateTokens(prompt) + reserve;
   const gate = ProzaEdit.AIQuotaManager.canExecute(estimated, readAiQuotaLimitsFromDom());
-  if (!gate.ok) throw new Error(gate.message || "Session token ceiling reached.");
+  if (!gate.ok) {
+    const hint = isChecked("simpleMode", false)
+      ? " The ceiling is set under Settings → Safety (switch Simple mode off there to raise or turn it off)."
+      : "";
+    throw new Error(`${gate.message || "Session token ceiling reached."}${hint}`);
+  }
   const reply = await ProzaEdit.Gemini.generate(getApiKey(), prompt, generationConfig, { signal });
   ProzaEdit.AIQuotaManager.recordUsage(estimated);
   return reply;
@@ -4327,7 +4525,13 @@ function finalizeAudit(result, label) {
   html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
-  html += `<p>${escapeHtml(buildManuscriptProfile())}</p>`;
+  html += `<p>${escapeHtml(buildManuscriptProfile({ baseOnly: true }))}</p>`;
+  const mc = result.manuscriptContext;
+  if (mc?.used) {
+    html += `<p class="help-muted" style="font-size:11px;">Manuscript index used: ${mc.namesUsed} recurring names checked for spelling variants.</p>`;
+  } else if (mc?.indexPresent) {
+    html += `<p class="help-muted" style="font-size:11px;">Manuscript index is out of date, so name checks used this text only. Refresh it on Checks or in Settings.</p>`;
+  }
   const typeHint = getManuscriptTypeAwareHint();
   if (typeHint) html += `<p class="audit-type-hint">${escapeHtml(typeHint)}</p>`;
   if (isChecked("fictionScopeReminder", true) && fictionModulesActive() && !scopeCoversFullManuscript()) {
@@ -4986,7 +5190,8 @@ async function sendLocalCoachMessage() {
       return (sel.text || "").trim().substring(0, 600);
     });
   } catch (_) {}
-  const profile = buildManuscriptProfile();
+  const statusLine = manuscriptContextStatusLine();
+  const profile = [buildManuscriptProfile({ baseOnly: true }), statusLine].filter(Boolean).join("\n");
   const reply = ProzaEdit.LocalCoach.answer(prompt, snippet ? `${profile}\n\nSelection excerpt:\n${snippet}` : profile);
   appendCoachMessage(reply, false);
   showPeStatus("Local Coach (0 tokens).", "ok");
@@ -5543,14 +5748,14 @@ async function runDeepAuditAI() {
   const key = getApiKey();
   if (!key) {
     showPeStatus("Add a Gemini API key under Settings → Essentials (optional Gemini), or use the free local audit.", "warn");
-    showTab("tab5");
+    openAiHelpSetup();
     return;
   }
   if (
     !(await peConfirm({
       title: "Deep audit via Gemini",
       message:
-        "Deep Audit uses 1 Gemini API call.\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.\n\nContinue with Gemini?",
+        `Deep Audit uses 1 Gemini API call and sends the scoped text to Google.\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue with Gemini?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -5603,9 +5808,19 @@ async function runDeepAuditAICore() {
     longOp.throwIfCancelled();
     longOp.setStatus("Waiting for Gemini…");
 
-    const prompt =
-      `${GUARDRAILS}\n${buildManuscriptProfile()}\nReturn ONLY JSON array (max 6):\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":"","ruleId":""}]\n\nEXCERPT:\n${excerpt}`;
-    const reply = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1200, temperature: 0.3 }, null, longOp.abortSignal);
+    const prep = await prepareGeminiPrompt(({ profile, index }) => [
+      { id: "guardrails", text: GUARDRAILS },
+      { id: "profile", text: profile },
+      { id: "index", role: "index", text: index },
+      {
+        id: "instruction",
+        text: `Return ONLY JSON array (max 6):\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":"","ruleId":""}]`,
+      },
+      { id: "excerpt", role: "excerpt", label: "EXCERPT:", text: excerpt },
+    ]);
+    longOp.throwIfCancelled();
+    if (prep.note) showPeStatus(prep.note, "warn");
+    const reply = await geminiGenerateWithQuota(prep.text, { maxOutputTokens: 1200, temperature: 0.3 }, null, longOp.abortSignal);
     timing.mark("gemini");
     longOp.throwIfCancelled();
     let ai = [];
@@ -5718,7 +5933,7 @@ async function sendChatMessage() {
   if (
     !(await peConfirm({
       title: "Send via Gemini",
-      message: "Send via Gemini (uses API tokens)?",
+      message: `Send via Gemini (uses API tokens)? Your question and the chosen context are sent to Google.${geminiIndexDisclosure()}`,
       confirmLabel: "Send",
       cancelLabel: "Cancel",
     }))
@@ -5753,8 +5968,15 @@ async function sendChatMessage() {
   } finally {
     auditStarting = false;
   }
-  const text = `${GUARDRAILS}\n${buildManuscriptProfile()}\n\nContext:\n${context}\n\nQuestion:\n${prompt}`;
-  await runChatGeminiCall(text);
+  const prep = await prepareGeminiPrompt(({ profile, index }) => [
+    { id: "guardrails", text: GUARDRAILS },
+    { id: "profile", text: profile },
+    { id: "index", role: "index", text: index },
+    { id: "context", role: "context", label: "Context:", text: context },
+    { id: "question", label: "Question:", text: prompt },
+  ]);
+  if (prep.note) appendChatMessage(log, `Note: ${prep.note}`, "chat-ai");
+  await runChatGeminiCall(prep.text);
 }
 
 async function runChatGeminiCall(text) {
@@ -5863,13 +6085,13 @@ async function runSmartRewrite() {
   const key = getApiKey();
   if (!key) {
     showPeStatus("Add a Gemini API key under Settings → Essentials, or use Local paraphrase (free).", "warn");
-    showTab("tab5");
+    openAiHelpSetup();
     return;
   }
   if (
     !(await peConfirm({
       title: "Rewrite via Gemini",
-      message: "Rewrite via Gemini uses API tokens. Continue?",
+      message: `Rewrite via Gemini uses API tokens and sends your selected text to Google. Continue?${geminiIndexDisclosure()}`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -5901,8 +6123,11 @@ async function runSmartRewrite() {
   }
   const est = getEl("rewriteTokenEstimate");
   if (est) est.textContent = `Est. tokens: ~${ProzaEdit.Gemini.estimateTokens(excerpt) + 200}`;
-  const prompt = ProzaEdit.Gemini.buildRewritePrompt(mode, excerpt, buildManuscriptProfile(), GUARDRAILS);
-  await runRewriteGeminiCall(prompt);
+  const prep = await prepareGeminiPrompt(({ profile, index }) =>
+    ProzaEdit.Gemini.buildRewritePromptDetailed(mode, excerpt, profile, GUARDRAILS, index)
+  );
+  if (prep.note) showPeStatus(prep.note, "warn");
+  await runRewriteGeminiCall(prep.text);
 }
 
 async function runRewriteGeminiCall(prompt) {

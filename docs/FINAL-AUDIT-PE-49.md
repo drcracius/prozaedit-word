@@ -29,7 +29,7 @@
 | F-6 | P2 | vNext spec body | Many **2.0.0.14** labels in vNext sketch (intentional delta vs shipped UI) | Production baseline table updated; full spec body unchanged |
 | F-7 | P2 | `prozaedit-deep-audit-report.md` | Pre-PE-48 audit; WORKFLOWS/THIRD-PARTY **2.0.0.14** note stale | Superseded by this audit; headers already **2.0.0.15** |
 | F-8 | P2 | Owner-only | Phase 1 Word web validation log (**PE-47**) | [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) |
-| F-9 | P2 | Owner-only | Optional diagnostics ingest **2.0.0.16** | [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) — not in PE-49 scope |
+| F-9 | P2 | Owner-only | Optional diagnostics ingest **2.0.0.17** | [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) — not in PE-49 scope |
 
 ---
 
