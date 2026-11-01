@@ -40,6 +40,15 @@
       <button type="button" class="btn-linkish" onclick="openSettingsModal('appearance')">Settings → Appearance</button>
     </div>
   </div>
+  <div id="peSimpleModeFirstRunBanner" class="pe-top-banner help-box hidden" role="region" aria-label="Simple mode first run">
+    <p class="pe-top-banner-lead"><strong>Simple mode</strong></p>
+    <p id="peSimpleModeFirstRunBannerBody" class="pe-top-banner-body">Simple mode is on — fewer tabs, Critical issues first. Turn off in Settings → Safety.</p>
+    <div class="pe-top-banner-actions">
+      <button type="button" class="btn-secondary" onclick="dismissSimpleModeFirstRunBanner(false)">Got it</button>
+      <button type="button" class="btn-linkish" onclick="dismissSimpleModeFirstRunBanner(true)">Don&apos;t show again</button>
+      <button type="button" class="btn-linkish" onclick="openSettingsModal('safety')">Settings → Safety</button>
+    </div>
+  </div>
   <div id="pePriorSessionBanner" class="pe-top-banner help-box hidden" role="region" aria-label="Prior session summary">
     <p class="pe-top-banner-lead"><strong>Welcome back</strong></p>
     <ul id="pePriorSessionLines" class="help-list pe-prior-session-lines"></ul>
@@ -55,6 +64,7 @@
     <li class="workflow-step pe-workflow-step" data-workflow-step="3"><span class="workflow-num">3</span> Run audit</li>
     <li class="workflow-step pe-workflow-step" data-workflow-step="4"><span class="workflow-num">4</span> Fix cards</li>
   </ol>
+  <p id="peWorkflowNextStep" class="pe-workflow-next-step help-muted hidden" role="status" aria-live="polite">Next: set scope on Target, then Run audit.</p>
   <details class="help-box help-details">
     <summary>Quick start &amp; editing stack</summary>
     <p><strong>Local-first:</strong> audit, coach, paraphrase = <strong>0 API tokens</strong>. Partner tools in Word:</p>
@@ -168,6 +178,7 @@
         <option value="full">Full manuscript</option>
       </select>
       <p class="help-inline scope-mode-hint">Modes: <strong>highlighted selection</strong>; <strong>approximate page range</strong> (choose Page range, then set <strong>From page</strong> / <strong>To page</strong> — about 2,800 characters per page); <strong>selected chapters</strong> (checklist when that mode is active); or <strong>full manuscript</strong>.</p>
+      <p id="peFullManuscriptScopeTip" class="help-muted pe-full-ms-tip hidden" role="status" aria-live="polite">For very long documents, try <strong>Selected chapters</strong> or <strong>Page range</strong> (common pro workaround).</p>
       <p id="scopeCharPreview" class="scope-char-preview" aria-live="polite">Select a scope, then click Refresh count.</p>
       <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="refreshScopeCharPreview()">Refresh count</button>
     </div>
@@ -246,6 +257,16 @@
       <p class="help-inline" style="margin:6px 0 0;">Plot, timeline, and fiction modules run only when type is <strong>Fiction</strong>. Citation verify runs for Academic, Business, and Technical/Journalism when you opt in below — other types skip fiction and citation engines automatically.</p>
     </details>
     <p id="checksScopeChip" class="pe-scope-chip help-muted" aria-live="polite">Scope: —</p>
+    <details id="peFirstAuditChecklist" class="help-box help-muted pe-first-audit-checklist" open>
+      <summary>First audit checklist</summary>
+      <ol class="help-list pe-first-audit-steps">
+        <li>Set scope on <strong>Target</strong></li>
+        <li>Enable <strong>1–2 checks</strong> below (not every module)</li>
+        <li><strong>Run audit</strong> (toolbar or button below)</li>
+        <li>Fix <strong>Critical</strong> findings first; Mute or Dictionary for noisy names</li>
+      </ol>
+      <p class="help-inline" style="margin:6px 0 0;font-size:10px;">Walkthrough: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/PHASE-1-QUICKSTART.md" target="_blank" rel="noopener">PHASE-1-QUICKSTART.md</a></p>
+    </details>
     <div class="audit-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
       <div id="peLongOpProgressChecks" class="pe-longop-progress hidden" aria-live="polite">
@@ -262,7 +283,10 @@
         <button type="button" class="btn-partner btn-partner-accent" onclick="copyAuditForCopilotFromAnywhere()">Copy for Copilot</button>
         <button type="button" class="btn-partner" onclick="showTab('tab4')">Open Audit</button>
       </div>
-      <p class="partner-tools-hint">WMT &amp; PerfectIt: see <strong>Quick start &amp; editing stack</strong> above or <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORKFLOWS.md" target="_blank" rel="noopener">WORKFLOWS.md</a>.</p>
+      <details class="partner-tools-more">
+        <summary class="partner-tools-hint">WMT &amp; PerfectIt (optional)</summary>
+        <p class="help-inline" style="margin:4px 0 0;font-size:10px;">See <strong>Quick start &amp; editing stack</strong> above or <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORKFLOWS.md" target="_blank" rel="noopener">WORKFLOWS.md</a>.</p>
+      </details>
     </div>
     <details class="help-box help-muted" style="margin:8px 0;">
       <summary>Long manuscript tools (optional)</summary>
@@ -446,6 +470,17 @@
     </div>
     <h2 class="pe-section-title">ProzaEdit Help</h2>
     <div class="help-box">
+      <p><strong>Manual audits (not realtime):</strong> ProzaEdit runs <strong>manual audits</strong> when you click <strong>Run audit</strong> — not Grammarly-style realtime underlines in Word.</p>
+      <details id="peFirstAuditChecklistHelp" class="help-muted pe-first-audit-checklist" style="margin:8px 0;">
+        <summary>First audit checklist</summary>
+        <ol class="help-list pe-first-audit-steps">
+          <li>Set scope on <strong>Target</strong></li>
+          <li>Enable <strong>1–2 checks</strong> on Checks</li>
+          <li><strong>Run audit</strong></li>
+          <li>Fix <strong>Critical</strong> only first</li>
+        </ol>
+        <p class="help-inline" style="margin:6px 0 0;font-size:10px;"><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/PHASE-1-QUICKSTART.md" target="_blank" rel="noopener">PHASE-1-QUICKSTART.md</a></p>
+      </details>
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
       <p><strong>Analysis scope (Target):</strong> Highlighted selection; <strong>Page range</strong> (From/To pages, ~2,800 chars each); Selected chapters (Heading 1–3 checklist); or Full manuscript.</p>
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>

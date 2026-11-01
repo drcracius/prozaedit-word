@@ -58,6 +58,9 @@ let pendingSelectedChapterIndices = null;
 let activeLongOp = null;
 let pendingLongOpActionId = null;
 let pendingLongOpRunner = null;
+let configFirstRunComplete = false;
+let sessionAuditCompletedThisSession = false;
+let muteDictionaryNudgeShownThisSession = false;
 
 const AUDIT_PIN_FIELDS = [
   ["manuscriptType", "pinManuscriptType", true],
@@ -106,9 +109,7 @@ function setupSafeHandlers() {
       syncScopePanels();
       updateActiveChecksHint();
       updateWorkflowStatusLine();
-      if (scope.value === "full") {
-        alert("Full manuscript scans can be slow on long docs. For plot/character checks, prefer full or wide chapter range when possible.");
-      }
+      updateFullManuscriptScopeTip();
       if (scope.value === "selected-chapters" || scope.value === "chapter" || scope.value === "chapter-range") {
         refreshChapterScopeLists();
       } else {
@@ -212,6 +213,31 @@ function syncScopePanels() {
   if (pages) pages.classList.toggle("hidden", mode !== "pages");
   if (ch) ch.classList.toggle("hidden", !chapterModes);
   updateScopeChapterEmptyState();
+  updateFullManuscriptScopeTip();
+}
+
+function updateFullManuscriptScopeTip() {
+  const tip = getEl("peFullManuscriptScopeTip");
+  if (!tip) return;
+  const show = getScopeMode() === "full";
+  tip.classList.toggle("hidden", !show);
+}
+
+function updateWorkflowNextStepHint() {
+  const el = getEl("peWorkflowNextStep");
+  if (!el) return;
+  const show = ProzaEdit.Onboarding?.shouldShowWorkflowNextStep?.({
+    sessionAuditCompleted: sessionAuditCompletedThisSession,
+    hasAuditCards: currentAuditSuggestions.length > 0,
+  });
+  el.classList.toggle("hidden", !show);
+}
+
+function markFirstRunCompleteAndPersist() {
+  if (configFirstRunComplete) return;
+  configFirstRunComplete = true;
+  persistSettings(false);
+  initSimpleModeFirstRunBanner();
 }
 
 function setupScopeUi() {
@@ -335,6 +361,7 @@ function updateWorkflowStatusLine() {
   const guidePart = getActiveStyleGuideLabel();
   line.textContent = `Guide: ${guidePart} · Scope: ${scopePart} — ${charPart}`;
   updateChecksScopeChip();
+  updateWorkflowNextStepHint();
 }
 
 function updateChecksScopeChip() {
@@ -858,7 +885,9 @@ Office.onReady((info) => {
       sm.addEventListener("change", () => {
         applySimpleMode();
         if (isChecked("simpleMode", false)) applySimpleModeAuditFilterDefault();
+        else markFirstRunCompleteAndPersist();
         persistSettings(false);
+        initSimpleModeFirstRunBanner();
       });
     }
     showAuditEmptyIfNeeded();
@@ -866,10 +895,13 @@ Office.onReady((info) => {
     initWhatsNewBanner();
     initPriorSessionBanner();
     initSessionTips();
+    initSimpleModeFirstRunBanner();
     initDarkAppearanceTip();
     setupSettingsKeyboardShortcut();
     tryOpenSettingsFromLocationHash();
     updateWorkflowStatusLine();
+    updateFullManuscriptScopeTip();
+    updateWorkflowNextStepHint();
     updateChecksScopeChip();
     updateAuditTabBadge();
     setupNarrowPaneClass();
@@ -1057,6 +1089,7 @@ function collectUiConfig() {
     themePreference: getThemePreferenceFromUi(),
     lastActiveTab: getCurrentActiveTabId(),
     batchSectionCount: Math.min(8, Math.max(1, parseInt(getEl("batchSectionCount")?.value, 10) || 3)),
+    firstRunComplete: configFirstRunComplete,
     rewriteMode: (() => {
       const v = getEl("rewriteMode")?.value || "fluency";
       return ["fluency", "formal", "creative", "academic"].includes(v) ? v : "fluency";
@@ -1132,6 +1165,7 @@ function applyUiConfig(p) {
     updateAuditSortChips();
   }
   setC("simpleMode", p.simpleMode);
+  if (typeof p.firstRunComplete === "boolean") configFirstRunComplete = p.firstRunComplete;
   setC("showHoverTips", p.showHoverTips !== false);
   setC("fkLock", p.fkLock);
   setC("remindVersionHistory", p.remindVersionHistory);
@@ -1215,15 +1249,35 @@ function restoreLastActiveTab() {
 
 function loadSavedSettings() {
   const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
-  if (!raw) return;
+  let parsed = null;
+  if (raw) {
+    try {
+      parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    } catch (e) {
+      console.warn(e);
+      return;
+    }
+  }
+  const firstRun = ProzaEdit.Onboarding?.resolveFirstRunOnLoad?.({ rawConfig: raw, parsedConfig: parsed });
+  if (firstRun?.kind === "bootstrap") {
+    applyUiConfig(firstRun.patch || ProzaEdit.Onboarding.buildFirstRunBootstrapPatch());
+    adaptModules();
+    toggleCustomStylePanel();
+    persistSettings(false);
+    return;
+  }
+  if (!raw || !parsed) return;
   try {
-    let parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (ProzaEdit.ScopeReader?.migrateLegacyChapterScope) {
       const migrated = ProzaEdit.ScopeReader.migrateLegacyChapterScope(parsed);
       if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
         parsed = migrated;
         ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CONFIG, JSON.stringify(migrated));
       }
+    }
+    if (firstRun?.kind === "migrate-legacy" && firstRun.patch) {
+      parsed = { ...parsed, ...firstRun.patch };
+      ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CONFIG, JSON.stringify(parsed));
     }
     let legacyTipsHidden = false;
     try {
@@ -1884,6 +1938,38 @@ function dismissSessionTips(dontShowAgain) {
   } catch (_) {}
 }
 
+function initSimpleModeFirstRunBanner() {
+  const el = getEl("peSimpleModeFirstRunBanner");
+  if (!el) return;
+  const show = ProzaEdit.Onboarding?.shouldShowSimpleModeFirstRunBanner?.({
+    firstRunComplete: configFirstRunComplete,
+    simpleMode: isChecked("simpleMode", false),
+  });
+  if (!show) {
+    el.classList.add("hidden");
+    return;
+  }
+  const body = getEl("peSimpleModeFirstRunBannerBody");
+  if (body && ProzaEdit.Onboarding?.SIMPLE_MODE_FIRST_RUN_BANNER_LEAD) {
+    body.textContent = ProzaEdit.Onboarding.SIMPLE_MODE_FIRST_RUN_BANNER_LEAD;
+  }
+  el.classList.remove("hidden");
+}
+
+function dismissSimpleModeFirstRunBanner(dontShowAgain) {
+  hideOnboardingBanner("peSimpleModeFirstRunBanner");
+  if (dontShowAgain) {
+    markFirstRunCompleteAndPersist();
+    return;
+  }
+  try {
+    sessionStorage.setItem(
+      ProzaEdit.Onboarding?.SIMPLE_MODE_FIRST_RUN_DISMISSED_KEY || "pe-simple-mode-first-run-dismissed",
+      "1"
+    );
+  } catch (_) {}
+}
+
 function initDarkAppearanceTip() {
   const el = getEl("peDarkAppearanceBanner");
   if (!el) return;
@@ -2004,6 +2090,7 @@ function resetSettingsGroup(groupKey) {
     initWhatsNewBanner();
     initPriorSessionBanner();
     initSessionTips();
+    initSimpleModeFirstRunBanner();
     initDarkAppearanceTip();
   }
   persistSettings(false);
@@ -2080,14 +2167,19 @@ function dismissPeStatus() {
 }
 
 function showPeStatus(message, kind) {
+  showPeStatusHtml(message, kind, false);
+}
+
+function showPeStatusHtml(html, kind, isHtml) {
   const el = getEl("peStatus");
   const dismissBtn = getEl("btnPeStatusDismiss");
   if (!el) return;
-  el.textContent = message || "";
+  if (isHtml || (html && String(html).includes("<"))) el.innerHTML = html || "";
+  else el.textContent = html || "";
   el.classList.remove("ok", "warn");
   if (kind) el.classList.add(kind);
   if (peStatusTimer) clearTimeout(peStatusTimer);
-  if (message) {
+  if (html) {
     dismissBtn?.classList.remove("hidden");
     peStatusTimer = setTimeout(() => dismissPeStatus(), PE_STATUS_AUTO_CLEAR_MS);
   } else {
@@ -2708,6 +2800,7 @@ function setAuditSuggestions(list) {
   updateAuditFilterChips();
   updateAuditTabBadge();
   applyAuditCardFilter();
+  updateWorkflowNextStepHint();
   const activeTab = TAB_IDS.find((id) => document.getElementById(id)?.classList.contains("active"));
   if (activeTab) updateWorkflowStepper(activeTab);
 }
@@ -3118,6 +3211,8 @@ function runAuditInternalCore(opts) {
     }
     lastAuditExcerpt = text;
     finalizeAudit(result, opts.label || "Full audit (local)");
+    sessionAuditCompletedThisSession = true;
+    updateWorkflowNextStepHint();
     lastSessionSummaryRanAudit = true;
     scheduleLastSessionSummaryPersist({ ranAudit: true });
   })
@@ -3224,7 +3319,15 @@ async function muteRule(item) {
   await ProzaEdit.Settings.muteRule(item.ruleId);
   if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
   removeAuditCard(item.id);
-  showPeStatus("Muted on this PC for future audits.", "ok");
+  if (!muteDictionaryNudgeShownThisSession) {
+    muteDictionaryNudgeShownThisSession = true;
+    showPeStatusHtml(
+      'Added to session mutes — <button type="button" class="btn-linkish" onclick="openSettingsModal(\'dictionary\')">add to Dictionary in Settings</button> for this document?',
+      "ok"
+    );
+  } else {
+    showPeStatus("Muted on this PC for future audits.", "ok");
+  }
 }
 
 async function dismissCard(item) {

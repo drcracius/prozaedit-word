@@ -18,6 +18,83 @@ ProzaEdit.Onboarding = {
 
   ONBOARDING_CONFIG_KEYS: ["showSessionTips", "showWhatsNew", "showPriorSessionSummary", "showDarkAppearanceTip"],
 
+  FIRST_RUN_COMPLETE_KEY: "firstRunComplete",
+  SIMPLE_MODE_FIRST_RUN_DISMISSED_KEY: "pe-simple-mode-first-run-dismissed",
+
+  SIMPLE_MODE_FIRST_RUN_BANNER_LEAD:
+    "Simple mode is on — fewer tabs, Critical issues first. Turn off in Settings → Safety.",
+
+  FULL_MANUSCRIPT_SCOPE_TIP:
+    "For very long documents, try Selected chapters or Page range (common pro workaround).",
+
+  MANUAL_AUDIT_HELP_COPY:
+    "ProzaEdit runs manual audits when you click Run audit — not Grammarly-style realtime underlines.",
+
+  FIRST_AUDIT_CHECKLIST_STEPS: [
+    "Set scope on Target (selection, chapters, or page range).",
+    "Enable one or two checks on Checks (you do not need every module).",
+    "Run audit from the toolbar or Checks tab.",
+    "Fix Critical findings first; use Mute or Dictionary for noisy names.",
+  ],
+
+  PHASE_1_QUICKSTART_URL:
+    "https://github.com/drcracius/prozaedit-word/blob/main/docs/PHASE-1-QUICKSTART.md",
+
+  /** Shipped first-run defaults (PE-61): Simple + Critical filter; user can turn off once. */
+  buildFirstRunBootstrapPatch() {
+    return {
+      simpleMode: true,
+      auditCardFilter: "confirmed",
+      firstRunComplete: false,
+      auditExtended: false,
+      reportDensity: "balanced",
+    };
+  },
+
+  /**
+   * @param {object} options
+   * @param {string|null} [options.rawConfig] — PROZAEDIT_CONFIG raw
+   * @param {object|null} [options.parsedConfig] — parsed object when raw present
+   * @returns {{ kind: "bootstrap"|"migrate-legacy"|"none", patch?: object }}
+   */
+  resolveFirstRunOnLoad(options) {
+    options = options || {};
+    const raw = options.rawConfig;
+    const empty = raw == null || raw === "";
+    if (empty) {
+      return { kind: "bootstrap", patch: ProzaEdit.Onboarding.buildFirstRunBootstrapPatch() };
+    }
+    const p = options.parsedConfig;
+    if (!p || typeof p !== "object") return { kind: "none" };
+    if (p.firstRunComplete === true) return { kind: "none" };
+    if (p.firstRunComplete === false) return { kind: "none" };
+    return { kind: "migrate-legacy", patch: { firstRunComplete: true } };
+  },
+
+  shouldShowSimpleModeFirstRunBanner(options) {
+    options = options || {};
+    if (options.firstRunComplete === true) return false;
+    if (!options.simpleMode) return false;
+    try {
+      if (options.sessionGet) {
+        if (options.sessionGet(ProzaEdit.Onboarding.SIMPLE_MODE_FIRST_RUN_DISMISSED_KEY) === "1") return false;
+      } else if (
+        typeof sessionStorage !== "undefined" &&
+        sessionStorage.getItem(ProzaEdit.Onboarding.SIMPLE_MODE_FIRST_RUN_DISMISSED_KEY) === "1"
+      ) {
+        return false;
+      }
+    } catch (_) {}
+    return true;
+  },
+
+  shouldShowWorkflowNextStep(options) {
+    options = options || {};
+    if (options.sessionAuditCompleted) return false;
+    if (options.hasAuditCards) return false;
+    return true;
+  },
+
   DARK_APPEARANCE_TIP_COPY:
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
