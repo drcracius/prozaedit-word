@@ -5,14 +5,15 @@
 
 ---
 
-## Overall score: **7 / 10** → **7.5 (UX-1)** → **~8.5 shipped (UX-1–UX-3)**
+## Overall score: **7 / 10** → **7.5 (UX-1)** → **~8.5–8.7 shipped (UX-1–UX-3 + PE-45 polish)**
 
 | Milestone | Score | Evidence |
 |-----------|-------|----------|
 | Baseline (pre–UX pack) | **7.0** | Sound Target → Checks → Audit → Fix loop; dense text UI; seven tabs |
 | After UX-1 | **7.5** | `pe-icons.js` + toolbar/card icon+label rows; Simple → Critical default; workflow strip `.pe-workflow-step.active`; `sendIssueToRewrite()`; `getManuscriptTypeAwareHint()` in summary/empty |
 | After UX-2 | **~8.0** | Help/Target doc links verified; Checks active-checks hint; STYLE-GUIDE reference doc |
-| After UX-3 (current) | **~8.5** | `NATIVE_TITLE_REGISTRY` + deduped tips; Mute/Dismiss icons; no SR regression on primary actions (text + `aria-label` retained) |
+| After UX-3 | **~8.5** | `NATIVE_TITLE_REGISTRY` + deduped tips; Mute/Dismiss icons; no SR regression on primary actions (text + `aria-label` retained) |
+| After PE-45 polish | **~8.5–8.7** | Simple-mode Audit banner, scope chip parity, Run audit icon consistency, card rhythm, Checks eligibility callout, shaper persistence — **9.0 still needs beta cohort data** |
 
 **Why not 9.0 yet:** No structured beta cohort feedback on mis-clicks, time-to-first-fix, or Simple-mode comprehension; tab count and fiction/citation gating unchanged by design; pane width still limits layout. Closing the gap is **measurement + small polish**, not new IA.
 
@@ -40,11 +41,11 @@ ProzaEdit fits the Word task-pane constraint well: local-first audits, sticky Un
 
 | Item | Rationale |
 |------|-----------|
-| Chip/filter affordance | If users miss Critical default, add one-line Audit header when Simple is on |
-| Card vertical rhythm | +2px gap between primary and secondary rows if beta reports mis-taps (CSS only) |
-| Run audit icon | Unify emoji vs SVG on Run audit if testers want visual consistency |
-| Fiction gating callout | Single Checks `<details>` line if academic users skip eligibility copy |
-| Shaper slider persistence | P2 — only if beta asks to keep shaper values across sessions |
+| Chip/filter affordance | **Done (PE-45)** — Audit banner + hint when Simple is on |
+| Card vertical rhythm | **Done (PE-45)** — +2px row separation on cards |
+| Run audit icon | **Done (PE-45)** — hub buttons match toolbar SVG |
+| Fiction gating callout | **Done (PE-45)** — Checks eligibility `<details>` |
+| Shaper slider persistence | **Done (PE-45)** — `PROZAEDIT_CONFIG` |
 
 **Beta feedback prompts (UX-4):**
 

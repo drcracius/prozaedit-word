@@ -208,7 +208,7 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 
 - Requires **highlighted selection** (max ~3,500 chars).
 - Modes: Fluency, Formal, Creative, Academic — rule-based transforms (wordiness lists, pleonasms, contractions, register shifts). Shared lists live in `lexical-banks.js`.
-- **Advanced lexical shaper** (collapsible, hidden in Simple mode): Complexity / Intensity / Density sliders (1–5). Calibration stacks **only when the panel is open**; collapsed shaper leaves legacy four modes unchanged.
+- **Advanced lexical shaper** (collapsible, hidden in Simple mode): Complexity / Intensity / Density sliders (1–5), persisted in `PROZAEDIT_CONFIG` (`shaperComplexity`, `shaperIntensity`, `shaperDensity`; defaults 3 / 4 / 2). Calibration stacks **only when the panel is open**; collapsed shaper leaves legacy four modes unchanged. **Reset shaper sliders to defaults** in the panel restores shipped values.
 - **Preview** then **Apply preview to selection** replaces selection text (respects selection-only toggle for search scope).
 
 **Optional Gemini rewrite:** Same selection limits; uses `buildRewritePrompt` and guardrails.
@@ -238,7 +238,7 @@ In-pane quick reference: daily use, Apply fix behavior, mute/dismiss storage, fu
 
 | Storage | What |
 |---------|------|
-| `Office.context.document.settings` | Full UI config (`PROZAEDIT_CONFIG`, includes `lastActiveTab`), dictionary, muted rules (document), last audit cache, section/chapter loop indices, chapter heatmap JSON, reference style, custom style guide, continuity index snapshot, optional API key when “remember” is on |
+| `Office.context.document.settings` | Full UI config (`PROZAEDIT_CONFIG`, includes `lastActiveTab`, shaper slider values), dictionary, muted rules (document), last audit cache, section/chapter loop indices, chapter heatmap JSON, reference style, custom style guide, continuity index snapshot, optional API key when “remember” is on |
 | `localStorage` (browser on this PC) | Global muted rule IDs, globally dismissed target strings, continuity warning dismissals |
 
 Target fields debounce-save (~350 ms). **Save now** forces config write.

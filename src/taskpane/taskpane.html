@@ -232,6 +232,10 @@
   </div>
 
   <div id="tab3" class="tab-content" role="tabpanel">
+    <details id="pe-checks-eligibility" class="help-box help-muted pe-checks-eligibility" open>
+      <summary>Which checks run for your manuscript type?</summary>
+      <p class="help-inline" style="margin:6px 0 0;">Plot, timeline, and fiction modules run only when type is <strong>Fiction</strong>. Citation verify runs for Academic, Business, and Technical/Journalism when you opt in below — other types skip fiction and citation engines automatically.</p>
+    </details>
     <p id="checksScopeChip" class="pe-scope-chip help-muted" aria-live="polite">Scope: —</p>
     <div class="audit-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
@@ -263,8 +267,8 @@
         <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="selectNextChapterAndAudit()">Chapter + audit</button>
         <label for="batchSectionCount" style="margin-top:8px;display:block;">Batch section audits</label>
         <input type="number" id="batchSectionCount" min="1" max="8" value="3">
-        <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="runBatchSectionAudit()">Run batch</button>
-        <button type="button" class="btn-go" style="margin-top:4px;" onclick="cancelBatchAudit()">Cancel batch</button>
+        <button type="button" class="btn-secondary pe-btn" style="margin-top:4px;" onclick="runBatchSectionAudit()">Run batch</button>
+        <button type="button" class="btn-linkish pe-btn" style="margin-top:4px;" onclick="cancelBatchAudit()">Cancel batch</button>
         <button type="button" class="btn-secondary btn-api-opt" style="margin-top:8px;" onclick="runDeepAuditAI()">Optional: Deep Audit (+1 Gemini)</button>
         <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="scanChapterHeatmap()">Build chapter heatmap (local)</button>
       </div>
@@ -277,10 +281,6 @@
       <div class="toggle-row"><span>AI Detection (heuristic) + Anti-AI Voice</span><input type="checkbox" id="chkAI" checked></div>
       <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">AI detection is heuristic only—not proof of AI or plagiarism.</p>
     </div>
-    <details class="help-box help-muted" style="margin:8px 0 4px;">
-      <summary>Fiction vs academic: which checks run?</summary>
-      <p class="help-inline">Fiction-only toggles and <strong>Timeline scan</strong> run when manuscript type is <strong>Fiction</strong>. <strong>Citation verify</strong> is for Academic, Business, and Technical/Journalism when opt-in is on — academic audits still include the lighter citation hint on Run audit.</p>
-    </details>
     <h2 class="pe-section-title">Fiction modules</h2>
     <div class="form-group form-group-flush">
       <div class="toggle-row"><span>1. Plot & Chapter Structure</span><input type="checkbox" id="mPlot" checked></div>
@@ -329,6 +329,8 @@
   </div>
 
   <div id="tab4" class="tab-content" role="tabpanel">
+    <p id="peSimpleModeAuditBanner" class="pe-simple-audit-banner hidden" role="status" aria-live="polite"><strong>Simple mode:</strong> Showing <strong>Critical</strong> findings first. Use the filter chips below for All or Style.</p>
+    <p id="auditScopeChip" class="pe-scope-chip pe-audit-scope-chip help-muted" aria-live="polite">Scope (read-only): —</p>
     <div class="audit-run-hub audit-run-hub-inline">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
       <div id="peLongOpProgressAudit" class="pe-longop-progress hidden" aria-live="polite">
@@ -519,6 +521,7 @@
         <label class="pe-shaper-label" for="slider-shaper-density">Density <span id="label-shaper-density" class="pe-shaper-val">2</span></label>
         <input type="range" min="1" max="5" value="2" class="pe-slider" id="slider-shaper-density" data-pe-tip="slider-density" oninput="syncShaperSliderLabels()">
       </div>
+      <button type="button" class="btn-linkish pe-btn" style="margin-top:6px;" onclick="resetShaperSlidersToDefaults()">Reset shaper sliders to defaults</button>
     </details>
     <details class="help-box help-muted pe-gemini-block" style="margin-top:8px;">
       <summary>Optional Gemini rewrite (uses tokens)</summary>

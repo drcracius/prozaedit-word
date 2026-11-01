@@ -320,10 +320,12 @@ function updateWorkflowStatusLine() {
 }
 
 function updateChecksScopeChip() {
-  const chip = getEl("checksScopeChip");
-  if (!chip) return;
   const mode = getScopeMode();
-  chip.textContent = `Scope (read-only): ${getScopeModeLabel(mode)}${lastScopePreviewSummary ? ` — ${lastScopePreviewSummary}` : ""}`;
+  const text = `Scope (read-only): ${getScopeModeLabel(mode)}${lastScopePreviewSummary ? ` — ${lastScopePreviewSummary}` : ""}`;
+  const chip = getEl("checksScopeChip");
+  if (chip) chip.textContent = text;
+  const auditChip = getEl("auditScopeChip");
+  if (auditChip) auditChip.textContent = text;
 }
 
 function updateAuditTabBadge() {
@@ -757,6 +759,8 @@ Office.onReady((info) => {
     setupSettingsModal();
     setupLongOpWarningBanner();
     setupLongOpCancelButtons();
+    setupRunAuditHubButtons();
+    setupShaperSliderPersistence();
     setupSettingsKeywordFilter();
     bindWorkflowStepper();
     restoreLastActiveTab();
@@ -975,6 +979,11 @@ function collectUiConfig() {
     showPriorSessionSummary: isChecked("showPriorSessionSummary", true),
     showLongOperationWarnings: isChecked("showLongOperationWarnings", true),
     lastActiveTab: getCurrentActiveTabId(),
+    ...ProzaEdit.UiPrefs?.normalizeShaperFields?.({
+      shaperComplexity: getEl("slider-shaper-complexity")?.value,
+      shaperIntensity: getEl("slider-shaper-intensity")?.value,
+      shaperDensity: getEl("slider-shaper-density")?.value,
+    }),
     modules: {},
   };
   MODULE_IDS.forEach((id) => {
@@ -1054,6 +1063,13 @@ function applyUiConfig(p) {
   setC("chkCitationReconcile", p.citationReconcileBiblio !== false);
   setC("aiEnforceSessionCeiling", !!p.aiEnforceSessionCeiling);
   if (p.aiMaxSessionTokens != null) setV("aiMaxSessionTokens", p.aiMaxSessionTokens);
+  const shaper = ProzaEdit.UiPrefs?.normalizeShaperFields?.(p);
+  if (shaper) {
+    setV("slider-shaper-complexity", shaper.shaperComplexity);
+    setV("slider-shaper-intensity", shaper.shaperIntensity);
+    setV("slider-shaper-density", shaper.shaperDensity);
+    syncShaperSliderLabels();
+  }
   syncExtendedAuditToggles();
   syncScopePanels();
   applySimpleMode();
@@ -1410,7 +1426,58 @@ function applySimpleMode() {
   document.body.classList.toggle("pe-simple-mode", on);
   const label = getEl("targetSimpleModeLabel");
   if (label) label.textContent = on ? "On" : "Off";
+  const banner = getEl("peSimpleModeAuditBanner");
+  if (banner) banner.classList.toggle("hidden", !on);
+  updateAuditDefaultFilterHint();
   if (on && getCurrentActiveTabId() === "tab2") showTab("tab1");
+}
+
+function decorateRunAuditHubButton(btn) {
+  if (!btn || btn.dataset.peRunAuditDecorated) return;
+  btn.dataset.peRunAuditDecorated = "1";
+  const ic = window.ProzaEdit?.PeIcons?.svg ? ProzaEdit.PeIcons.svg("flash") : "";
+  btn.classList.add("btn-with-icon");
+  btn.innerHTML = `${ic}<span data-pe-run-audit-label>Run audit</span>`;
+}
+
+function setRunAuditHubButtonLabel(btn, text) {
+  if (!btn) return;
+  const span = btn.querySelector("[data-pe-run-audit-label]");
+  if (span) span.textContent = text;
+  else btn.textContent = text;
+}
+
+function setupRunAuditHubButtons() {
+  [getEl("btnRunAudit"), getEl("btnAuditPrimary")].forEach(decorateRunAuditHubButton);
+}
+
+function setupShaperSliderPersistence() {
+  ["slider-shaper-complexity", "slider-shaper-intensity", "slider-shaper-density"].forEach((id) => {
+    const el = getEl(id);
+    if (!el || el.dataset.peShaperPersist) return;
+    el.dataset.peShaperPersist = "1";
+    el.addEventListener("input", () => {
+      syncShaperSliderLabels();
+      schedulePersistSettings();
+    });
+  });
+}
+
+function resetShaperSlidersToDefaults() {
+  const patch = ProzaEdit.UiPrefs?.getShaperDefaultsPatch?.();
+  if (!patch) return;
+  const map = [
+    ["slider-shaper-complexity", patch.shaperComplexity],
+    ["slider-shaper-intensity", patch.shaperIntensity],
+    ["slider-shaper-density", patch.shaperDensity],
+  ];
+  map.forEach(([id, val]) => {
+    const el = getEl(id);
+    if (el) el.value = val;
+  });
+  syncShaperSliderLabels();
+  schedulePersistSettings();
+  showPeStatus("Shaper sliders reset to defaults.", "ok");
 }
 
 function updateCustomRulesSummary() {
@@ -1438,6 +1505,11 @@ function getDefaultAuditFilterLabel() {
 function updateAuditDefaultFilterHint() {
   const hint = getEl("auditDefaultFilterHint");
   if (!hint) return;
+  if (isChecked("simpleMode", false)) {
+    hint.innerHTML =
+      'Simple mode: Audit emphasizes <strong>Critical</strong> on load (<button type="button" class="btn-linkish" onclick="openSettingsModal(\'safety\')">Settings → Safety</button>). Saved filter chips still apply.';
+    return;
+  }
   const label = getDefaultAuditFilterLabel();
   hint.innerHTML = `Default filter: <strong>${label}</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
 }
@@ -2776,9 +2848,9 @@ function runAuditInternalCore(opts) {
     initialStatus: "Reading document…",
     setStatus: (msg) => showPeStatus(msg),
   });
-  if (auditBtn) auditBtn.textContent = "Reading…";
+  if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Reading…");
   const extBtn = getEl("btnAuditPrimary");
-  if (extBtn) extBtn.textContent = "Reading…";
+  if (extBtn) setRunAuditHubButtonLabel(extBtn, "Reading…");
   showPeStatus(opts.status || "Reading document…");
   persistSettings(false);
   showTab("tab4");
@@ -2804,8 +2876,8 @@ function runAuditInternalCore(opts) {
     let text = await readScopeText(ctx, longOp);
     longOp.throwIfCancelled();
     longOp.setStatus("Analyzing…");
-    if (auditBtn) auditBtn.textContent = "Analyzing…";
-    if (extBtn) extBtn.textContent = "Analyzing…";
+    if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Analyzing…");
+    if (extBtn) setRunAuditHubButtonLabel(extBtn, "Analyzing…");
     if (sumEl) sumEl.innerHTML = "Analyzing…";
     let truncated = false;
     const cap = getScopeCharLimit(getScopeMode());
@@ -2852,9 +2924,9 @@ function runAuditInternalCore(opts) {
       auditBusy = false;
       endLongOperation(longOp);
       setModuleButtonsDisabled(false);
-      if (auditBtn) auditBtn.textContent = auditBtnDefault;
+      if (auditBtn) setRunAuditHubButtonLabel(auditBtn, auditBtnDefault);
       const primary = getEl("btnAuditPrimary");
-      if (primary) primary.textContent = "Run audit";
+      if (primary) setRunAuditHubButtonLabel(primary, "Run audit");
       if (cancelled) showPeStatus("Cancelled.", "warn");
       else showPeStatus("Audit finished (0 tokens).", "ok");
     })

@@ -1,6 +1,6 @@
 # ProzaEdit — UI/UX enhancement backlog
 
-**Baseline:** `main` after **PE-43** · UI **2.0.0.15**
+**Baseline:** `main` after **PE-45** · UI **2.0.0.15**
 
 ---
 
@@ -26,7 +26,12 @@
 
 ## P3 — Later
 
-Unchanged from PE-42 backlog (dark theme, tab merge, shaper CONFIG persistence, in-pane tour).
+| # | Item | Status |
+|---|------|--------|
+| 11 | Dark theme | Deferred |
+| 12 | Tab merge (vNext IA) | Deferred |
+| 13 | Shaper slider CONFIG persistence | **Done (PE-45)** |
+| 14 | In-pane tour | Deferred |
 
 ## PE-43 add-ons (long operations)
 
