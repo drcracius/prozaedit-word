@@ -508,6 +508,11 @@ body.pe-narrow-pane .btn-tool-icon-label {
   background: #e8f0fe;
 }
 
+.btn-tool:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .btn-tool:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -591,6 +596,14 @@ body.pe-narrow-pane .btn-tool-icon-label {
   text-decoration: underline;
 }
 
+.pe-status-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
 .pe-status {
   flex: 1 1 auto;
   font-size: 10px;
@@ -602,8 +615,112 @@ body.pe-narrow-pane .btn-tool-icon-label {
   white-space: nowrap;
 }
 
+.pe-status-dismiss {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.pe-status-dismiss:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.pe-status-dismiss:hover {
+  color: var(--text);
+  background: var(--bg);
+}
+
 .pe-status.ok { color: var(--pe-success); font-weight: 600; }
 .pe-status.warn { color: var(--red); font-weight: 600; }
+
+.pe-tab-badge {
+  display: inline-block;
+  min-width: 16px;
+  padding: 0 4px;
+  margin-left: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  vertical-align: middle;
+}
+
+.pe-tab-badge.hidden {
+  display: none !important;
+}
+
+.pe-scope-chip {
+  font-size: 10px;
+  margin: 0 0 8px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.pe-longop-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  font-size: 10px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+}
+
+.pe-longop-progress.hidden {
+  display: none !important;
+}
+
+.pe-longop-progress-label {
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.pe-btn.pe-btn-primary {
+  /* alias — keeps btn-main styling */
+}
+
+.pe-settings-search-wrap {
+  padding: 0 12px 8px;
+}
+
+.pe-settings-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.pe-settings-group.pe-settings-filter-hidden {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 .pe-rewrite-back {
   display: inline-flex;
