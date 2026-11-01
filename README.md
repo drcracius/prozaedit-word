@@ -3,6 +3,7 @@
 Microsoft Word task-pane add-in for local-first editorial audit, coach, and rewrite — optional Google Gemini with your own API key.
 
 **Install (daily use):** see [README.txt](./README.txt) and [docs/BETA-TESTERS-INSTALL.txt](./docs/BETA-TESTERS-INSTALL.txt).  
+**Windows catalog / Shared Folder (PE-2, repo scripts only):** [scripts/install/README.md](./scripts/install/README.md), [Verify-ProzaEdit-Install.bat](./Verify-ProzaEdit-Install.bat) → [docs/pe-2-shared-folder-checklist.md](./docs/pe-2-shared-folder-checklist.md) (owner must run proof on a Windows PC).  
 **Production baseline:** **2.0.0.15** — `manifest.hosted.xml` + hosted UI on GitHub Pages.
 
 ## Primary roadmap (chat-approved)

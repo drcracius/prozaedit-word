@@ -2,6 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadLib } from "./load-lib.mjs";
 
+test("DiagnosticsConfig.ingestEnabled is false when URL empty", () => {
+  const pe = loadLib("src/taskpane/lib/diagnostics-config.js");
+  assert.equal(pe.DiagnosticsConfig.DIAGNOSTICS_INGEST_URL, "");
+  assert.equal(pe.DiagnosticsConfig.ingestEnabled(), false);
+});
+
 test("Diagnostics.redactString removes emails and API key patterns", () => {
   const pe = loadLib("src/taskpane/lib/diagnostics-reporter.js");
   const { redactString } = pe.Diagnostics;

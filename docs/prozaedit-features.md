@@ -99,6 +99,12 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 - **Copy for Copilot:** Clipboard export of last audit (works from Checks without opening Audit).
 - **Open Audit:** Switches to tab 4.
 
+**PE-43 UX (2.0.0.15, no manifest bump):**
+
+- **Scope (read-only)** chip mirrors Target scope / refresh count.
+- **Long-operation warning** (Settings → Onboarding → **Warn before long operations**): Continue / Not now / Don't show again before heavy reads (audit, citation/timeline scan, batch sections).
+- **Cancel** during cooperative Word read phases (audit **Reading…** / **Analyzing…**, citation/timeline scan, batch sections between sections).
+
 **Long manuscript tools (optional):**
 
 - **Section loop:** Select next N paragraphs (5–150, default 40); persists section index in document settings.
@@ -144,6 +150,8 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 ### Audit (tab 4)
 
 **Purpose:** Run audit, read summary, filter/sort **finding cards**, apply fixes, export reports.
+
+**PE-43:** Tab **badge** shows open issue count after an audit; empty state **Run audit from Checks** CTA; hub progress (**Reading document…** / **Analyzing…**) with **Cancel** (status **Cancelled.**); `:focus-visible` rings on toolbar actions.
 
 **Quick pins:** Manuscript type, scope, critic persona (mirrors Target; changes sync back).
 
@@ -211,15 +219,16 @@ Legacy saved configs with single-chapter or from/to range migrate once to **Sele
 
 ### Help (tab 7)
 
-In-pane quick reference: daily use, Apply fix behavior, mute/dismiss storage, full-manuscript tips, **manifest.hosted.xml** link, Word on the web upload steps, update behavior (push to GitHub vs re-upload manifest), **Check for updates** (compares UI version to raw GitHub manifest), platform notes (web vs desktop Upload), paraphrase attribution, links to **WORKFLOWS.md** and **THIRD-PARTY-ATTRIBUTION.md** on GitHub.
+In-pane quick reference: daily use, Apply fix behavior, mute/dismiss storage, full-manuscript tips, **manifest.hosted.xml** link, Word on the web upload steps, update behavior (push to GitHub vs re-upload manifest), **Check for updates** (compares UI version to raw GitHub manifest), platform notes (web vs desktop Upload), paraphrase attribution, links to **WORKFLOWS.md** and **THIRD-PARTY-ATTRIBUTION.md** on GitHub, **keyboard shortcut cheat sheet** (Settings / Help).
 
 ---
 
 ### Sticky toolbar (all tabs)
 
 - **Undo / Redo:** ProzaEdit-applied replacements only (session stack, max 40); Ctrl+Shift+Z / Ctrl+Shift+Y.
-- **Status line:** Transient messages.
+- **Status line:** Transient messages (~6s auto-clear; **×** dismisses immediately).
 - **Run audit:** Same as Checks primary button.
+- **Settings modal:** **Filter settings** search hides non-matching groups; Onboarding includes **Warn before long operations** (default on).
 
 ---
 

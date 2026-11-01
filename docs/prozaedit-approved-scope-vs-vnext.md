@@ -1,7 +1,7 @@
 # Approved Project roadmap vs vNext north star
 
 **Audience:** D Cracius and Project coordinators  
-**Updated:** 2026-10-31 (PE-33 repo closure)  
+**Updated:** 2026-11-01 (PE-44 repo closure)  
 **Production baseline:** hosted build **2.0.0.15** ([source-of-truth](./source-of-truth.md))
 
 ---
@@ -49,6 +49,7 @@ Primary execution doc: [prozaedit-implementation-plan-audited.md](./prozaedit-im
 | **PE-30** | Shipped rating + version-sync CI on `main` | **Done** | [prozaedit-audit-rating-current.md](./prozaedit-audit-rating-current.md) |
 | **PE-32** | Features §8 sync, spec review baseline, README roadmap, fiction gating `<details>` | **Done** | PE-32 |
 | **PE-33** | Diagnostics deploy automation and issue template | **Done** | This pass |
+| **PE-43** | Cancel long ops, P1/P2 UI backlog, uniformity pass | **Done** | PR #2 → `main`; [pe-ui-enhancement-backlog.md](./pe-ui-enhancement-backlog.md) |
 
 ### Repo completion math
 

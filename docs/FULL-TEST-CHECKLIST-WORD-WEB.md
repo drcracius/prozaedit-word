@@ -78,3 +78,12 @@
 ---
 
 *Automated coverage:* `npm test` (includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`, `onboarding-banners.test.mjs`, `long-operation-helpers.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).
+
+---
+
+## Owner-only outstanding (not this checklist)
+
+| Item | Owner action |
+|------|----------------|
+| **PE-2 Shared Folder** | On Windows: [Verify-ProzaEdit-Install.bat](../Verify-ProzaEdit-Install.bat) + manual smoke per [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md). |
+| **Diagnostics ingest live** | Deploy worker ([DIAGNOSTICS.md](./DIAGNOSTICS.md)); set `DIAGNOSTICS_INGEST_URL`, manifest AppDomain, bump **2.0.0.16** — client today uses empty URL (clipboard + GitHub issue fallback). |
