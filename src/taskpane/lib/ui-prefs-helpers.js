@@ -15,6 +15,7 @@ ProzaEdit.UiPrefs = {
     privacy: "privacy",
     reference: "reference",
     dictionary: "dictionary",
+    manuscript: "manuscript",
   },
 
   SETTINGS_GROUP_KEYS: [
@@ -26,6 +27,7 @@ ProzaEdit.UiPrefs = {
     "privacy",
     "reference",
     "dictionary",
+    "manuscript",
     "custom-style",
   ],
 
@@ -70,6 +72,7 @@ ProzaEdit.UiPrefs = {
     shaperIntensity: 4,
     shaperDensity: 2,
     themePreference: "light",
+    autoRefreshManuscriptContext: false,
   },
 
   SHAPER_KEYS: ["shaperComplexity", "shaperIntensity", "shaperDensity"],
@@ -191,6 +194,10 @@ ProzaEdit.UiPrefs = {
           reportDensity: base.reportDensity,
           auditCardFilter: base.auditCardFilter,
           auditExtended: base.auditExtended,
+        };
+      case "manuscript":
+        return {
+          autoRefreshManuscriptContext: base.autoRefreshManuscriptContext,
         };
       case "privacy":
         return { diagnosticsOptIn: false, diagnosticsNote: "" };
