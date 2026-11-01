@@ -47,7 +47,7 @@ ProzaEdit does **not** ship VBA macros or FRedit. Run macro tools on a **copy** 
 |--------|------|
 | **Word on the web → Upload My Add-in** | Default for consumer M365; works on iPad after upload on web |
 | **`Install-ProzaEdit-Desktop-GitHub.bat`** | Downloads latest [hosted manifest](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) and opens upload instructions |
-| **Shared Folder catalog (advanced, Windows)** | Optional; see `scripts/install/README.md` and **Fix-ProzaEdit-SharedFolder.bat** — validate on your PC (PE-2) |
+| **Shared Folder catalog (advanced, Windows)** | **Deferred optional appendix (PE-2)**; primary path is web upload — see `scripts/install/README.md` and [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) |
 
 ---
 

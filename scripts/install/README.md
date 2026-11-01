@@ -1,6 +1,6 @@
 # ProzaEdit install scripts (GitHub-hosted beta)
 
-**Production UI** loads from GitHub Pages after Office registers **`manifest.hosted.xml`**. These scripts download the manifest from GitHub; they do **not** replace the one-time Word upload for most consumer accounts.
+**Production UI** loads from GitHub Pages after Office registers **`manifest.hosted.xml`**. **Primary beta path:** Word on the web upload ([FINAL-MILE-PLAN-WEB.md](../../docs/FINAL-MILE-PLAN-WEB.md), [BETA-TESTERS-INSTALL.txt](../../docs/BETA-TESTERS-INSTALL.txt)). These scripts are an **optional desktop appendix** (PE-2 deferred); they download the manifest from GitHub and do **not** replace the one-time web upload for most consumer accounts.
 
 ---
 
@@ -18,7 +18,7 @@ PowerShell directly:
 powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\install\Install-ProzaEdit-GitHub.ps1"
 ```
 
-Optional Shared Folder catalog (desktop, **PE-2 — test on your PC**):
+Optional Shared Folder catalog (desktop, **PE-2 deferred — skip unless you need desktop catalog**):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\install\Install-ProzaEdit-GitHub.ps1" -RegisterLocalCatalog

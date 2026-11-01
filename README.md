@@ -2,9 +2,10 @@
 
 Microsoft Word task-pane add-in for local-first editorial audit, coach, and rewrite — optional Google Gemini with your own API key.
 
-**Install (daily use):** see [README.txt](./README.txt) and [docs/BETA-TESTERS-INSTALL.txt](./docs/BETA-TESTERS-INSTALL.txt).  
-**Windows catalog / Shared Folder (PE-2, repo scripts only):** [scripts/install/README.md](./scripts/install/README.md), [Verify-ProzaEdit-Install.bat](./Verify-ProzaEdit-Install.bat) → [docs/pe-2-shared-folder-checklist.md](./docs/pe-2-shared-folder-checklist.md) (owner must run proof on a Windows PC).  
-**Production baseline:** **2.0.0.15** — `manifest.hosted.xml` + hosted UI on GitHub Pages.
+**Install (primary — Word on the web):** upload [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) once — [docs/BETA-TESTERS-INSTALL.txt](./docs/BETA-TESTERS-INSTALL.txt), [README.txt](./README.txt).  
+**Final mile (validation + beta):** [docs/FINAL-MILE-PLAN-WEB.md](./docs/FINAL-MILE-PLAN-WEB.md) · manual checklist [docs/FULL-TEST-CHECKLIST-WORD-WEB.md](./docs/FULL-TEST-CHECKLIST-WORD-WEB.md).  
+**Optional desktop appendix (deferred PE-2):** [scripts/install/README.md](./scripts/install/README.md), [Verify-ProzaEdit-Install.bat](./Verify-ProzaEdit-Install.bat) → [docs/pe-2-shared-folder-checklist.md](./docs/pe-2-shared-folder-checklist.md) — not required for web 1.0.  
+**Production baseline:** **2.0.0.15** — `manifest.hosted.xml` + hosted UI on GitHub Pages · **29** `npm test` on `main`.
 
 ## Primary roadmap (chat-approved)
 
@@ -17,6 +18,7 @@ Approved beta scope vs vNext north star (~42%): **[docs/prozaedit-approved-scope
 | Doc | Purpose |
 |-----|---------|
 | [prozaedit-features.md](./docs/prozaedit-features.md) | As-built feature reference |
+| [FINAL-MILE-PLAN-WEB.md](./docs/FINAL-MILE-PLAN-WEB.md) | Web beta final mile (owner) |
 | [WHEN-YOU-RETURN.md](./docs/WHEN-YOU-RETURN.md) | Version bump + smoke checklist |
 | [WORKFLOWS.md](./docs/WORKFLOWS.md) | Partner tools (Editor, Copilot, WMT) |
 

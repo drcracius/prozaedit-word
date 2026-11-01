@@ -70,7 +70,7 @@
 | 3 — Banks + shaper v1 | **Complete** | `83e88f0` | `lexical-banks.js`, `lexical-shaper.js`, Rewrite Advanced panel; no manifest bump |
 | 4 — Chronology v1 | **Complete** | `76adf92` | `chronology-engine.js`, Checks Timeline scan sub-panel; no manifest bump |
 | 5 — Citations v1 | **Complete** | `8f12b94` | `citation-engine.js`, Checks sub-panel + Target verify; no manifest bump |
-| 6 — Install + docs hygiene | **Complete** | `3065334` | WORKFLOWS.md, THIRD-PARTY-ATTRIBUTION.md, GitHub install scripts; PE-2 manual on D PC |
+| 6 — Install + docs hygiene | **Complete** | `3065334` | WORKFLOWS.md, THIRD-PARTY-ATTRIBUTION.md, GitHub install scripts; web upload primary; PE-2 deferred |
 | 7+ — Optional (CI, quota, Zipf, IA merge) | **Partial** | PE-32 | **7a-lite**, **7c**, **7b** (version-sync + `npm test` on `main`); **7d–7g** deferred |
 
 ---
@@ -89,7 +89,7 @@ Seven tabs + workflow strip unchanged. **2.0.0.15** registers Phases 2–7: hove
 
 ### 4.3 Known gaps (unchanged)
 
-Root install `.bat` / **PE-2** catalog proof (owner on Windows PC), hosted diagnostics **ingest** deploy (client ships opt-in off), vNext engines — see v1 plan §2.4.
+Optional desktop `.bat` / **PE-2** catalog (deferred appendix), optional hosted diagnostics **ingest** deploy (client ships opt-in off), vNext engines — see [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md).
 
 ---
 
@@ -123,7 +123,7 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 *(Same as v1 plan — smoke checklist, manifest discipline, PE-2 logging only.)*
 
-**PE-2 (D, Windows):** [pe-2-shared-folder-checklist.md](pe-2-shared-folder-checklist.md)
+**PE-2 (optional desktop, deferred):** [pe-2-shared-folder-checklist.md](pe-2-shared-folder-checklist.md) — not required for web 1.0; see [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md).
 
 **Acceptance:** Audit → Apply fix → Undo → Go to (web); Check for updates; manifest/UI version match on `main`.
 
@@ -207,7 +207,7 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 
 **Acceptance:** No 404 for shipped help docs on GitHub; features §8 matches `taskpane.html` load order; no manifest bump.
 
-**PE-2 (manual, D on Windows):** Run `Fix-ProzaEdit-SharedFolder.bat` or web upload; confirm Shared Folder or upload path; log result in Project notes.
+**Install validation (web-first):** Word on the web upload + [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md). Optional: PE-2 Shared Folder on Windows per checklist appendix.
 
 ---
 
@@ -280,7 +280,7 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 | Run audit / extended | ✓ | ✓ | ✓ |
 | Apply fix / undo | ✓ | ✓ | ✓ |
 | Hover tips on/off | ✓ | ✓ (WebView2) | ✓ |
-| Shared Folder install | — | ✓ PE-2 | — |
+| Shared Folder install (optional) | — | PE-2 deferred | Web upload primary |
 
 **Minimum smoke after `src/` merge:** Target save → Checks Run audit → Audit Apply one safe fix → Undo → toggle hover tips → Help Check for updates.
 

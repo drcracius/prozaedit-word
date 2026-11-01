@@ -1,4 +1,6 @@
-# PE-2 — Windows Shared Folder validation (D Cracius)
+# PE-2 — Windows Shared Folder validation (optional appendix)
+
+> **Deferred — skip for now (owner policy, PE-46).** Web 1.0 beta does **not** require this path. Use **Word on the web → Upload My Add-in** ([BETA-TESTERS-INSTALL.txt](./BETA-TESTERS-INSTALL.txt), [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)). Return here only if you explicitly want desktop Shared Folder sideload on a Windows PC.
 
 **Purpose:** Confirm desktop Word can sideload ProzaEdit via **SHARED FOLDER** (local TrustedCatalog) using scripts on GitHub `main`. UI still loads from GitHub Pages; the catalog only registers `manifest.hosted.xml`.
 
@@ -65,7 +67,7 @@
 - [ ] Icons resolve (32/64 PNG URLs on raw GitHub, not broken ribbon).
 - [ ] **SHARED FOLDER** shows ProzaEdit **or** documented fallback (web upload) succeeded.
 - [ ] Task pane **SourceLocation** is GitHub Pages URL, not `localhost`.
-- [ ] Log outcome in Project notes (pass / fail + symptom).
+- [ ] Log outcome in Project notes (pass / fail + symptom) — optional; PE-2 is **Canceled** in Project tasks.
 
 ---
 
@@ -121,4 +123,4 @@ Raw manifest for upload:
 1. Word closed → run **`Fix-ProzaEdit-SharedFolder.bat`** from current `main`.  
 2. Clear **Wef** cache → reopen Word → **SHARED FOLDER**.  
 3. Confirm manifest **2.0.0.15**, icons, **SupportUrl** → open task pane → smoke audit.  
-4. If fail → note symptom → fall back to **web upload**; PE-2 result logged in Project notes.
+4. If fail → note symptom → use **web upload** (supported beta path); desktop catalog is optional.

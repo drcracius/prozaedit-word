@@ -1,8 +1,9 @@
 # ProzaEdit Word — five-pass beta-ready audit
 
-**Baseline commit:** `675a1b6` (PE-38 Settings consolidation) → UX pack 2 (PE-39)  
-**Hosted version:** **2.0.0.15** (manifest + UI — **no bump** in this pack)  
-**Date:** 2026-10-31
+**Baseline:** `main` after **PE-45** (PE-43 cancel/long-op, PE-45 shaper CONFIG + scope chips)  
+**Hosted version:** **2.0.0.15** (manifest + UI)  
+**Date:** 2026-11-01  
+**Manual validation:** [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)
 
 ---
 

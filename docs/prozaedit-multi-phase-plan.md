@@ -57,7 +57,7 @@ Seven tabs + workflow strip: **Target**, **Thesaurus**, **Checks**, **Audit**, *
 | Gap | Impact | Tracked |
 |-----|--------|---------|
 | Root `.bat` / `Create-Hosted-Manifest.bat`, `scripts/install/` | PC authors expect one-click install; only archive READMEs exist | Phases 0, 5 |
-| **PE-2** Shared Folder catalog (Windows desktop) | Advanced sideload without web upload; scripts not on GitHub | Phase 5 |
+| **PE-2** Shared Folder catalog (Windows desktop) | **Deferred optional appendix** — web upload is primary ([FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)) | Phase 5 docs only |
 | Help links to `docs/WORKFLOWS.md`, `docs/THIRD-PARTY-ATTRIBUTION.md` | Broken in-pane references | Phase 5 |
 | No automated tests / CI | Manual Word verification only | Phase 6+ (optional) |
 | vNext engines (timeline, citations, Zipf shaper) | Vision only until phased | Phases 3–4 |
@@ -356,7 +356,7 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 1. **Install artifacts on GitHub `main`:**
    - Minimal **PowerShell** `Create-Hosted-Manifest.ps1` (or documented equivalent) aligning URLs with [source-of-truth](/cursor/stores/self/docs/source-of-truth.md).
    - **`scripts/install/`** or `install/` folder: `Install-WordAddin.ps1`, `Register-TrustedCatalog.ps1`, wrapped by **`Install-In-Word.bat`** — recovered from restore point / `_archive/local-dev` per codebase overview; README with cache-clear steps.
-2. **PE-2 validation:** Shared Folder catalog on Windows after Office cache clear; document success/failure in repo `docs/BETA-SETUP-GITHUB.md` or `docs/WINDOWS-SHARED-FOLDER-INSTALL.md`.
+2. **Web validation:** [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) + [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md). PE-2 Shared Folder is optional/deferred.
 3. **Missing docs:** Add `docs/WORKFLOWS.md`, `docs/THIRD-PARTY-ATTRIBUTION.md` (and `STYLE-GUIDE-SOURCES.md` if still referenced) — content aligned with in-pane help, no false claims.
 4. **Repo `docs/prozaedit-features.md`:** Keep in sync with Project store copy or single-source policy (decision log).
 
@@ -476,7 +476,7 @@ Phases **2–5** follow [spec review §5](/cursor/stores/self/docs/prozaedit-nex
 | Section/chapter loop | ✓ | ✓ | Limited UI |
 | Heatmap build | ✓ | ✓ | ✓ |
 | Gemini paths | ✓ | ✓ | ✓ (if key) |
-| Shared Folder install | — | ✓ PE-2 | — |
+| Shared Folder install (optional) | — | PE-2 deferred | Web upload primary |
 | Tooltip/shaper/chronology | ✓ | ✓ | ✓ read/scan |
 
 After **every merge to `main` affecting `src/`:** run **minimum smoke**: Target save → Checks Run audit → Audit Apply one safe fix → Undo → Help Check for updates.
