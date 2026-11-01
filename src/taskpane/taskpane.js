@@ -85,11 +85,19 @@ function setupSafeHandlers() {
     remember.addEventListener("change", () => {
       if (remember.checked) {
         alert("API key will be stored inside this Word document. Use only on your private PC.");
+        schedulePersistSettings();
       } else {
         const keyEl = getEl("apiKey");
         if (keyEl) keyEl.value = "";
         persistSettings(false);
       }
+    });
+  }
+  const keyEl = getEl("apiKey");
+  if (keyEl && !keyEl.dataset.peAutosave) {
+    keyEl.dataset.peAutosave = "1";
+    keyEl.addEventListener("input", () => {
+      if (isChecked("rememberApiKey", false)) schedulePersistSettings();
     });
   }
   const scope = document.getElementById("scope");
@@ -1348,6 +1356,7 @@ function setupAutoSaveHandlers() {
     "language",
     "styleGuideRef",
     "replaceInSelectionOnly",
+    "chatSelectionOnly",
     "confirmBeforeApply",
     "fkLock",
     "remindVersionHistory",
