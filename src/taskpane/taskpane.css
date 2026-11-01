@@ -1499,6 +1499,69 @@ body.pe-onboarding-tour-open {
   display: none !important;
 }
 
+.pe-confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 10px;
+  box-sizing: border-box;
+}
+
+.pe-confirm-modal.hidden {
+  display: none !important;
+}
+
+.pe-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--pe-backdrop);
+}
+
+.pe-confirm-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 380px);
+  max-height: min(88vh, 520px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--pe-modal-shadow);
+  overflow: auto;
+}
+
+.pe-confirm-title {
+  margin: 0;
+  font-size: var(--pe-font-size-base);
+  font-weight: var(--pe-font-weight-heading);
+  color: var(--primary);
+}
+
+.pe-confirm-message {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: var(--text);
+}
+
+.pe-confirm-actions {
+  margin-top: 4px;
+  justify-content: flex-end;
+}
+
+.pe-doc-scope-trust-line {
+  font-size: 10px;
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+
 .pe-settings-backdrop {
   position: absolute;
   inset: 0;
@@ -2318,6 +2381,11 @@ textarea:focus {
 
 [data-pe-theme="dark"] .pe-settings-dialog {
   border-color: var(--border-muted);
+}
+
+[data-pe-theme="dark"] .pe-confirm-dialog {
+  border-color: var(--border-muted);
+  background: var(--surface);
 }
 
 [data-pe-theme="dark"] .pe-settings-header {

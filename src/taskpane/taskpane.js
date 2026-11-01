@@ -82,10 +82,32 @@ const AUDIT_EMPTY_HTML = `<div class="audit-empty">
   <button type="button" class="btn-secondary pe-btn" onclick="showTab('tab3')">Configure checks</button>
 </div>`;
 
-function confirmBeforeApply(actionLabel) {
+function peConfirm(message, options) {
+  const opts =
+    message && typeof message === "object"
+      ? message
+      : { message: String(message || ""), ...(options || {}) };
+  if (ProzaEdit.ConfirmDialog?.show) return ProzaEdit.ConfirmDialog.show(opts);
+  return Promise.resolve(false);
+}
+
+function isPeOverlayDialogOpen() {
+  return (
+    ProzaEdit.ConfirmDialog?.isOpen?.() ||
+    !getEl("pe-settings-modal")?.classList.contains("hidden") ||
+    !getEl("peOnboardingTour")?.classList.contains("hidden")
+  );
+}
+
+async function confirmBeforeApply(actionLabel) {
   const el = document.getElementById("confirmBeforeApply");
   if (el && !el.checked) return true;
-  return confirm(`Apply this change to Word?\n\n${actionLabel}`);
+  return peConfirm({
+    title: "Apply to Word?",
+    message: `Apply this change to Word?\n\n${actionLabel}`,
+    confirmLabel: "Apply",
+    cancelLabel: "Cancel",
+  });
 }
 
 function setupSafeHandlers() {
@@ -541,6 +563,7 @@ function setupSettingsModal() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape" || e.defaultPrevented || modal.classList.contains("hidden")) return;
+    if (ProzaEdit.ConfirmDialog?.isOpen?.()) return;
     if (!getEl("peOnboardingTour")?.classList.contains("hidden")) return;
     e.preventDefault();
     closeSettingsModal();
@@ -548,7 +571,9 @@ function setupSettingsModal() {
   modal.querySelectorAll("[data-pe-settings-reset]").forEach((btn) => {
     if (btn.dataset.resetBound) return;
     btn.dataset.resetBound = "1";
-    btn.addEventListener("click", () => resetSettingsGroup(btn.dataset.peSettingsReset));
+    btn.addEventListener("click", () => {
+      void resetSettingsGroup(btn.dataset.peSettingsReset);
+    });
   });
 }
 
@@ -898,9 +923,7 @@ function setupLongOpCancelButtons() {
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape" || e.defaultPrevented) return;
       if (!activeLongOp) return;
-      const modalOpen =
-        !getEl("pe-settings-modal")?.classList.contains("hidden") || !getEl("peOnboardingTour")?.classList.contains("hidden");
-      if (modalOpen) return;
+      if (isPeOverlayDialogOpen()) return;
       const tag = (e.target && e.target.tagName) || "";
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       e.preventDefault();
@@ -1870,9 +1893,13 @@ async function prepareScopeForAudit(retryOpts) {
     return false;
   }
   if (
-    confirm(
-      "Nothing (or too little) is highlighted in Word.\n\nSelect the next section automatically and run audit?\n\n(Cancel = stop; you can highlight text yourself.)"
-    )
+    await peConfirm({
+      title: "No selection",
+      message:
+        "Nothing (or too little) is highlighted in Word.\n\nSelect the next section automatically and run audit?\n\n(Cancel = stop; you can highlight text yourself.)",
+      confirmLabel: "Select next section",
+      cancelLabel: "Cancel",
+    })
   ) {
     try {
       await selectNextSection();
@@ -2878,7 +2905,7 @@ function tryOpenSettingsFromLocationHash() {
   } catch (_) {}
 }
 
-function resetSettingsGroup(groupKey) {
+async function resetSettingsGroup(groupKey) {
   const norm = ProzaEdit.UiPrefs?.normalizeSettingsSection?.(groupKey) || groupKey;
   const labels = {
     safety: "Safety",
@@ -2894,7 +2921,15 @@ function resetSettingsGroup(groupKey) {
     showPeStatus("Reference capture has no defaults — use Capture when needed.", "warn");
     return;
   }
-  if (!confirm(`Reset ${label} to shipped defaults for this document?\n\nOther settings groups are unchanged.`)) return;
+  if (
+    !(await peConfirm({
+      title: `Reset ${label}?`,
+      message: `Reset ${label} to shipped defaults for this document?\n\nOther settings groups are unchanged.`,
+      confirmLabel: "Reset",
+      cancelLabel: "Cancel",
+    }))
+  )
+    return;
   const patch = ProzaEdit.UiPrefs?.getDefaultsPatchForGroup?.(norm);
   if (!patch) return;
   if (norm === "privacy") {
@@ -3117,13 +3152,16 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
     const warnings = ProzaEdit.ContinuityGuard.assessReplace(before, after, index, level);
     if (warnings.length) {
       const block = ProzaEdit.ContinuityGuard.formatWarningBlock(warnings);
-      const proceed = confirm(
-        `Continuity check (local, 0 tokens):\n\n${block}\n\nApply this change anyway?\n(Cancel = skip; use Dismiss on card to silence similar warnings.)`
-      );
+      const proceed = await peConfirm({
+        title: "Continuity check",
+        message: `Continuity check (local, 0 tokens):\n\n${block}\n\nApply this change anyway?\n(Cancel = skip; use Dismiss on card to silence similar warnings.)`,
+        confirmLabel: "Apply anyway",
+        cancelLabel: "Skip",
+      });
       if (!proceed) return false;
       warnings.forEach((w) => ProzaEdit.ContinuityGuard.dismissWarningKey(w.key));
     }
-    if (!confirmBeforeApply(`Replace "${before}" with "${after}"?`)) return false;
+    if (!(await confirmBeforeApply(`Replace "${before}" with "${after}"?`))) return false;
     const searchOpts = options && options.forceDocument ? { forceDocument: true } : {};
     try {
       await swapTextInScope(before, after, searchOpts);
@@ -3798,7 +3836,7 @@ function auditReportInput() {
 }
 
 function auditReportUiHooks() {
-  return { showPeStatus, alert, confirm, wordRun };
+  return { showPeStatus, alert, confirmAsync: (msg, opts) => peConfirm(typeof msg === "string" ? { message: msg, ...opts } : msg), wordRun };
 }
 
 function buildAuditReportPlainText() {
@@ -4354,7 +4392,7 @@ function muteRule(item) {
       muteDictionaryNudgeShownThisSession = true;
       showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok");
     } else {
-      showPeStatus("Muted on this PC for future audits.", "ok");
+      showPeStatus("Rule muted — saved in this document and this browser (not other PCs or files).", "ok");
     }
   });
 }
@@ -4493,7 +4531,15 @@ async function checkForUpdates(manual) {
         `Update available: manifest ${remote} (you have UI ${PROZAEDIT_BUILD_VERSION}). Close this pane and reopen ProzaEdit; re-upload manifest if Word asks.`,
         true
       );
-      if (manual && confirm("Reload the task pane now to pull the latest UI from GitHub?")) {
+      if (
+        manual &&
+        (await peConfirm({
+          title: "Reload pane?",
+          message: "Reload the task pane now to pull the latest UI from GitHub?",
+          confirmLabel: "Reload",
+          cancelLabel: "Not now",
+        }))
+      ) {
         location.reload();
       }
     } else if (cmp === 0) {
@@ -5094,7 +5140,7 @@ function getApiKey() {
   return getEl("apiKey")?.value.trim() || "";
 }
 
-function runDeepAuditAI() {
+async function runDeepAuditAI() {
   if (isOperationBusy()) {
     warnOperationBusy();
     return;
@@ -5106,9 +5152,13 @@ function runDeepAuditAI() {
     return;
   }
   if (
-    !confirm(
-      "Deep Audit uses 1 Gemini API call.\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.\n\nContinue with Gemini?"
-    )
+    !(await peConfirm({
+      title: "Deep audit via Gemini",
+      message:
+        "Deep Audit uses 1 Gemini API call.\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.\n\nContinue with Gemini?",
+      confirmLabel: "Continue",
+      cancelLabel: "Cancel",
+    }))
   )
     return;
   const actionId = ProzaEdit.LongOp?.ACTION_IDS?.DEEP_AUDIT;
@@ -5259,11 +5309,36 @@ async function sendChatMessage() {
     return;
   }
   if (!key) {
-    if (confirm("No Gemini API key. Use free Local Coach instead?")) sendLocalCoachMessage();
+    if (
+      await peConfirm({
+        title: "No API key",
+        message: "No Gemini API key. Use free Local Coach instead?",
+        confirmLabel: "Use Local Coach",
+        cancelLabel: "Cancel",
+      })
+    )
+      sendLocalCoachMessage();
     return;
   }
-  if (!confirm("Send via Gemini (uses API tokens)?")) return;
-  if (ProzaEdit.Gemini.estimateTokens(prompt) > 2000 && !confirm("Large prompt—continue?")) return;
+  if (
+    !(await peConfirm({
+      title: "Send via Gemini",
+      message: "Send via Gemini (uses API tokens)?",
+      confirmLabel: "Send",
+      cancelLabel: "Cancel",
+    }))
+  )
+    return;
+  if (
+    ProzaEdit.Gemini.estimateTokens(prompt) > 2000 &&
+    !(await peConfirm({
+      title: "Large prompt",
+      message: "Large prompt—continue?",
+      confirmLabel: "Continue",
+      cancelLabel: "Cancel",
+    }))
+  )
+    return;
 
   const log = getEl("chatLog");
   if (!log) return;
@@ -5396,7 +5471,15 @@ async function runSmartRewrite() {
     showTab("tab5");
     return;
   }
-  if (!confirm("Rewrite via Gemini uses API tokens. Continue?")) return;
+  if (
+    !(await peConfirm({
+      title: "Rewrite via Gemini",
+      message: "Rewrite via Gemini uses API tokens. Continue?",
+      confirmLabel: "Continue",
+      cancelLabel: "Cancel",
+    }))
+  )
+    return;
   const mode = getEl("rewriteMode")?.value || "fluency";
   const preview = getEl("rewritePreview");
   if (!preview) return;

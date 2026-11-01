@@ -40,18 +40,25 @@ ProzaEdit.ReportDocxExport = {
         ui.showPeStatus("Report downloaded — open in Word and Save As .docx or PDF if needed.", "ok");
       }
     } catch (e) {
-      if (ui.alert) ui.alert(e.message || "Download failed.");
+      if (ui.showPeStatus) ui.showPeStatus(e.message || "Download failed.", "warn");
+      else if (ui.alert) ui.alert(e.message || "Download failed.");
     }
   },
 
-  insertAuditReportInWord(text, deps) {
+  async insertAuditReportInWord(text, deps) {
     deps = deps || {};
     if (!text) {
       if (deps.showPeStatus) deps.showPeStatus("Run an audit first.", "warn");
-      return Promise.resolve();
+      return;
     }
-    if (typeof deps.confirm === "function" && !deps.confirm("Insert a plain-text audit report at the end of this document?")) {
-      return Promise.resolve();
+    if (typeof deps.confirmAsync === "function") {
+      const ok = await deps.confirmAsync({
+        title: "Insert report",
+        message: "Insert a plain-text audit report at the end of this document?",
+        confirmLabel: "Insert",
+        cancelLabel: "Cancel",
+      });
+      if (!ok) return;
     }
     return deps
       .wordRun("insert-report", async (context) => {
@@ -63,7 +70,8 @@ ProzaEdit.ReportDocxExport = {
         if (deps.showPeStatus) deps.showPeStatus("Report inserted at document end.", "ok");
       })
       .catch((e) => {
-        if (deps.alert) deps.alert(e.message);
+        if (deps.showPeStatus) deps.showPeStatus(e.message || "Insert failed.", "warn");
+        else if (deps.alert) deps.alert(e.message);
       });
   },
 
@@ -99,7 +107,8 @@ ProzaEdit.ReportDocxExport = {
         }
         return;
       }
-      if (deps.alert) deps.alert(e.message);
+      if (deps.showPeStatus) deps.showPeStatus(e.message || "Export failed.", "warn");
+      else if (deps.alert) deps.alert(e.message);
     }
   },
 
@@ -110,14 +119,10 @@ ProzaEdit.ReportDocxExport = {
       return Promise.resolve();
     }
     return this.exportComprehensiveWordReport(text, deps).then(() => {
-      if (deps.alert) {
-        deps.alert(
-          "PDF export (Microsoft Word):\n\n" +
-            "• Word on the web: File → Export → Download as PDF\n" +
-            "• Word desktop: File → Save As → PDF\n\n" +
-            "The report should be in the new document that just opened. If not, use Download .txt and open that file in Word first."
-        );
-      }
+      const msg =
+        "PDF: Word on the web → File → Export → PDF; desktop → Save As PDF. Use the new doc that opened, or Download .txt first.";
+      if (deps.showPeStatus) deps.showPeStatus(msg, "ok");
+      else if (deps.alert) deps.alert(msg);
     });
   },
 };
