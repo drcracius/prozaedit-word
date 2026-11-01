@@ -408,6 +408,15 @@ ProzaEdit.ScopeReader = {
     throw new Error("Unknown scope mode.");
   },
 
+  async _loadParaTexts(context, paras, from, to, opts) {
+    for (let b = from; b <= to; b += 200) {
+      this._cancelCheck(opts);
+      const e = Math.min(b + 199, to);
+      for (let i = b; i <= e; i++) paras.items[i].load("text");
+      await context.sync();
+    }
+  },
+
   /** Paragraph objects for chronology walk (15k cap; indices are body paragraph indexes). */
   async readParagraphsInScope(context, opts) {
     opts = opts || {};
@@ -455,24 +464,31 @@ ProzaEdit.ScopeReader = {
         .filter(Boolean)
         .sort((x, y) => x.startPara - y.startPara);
       if (ranges.some((ch) => !rangeOk(ch.startPara, ch.endPara))) throw stale();
-      for (let r = 0; r < ranges.length; r++) {
-        const ch = ranges[r];
-        for (let i = ch.startPara; i <= ch.endPara; i++) {
-          paras.items[i].load(["text", "styleBuiltIn"]);
-        }
-      }
-      await context.sync();
+      const maxChars = opts.maxChars != null ? Number(opts.maxChars) : 600000;
       const out = [];
+      let chars = 0;
+      const CH = 50;
       for (let r = 0; r < ranges.length; r++) {
         const ch = ranges[r];
-        for (let i = ch.startPara; i <= ch.endPara; i++) {
-          const p = paras.items[i];
-          const s = p.styleBuiltIn;
-          let headingLevel = 0;
-          if (s === Word.Style.heading1) headingLevel = 1;
-          else if (s === Word.Style.heading2) headingLevel = 2;
-          else if (s === Word.Style.heading3) headingLevel = 3;
-          out.push({ index: i, text: p.text || "", headingLevel });
+        for (let blockStart = ch.startPara; blockStart <= ch.endPara; blockStart += CH) {
+          this._cancelCheck(opts);
+          const blockEnd = Math.min(blockStart + CH - 1, ch.endPara);
+          for (let i = blockStart; i <= blockEnd; i++) paras.items[i].load(["text", "styleBuiltIn"]);
+          await context.sync();
+          for (let i = blockStart; i <= blockEnd; i++) {
+            const p = paras.items[i];
+            const s = p.styleBuiltIn;
+            let headingLevel = 0;
+            if (s === Word.Style.heading1) headingLevel = 1;
+            else if (s === Word.Style.heading2) headingLevel = 2;
+            else if (s === Word.Style.heading3) headingLevel = 3;
+            const text = p.text || "";
+            chars += text.length + 1;
+            out.push({ index: i, text, headingLevel });
+          }
+          if (chars > maxChars) {
+            throw new Error(`Selected chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
+          }
         }
       }
       return out;
@@ -483,8 +499,7 @@ ProzaEdit.ScopeReader = {
       const endChar = to * this.CHARS_PER_PAGE;
       let charPos = 0;
       let foundStart = false;
-      for (let i = 0; i < total; i++) paras.items[i].load("text");
-      await context.sync();
+      await this._loadParaTexts(context, paras, 0, total - 1, opts);
       for (let i = 0; i < total; i++) {
         const t = paras.items[i].text || "";
         const chunkLen = t.length + 1;
@@ -520,8 +535,7 @@ ProzaEdit.ScopeReader = {
       const n = selParas.items.length;
       const firstT = (selParas.items[0].text || "").trim();
       const lastT = (selParas.items[n - 1].text || "").trim();
-      for (let i = 0; i < total; i++) paras.items[i].load("text");
-      await context.sync();
+      await this._loadParaTexts(context, paras, 0, total - 1, opts);
       const textAt = (i) => (paras.items[i].text || "").trim();
       start = -1;
       for (let i = 0; i < total && start < 0; i++) {

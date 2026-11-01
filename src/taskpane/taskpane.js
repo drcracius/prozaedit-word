@@ -3914,6 +3914,8 @@ async function addDictionaryWordFromCard(raw) {
   if (ok) {
     renderDictionaryList();
     showPeStatus(`Added “${w}” to dictionary.`, "ok");
+  } else {
+    showPeStatus("Could not save the dictionary entry (storage full or blocked).", "warn");
   }
 }
 
@@ -3991,6 +3993,8 @@ async function addDictionaryFromLastMute() {
     renderDictionaryList();
     persistSettings(false);
     showPeStatus(`Added “${w}” to dictionary (saved in this document).`, "ok");
+  } else {
+    showPeStatus("Could not save the dictionary entry (storage full or blocked).", "warn");
   }
 }
 
@@ -4072,11 +4076,17 @@ function renderCustomStyleRulesList() {
   el.innerHTML = data.rules
     .map((r) => {
       const label = r.replace ? `${r.find} → ${r.replace}` : r.find;
-      return `<span class="tag" data-custom-rule="${escapeAttr(r.id)}" title="${escapeAttr(r.hint || "")}">${escapeHtml(label)} ×</span>`;
+      return `<span class="tag" role="button" tabindex="0" data-custom-rule="${escapeAttr(r.id)}" title="${escapeAttr(r.hint || "")}" aria-label="Remove rule ${escapeAttr(label)}">${escapeHtml(label)} ×</span>`;
     })
     .join("");
   el.querySelectorAll("[data-custom-rule]").forEach((tag) => {
     tag.addEventListener("click", () => removeCustomStyleRule(tag.dataset.customRule));
+    tag.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        removeCustomStyleRule(tag.dataset.customRule);
+      }
+    });
   });
   updateCustomRulesSummary();
 }
@@ -4140,7 +4150,10 @@ async function addCustomStyleFromCard(item) {
   });
   if (!rule) return;
   const data = ProzaEdit.CustomStyleGuide.mergeRules(ProzaEdit.Settings.getCustomStyleGuide(), [rule]);
-  await ProzaEdit.Settings.setCustomStyleGuide(data);
+  if (!(await ProzaEdit.Settings.setCustomStyleGuide(data))) {
+    showPeStatus("Could not save the house rule (limit reached or storage blocked).", "warn");
+    return;
+  }
   renderCustomStyleRulesList();
   if (!isCustomStyleGuideMode()) {
     getEl("styleGuideRef").value = "custom-plus-auto";
@@ -4171,7 +4184,10 @@ async function loadCustomStylePreset(presetId) {
   if (!preset) return;
   const data = ProzaEdit.CustomStyleGuide.mergeRules(ProzaEdit.Settings.getCustomStyleGuide(), preset.rules);
   data.name = preset.name;
-  await ProzaEdit.Settings.setCustomStyleGuide(data);
+  if (!(await ProzaEdit.Settings.setCustomStyleGuide(data))) {
+    showPeStatus("Could not load that preset (rule limit reached or storage blocked).", "warn");
+    return;
+  }
   getEl("customStyleName").value = preset.name;
   renderCustomStyleRulesList();
   if (!isCustomStyleGuideMode()) {
@@ -4185,8 +4201,13 @@ async function loadCustomStylePreset(presetId) {
 async function removeCustomStyleRule(ruleId) {
   const data = ProzaEdit.Settings.getCustomStyleGuide();
   data.rules = data.rules.filter((r) => r.id !== ruleId);
-  await ProzaEdit.Settings.setCustomStyleGuide(data);
+  if (!(await ProzaEdit.Settings.setCustomStyleGuide(data))) {
+    showPeStatus("Could not remove the rule (storage blocked).", "warn");
+    renderCustomStyleRulesList();
+    return;
+  }
   renderCustomStyleRulesList();
+  schedulePersistSettings();
   showPeStatus("Rule removed.", "ok");
 }
 
@@ -4247,6 +4268,8 @@ function setupThesaurusDelegation() {
   });
 }
 
+let thesaurusLookupSeq = 0;
+
 async function renderThesaurus(word, box) {
   if (!box) return;
   box.innerHTML = "Searching…";
@@ -4257,16 +4280,22 @@ async function renderThesaurus(word, box) {
   }
   let syn = [];
   let ant = [];
+  let abortTimer = null;
+  const myLookup = (thesaurusLookupSeq = (thesaurusLookupSeq || 0) + 1);
   try {
     const ctrl = new AbortController();
-    setTimeout(() => ctrl.abort(), 8000);
+    abortTimer = setTimeout(() => ctrl.abort(), 8000);
     const [rs, ra] = await Promise.all([
       fetch(`https://api.datamuse.com/words?rel_syn=${encodeURIComponent(token)}&max=10`, { signal: ctrl.signal }),
       fetch(`https://api.datamuse.com/words?rel_ant=${encodeURIComponent(token)}&max=8`, { signal: ctrl.signal }),
     ]);
     if (rs.ok) syn = (await rs.json()).map((x) => x.word);
     if (ra.ok) ant = (await ra.json()).map((x) => x.word);
-  } catch (_) {}
+  } catch (_) {
+  } finally {
+    if (abortTimer) clearTimeout(abortTimer);
+  }
+  if (myLookup !== thesaurusLookupSeq) return;
   if (!syn.length) syn = ["sharp", "direct", "plain"].map((x) => `${x} ${token}`);
   let html = `<strong>${escapeHtml(token)}</strong><br/><em>Synonyms</em><br/>`;
   syn.forEach((s) => {
@@ -4786,6 +4815,14 @@ function renderTraffic(traffic, score) {
   bar.textContent = `${traffic.label} — Score ${score} / 10`;
 }
 
+function resetStaleAuditSummaryState() {
+  lastAuditResultForMode = null;
+  lastAuditMeta = {};
+  lastFeedbackLetter = "";
+  getEl("trafficBar")?.classList.add("hidden");
+  getEl("miniScores")?.classList.add("hidden");
+}
+
 function renderMiniScores(scores) {
   const el = getEl("miniScores");
   if (!el || !scores) return;
@@ -4795,11 +4832,11 @@ function renderMiniScores(scores) {
 
 let lastAuditResultForMode = null;
 
-function refreshAuditSummaryForMode() {
+function refreshAuditSummaryForMode(extra) {
   if (!lastAuditResultForMode || auditBusy || deepBusy) return;
   const { result, label } = lastAuditResultForMode;
   const keep = currentAuditSuggestions;
-  finalizeAudit({ ...result, suggestions: keep }, label, { rerender: true });
+  finalizeAudit({ ...result, suggestions: keep }, label, { rerender: true, ...(extra || {}) });
 }
 
 function finalizeAudit(result, label, fopts) {
@@ -4892,6 +4929,7 @@ function finalizeAudit(result, label, fopts) {
     : "";
   const summary = getEl("summaryReport");
   if (summary) summary.innerHTML = html;
+  if (fopts.summaryOnly) return;
   setAuditSuggestions(suggestions);
   updateWorkflowCrossNav(getCurrentActiveTabId() || "tab4");
   updateChecksPostRunNav();
@@ -5097,6 +5135,7 @@ function runAuditInternalCore(opts) {
     persistSettings(false);
     showTab("tab4");
     currentAuditSuggestions = [];
+    resetStaleAuditSummaryState();
     const cardBox = getEl("cardContainer");
     if (cardBox) cardBox.innerHTML = "";
     if (sumEl) sumEl.textContent = opts.status || "Reading document…";
@@ -5335,6 +5374,7 @@ function muteRule(item) {
         updateDictionaryCountBadge();
       }
     }
+    dropSameRuleFindings(item);
     removeAuditCard(item.id);
     const showDictNudge = ProzaEdit.PlainLanguage?.shouldShowMuteDictionaryNudge?.(
       item,
@@ -5354,8 +5394,14 @@ function dismissCard(item) {
   return withCardActionLock(`dismiss:${item.id}`, "dismiss this finding", async () => {
     if (item.ruleId) await ProzaEdit.Settings.muteRule(item.ruleId);
     if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
+    dropSameRuleFindings(item);
     removeAuditCard(item.id);
   });
+}
+
+function dropSameRuleFindings(item) {
+  if (!item || !item.ruleId) return;
+  currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id === item.id || x.ruleId !== item.ruleId);
 }
 
 function removeAuditCard(id) {
@@ -5372,7 +5418,8 @@ function removeAuditCard(id) {
   currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id !== id);
   updateAuditFilterChips();
   updateAuditTabBadge();
-  applyAuditCardFilter();
+  applyAuditCardFilter({ preserveDisplayLimit: true });
+  refreshAuditSummaryForMode({ summaryOnly: true });
   const nextCard = nextId ? getEl(`card_${nextId}`) : null;
   if (nextCard && Number.isFinite(oldTop)) {
     const newTop = nextCard.getBoundingClientRect?.().top;
@@ -5627,7 +5674,10 @@ async function runBatchSectionAuditCore() {
           skipLongOpWarning: true,
           fromBatch: true,
         });
-        if (!ok) break;
+        if (!ok) {
+          failed = !(batchCancel || batchOp.isCancelled());
+          break;
+        }
       } catch (e) {
         failed = true;
         reportActionError(e, "run the batch audit");
@@ -5786,6 +5836,8 @@ async function runCitationScanCore() {
     }
     if (result.findings.length) {
       currentAuditSuggestions = ProzaEdit.CitationEngine.mergeFindings(currentAuditSuggestions, result.findings);
+      updateAuditFilterChips();
+      updateAuditTabBadge();
       applyAuditCardFilter();
       showPeStatus(`${result.findings.length} citation finding(s) added to Audit cards.`, "ok");
     } else {
@@ -5871,6 +5923,8 @@ async function runTimelineScanCore() {
     }
     if (result.findings.length) {
       currentAuditSuggestions = ProzaEdit.ChronologyEngine.mergeFindings(currentAuditSuggestions, result.findings);
+      updateAuditFilterChips();
+      updateAuditTabBadge();
       applyAuditCardFilter();
       showPeStatus(`${result.findings.length} timeline finding(s) added to Audit cards.`, "ok");
     } else {
@@ -5952,6 +6006,16 @@ async function captureReferenceStyle() {
   }
 }
 
+function forceScopeToSelection() {
+  const scopeEl = getEl("scope");
+  if (scopeEl) scopeEl.value = "selection";
+  const pinScope = getEl("pinScope");
+  if (pinScope) pinScope.value = "selection";
+  syncScopePanels();
+  updateActiveChecksHint();
+  updateWorkflowStatusLine();
+}
+
 function selectNextChapter() {
   return wordRun("chapter", async (ctx) => {
     const paras = ctx.document.body.paragraphs;
@@ -5980,10 +6044,7 @@ function selectNextChapter() {
     paras.items[start].getRange("Start").expandTo(paras.items[endPara].getRange("End")).select();
     await ctx.sync();
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CHAPTER_IDX, ptr + 1);
-    const scopeEl = getEl("scope");
-    if (scopeEl) scopeEl.value = "selection";
-    const pinScope = getEl("pinScope");
-    if (pinScope) pinScope.value = "selection";
+    forceScopeToSelection();
   });
 }
 
@@ -6032,9 +6093,7 @@ async function sendIssueToRewrite(item) {
     });
     const scopeEl = getEl("scope");
     if (scopeEl && scopeEl.value !== "selection") {
-      scopeEl.value = "selection";
-      const pinScope = getEl("pinScope");
-      if (pinScope) pinScope.value = "selection";
+      forceScopeToSelection();
       await persistSettings(false);
     }
     const snippet = String(target).length > 120 ? `${String(target).slice(0, 117)}…` : target;
@@ -6078,10 +6137,7 @@ function selectNextSection() {
     paras.items[idx].getRange("Start").expandTo(paras.items[end].getRange("End")).select();
     await ctx.sync();
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.SECTION_IDX, end + 1);
-    const scopeEl = getEl("scope");
-    if (scopeEl) scopeEl.value = "selection";
-    const pinScope = getEl("pinScope");
-    if (pinScope) pinScope.value = "selection";
+    forceScopeToSelection();
     await persistSettings(false);
   });
 }
@@ -6148,6 +6204,7 @@ async function runDeepAuditAICore() {
     longOp = beginLongOperation({ initialStatus: "Reading for deep audit…" });
     showTab("tab4");
     currentAuditSuggestions = [];
+    resetStaleAuditSummaryState();
     const cardD = getEl("cardContainer");
     if (sumD) sumD.textContent = "Deep audit…";
     if (cardD) cardD.innerHTML = "";
@@ -6322,13 +6379,20 @@ async function sendChatMessage() {
   } finally {
     auditStarting = false;
   }
-  const prep = await prepareGeminiPrompt(({ profile, index }) => [
+  let prep;
+  try {
+    prep = await prepareGeminiPrompt(({ profile, index }) => [
     { id: "guardrails", text: GUARDRAILS },
     { id: "profile", text: profile },
     { id: "index", role: "index", text: index },
     { id: "context", role: "context", label: "Context (untrusted manuscript text):", text: ProzaEdit.AISafety.wrapUntrusted(context) },
     { id: "question", label: "Question:", text: prompt },
-  ]);
+    ]);
+  } catch (e) {
+    const result = reportActionError(e, "prepare the AI message");
+    appendChatMessage(log, result.message, "chat-ai", true);
+    return;
+  }
   if (prep.note) appendChatMessage(log, `Note: ${prep.note}`, "chat-ai");
   await runChatGeminiCall(prep.text);
 }
@@ -6477,9 +6541,16 @@ async function runSmartRewrite() {
   }
   const est = getEl("rewriteTokenEstimate");
   if (est) est.textContent = `Est. tokens: ~${ProzaEdit.AIProviders.estimateTokens(excerpt) + 200}`;
-  const prep = await prepareGeminiPrompt(({ profile, index }) =>
-    ProzaEdit.Gemini.buildRewritePromptDetailed(mode, ProzaEdit.AISafety.wrapUntrusted(excerpt), profile, GUARDRAILS, index)
-  );
+  let prep;
+  try {
+    prep = await prepareGeminiPrompt(({ profile, index }) =>
+      ProzaEdit.Gemini.buildRewritePromptDetailed(mode, ProzaEdit.AISafety.wrapUntrusted(excerpt), profile, GUARDRAILS, index)
+    );
+  } catch (e) {
+    const result = reportActionError(e, "prepare the AI rewrite");
+    preview.innerText = result.message;
+    return;
+  }
   if (prep.note) showPeStatus(prep.note, "warn");
   await runRewriteGeminiCall(prep.text);
 }
