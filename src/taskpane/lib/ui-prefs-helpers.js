@@ -20,6 +20,18 @@ ProzaEdit.UiPrefs = {
 
   THEME_PREFERENCES: ["light", "dark", "system"],
 
+  /** Built-in style guides that imply formal / consistency-first review (PE-57). */
+  REVIEW_MODE_STYLE_GUIDES: [
+    "govuk",
+    "strunk",
+    "plain-us",
+    "microsoft",
+    "google-dev",
+    "redhat",
+    "custom",
+    "custom-plus-auto",
+  ],
+
   /** Shipped defaults for Settings groups (matches taskpane.html on first load). */
   UI_CONFIG_DEFAULTS: {
     replaceInSelectionOnly: true,
@@ -42,6 +54,7 @@ ProzaEdit.UiPrefs = {
     showWhatsNew: true,
     showPriorSessionSummary: true,
     showLongOperationWarnings: true,
+    showDarkAppearanceTip: true,
     shaperComplexity: 3,
     shaperIntensity: 4,
     shaperDensity: 2,
@@ -84,6 +97,28 @@ ProzaEdit.UiPrefs = {
     const pref = ProzaEdit.UiPrefs.validateThemePreference(themePreference);
     if (pref === "system") return systemPrefersDark ? "dark" : "light";
     return pref;
+  },
+
+  isReviewModeManuscriptType(manuscriptType) {
+    const t = String(manuscriptType || "");
+    return /Academic|Business|Legal/i.test(t);
+  },
+
+  isReviewModeStyleGuide(styleGuideRef) {
+    const ref = String(styleGuideRef || "").trim();
+    return ProzaEdit.UiPrefs.REVIEW_MODE_STYLE_GUIDES.includes(ref);
+  },
+
+  isReviewModeProfile(manuscriptType, styleGuideRef) {
+    return (
+      ProzaEdit.UiPrefs.isReviewModeManuscriptType(manuscriptType) ||
+      ProzaEdit.UiPrefs.isReviewModeStyleGuide(styleGuideRef)
+    );
+  },
+
+  /** Default audit filter chip for academic / house-style workflows. */
+  reviewModeDefaultAuditFilter() {
+    return "styleguide";
   },
 
   validateLastActiveTab(tabId, options) {
@@ -136,6 +171,7 @@ ProzaEdit.UiPrefs = {
           showWhatsNew: base.showWhatsNew,
           showPriorSessionSummary: base.showPriorSessionSummary,
           showLongOperationWarnings: base.showLongOperationWarnings,
+          showDarkAppearanceTip: base.showDarkAppearanceTip,
         };
       case "appearance":
         return { themePreference: base.themePreference };

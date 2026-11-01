@@ -309,13 +309,23 @@ function getScopeModeLabel(mode) {
   return m;
 }
 
+function getActiveStyleGuideLabel() {
+  const ctx = buildAuditContext();
+  if (ProzaEdit.ManuscriptOverview?.styleGuideLabel) {
+    return ProzaEdit.ManuscriptOverview.styleGuideLabel(ctx.styleGuideRef, ctx);
+  }
+  const ref = ctx.styleGuideRef || "auto";
+  return ref === "auto" ? "Auto (language + type)" : ref;
+}
+
 function updateWorkflowStatusLine() {
   const line = getEl("peWorkflowStatusLine");
   if (!line) return;
   const mode = getScopeMode();
   const scopePart = getScopeModeLabel(mode);
   const charPart = lastScopePreviewSummary || "use Refresh count on Target for character estimate";
-  line.textContent = `Scope: ${scopePart} — ${charPart}`;
+  const guidePart = getActiveStyleGuideLabel();
+  line.textContent = `Guide: ${guidePart} · Scope: ${scopePart} — ${charPart}`;
   updateChecksScopeChip();
 }
 
@@ -523,6 +533,7 @@ function applyPeTheme(themePreference) {
       : getThemePreferenceFromUi();
   const effective = ProzaEdit.UiPrefs?.resolveEffectiveTheme?.(pref, systemPrefersDark()) || "light";
   document.documentElement.setAttribute("data-pe-theme", effective);
+  initDarkAppearanceTip();
 }
 
 function setupThemePreference() {
@@ -822,6 +833,8 @@ Office.onReady((info) => {
     updateAuditSortChips();
     applySimpleMode();
     maybeDefaultAuditFilterForSimple();
+    maybeDefaultAuditFilterForReviewMode();
+    updateReviewModeAuditHint();
     syncShaperSliderLabels();
     applyHoverTips();
     updateActiveChecksHint();
@@ -845,6 +858,7 @@ Office.onReady((info) => {
     initWhatsNewBanner();
     initPriorSessionBanner();
     initSessionTips();
+    initDarkAppearanceTip();
     setupSettingsKeyboardShortcut();
     tryOpenSettingsFromLocationHash();
     updateWorkflowStatusLine();
@@ -1031,6 +1045,7 @@ function collectUiConfig() {
     showWhatsNew: isChecked("showWhatsNew", true),
     showPriorSessionSummary: isChecked("showPriorSessionSummary", true),
     showLongOperationWarnings: isChecked("showLongOperationWarnings", true),
+    showDarkAppearanceTip: isChecked("showDarkAppearanceTip", true),
     themePreference: getThemePreferenceFromUi(),
     lastActiveTab: getCurrentActiveTabId(),
     ...ProzaEdit.UiPrefs?.normalizeShaperFields?.({
@@ -1105,6 +1120,7 @@ function applyUiConfig(p) {
   setC("showWhatsNew", p.showWhatsNew !== false);
   setC("showPriorSessionSummary", p.showPriorSessionSummary !== false);
   setC("showLongOperationWarnings", p.showLongOperationWarnings !== false);
+  setC("showDarkAppearanceTip", p.showDarkAppearanceTip !== false);
   setThemePreferenceInUi(p.themePreference != null ? p.themePreference : "light");
   applyPeTheme(getThemePreferenceFromUi());
   if (p.continuityWarnLevel) setV("continuityWarnLevel", p.continuityWarnLevel);
@@ -1306,6 +1322,10 @@ function setupAutoSaveHandlers() {
       else if (el.id === "chkCitationScan") adaptModules();
       else updateActiveChecksHint();
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
+      if (el.id === "manuscriptType" || el.id === "styleGuideRef") {
+        updateWorkflowStatusLine();
+        maybeApplyReviewModeFilterOnProfileChange();
+      }
       if (el.id === "showHoverTips") applyHoverTips();
       if (el.id === "simpleMode") {
         applySimpleMode();
@@ -1350,6 +1370,7 @@ function setupAutoSaveHandlers() {
     "showWhatsNew",
     "showPriorSessionSummary",
     "showLongOperationWarnings",
+    "showDarkAppearanceTip",
   ].forEach((id) => bind(getEl(id)));
   const showTipsEl = getEl("showSessionTips");
   if (showTipsEl && !showTipsEl.dataset.peOnboardingFx) {
@@ -1385,6 +1406,19 @@ function setupAutoSaveHandlers() {
       } else {
         ProzaEdit.Onboarding?.clearSessionDismissForPref?.("showPriorSessionSummary");
         initPriorSessionBanner();
+      }
+      schedulePersistSettings();
+    });
+  }
+  const showDarkTipEl = getEl("showDarkAppearanceTip");
+  if (showDarkTipEl && !showDarkTipEl.dataset.peOnboardingFx) {
+    showDarkTipEl.dataset.peOnboardingFx = "1";
+    showDarkTipEl.addEventListener("change", () => {
+      if (!isChecked("showDarkAppearanceTip", true)) {
+        hideOnboardingBanner("peDarkAppearanceBanner");
+      } else {
+        ProzaEdit.Onboarding?.clearSessionDismissForPref?.("showDarkAppearanceTip");
+        initDarkAppearanceTip();
       }
       schedulePersistSettings();
     });
@@ -1607,6 +1641,66 @@ function maybeDefaultAuditFilterForSimple() {
   if (savedFilter == null) applySimpleModeAuditFilterDefault();
 }
 
+function isReviewModeProfileActive() {
+  return ProzaEdit.UiPrefs?.isReviewModeProfile?.(
+    getEl("manuscriptType")?.value || "",
+    getEl("styleGuideRef")?.value || "auto"
+  );
+}
+
+function applyReviewModeAuditFilterDefault() {
+  const mode = ProzaEdit.UiPrefs?.reviewModeDefaultAuditFilter?.() || "styleguide";
+  if (!["all", "confirmed", "preference", "styleguide"].includes(mode)) return;
+  auditCardFilter = mode;
+  updateAuditFilterChips();
+  applyAuditCardFilter();
+  updateReviewModeAuditHint();
+}
+
+function maybeDefaultAuditFilterForReviewMode() {
+  if (isChecked("simpleMode", false)) return;
+  if (!isReviewModeProfileActive()) {
+    updateReviewModeAuditHint();
+    return;
+  }
+  const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
+  let savedFilter;
+  try {
+    const p = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
+    savedFilter = p?.auditCardFilter;
+  } catch (_) {
+    savedFilter = undefined;
+  }
+  if (savedFilter == null || savedFilter === "all") applyReviewModeAuditFilterDefault();
+  else updateReviewModeAuditHint();
+}
+
+function maybeApplyReviewModeFilterOnProfileChange() {
+  if (isChecked("simpleMode", false)) {
+    updateReviewModeAuditHint();
+    return;
+  }
+  if (!isReviewModeProfileActive()) {
+    updateReviewModeAuditHint();
+    return;
+  }
+  if (auditCardFilter === "all") applyReviewModeAuditFilterDefault();
+  else updateReviewModeAuditHint();
+}
+
+function updateReviewModeAuditHint() {
+  const hint = getEl("peReviewModeAuditHint");
+  if (!hint) return;
+  if (!isReviewModeProfileActive() || isChecked("simpleMode", false)) {
+    hint.classList.add("hidden");
+    hint.textContent = "";
+    return;
+  }
+  const label = AUDIT_FILTER_LABELS[auditCardFilter] || "All";
+  hint.innerHTML = `Review profile: consistency and house-style checks first — filter chip <strong>${label}</strong> (use Critical or Style guide chips as needed).`;
+  hint.classList.remove("hidden");
+}
+
 function getManuscriptTypeAwareHint() {
   if (isFictionManuscriptType()) return "";
   const type = (getEl("manuscriptType")?.value || "Non-fiction").replace(/\s*\(.+\)\s*$/, "").trim();
@@ -1767,6 +1861,39 @@ function dismissSessionTips(dontShowAgain) {
   } catch (_) {}
 }
 
+function initDarkAppearanceTip() {
+  const el = getEl("peDarkAppearanceBanner");
+  if (!el) return;
+  const effective = document.documentElement.getAttribute("data-pe-theme") || "light";
+  const show = ProzaEdit.Onboarding?.shouldShowDarkAppearanceTip?.({
+    showDarkAppearanceTip: isChecked("showDarkAppearanceTip", true),
+    effectiveTheme: effective,
+  });
+  if (!show) {
+    el.classList.add("hidden");
+    return;
+  }
+  const body = getEl("peDarkAppearanceBannerBody");
+  if (body && ProzaEdit.Onboarding?.DARK_APPEARANCE_TIP_COPY) {
+    body.textContent = ProzaEdit.Onboarding.DARK_APPEARANCE_TIP_COPY;
+  }
+  el.classList.remove("hidden");
+}
+
+function dismissDarkAppearanceTip(dontShowAgain) {
+  hideOnboardingBanner("peDarkAppearanceBanner");
+  if (dontShowAgain) {
+    permanentOffOnboardingPref("showDarkAppearanceTip", "peDarkAppearanceBanner");
+    return;
+  }
+  try {
+    sessionStorage.setItem(
+      ProzaEdit.Onboarding?.DARK_APPEARANCE_TIP_DISMISSED_KEY || "pe-dark-appearance-tip-dismissed",
+      "1"
+    );
+  } catch (_) {}
+}
+
 function setupSettingsKeyboardShortcut() {
   if (document.body.dataset.peSettingsShortcut) return;
   document.body.dataset.peSettingsShortcut = "1";
@@ -1854,6 +1981,7 @@ function resetSettingsGroup(groupKey) {
     initWhatsNewBanner();
     initPriorSessionBanner();
     initSessionTips();
+    initDarkAppearanceTip();
   }
   persistSettings(false);
   showPeStatus(`${label} reset to defaults.`, "ok");
@@ -1949,8 +2077,9 @@ function updateUndoRedoUi() {
   const r = getEl("btnRedo");
   const last = getEl("btnGoLastEdit");
   const hist = ProzaEdit.EditHistory;
+  const canUndo = !historyBusy && hist.canUndo();
   if (u) {
-    u.disabled = historyBusy || !hist.canUndo();
+    u.disabled = !canUndo;
     const peek = hist.peekUndo();
     u.title = peek ? `Undo: ${peek.label} (Ctrl+Shift+Z)` : "Nothing to undo";
   }
@@ -1962,6 +2091,9 @@ function updateUndoRedoUi() {
       ? `Go to last edit: ${nav.label || "edit"} — “${String(nav.target).slice(0, 48)}…”`
       : "Jump to where you last applied a ProzaEdit change";
   }
+  document.querySelectorAll('.card-actions-trust [data-a="undo"]').forEach((btn) => {
+    btn.disabled = !canUndo;
+  });
 }
 
 function goToLastEdit() {
@@ -2192,6 +2324,7 @@ function toggleCustomStylePanel() {
   if (summary) summary.classList.toggle("hidden", !on);
   updateCustomRulesSummary();
   updateActiveChecksHint();
+  updateWorkflowStatusLine();
 }
 
 function loadCustomStyleUi() {
@@ -2507,6 +2640,7 @@ function setAuditCardFilter(mode) {
   applyAuditCardFilter();
   syncSettingsDefaultAuditFilterSelect();
   updateAuditDefaultFilterHint();
+  updateReviewModeAuditHint();
   persistSettings(false);
 }
 
@@ -3022,9 +3156,12 @@ function renderAuditCards(list) {
       <p class="card-target">"${escapeHtml(item.targetText)}"</p>
       <p class="card-replacement">"${escapeHtml(item.replacementText)}"</p>
       <div class="card-actions">
+        <div class="card-actions-trust" role="group" aria-label="Apply and undo">
+          <button type="button" class="btn-secondary btn-trust btn-card-undo btn-with-icon" data-a="undo" aria-label="Undo last ProzaEdit replace">${ic("undo")} Undo</button>
+          ${canApply ? `<button type="button" class="btn-apply btn-trust btn-with-icon" data-a="apply" data-pe-tip="btn-card-apply" aria-label="Apply fix">${ic("check")} Apply</button>` : ""}
+        </div>
         <div class="card-actions-primary">
           <button type="button" class="btn-go btn-with-icon" data-a="goto" data-pe-tip="btn-card-goto" aria-label="Go to finding in Word">${ic("locate")} Go to</button>
-          ${canApply ? `<button type="button" class="btn-apply btn-with-icon" data-a="apply" data-pe-tip="btn-card-apply" aria-label="Apply fix">${ic("check")} Apply</button>` : ""}
           ${canRewrite ? `<button type="button" class="btn-go btn-with-icon" data-a="rewrite" data-pe-tip="btn-card-rewrite" aria-label="Rewrite finding">${ic("edit")} Rewrite</button>` : ""}
           <button type="button" class="btn-go" data-a="localtip">Local tip</button>
         </div>
@@ -3037,6 +3174,8 @@ function renderAuditCards(list) {
         </div>
       </div>`;
     div.querySelector('[data-a="goto"]').onclick = () => goToIssue(item.targetText);
+    const undoBtn = div.querySelector('[data-a="undo"]');
+    if (undoBtn) undoBtn.onclick = () => prozaEditUndo();
     const rewriteBtn = div.querySelector('[data-a="rewrite"]');
     if (rewriteBtn) rewriteBtn.onclick = () => sendIssueToRewrite(item);
     div.querySelector('[data-a="localtip"]').onclick = () => showLocalTipForIssue(item);
@@ -3051,6 +3190,7 @@ function renderAuditCards(list) {
   if (ProzaEdit.TooltipRegistry?.refreshTooltips) {
     ProzaEdit.TooltipRegistry.refreshTooltips(isChecked("showHoverTips", true));
   }
+  updateUndoRedoUi();
 }
 
 async function muteRule(item) {
