@@ -38,6 +38,8 @@
 
 ## 2. Phase 1 — Word web validation
 
+**Visual pass (PE-53):** In Word web, verify Settings → **Appearance** (Light / Dark / Match system) and **typography** (13px body, readable tabs) on Target, Audit cards, and Settings — see checklist §3 and §7.
+
 **Checklist:** [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md)  
 **Pane URL:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html  
 **Manifest (raw):** https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml  
