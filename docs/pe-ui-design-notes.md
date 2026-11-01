@@ -59,25 +59,25 @@ Collapsible `<details class="pe-settings-group">`:
 
 Accent greens and indigo are chosen for readable text on white/slate surfaces in narrow Word web panes; severity chips keep existing high-contrast traffic colors.
 
-## Dark palette (PE-54 revision)
+## Dark palette (PE-55 black + green)
 
-Direction: warm **editorial charcoal** (VS Code Dark+–style warmth), not blue-gray slate. Light tokens are frozen; only `[data-pe-theme="dark"]` values and dark-scoped rules change.
+Direction: **true black** stack (terminal / Spotify-style black UI), **white** primary type, **light green** accents — no violet-indigo primary in dark mode. Light tokens are frozen; only `[data-pe-theme="dark"]` values and dark-scoped rules change.
 
 | Token | Hex (approx.) | Role |
 | --- | --- | --- |
-| `--bg` | `#1a1a1c` | Base wash (scope lists, inset wells) |
-| `--surface` | `#212124` | Pane body, settings groups |
-| `--pe-card-surface` | `#2a2a2e` | Cards, audit hubs, elevated panels |
-| `--surface-subtle` | `#1f1f22` | Tabs bar, toolbar, chips row |
-| `--surface-inset` | `#18181a` | Inputs, inactive chips, workflow steps |
-| `--border` / `--border-muted` | `#3a3a3f` / `#2e2e32` | Dividers (subtle, non-glowing) |
-| `--text` / `--text-muted` | `#ececec` / `#a3a3a8` | Primary and secondary copy |
-| `--pe-primary-indigo` | `#8490ff` | Actions, links, focus (`--pe-focus-ring` ~`#9490ff`) |
-| `--pe-success` / `--pe-success-bg` | `#5cb88a` / `#1e2e26` | Workflow OK, tab underline, completion |
-| `--pe-warning` / `--pe-warning-bg` | `#d4a054` / `#2e2618` | Caution banners (desaturated gold) |
-| `--red` / `--red-bg` | `#e89292` / `#3a2222` | Critical severity on cards |
-| `--orange` / `--orange-bg` | `#e89656` / `#3a2818` | Style severity on cards |
-| `--pe-help-box-bg`, `--pe-banner-tint-*` | `#252528`, `#404048` border | Subtle tinted banners (not saturated boxes) |
-| `--pe-brand-bg` | `#141416` | Brand bar; wordmark filter in dark-only CSS |
+| `--bg` | `#000000` | Base wash (scope lists, inset wells) |
+| `--surface` | `#0d0d0d` | Pane body, settings groups |
+| `--pe-card-surface` | `#141414` | Cards, audit hubs, elevated panels |
+| `--surface-subtle` | `#0a0a0a` | Tabs bar, toolbar, chips row |
+| `--surface-inset` | `#000000` | Inputs, inactive chips, workflow steps |
+| `--border` / `--border-muted` | `#2a2a2a` / `#1f1f1f` | Dividers (subtle, non-glowing) |
+| `--text` / `--text-muted` | `#f5f5f5` / `#a3a3a3` | Primary and secondary copy |
+| `--primary` / `--primary-hover` | `#86efac` / `#6ee7a0` | Actions, links, chips, focus (`--pe-focus-ring` `#6ee7a0`) |
+| `--pe-success` / `--pe-success-bg` | `#6ee7a0` / `#0f1f17` | Workflow OK, tab underline, completion |
+| `--pe-warning` / `--pe-warning-bg` | `#e8a855` / `#2a1f0d` | Caution banners (desaturated gold) |
+| `--red` / `--red-bg` | `#f0a0a0` / `#2a1414` | Critical severity on cards |
+| `--orange` / `--orange-bg` | `#e89656` / `#2a1810` | Style severity on cards |
+| `--pe-help-box-bg`, `--pe-banner-tint-*` | `#0d0d0d`, `#2a2a2a` border | Neutral banners on black (no purple tint) |
+| `--pe-brand-bg` | `#000000` | Brand bar; wordmark brightness filter in dark-only CSS |
 
-PE-51 component polish (tabs, toolbar, settings modal, audit cards, focus rings) remains scoped under `[data-pe-theme="dark"]`.
+PE-51 component polish (tabs, toolbar, settings modal, audit cards, focus rings) remains scoped under `[data-pe-theme="dark"]`. PE-55 replaces PE-54 purple tab-hover and violet focus ring with green-on-black tints.
