@@ -137,16 +137,16 @@
   <p id="peDocScopeTrustLine" class="pe-doc-scope-trust-line help-muted" role="note">Dictionary: this Word document · Mute: this document + this browser · Dismiss wording: this browser only (not other PCs or files).</p>
   <nav id="peWorkflowCrossNav" class="pe-workflow-cross-nav hidden" aria-label="Related workflow steps"></nav>
   <div class="nav-tabs" role="tablist" aria-label="ProzaEdit sections">
-    <button type="button" class="tab-btn active" data-pe-tab="tab1" data-pe-tab-default-label="Target" role="tab" aria-selected="true" onclick="showTab('tab1')"><span data-pe-tab-label>Target</span></button>
-    <button type="button" class="tab-btn" data-pe-tab="tab2" data-pe-tab-default-label="Thesaurus" data-simple-hide role="tab" onclick="showTab('tab2')"><span data-pe-tab-label>Thesaurus</span></button>
-    <button type="button" class="tab-btn" data-pe-tab="tab3" data-pe-tab-default-label="Checks" role="tab" onclick="showTab('tab3')"><span data-pe-tab-label>Checks</span></button>
-    <button type="button" class="tab-btn" data-pe-tab="tab4" data-pe-tab-default-label="Audit" role="tab" onclick="showTab('tab4')"><span data-pe-tab-label>Audit</span> <span id="peAuditTabBadge" class="pe-tab-badge hidden" aria-label="Open issue count"></span></button>
-    <button type="button" class="tab-btn" data-pe-tab="tab5" data-pe-tab-default-label="Coach" data-simple-deemphasize role="tab" onclick="showTab('tab5')"><span data-pe-tab-label>Coach</span></button>
-    <button type="button" class="tab-btn" data-pe-tab="tab6" data-pe-tab-default-label="Rewrite" data-simple-deemphasize role="tab" onclick="showTab('tab6')"><span data-pe-tab-label>Rewrite</span></button>
-    <button type="button" class="tab-btn" data-pe-tab="tab7" data-pe-tab-default-label="Help" role="tab" onclick="showTab('tab7')"><span data-pe-tab-label>Help</span></button>
+    <button type="button" class="tab-btn active" data-pe-tab="tab1" id="peTabBtn1" aria-controls="tab1" data-pe-tab-default-label="Target" role="tab" aria-selected="true" onclick="showTab('tab1')"><span data-pe-tab-label>Target</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab2" id="peTabBtn2" aria-controls="tab2" data-pe-tab-default-label="Thesaurus" data-simple-hide role="tab" aria-selected="false" onclick="showTab('tab2')"><span data-pe-tab-label>Thesaurus</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab3" id="peTabBtn3" aria-controls="tab3" data-pe-tab-default-label="Checks" role="tab" aria-selected="false" onclick="showTab('tab3')"><span data-pe-tab-label>Checks</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab4" id="peTabBtn4" aria-controls="tab4" data-pe-tab-default-label="Audit" role="tab" aria-selected="false" onclick="showTab('tab4')"><span data-pe-tab-label>Audit</span> <span id="peAuditTabBadge" class="pe-tab-badge hidden" aria-label="Open issue count"></span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab5" id="peTabBtn5" aria-controls="tab5" data-pe-tab-default-label="Coach" data-simple-deemphasize role="tab" aria-selected="false" onclick="showTab('tab5')"><span data-pe-tab-label>Coach</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab6" id="peTabBtn6" aria-controls="tab6" data-pe-tab-default-label="Rewrite" data-simple-deemphasize role="tab" aria-selected="false" onclick="showTab('tab6')"><span data-pe-tab-label>Rewrite</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab7" id="peTabBtn7" aria-controls="tab7" data-pe-tab-default-label="Help" role="tab" aria-selected="false" onclick="showTab('tab7')"><span data-pe-tab-label>Help</span></button>
   </div>
 
-  <div id="tab1" class="tab-content active" role="tabpanel">
+  <div id="tab1" class="tab-content active" role="tabpanel" aria-labelledby="peTabBtn1">
     <p id="peTargetRecommendedHint" class="pe-target-recommended help-box hidden" style="margin-top:0;" role="status"><strong>Recommended:</strong> <strong>Selected chapters</strong> scope + report depth <strong>Light</strong> or <strong>Balanced</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">Settings → Audit</button> · <button type="button" class="btn-linkish" onclick="showTab('tab7')">Help: chapter-first</button>).</p>
     <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Start here:</strong> pick <strong>scope</strong> below, then open <strong>Run</strong> (Checks) to audit. Profile and style guide are under advanced sections. Toolbar <strong>Settings</strong> holds dictionary, safety, and custom rules.</p>
     <p class="pe-target-scope-hint help-muted" style="font-size:12px;margin:0 0 8px;">Scope first — profile &amp; style below or in <strong>Settings</strong></p>
@@ -286,7 +286,7 @@
     <p style="font-size:12px;color:var(--text-muted);margin:4px 0 0;">Target fields auto-save when you change them. Advanced options in <strong>Settings</strong>.</p>
   </div>
 
-  <div id="tab2" class="tab-content pe-advanced-tab">
+  <div id="tab2" class="tab-content pe-advanced-tab" role="tabpanel" aria-labelledby="peTabBtn2">
     <div class="help-box">Synonyms, antonyms, nuance. Click to replace in Word.</div>
     <p class="help-inline pe-cloud-disclosure">Online lookup: only the search word is sent to Datamuse when you click Search. Run audit does not use Datamuse.</p>
     <div class="form-group">
@@ -297,7 +297,7 @@
     <div id="thesaurusResults" class="results-panel">Search results will appear here...</div>
   </div>
 
-  <div id="tab3" class="tab-content" role="tabpanel">
+  <div id="tab3" class="tab-content" role="tabpanel" aria-labelledby="peTabBtn3">
     <div class="pe-mci-stale-notice hidden" role="status" aria-live="polite">Manuscript index may be out of date<span data-pe-mci-stale-why></span>. <button type="button" class="btn-linkish" onclick="runBuildFullManuscriptContext(true)">Refresh index</button></div>
     <p id="peChecksPipelineHint" class="pe-pipeline-hint help-muted hidden" role="note"></p>
     <p id="checksScopeChip" class="pe-scope-chip help-muted" aria-live="polite">Scope: —</p>
@@ -422,7 +422,7 @@
     </details>
   </div>
 
-  <div id="tab4" class="tab-content" role="tabpanel">
+  <div id="tab4" class="tab-content" role="tabpanel" aria-labelledby="peTabBtn4">
     <p id="peAuditPipelineHint" class="pe-pipeline-hint help-muted hidden" role="note"></p>
     <p id="peSimpleModeAuditBanner" class="pe-simple-audit-banner hidden" role="status" aria-live="polite"></p>
     <p id="auditScopeChip" class="pe-scope-chip pe-audit-scope-chip help-muted" aria-live="polite">Scope (read-only): —</p>
@@ -475,7 +475,7 @@
     <div id="cardContainer"></div>
   </div>
 
-  <div id="tab5" class="tab-content">
+  <div id="tab5" class="tab-content" role="tabpanel" aria-labelledby="peTabBtn5">
     <div class="pe-mci-stale-notice hidden" role="status" aria-live="polite">Manuscript index may be out of date<span data-pe-mci-stale-why></span>. <button type="button" class="btn-linkish" onclick="runBuildFullManuscriptContext(true)">Refresh index</button></div>
     <div class="help-box help-muted">Local Coach uses curated rules (0 tokens). Word Copilot or optional AI help only when you need generative prose.</div>
     <div id="chatLog" class="chat-log">
@@ -515,7 +515,7 @@
     </details>
   </div>
 
-  <div id="tab7" class="tab-content" role="tabpanel">
+  <div id="tab7" class="tab-content" role="tabpanel" aria-labelledby="peTabBtn7">
     <h2 class="pe-section-title">About ProzaEdit</h2>
     <div class="help-box" id="peAboutSection">
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
@@ -654,7 +654,7 @@
     </div>
   </div>
 
-  <div id="tab6" class="tab-content">
+  <div id="tab6" class="tab-content" role="tabpanel" aria-labelledby="peTabBtn6">
     <div class="pe-mci-stale-notice hidden" role="status" aria-live="polite">Manuscript index may be out of date<span data-pe-mci-stale-why></span>. <button type="button" class="btn-linkish" onclick="runBuildFullManuscriptContext(true)">Refresh index</button></div>
     <button type="button" id="btnRewriteBackAudit" class="btn-linkish pe-rewrite-back hidden" onclick="backToAuditFromRewrite()" aria-label="Back to Audit tab">← Back to Audit</button>
     <div class="help-box">Rule-based paraphrase runs in the browser (0 tokens). Highlight text in Word first.</div>
@@ -765,6 +765,7 @@
             <p id="aiProviderHint" class="help-muted" style="font-size:12px;margin:4px 0;"></p>
             <p id="aiUsageMeter" class="help-muted" style="font-size:12px;margin:4px 0;" aria-live="polite"></p>
             <p class="help-muted" style="font-size:12px;margin:4px 0;">Repeating the same AI request reuses the earlier reply from this device (shown as "cached, 0 tokens"). Replies are kept up to 7 days, never in the document and never with your key. <button type="button" class="btn-linkish" onclick="clearAiCache()">Clear saved AI replies</button> <span id="aiCacheInfo" aria-live="polite"></span></p>
+            <div class="toggle-row"><span id="aiFreshReply-lbl">Fresh reply for the next AI request (skip the saved reply; this uses tokens)</span><input type="checkbox" id="aiFreshReply" aria-labelledby="aiFreshReply-lbl"></div>
             <p class="help-muted pe-cloud-disclosure">Everything works offline without a key. A subscription such as ChatGPT Plus, Claude Pro, Gemini Advanced or Copilot is <strong>not</strong> an API key; this feature needs a pay-as-you-go (or free-tier) API key from the provider. Nothing is sent until you click an AI action and confirm; then only the prompt, the passage you chose and (if built) the manuscript outline go to the provider you picked. The key stays in this browser profile only, never in the document. AI suggestions are never applied automatically.</p>
           </div>
           <p class="help-muted" style="font-size:12px;margin:6px 0 4px;">Task pane theme only — Word document canvas stays as Word sets it.</p>

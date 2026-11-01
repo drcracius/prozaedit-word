@@ -46,13 +46,14 @@
   --border: #dadce0;
   --border-muted: #e8eaed;
   --surface-subtle: #f8f9fa;
-  --red: #d93025;
+  --red: #c5221f;
   --red-bg: #fce8e6;
   --green: var(--pe-success);
   --green-bg: var(--pe-success-bg);
   --orange: #f2994a;
   --orange-bg: var(--pe-warning-bg);
   --pe-on-accent: #ffffff;
+  --pe-on-orange: #202124;
   --pe-hover-tint: #e8f0fe;
   --pe-muted-surface: #f1f3f4;
   --pe-brand-bg: #2b2b2b;
@@ -66,7 +67,7 @@
   --pe-btn-go-bg: #ffffff;
   --pe-heatmap-bar: #c2e7ff;
   --pe-workflow-active-text: #14532d;
-  --pe-warning-text: #b06000;
+  --pe-warning-text: #8f4f00;
   --pe-backdrop: rgba(32, 33, 36, 0.45);
   --pe-modal-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
   --pe-toolbar-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -109,6 +110,7 @@
   --orange: #e89656;
   --orange-bg: #2a1810;
   --pe-on-accent: #0a0a0a;
+  --pe-on-orange: #0a0a0a;
   --pe-hover-tint: #141414;
   --pe-muted-surface: #0d0d0d;
   --pe-brand-bg: #000000;
@@ -2244,7 +2246,7 @@ textarea:focus {
 
 .pe-legend-style {
   background: var(--orange-bg);
-  color: var(--orange);
+  color: var(--pe-warning-text);
   border: 1px solid var(--orange);
 }
 
@@ -2292,7 +2294,7 @@ textarea:focus {
 }
 
 .badge-confirmed { background: var(--red); }
-.badge-pref { background: var(--orange); }
+.badge-pref { background: var(--orange); color: var(--pe-on-orange); }
 
 .help-box {
   background: var(--pe-help-box-bg);
@@ -2498,3 +2500,9 @@ textarea:focus {
 }
 
 .pe-mci-none { color: var(--text-muted); }
+
+/* PE-91 — visible keyboard focus for every interactive control that has no bespoke ring (zero specificity: never overrides one). */
+:where(button, [role="button"], a[href], summary, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--pe-focus-ring, var(--primary));
+  outline-offset: 2px;
+}

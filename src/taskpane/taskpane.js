@@ -4294,14 +4294,33 @@ function setupThesaurusDelegation() {
     const tag = e.target.closest(".tag[data-target][data-replacement]");
     if (tag) replaceWithWord(tag.dataset.target, tag.dataset.replacement);
   });
+  box.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tag = e.target.closest?.(".tag[data-target][data-replacement]");
+    if (!tag) return;
+    e.preventDefault();
+    replaceWithWord(tag.dataset.target, tag.dataset.replacement);
+  });
 }
 
 let thesaurusLookupSeq = 0;
 
+function matchWordCase(original, replacement) {
+  const o = String(original || "");
+  const r = String(replacement || "");
+  if (!o || !r) return r;
+  if (o.length > 1 && o === o.toUpperCase() && o !== o.toLowerCase()) return r.toUpperCase();
+  const first = o.charAt(0);
+  if (first !== first.toLowerCase() && first === first.toUpperCase()) return r.charAt(0).toUpperCase() + r.slice(1);
+  return r;
+}
+
 async function renderThesaurus(word, box) {
   if (!box) return;
   box.innerHTML = "Searching…";
-  const token = word.trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z'-]/gi, "");
+  const words = word.trim().split(/\s+/);
+  const original = (words[0] || "").replace(/[^\p{L}'’-]/gu, "");
+  const token = original.toLowerCase();
   if (!token) {
     box.innerText = "Invalid word.";
     return;
@@ -4309,6 +4328,7 @@ async function renderThesaurus(word, box) {
   let syn = [];
   let ant = [];
   let abortTimer = null;
+  let failed = false;
   const myLookup = (thesaurusLookupSeq = (thesaurusLookupSeq || 0) + 1);
   try {
     const ctrl = new AbortController();
@@ -4317,23 +4337,29 @@ async function renderThesaurus(word, box) {
       fetch(`https://api.datamuse.com/words?rel_syn=${encodeURIComponent(token)}&max=10`, { signal: ctrl.signal }),
       fetch(`https://api.datamuse.com/words?rel_ant=${encodeURIComponent(token)}&max=8`, { signal: ctrl.signal }),
     ]);
-    if (rs.ok) syn = (await rs.json()).map((x) => x.word);
-    if (ra.ok) ant = (await ra.json()).map((x) => x.word);
+    if (rs.ok) syn = (await rs.json()).map((x) => String(x.word || "")).filter(Boolean);
+    else failed = true;
+    if (ra.ok) ant = (await ra.json()).map((x) => String(x.word || "")).filter(Boolean);
   } catch (_) {
+    failed = true;
   } finally {
     if (abortTimer) clearTimeout(abortTimer);
   }
   if (myLookup !== thesaurusLookupSeq) return;
-  if (!syn.length) syn = ["sharp", "direct", "plain"].map((x) => `${x} ${token}`);
-  let html = `<strong>${escapeHtml(token)}</strong><br/><em>Synonyms</em><br/>`;
-  syn.forEach((s) => {
-    html += `<span class="tag" data-target="${escapeAttr(token)}" data-replacement="${escapeAttr(s)}">${escapeHtml(s)}</span>`;
-  });
+  const tagHtml = (s) =>
+    `<span class="tag" role="button" tabindex="0" data-target="${escapeAttr(original)}" data-replacement="${escapeAttr(matchWordCase(original, s))}" aria-label="Replace ${escapeAttr(original)} with ${escapeAttr(s)}">${escapeHtml(s)}</span>`;
+  let html = `<strong>${escapeHtml(original)}</strong>`;
+  if (words.length > 1) html += ` <span class="help-muted">(first word of your selection; English only)</span>`;
+  html += `<br/><em>Synonyms</em><br/>`;
+  if (syn.length) syn.forEach((s) => (html += tagHtml(s)));
+  else {
+    html += failed
+      ? `<span class="help-muted">Could not reach the Datamuse word service. Check your connection and try again.</span>`
+      : `<span class="help-muted">No synonyms found (English words only).</span>`;
+  }
   if (ant.length) {
     html += `<br/><em>Antonyms</em><br/>`;
-    ant.forEach((a) => {
-      html += `<span class="tag" data-target="${escapeAttr(token)}" data-replacement="${escapeAttr(a)}">${escapeHtml(a)}</span>`;
-    });
+    ant.forEach((a) => (html += tagHtml(a)));
   }
   box.innerHTML = html;
 }
@@ -4754,7 +4780,8 @@ async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, sign
     temperature: generationConfig?.temperature,
     prompt,
   });
-  const cached = cacheKey ? ProzaEdit.AICache.get(cacheKey) : null;
+  const freshReply = isChecked("aiFreshReply", false);
+  const cached = cacheKey && !freshReply ? ProzaEdit.AICache.get(cacheKey) : null;
   if (cached) {
     aiLastCallNote = "cached, 0 tokens";
     updateAiMeter();
@@ -4797,6 +4824,8 @@ async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, sign
   updateAiMeter();
   const clean = String(res.text).split(ProzaEdit.AISafety.OPEN).join("").split(ProzaEdit.AISafety.CLOSE).join("").trim();
   if (cacheKey) ProzaEdit.AICache.set(cacheKey, clean, [getApiKey()]);
+  const freshBox = getEl("aiFreshReply");
+  if (freshBox) freshBox.checked = false;
   return clean;
 }
 
