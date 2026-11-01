@@ -1,6 +1,6 @@
 # Phase 1 quickstart (~15 min critical path)
 
-**Web 1.0 RC:** build **2.0.0.15**, **57** tests, UX bundle PE-63–67 merged; desktop **PE-2** deferred.  
+**Web 1.0 RC:** build **2.0.0.15**, **120** tests (PE-72 hardening merged), UX bundle PE-63–67 merged; desktop **PE-2** deferred.  
 **Owner:** Word on the web only.  
 **Full checklist:** [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) (~90 min)  
 **Log results:** [templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md) or [Word web validation issue](https://github.com/drcracius/prozaedit-word/issues/new?template=word-web-validation.yml)  

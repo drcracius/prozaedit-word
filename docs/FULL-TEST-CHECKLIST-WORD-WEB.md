@@ -3,7 +3,7 @@
 **Audience:** D Cracius beta validation on **Word online** (narrow task pane).  
 **Build:** UI **2.0.0.15** (no manifest re-upload for UX bundle PE-63–67).  
 **Pane URL:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html  
-**Final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **57** unit tests on `main` · UX bundle [#18](https://github.com/drcracius/prozaedit-word/pull/18) · desktop **PE-2** not required.
+**Final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **120** automated tests on `main` · UX bundle [#18](https://github.com/drcracius/prozaedit-word/pull/18) · desktop **PE-2** not required.
 
 ---
 
@@ -88,9 +88,25 @@
 - [ ] Re-enable each Onboarding toggle in Settings → **Reset Onboarding** clears session dismiss keys → banner can show again (What's new still respects per-release seen key).
 - [ ] After Settings **Close** / **Escape** / backdrop click: no invisible overlay; toolbar and tabs remain clickable (`pe-settings-modal.hidden`).
 
+## PE-72 hardening — manual Word web checks (cancel, retry, long doc)
+
+Run these on **Word on the web** (and desktop if available). The automated harness mocks Word, so these are the only proof for real hosts. Log results in [templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md).
+
+- [ ] **Cancel is reachable:** start Run audit on a long selection; the bar under the toolbar shows **Cancel** on every tab (Start, Run, Fix, Help). Press it (and `Esc` with focus outside inputs): status says Cancelled, buttons re-enable, Run audit works again immediately.
+- [ ] **Cancel during Gemini:** with a test API key, start Gemini chat / Deep audit / Smart rewrite and press Cancel: returns to idle at once, no error banner.
+- [ ] **Cancel during a scan** (Chronology, Citations, Heatmap, Section/batch loop): same result; nothing stays disabled.
+- [ ] **Try again (audit):** turn off the network or open a protected/read-only copy, run audit: plain recovery message appears with **Try again**; fix the cause, press **Try again** once (double-click runs it once).
+- [ ] **Try again (Apply):** edit the target text in Word, then press Apply on its card: message says the text changed, nothing is applied twice. If Word reports an error *during* the edit, the message says the change "may or may not have been made" and offers **no** Try again — use Go to to verify.
+- [ ] **Try again (Gemini):** break the key/network, send chat: recovery copy (key never shown), **Try again** repeats exactly one request.
+- [ ] **Long document:** 50k and 100k words — run audit on selection, then Section loop; Word stays responsive, cards show the first 300 with a note, cancel works mid-read.
+- [ ] **Rapid clicks:** double-click Run audit, Apply and Mute: only one action happens.
+- [ ] **Dialogs blocked:** if your tenant blocks `confirm()` in the task pane, note whether Apply still works (known risk; see release notes).
+- [ ] **Accessibility:** Tab order reaches Cancel first while busy; screen reader announces progress and "Cancelled"; tab list responds to arrow keys; Settings and tour close with `Esc`; check 200% zoom and Windows high contrast.
+- [ ] **Diagnostics timing (optional):** open the pane with `?pe-dev=1` (or set `localStorage pe-dev=1`) and confirm the status line shows phase timings after an audit; without the flag it must not.
+
 ---
 
-*Automated coverage:* `npm test` (**57** tests — includes `workflow-nav-helpers.test.mjs`, `plain-language-helpers.test.mjs`, `onboarding-tour.test.mjs`, onboarding/CONFIG wiring). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md). Office.js smoke: **PE-69** (manual Word web still P0).
+*Automated coverage:* `npm test` (**120** tests — unit tests plus a jsdom task-pane harness with a mocked Office host: startup, cancel/re-run, retry, apply phases, Gemini abort, storage and CONFIG failures) and `npm run verify:wiring` (orphan/duplicate ids, undefined inline handlers). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md). The harness is **not** a real Word host: manual Word web is still P0 (checklist below).
 
 ---
 
