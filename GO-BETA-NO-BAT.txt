@@ -1,5 +1,7 @@
 PROZAEDIT — STOP USING BAT FILES (beta on the internet)
 
+Web 1.0 RC: Word on the web upload (manifest.hosted.xml). Desktop PE-2 / bat install optional — see docs/FINAL-MILE-PLAN-WEB.md
+
 Read this guide (step-by-step, includes GitHub for beginners):
 
   docs\BETA-SETUP-GITHUB.md

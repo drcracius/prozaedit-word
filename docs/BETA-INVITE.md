@@ -1,6 +1,6 @@
 # Beta invite — copy-paste comms (Phase 4 draft)
 
-**Build:** 2.0.0.15 · **Install path:** Word on the web upload only (desktop `.bat` deferred).
+**Build:** 2.0.0.15 · **Web 1.0 RC** on `main` (PE-48 prep merged; owner Phase 1 **PE-47** open) · **Install path:** Word on the web upload only (desktop **PE-2** deferred).
 
 Owner: send with [BETA-TESTERS-INSTALL.txt](./BETA-TESTERS-INSTALL.txt) and raw manifest link below.
 

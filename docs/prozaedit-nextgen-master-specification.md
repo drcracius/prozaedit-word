@@ -1,5 +1,5 @@
 # ProzaEdit Next-Gen Architecture, UI/UX & Engine Specification
-**Target architecture**: vNext (post-2.0.0.14)  
+**Target architecture**: vNext (post-2.0.0.15 shipped baseline)  
 **Target Environment**: Microsoft Word (Web, Windows Desktop, macOS M365) via Office.js  
 **Execution Paradigm**: Local-First, 0-Token Deterministic Heuristics + Optional Secure Tier-1 LLM
 
@@ -7,8 +7,8 @@
 
 | Item | Source of truth |
 |------|-----------------|
-| Hosted manifest `<Version>` | **2.0.0.14** — `manifest.hosted.xml` |
-| Task pane build label | **2.0.0.14** — `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` (must match manifest) |
+| Hosted manifest `<Version>` | **2.0.0.15** — `manifest.hosted.xml` |
+| Task pane build label | **2.0.0.15** — `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` (must match manifest) |
 | Live UI (GitHub Pages) | https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html |
 | Acceptance checklist | [prozaedit-features.md](prozaedit-features.md) — verify anything labeled **Exists** below against this reference |
 

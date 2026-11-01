@@ -1,7 +1,7 @@
 # Hosted smoke — last automated run
 
 **Run (UTC):** 2026-11-01  
-**Runner:** PE-48 cloud agent (HTTP GET only; no Office.js)  
+**Runner:** PE-48 cloud agent (HTTP GET only; no Office.js) · Superseding audit: [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md)  
 **Expected build:** **2.0.0.15**
 
 ---

@@ -2,17 +2,20 @@
 
 **Audience:** D Cracius (author, primary tester, PC + iPad workflows)  
 **Authored:** 2026-10-31  
-**Production baseline:** hosted build **2.0.0.14** ([source-of-truth](/cursor/stores/self/docs/source-of-truth.md))  
-**North star:** [Next-Gen Master Specification](/cursor/stores/self/docs/prozaedit-nextgen-master-specification.md) (vNext architecture, post-2.0.0.14)  
-**As-built acceptance:** [Feature Reference](/cursor/stores/self/docs/prozaedit-features.md)  
-**Gap analysis:** [Spec Review](/cursor/stores/self/docs/prozaedit-nextgen-spec-review.md)  
-**Code map:** [Codebase Overview](/cursor/stores/self/docs/prozaedit-codebase-overview.md)
+
+> **Historical (v1).** Primary roadmap: [prozaedit-implementation-plan-audited.md](./prozaedit-implementation-plan-audited.md). Status: [source-of-truth.md](./source-of-truth.md) · [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md).
+
+**Production baseline:** hosted build **2.0.0.15** ([source-of-truth.md](./source-of-truth.md))  
+**North star:** [Next-Gen Master Specification](./prozaedit-nextgen-master-specification.md) (vNext architecture, post-2.0.0.15)  
+**As-built acceptance:** [Feature Reference](./prozaedit-features.md)  
+**Gap analysis:** [Spec Review](./prozaedit-nextgen-spec-review.md)  
+**Code map:** Project store `prozaedit-codebase-overview.md` (not mirrored in repo)
 
 ---
 
 ## 1. Executive summary
 
-**Where we are:** ProzaEdit Word is a **hosted beta** Office add-in (GitHub Pages + one-time `manifest.hosted.xml` upload). Core product is **local-first** audit, coach, and rewrite with optional Gemini. Shipped version **2.0.0.14** with manifest and `PROZAEDIT_BUILD_VERSION` aligned. Project documentation (source of truth, features, codebase overview, vNext spec + review) lives in the Project store; **Phase 1 code extraction** (`word-safe-navigator.js`) is on GitHub `main` (commit `91ecf56`).
+**Where we are:** ProzaEdit Word is a **hosted beta** Office add-in (GitHub Pages + one-time `manifest.hosted.xml` upload). Core product is **local-first** audit, coach, and rewrite with optional Gemini. Shipped version **2.0.0.15** with manifest and `PROZAEDIT_BUILD_VERSION` aligned. Agent prep **PE-48** merged; owner **Phase 1** (**PE-47**) open; desktop **PE-2** deferred. **29** `npm test`; merged PRs [#2](https://github.com/drcracius/prozaedit-word/pull/2)–[#5](https://github.com/drcracius/prozaedit-word/pull/5).
 
 **North star:** The vNext spec describes **Editorial Studio** UX, modular engines (chronology, citations, lexical shaper, tooltips, quota-aware Gemini), and additive tabs (**Narrative**, **Citations**) without replacing the v2 workflow strip or dropping **Checks**, **Thesaurus**, or batch/heatmap tooling.
 
@@ -27,7 +30,7 @@
 
 ## 2. Current state snapshot
 
-### 2.1 Shipped capabilities (2.0.0.14)
+### 2.1 Shipped capabilities (2.0.0.15)
 
 Seven tabs + workflow strip: **Target**, **Thesaurus**, **Checks**, **Audit**, **Coach**, **Rewrite**, **Help**. Local audit engine (`audit-engine.js` + 16 sibling libs), document-scoped settings, continuity guard, section/chapter loop, heatmap, custom house style, report depth, Gemini optional paths. See [prozaedit-features.md](/cursor/stores/self/docs/prozaedit-features.md).
 
@@ -499,7 +502,7 @@ After **every merge to `main` affecting `src/`:** run **minimum smoke**: Target 
 | Document | Path |
 |----------|------|
 | Source of truth | [/cursor/stores/self/docs/source-of-truth.md](/cursor/stores/self/docs/source-of-truth.md) |
-| Features (2.0.0.14) | [/cursor/stores/self/docs/prozaedit-features.md](/cursor/stores/self/docs/prozaedit-features.md) |
+| Features (2.0.0.15) | [prozaedit-features.md](./prozaedit-features.md) |
 | Codebase overview | [/cursor/stores/self/docs/prozaedit-codebase-overview.md](/cursor/stores/self/docs/prozaedit-codebase-overview.md) |
 | vNext master spec | [/cursor/stores/self/docs/prozaedit-nextgen-master-specification.md](/cursor/stores/self/docs/prozaedit-nextgen-master-specification.md) |
 | Spec review & §5 phasing | [/cursor/stores/self/docs/prozaedit-nextgen-spec-review.md](/cursor/stores/self/docs/prozaedit-nextgen-spec-review.md) |
@@ -507,4 +510,4 @@ After **every merge to `main` affecting `src/`:** run **minimum smoke**: Target 
 
 ---
 
-*Plan aligned to GitHub `main` through `91ecf56` (18 `lib/` modules including `word-safe-navigator.js`). Update this file when phases complete or when manifest baseline advances beyond 2.0.0.14.*
+*Historical v1 plan. Production baseline **2.0.0.15** on `main`; see [source-of-truth.md](./source-of-truth.md) and [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md).*
