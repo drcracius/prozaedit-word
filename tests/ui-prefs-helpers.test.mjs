@@ -39,3 +39,20 @@ test("UiPrefs.getDefaultsPatchForGroup", () => {
   assert.equal(onboarding.showLongOperationWarnings, true);
   assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showLongOperationWarnings, true);
 });
+
+test("UiPrefs themePreference default and round-trip", () => {
+  const { UiPrefs } = loadLib("src/taskpane/lib/ui-prefs-helpers.js");
+  assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.themePreference, "light");
+  assert.equal(UiPrefs.validateThemePreference(undefined), "light");
+  assert.equal(UiPrefs.validateThemePreference("dark"), "dark");
+  assert.equal(UiPrefs.validateThemePreference("system"), "system");
+  assert.equal(UiPrefs.validateThemePreference("neon"), "light");
+  assert.equal(UiPrefs.resolveEffectiveTheme("light", true), "light");
+  assert.equal(UiPrefs.resolveEffectiveTheme("dark", false), "dark");
+  assert.equal(UiPrefs.resolveEffectiveTheme("system", true), "dark");
+  assert.equal(UiPrefs.resolveEffectiveTheme("system", false), "light");
+  const appearance = UiPrefs.getDefaultsPatchForGroup("appearance");
+  assert.equal(appearance.themePreference, "light");
+  assert.equal(UiPrefs.normalizeSettingsSection("appearance"), "appearance");
+  assert.equal(UiPrefs.settingsHashForSection("appearance"), "#pe-settings-appearance");
+});

@@ -9,13 +9,16 @@ ProzaEdit.UiPrefs = {
     "custom-style": "custom-style",
     safety: "safety",
     onboarding: "onboarding",
+    appearance: "appearance",
     audit: "audit",
     privacy: "privacy",
     reference: "reference",
     dictionary: "dictionary",
   },
 
-  SETTINGS_GROUP_KEYS: ["safety", "onboarding", "audit", "privacy", "reference", "dictionary", "custom-style"],
+  SETTINGS_GROUP_KEYS: ["safety", "onboarding", "appearance", "audit", "privacy", "reference", "dictionary", "custom-style"],
+
+  THEME_PREFERENCES: ["light", "dark", "system"],
 
   /** Shipped defaults for Settings groups (matches taskpane.html on first load). */
   UI_CONFIG_DEFAULTS: {
@@ -42,6 +45,7 @@ ProzaEdit.UiPrefs = {
     shaperComplexity: 3,
     shaperIntensity: 4,
     shaperDensity: 2,
+    themePreference: "light",
   },
 
   SHAPER_KEYS: ["shaperComplexity", "shaperIntensity", "shaperDensity"],
@@ -69,6 +73,17 @@ ProzaEdit.UiPrefs = {
       shaperIntensity: base.shaperIntensity,
       shaperDensity: base.shaperDensity,
     };
+  },
+
+  validateThemePreference(value) {
+    const v = value == null ? "" : String(value).trim().toLowerCase();
+    return ProzaEdit.UiPrefs.THEME_PREFERENCES.includes(v) ? v : ProzaEdit.UiPrefs.UI_CONFIG_DEFAULTS.themePreference;
+  },
+
+  resolveEffectiveTheme(themePreference, systemPrefersDark) {
+    const pref = ProzaEdit.UiPrefs.validateThemePreference(themePreference);
+    if (pref === "system") return systemPrefersDark ? "dark" : "light";
+    return pref;
   },
 
   validateLastActiveTab(tabId, options) {
@@ -122,6 +137,8 @@ ProzaEdit.UiPrefs = {
           showPriorSessionSummary: base.showPriorSessionSummary,
           showLongOperationWarnings: base.showLongOperationWarnings,
         };
+      case "appearance":
+        return { themePreference: base.themePreference };
       case "audit":
         return {
           reportDensity: base.reportDensity,

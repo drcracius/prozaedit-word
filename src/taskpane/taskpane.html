@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-pe-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
@@ -577,6 +577,17 @@
           <div class="toggle-row"><span>Warn before long operations (audit, scans)</span><input type="checkbox" id="showLongOperationWarnings" checked></div>
           <p class="help-muted" style="font-size:10px;margin:4px 0 0;">Banners appear at the top of the pane. “Got it” hides until the next browser session; What&apos;s new can be dismissed per release. Long-operation warnings can be dismissed per action without turning this off.</p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="onboarding" style="margin-top:10px;">Reset Onboarding to defaults</button>
+        </details>
+        <details class="pe-settings-group" id="pe-settings-group-appearance">
+          <summary>Appearance</summary>
+          <p class="help-muted" style="font-size:10px;margin:6px 0 4px;">Task pane only — Word document canvas and host chrome stay as Word sets them.</p>
+          <fieldset class="pe-theme-options" id="peThemeFieldset">
+            <legend class="visually-hidden">Theme</legend>
+            <label class="pe-theme-option"><input type="radio" name="themePreference" id="themePreferenceLight" value="light" checked> Light</label>
+            <label class="pe-theme-option"><input type="radio" name="themePreference" id="themePreferenceDark" value="dark"> Dark</label>
+            <label class="pe-theme-option"><input type="radio" name="themePreference" id="themePreferenceSystem" value="system"> Match system</label>
+          </fieldset>
+          <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="appearance" style="margin-top:10px;">Reset Appearance to defaults</button>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-audit">
           <summary>Audit &amp; reports</summary>
