@@ -59,6 +59,11 @@ let activeLongOp = null;
 let pendingLongOpActionId = null;
 let pendingLongOpRunner = null;
 let configFirstRunComplete = false;
+let configOnboardingTourComplete = false;
+let onboardingTourActiveStep = 0;
+let onboardingTourPreviousFocus = null;
+let lastAuditHadTruncation = false;
+let lastAuditScopeModeAtRun = "";
 let sessionAuditCompletedThisSession = false;
 let muteDictionaryNudgeShownThisSession = false;
 
@@ -129,14 +134,17 @@ function getScopeCharLimit(mode) {
 }
 
 function getScopeOptions() {
+  const indices = getSelectedChapterIndicesFromUi();
+  const chapterFrom = indices.length ? indices[0] : 1;
+  const chapterTo = indices.length ? indices[indices.length - 1] : 1;
   return {
     mode: getScopeMode(),
     pageFrom: getEl("scopePageFrom")?.value || 1,
     pageTo: getEl("scopePageTo")?.value || 5,
-    chapterSingle: getEl("scopeChapterSingle")?.value || 1,
-    chapterFrom: getEl("scopeChapterFrom")?.value || 1,
-    chapterTo: getEl("scopeChapterTo")?.value || 1,
-    selectedChapterIndices: getSelectedChapterIndicesFromUi(),
+    chapterSingle: chapterFrom,
+    chapterFrom,
+    chapterTo,
+    selectedChapterIndices: indices,
     chapters: scopeChapterListCache,
   };
 }
@@ -230,6 +238,10 @@ function updateWorkflowNextStepHint() {
     sessionAuditCompleted: sessionAuditCompletedThisSession,
     hasAuditCards: currentAuditSuggestions.length > 0,
   });
+  if (show) {
+    el.textContent =
+      "Next step: set scope on Target (or keep your highlight), open Checks if needed, then Run audit from the toolbar.";
+  }
   el.classList.toggle("hidden", !show);
 }
 
@@ -251,7 +263,7 @@ function setupScopeUi() {
       schedulePersistSettings();
     });
   }
-  ["scopePageFrom", "scopePageTo", "scopeChapterSingle", "scopeChapterFrom", "scopeChapterTo"].forEach((id) => {
+  ["scopePageFrom", "scopePageTo"].forEach((id) => {
     const el = getEl(id);
     if (el && !el.dataset.scopeBound) {
       el.dataset.scopeBound = "1";
@@ -268,24 +280,6 @@ function setupScopeUi() {
 
 function fillChapterSelects(list) {
   scopeChapterListCache = list || [];
-  const opts = (n) => {
-    const sel = getEl(n);
-    if (!sel) return;
-    sel.innerHTML = "";
-    if (!list.length) {
-      sel.innerHTML = '<option value="1">No Heading 1–3 chapters found</option>';
-      return;
-    }
-    list.forEach((c) => {
-      const o = document.createElement("option");
-      o.value = String(c.index);
-      o.textContent = `${c.index}. ${c.title.substring(0, 48)}`;
-      sel.appendChild(o);
-    });
-  };
-  opts("scopeChapterSingle");
-  opts("scopeChapterFrom");
-  opts("scopeChapterTo");
   renderChapterChecklist(list, pendingSelectedChapterIndices);
   pendingSelectedChapterIndices = null;
   updateScopeChapterEmptyState();
@@ -343,6 +337,18 @@ function getScopeModeLabel(mode) {
   return m;
 }
 
+function getScopeDisplayLabel(mode) {
+  if (isChecked("simpleMode", false) && ProzaEdit.PlainLanguage?.scopeFriendlyLabel) {
+    const m = mode || getScopeMode();
+    return ProzaEdit.PlainLanguage.scopeFriendlyLabel(m, {
+      pageFrom: getEl("scopePageFrom")?.value || "1",
+      pageTo: getEl("scopePageTo")?.value || "5",
+      chapterCount: getSelectedChapterIndicesFromUi().length,
+    });
+  }
+  return getScopeModeLabel(mode);
+}
+
 function getActiveStyleGuideLabel() {
   const ctx = buildAuditContext();
   if (ProzaEdit.ManuscriptOverview?.styleGuideLabel) {
@@ -366,7 +372,9 @@ function updateWorkflowStatusLine() {
 
 function updateChecksScopeChip() {
   const mode = getScopeMode();
-  const text = `Scope (read-only): ${getScopeModeLabel(mode)}${lastScopePreviewSummary ? ` — ${lastScopePreviewSummary}` : ""}`;
+  const scopeLabel = getScopeDisplayLabel(mode);
+  const prefix = isChecked("simpleMode", false) ? "Checking:" : "Scope (read-only):";
+  const text = `${prefix} ${scopeLabel}${lastScopePreviewSummary ? ` — ${lastScopePreviewSummary}` : ""}`;
   const chip = getEl("checksScopeChip");
   if (chip) chip.textContent = text;
   const auditChip = getEl("auditScopeChip");
@@ -462,11 +470,6 @@ function scopeCoversFullManuscript() {
     const all = scopeChapterListCache.map((c) => c.index);
     return sel.length === all.length && sel.every((v, i) => v === all[i]);
   }
-  if (mode === "chapter-range") {
-    const from = parseInt(getEl("scopeChapterFrom")?.value, 10) || 1;
-    const to = parseInt(getEl("scopeChapterTo")?.value, 10) || 1;
-    return from <= 1 && to >= scopeChapterListCache.length;
-  }
   return false;
 }
 
@@ -489,6 +492,14 @@ const AUDIT_FILTER_LABELS = {
   preference: "Style",
   styleguide: "Style guide",
 };
+
+function auditFilterDisplayLabel(mode) {
+  const key = String(mode || "all");
+  if (ProzaEdit.PlainLanguage?.auditFilterUserLabel) {
+    return ProzaEdit.PlainLanguage.auditFilterUserLabel(key, isChecked("simpleMode", false));
+  }
+  return AUDIT_FILTER_LABELS[key] || "All";
+}
 
 function setupSettingsModal() {
   const modal = getEl("pe-settings-modal");
@@ -592,6 +603,7 @@ function setupThemePreference() {
 }
 
 const PE_SETTINGS_GROUP_IDS = {
+  essentials: "pe-settings-group-essentials",
   safety: "pe-settings-group-safety",
   onboarding: "pe-settings-group-onboarding",
   appearance: "pe-settings-group-appearance",
@@ -604,9 +616,16 @@ const PE_SETTINGS_GROUP_IDS = {
 
 function expandSettingsGroup(key) {
   const norm = ProzaEdit.UiPrefs?.normalizeSettingsSection?.(key) || key;
+  if (norm === "appearance") expandSettingsGroup("essentials");
   const id = PE_SETTINGS_GROUP_IDS[norm];
   const el = id ? getEl(id) : null;
   if (el && el.tagName === "DETAILS") el.open = true;
+}
+
+function collapseSettingsGroupsToEssentials() {
+  document.querySelectorAll(".pe-settings-group").forEach((group) => {
+    group.open = group.id === "pe-settings-group-essentials";
+  });
 }
 
 function syncOnboardingTogglesFromPersistedConfig() {
@@ -799,6 +818,7 @@ function openSettingsModal(focusGroup) {
     if (n > 0 || isCustomStyleGuideMode()) customGroup.open = true;
   }
   if (norm) expandSettingsGroup(norm);
+  else collapseSettingsGroupsToEssentials();
   try {
     const hash = ProzaEdit.UiPrefs?.settingsHashForSection?.(norm || focusGroup);
     if (hash) history.replaceState(null, "", hash);
@@ -862,7 +882,9 @@ Office.onReady((info) => {
     setupShaperSliderPersistence();
     setupSettingsKeywordFilter();
     bindWorkflowStepper();
+    bindWorkflowCrossNavDelegation();
     restoreLastActiveTab();
+    updateWorkflowCrossNav(getCurrentActiveTabId() || "tab1");
     updateUndoRedoUi();
     updateAuditFilterChips();
     updateAuditSortChips();
@@ -896,7 +918,11 @@ Office.onReady((info) => {
     initPriorSessionBanner();
     initSessionTips();
     initSimpleModeFirstRunBanner();
+    initHelpNewToEditingList();
     initDarkAppearanceTip();
+    setupFirstAuditChecklistDismissTracking();
+    syncFirstAuditChecklistVisibility();
+    setTimeout(() => maybeInitOnboardingTour(), 600);
     setupSettingsKeyboardShortcut();
     tryOpenSettingsFromLocationHash();
     updateWorkflowStatusLine();
@@ -995,6 +1021,8 @@ function showTab(tabId) {
   }
   if (tabId === "tab3") updateActiveChecksHint();
   if (tabId === "tab6") updateRewriteBackNav();
+  updateWorkflowCrossNav(tabId);
+  updateChecksPostRunNav();
 }
 
 function bindWorkflowStepper() {
@@ -1068,9 +1096,6 @@ function collectUiConfig() {
     continuityWarnLevel: parseInt(getEl("continuityWarnLevel")?.value, 10) || 3,
     scopePageFrom: getEl("scopePageFrom")?.value || "1",
     scopePageTo: getEl("scopePageTo")?.value || "5",
-    scopeChapterSingle: getEl("scopeChapterSingle")?.value || "1",
-    scopeChapterFrom: getEl("scopeChapterFrom")?.value || "1",
-    scopeChapterTo: getEl("scopeChapterTo")?.value || "1",
     selectedChapterIndices: getSelectedChapterIndicesFromUi(),
     auditExtended: isAuditExtended(),
     reportDensity: getEl("reportDensity")?.value || "balanced",
@@ -1090,6 +1115,7 @@ function collectUiConfig() {
     lastActiveTab: getCurrentActiveTabId(),
     batchSectionCount: Math.min(8, Math.max(1, parseInt(getEl("batchSectionCount")?.value, 10) || 3)),
     firstRunComplete: configFirstRunComplete,
+    onboardingTourComplete: configOnboardingTourComplete,
     rewriteMode: (() => {
       const v = getEl("rewriteMode")?.value || "fluency";
       return ["fluency", "formal", "creative", "academic"].includes(v) ? v : "fluency";
@@ -1166,6 +1192,7 @@ function applyUiConfig(p) {
   }
   setC("simpleMode", p.simpleMode);
   if (typeof p.firstRunComplete === "boolean") configFirstRunComplete = p.firstRunComplete;
+  if (typeof p.onboardingTourComplete === "boolean") configOnboardingTourComplete = p.onboardingTourComplete;
   setC("showHoverTips", p.showHoverTips !== false);
   setC("fkLock", p.fkLock);
   setC("remindVersionHistory", p.remindVersionHistory);
@@ -1593,10 +1620,304 @@ function applySimpleMode() {
   document.body.classList.toggle("pe-simple-mode", on);
   const label = getEl("targetSimpleModeLabel");
   if (label) label.textContent = on ? "On" : "Off";
-  const banner = getEl("peSimpleModeAuditBanner");
-  if (banner) banner.classList.toggle("hidden", !on);
+  const targetHint = getEl("peTargetRecommendedHint");
+  if (targetHint) targetHint.classList.toggle("hidden", !on);
   updateAuditDefaultFilterHint();
   if (on && getCurrentActiveTabId() === "tab2") showTab("tab1");
+  syncFirstAuditChecklistVisibility();
+  applyPlainLanguageLayer();
+}
+
+function applyPlainLanguageLayer() {
+  const on = isChecked("simpleMode", false);
+  const intro = getEl("peSimpleModeEssentialsIntro");
+  const turnOff = getEl("btnTurnOffSimpleMode");
+  if (intro) intro.classList.toggle("hidden", !on);
+  if (turnOff) turnOff.classList.toggle("hidden", !on);
+  updatePlainLanguageScopeSelect();
+  updatePlainLanguageControlHints();
+  updateAuditFilterLanesHintPlain();
+  updateSimpleModeAuditBanner();
+  updateChecksScopeChip();
+  updateSimpleModeTabHints();
+  updateSettingsPlainLanguageLabels();
+  updateAuditSeverityLegend();
+  updateChecksReportDepthHint();
+  updateAuditFilterChips();
+  applyTabStripOrder();
+  updateTabStripVisibleLabels();
+  updatePipelineHints();
+  updateSimpleModeAdvancedTabsList();
+}
+
+function updatePlainLanguageScopeSelect() {
+  const sel = getEl("scope");
+  if (!sel || !ProzaEdit.PlainLanguage?.scopeSelectOptionLabel) return;
+  const on = isChecked("simpleMode", false);
+  sel.querySelectorAll("option").forEach((opt) => {
+    if (!opt.dataset.peOriginalLabel) opt.dataset.peOriginalLabel = opt.textContent;
+    const friendly = ProzaEdit.PlainLanguage.scopeSelectOptionLabel(opt.value);
+    opt.textContent = on && friendly ? friendly : opt.dataset.peOriginalLabel;
+  });
+}
+
+function updatePlainLanguageControlHints() {
+  const density = getEl("reportDensity");
+  const hint = getEl("peReportDensityPlainHint");
+  const optionsPlain = getEl("peReportDepthOptionsPlain");
+  const on = isChecked("simpleMode", false);
+  const raw = density?.value || "balanced";
+  if (density && on) {
+    density.setAttribute("aria-label", ProzaEdit.PlainLanguage.reportDepthHintLabel(raw));
+    density.querySelectorAll("option").forEach((opt) => {
+      const helper = ProzaEdit.PlainLanguage.reportDepthOptionHelper(opt.value);
+      if (helper) opt.title = helper;
+    });
+  } else if (density) {
+    density.removeAttribute("aria-label");
+    density.querySelectorAll("option").forEach((opt) => {
+      opt.removeAttribute("title");
+    });
+  }
+  if (hint) {
+    hint.textContent = on
+      ? ProzaEdit.PlainLanguage.reportDepthHintLabel(raw)
+      : "Controls card cap and overview detail on the Audit tab.";
+  }
+  if (optionsPlain) {
+    optionsPlain.classList.toggle("hidden", !on);
+    if (on && ProzaEdit.PlainLanguage?.REPORT_DEPTH_OPTION_HELPER) {
+      const lines = ["light", "balanced", "dense"]
+        .map((k) => ProzaEdit.PlainLanguage.reportDepthOptionHelper(k))
+        .filter(Boolean);
+      optionsPlain.textContent = lines.join(" · ");
+    }
+  }
+}
+
+function updateSimpleModeTabHints() {
+  const hints = ProzaEdit.PlainLanguage?.TAB_HINTS;
+  if (!hints) return;
+  const on = isChecked("simpleMode", false);
+  document.querySelectorAll(".tab-btn[data-pe-tab]").forEach((btn) => {
+    const tabId = btn.dataset.peTab;
+    const hintText = hints[tabId];
+    const aria = ProzaEdit.WorkflowNav?.tabAriaLabel?.(
+      tabId,
+      btn.dataset.peTabDefaultLabel || tabId,
+      on
+    );
+    if (aria) btn.setAttribute("aria-label", aria);
+    else btn.removeAttribute("aria-label");
+    if (hintText && on) btn.setAttribute("title", hintText);
+    else btn.removeAttribute("title");
+    let sub = btn.querySelector(".pe-tab-hint");
+    if (on && hintText) {
+      if (!sub) {
+        sub = document.createElement("span");
+        sub.className = "pe-tab-hint";
+        btn.appendChild(sub);
+      }
+      sub.textContent = hintText;
+      sub.classList.remove("hidden");
+    } else if (sub) {
+      sub.classList.add("hidden");
+    }
+  });
+}
+
+function applyTabStripOrder() {
+  const nav = ProzaEdit.WorkflowNav;
+  if (!nav?.tabFlexOrder) return;
+  const on = isChecked("simpleMode", false);
+  document.querySelectorAll(".tab-btn[data-pe-tab]").forEach((btn) => {
+    btn.style.order = String(nav.tabFlexOrder(btn.dataset.peTab, on));
+  });
+}
+
+function updateTabStripVisibleLabels() {
+  const nav = ProzaEdit.WorkflowNav;
+  if (!nav?.tabVisibleLabel) return;
+  const on = isChecked("simpleMode", false);
+  document.querySelectorAll(".tab-btn[data-pe-tab]").forEach((btn) => {
+    const tabId = btn.dataset.peTab;
+    const def = btn.dataset.peTabDefaultLabel || tabId;
+    const labelEl = btn.querySelector("[data-pe-tab-label]");
+    if (labelEl) labelEl.textContent = nav.tabVisibleLabel(tabId, def, on);
+  });
+}
+
+function updatePipelineHints() {
+  const on = isChecked("simpleMode", false);
+  const text = on
+    ? ProzaEdit.WorkflowNav?.PIPELINE_HINT_SIMPLE ||
+      ProzaEdit.PlainLanguage?.auditFilterLanesHint?.(true) ||
+      ""
+    : "";
+  ["peChecksPipelineHint", "peAuditPipelineHint"].forEach((id) => {
+    const el = getEl(id);
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle("hidden", !text);
+  });
+  const tagline = getEl("peChecksRunAuditTagline");
+  if (tagline && on && ProzaEdit.PlainLanguage?.CHECKS_RUN_AUDIT_TAGLINE) {
+    tagline.textContent = ProzaEdit.PlainLanguage.CHECKS_RUN_AUDIT_TAGLINE;
+  }
+}
+
+function updateSimpleModeAdvancedTabsList() {
+  const el = getEl("peSimpleModeAdvancedTabsList");
+  if (!el || !ProzaEdit.WorkflowNav?.ADVANCED_TABS_WHEN_SIMPLE_OFF) return;
+  const on = isChecked("simpleMode", false);
+  el.classList.toggle("hidden", !on);
+  if (on) {
+    el.innerHTML = `<strong>All features:</strong> ${escapeHtml(ProzaEdit.WorkflowNav.ADVANCED_TABS_WHEN_SIMPLE_OFF)} Turn off Simple mode above.`;
+  }
+}
+
+function hasAuditResultsForNav() {
+  return currentAuditSuggestions.length > 0 || sessionAuditCompletedThisSession;
+}
+
+function handleWorkflowCrossNavAction(link) {
+  if (!link) return;
+  if (link.targetTab === "__settings_dictionary__") {
+    openSettingsModal("dictionary");
+    return;
+  }
+  if (link.id === "run-audit") {
+    runPrimaryAudit();
+    return;
+  }
+  if (link.targetTab) showTab(link.targetTab);
+}
+
+function bindWorkflowCrossNavDelegation() {
+  const navEl = getEl("peWorkflowCrossNav");
+  if (!navEl || navEl.dataset.peCrossDelegated) return;
+  navEl.dataset.peCrossDelegated = "1";
+  navEl.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("[data-pe-cross-nav]");
+    if (!btn || !navEl.contains(btn)) return;
+    handleWorkflowCrossNavAction({
+      id: btn.dataset.peCrossNav,
+      targetTab: btn.dataset.peCrossTab,
+    });
+  });
+}
+
+function updateWorkflowCrossNav(activeTabId) {
+  const navEl = getEl("peWorkflowCrossNav");
+  const nav = ProzaEdit.WorkflowNav;
+  if (!navEl || !nav?.crossNavLinks) return;
+  bindWorkflowCrossNavDelegation();
+  const links = nav.crossNavLinks(activeTabId, {
+    hasAuditResults: hasAuditResultsForNav(),
+    auditBusy,
+  });
+  if (!links.length) {
+    navEl.classList.add("hidden");
+    navEl.innerHTML = "";
+    return;
+  }
+  navEl.classList.remove("hidden");
+  navEl.innerHTML = links
+    .map(
+      (link) =>
+        `<button type="button" class="btn-linkish pe-workflow-cross-link${link.primary ? " pe-workflow-cross-link-primary" : ""}" data-pe-cross-nav="${escapeHtml(link.id)}" data-pe-cross-tab="${escapeHtml(link.targetTab || "")}">${escapeHtml(link.label)}</button>`
+    )
+    .join('<span class="pe-workflow-cross-sep" aria-hidden="true">·</span>');
+}
+
+function updateChecksPostRunNav() {
+  const el = getEl("peChecksPostRunNav");
+  if (!el) return;
+  const show =
+    sessionAuditCompletedThisSession &&
+    hasAuditResultsForNav() &&
+    !auditBusy &&
+    getCurrentActiveTabId() === "tab3";
+  if (!show) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+  el.classList.remove("hidden");
+  el.innerHTML =
+    'Audit finished — <button type="button" class="btn-linkish" onclick="showTab(\'tab4\')">View issues on Fix</button>';
+}
+
+function updateSettingsPlainLanguageLabels() {
+  const on = isChecked("simpleMode", false);
+  const sel = getEl("settingsDefaultAuditFilter");
+  if (sel) {
+    sel.querySelectorAll("option").forEach((opt) => {
+      if (!opt.dataset.peOriginalLabel) opt.dataset.peOriginalLabel = opt.textContent;
+      if (opt.value === "confirmed") {
+        opt.textContent = on ? "Important" : opt.dataset.peOriginalLabel;
+      }
+    });
+  }
+}
+
+function updateAuditSeverityLegend() {
+  const el = getEl("peAuditSeverityLegend");
+  if (!el || !ProzaEdit.PlainLanguage?.auditSeverityLegendLine) return;
+  el.textContent = ProzaEdit.PlainLanguage.auditSeverityLegendLine(isChecked("simpleMode", false));
+}
+
+function updateChecksReportDepthHint() {
+  const el = getEl("peChecksReportDepthPlainHint");
+  if (!el) return;
+  const on = isChecked("simpleMode", false);
+  el.classList.toggle("hidden", !on);
+  if (!on) return;
+  const raw = getEl("reportDensity")?.value || "balanced";
+  el.textContent = ProzaEdit.PlainLanguage?.reportDepthOptionHelper?.(raw) || "";
+}
+
+function updateAuditFilterLanesHintPlain() {
+  const el = getEl("peAuditFilterLanesHint");
+  if (!el || !ProzaEdit.PlainLanguage?.auditFilterLanesHint) return;
+  el.textContent = ProzaEdit.PlainLanguage.auditFilterLanesHint(isChecked("simpleMode", false));
+}
+
+function updateSimpleModeAuditBanner() {
+  const banner = getEl("peSimpleModeAuditBanner");
+  if (!banner) return;
+  const on = isChecked("simpleMode", false);
+  banner.classList.toggle("hidden", !on);
+  if (!on) {
+    banner.textContent = "";
+    return;
+  }
+  banner.textContent =
+    ProzaEdit.PlainLanguage?.simpleModeAuditBannerText?.(auditCardFilter) ||
+    "Simple mode is on — turn off in Settings → Essentials for all features.";
+}
+
+function turnOffSimpleModeFromEssentials() {
+  const sm = getEl("simpleMode");
+  if (!sm || !sm.checked) return;
+  sm.checked = false;
+  applySimpleMode();
+  if (!isReviewModeProfileActive()) markFirstRunCompleteAndPersist();
+  persistSettings(false);
+  initSimpleModeFirstRunBanner();
+  showPeStatus("Simple mode off — Coach, Rewrite, and Thesaurus tabs are back.", "ok");
+}
+
+function initHelpNewToEditingList() {
+  const list = getEl("peHelpNewToEditingList");
+  const bullets = ProzaEdit.PlainLanguage?.NEW_TO_EDITING_TOOLS_BULLETS;
+  if (!list || !bullets?.length || list.dataset.peFilled) return;
+  list.dataset.peFilled = "1";
+  bullets.forEach((text) => {
+    const li = document.createElement("li");
+    li.textContent = text;
+    list.appendChild(li);
+  });
 }
 
 function decorateRunAuditHubButton(btn) {
@@ -1660,13 +1981,21 @@ function updateAuditReportDepthHint() {
   if (!hint) return;
   const raw = getEl("reportDensity")?.value || "balanced";
   const label = REPORT_DENSITY_LABELS[raw] || "Balanced";
+  if (isChecked("simpleMode", false) && ProzaEdit.PlainLanguage?.reportDepthHintLabel) {
+    const plain = ProzaEdit.PlainLanguage.reportDepthHintLabel(raw);
+    hint.innerHTML = `${plain} (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
+    updatePlainLanguageControlHints();
+    updateChecksReportDepthHint();
+    return;
+  }
+  updateChecksReportDepthHint();
   hint.innerHTML = `Report depth: <strong>${label}</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
 }
 
 function getDefaultAuditFilterLabel() {
   const sel = getEl("settingsDefaultAuditFilter");
   const mode = sel?.value || "all";
-  return AUDIT_FILTER_LABELS[mode] || "All";
+  return auditFilterDisplayLabel(mode);
 }
 
 function updateAuditDefaultFilterHint() {
@@ -1674,7 +2003,7 @@ function updateAuditDefaultFilterHint() {
   if (!hint) return;
   if (isChecked("simpleMode", false)) {
     hint.innerHTML =
-      'Simple mode: Audit emphasizes <strong>Critical</strong> on load (<button type="button" class="btn-linkish" onclick="openSettingsModal(\'safety\')">Settings → Safety</button>). Saved filter chips still apply.';
+      'Simple mode: Audit opens on <strong>Important</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal(\'essentials\')">Settings → Essentials</button>). Filter chips below still work.';
     return;
   }
   const label = getDefaultAuditFilterLabel();
@@ -1913,8 +2242,36 @@ function writeLastSessionSummary(extra) {
   } catch (_) {}
 }
 
+function isOnboardingTourShellOpen() {
+  const shell = getEl("peOnboardingTour");
+  return !!shell && !shell.classList.contains("hidden");
+}
+
+function syncFirstAuditChecklistVisibility() {
+  const el = getEl("peFirstAuditChecklist");
+  if (!el) return;
+  const show = ProzaEdit.Onboarding?.shouldShowFirstAuditChecklist?.({
+    simpleModeFirstRunBannerVisible:
+      !!getEl("peSimpleModeFirstRunBanner") && !getEl("peSimpleModeFirstRunBanner").classList.contains("hidden"),
+    onboardingTourOpen: isOnboardingTourShellOpen(),
+    onboardingTourPending: shouldOfferOnboardingTourNow(),
+    checklistDismissed: isFirstAuditChecklistDismissed(),
+  });
+  if (!show) {
+    el.open = false;
+    el.classList.add("hidden");
+    return;
+  }
+  el.classList.remove("hidden");
+}
+
 function initSessionTips() {
-  if (!isChecked("showSessionTips", true)) return;
+  const show = ProzaEdit.Onboarding?.shouldShowSessionTipsOnLoad?.({
+    showSessionTips: isChecked("showSessionTips", true),
+    firstRunComplete: configFirstRunComplete,
+    simpleMode: isChecked("simpleMode", false),
+  });
+  if (!show) return;
   const dismissedKey = ProzaEdit.Onboarding?.SESSION_TIPS_DISMISSED_KEY || "pe-session-tips-dismissed";
   try {
     if (sessionStorage.getItem(dismissedKey) === "1") return;
@@ -1936,6 +2293,7 @@ function dismissSessionTips(dontShowAgain) {
   try {
     sessionStorage.setItem(ProzaEdit.Onboarding?.SESSION_TIPS_DISMISSED_KEY || "pe-session-tips-dismissed", "1");
   } catch (_) {}
+  maybeInitOnboardingTour();
 }
 
 function initSimpleModeFirstRunBanner() {
@@ -1943,6 +2301,7 @@ function initSimpleModeFirstRunBanner() {
   if (!el) return;
   const show = ProzaEdit.Onboarding?.shouldShowSimpleModeFirstRunBanner?.({
     firstRunComplete: configFirstRunComplete,
+    onboardingTourComplete: configOnboardingTourComplete,
     simpleMode: isChecked("simpleMode", false),
   });
   if (!show) {
@@ -1954,12 +2313,17 @@ function initSimpleModeFirstRunBanner() {
     body.textContent = ProzaEdit.Onboarding.SIMPLE_MODE_FIRST_RUN_BANNER_LEAD;
   }
   el.classList.remove("hidden");
+  document.body.classList.add("pe-simple-first-run-active");
+  syncFirstAuditChecklistVisibility();
 }
 
 function dismissSimpleModeFirstRunBanner(dontShowAgain) {
   hideOnboardingBanner("peSimpleModeFirstRunBanner");
+  document.body.classList.remove("pe-simple-first-run-active");
+  syncFirstAuditChecklistVisibility();
   if (dontShowAgain) {
     markFirstRunCompleteAndPersist();
+    maybeInitOnboardingTour();
     return;
   }
   try {
@@ -1968,6 +2332,192 @@ function dismissSimpleModeFirstRunBanner(dontShowAgain) {
       "1"
     );
   } catch (_) {}
+  maybeInitOnboardingTour();
+}
+
+function isFirstAuditChecklistDismissed() {
+  const key = ProzaEdit.Onboarding?.FIRST_AUDIT_CHECKLIST_DISMISSED_KEY || "pe-first-audit-checklist-dismissed";
+  try {
+    if (sessionStorage.getItem(key) === "1") return true;
+  } catch (_) {}
+  const details = getEl("peFirstAuditChecklist");
+  return details ? !details.open : false;
+}
+
+function onboardingTourUiBlockingBanners() {
+  const simpleEl = getEl("peSimpleModeFirstRunBanner");
+  const tipsEl = getEl("peSessionTips");
+  const checklist = getEl("peFirstAuditChecklist");
+  return {
+    simpleModeFirstRunBannerVisible:
+      !!simpleEl && !simpleEl.classList.contains("hidden"),
+    sessionTipsVisible: !!tipsEl && !tipsEl.classList.contains("hidden"),
+    firstAuditChecklistExpanded: !!checklist && checklist.open && !checklist.classList.contains("hidden"),
+    onboardingTourOpen: isOnboardingTourShellOpen(),
+  };
+}
+
+function shouldOfferOnboardingTourNow() {
+  return !!ProzaEdit.Onboarding?.shouldShowOnboardingTour?.({
+    onboardingTourComplete: configOnboardingTourComplete,
+    firstRunComplete: configFirstRunComplete,
+    showSessionTips: isChecked("showSessionTips", true),
+    checklistDismissed: isFirstAuditChecklistDismissed(),
+  });
+}
+
+function markOnboardingTourCompleteAndPersist() {
+  if (configOnboardingTourComplete) return;
+  configOnboardingTourComplete = true;
+  persistSettings(false);
+}
+
+function clearOnboardingTourAnchorHighlight() {
+  document.querySelectorAll(".pe-tour-anchor-highlight").forEach((el) => {
+    el.classList.remove("pe-tour-anchor-highlight");
+  });
+}
+
+function closeOnboardingTourShell() {
+  const shell = getEl("peOnboardingTour");
+  if (!shell) return;
+  shell.classList.add("hidden");
+  shell.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("pe-onboarding-tour-open");
+  clearOnboardingTourAnchorHighlight();
+  if (document.body.dataset.peTourKeydown) {
+    document.removeEventListener("keydown", onboardingTourKeydownHandler);
+    delete document.body.dataset.peTourKeydown;
+  }
+  syncFirstAuditChecklistVisibility();
+  const prev = onboardingTourPreviousFocus;
+  onboardingTourPreviousFocus = null;
+  if (prev && typeof prev.focus === "function") prev.focus();
+}
+
+function onboardingTourKeydownHandler(e) {
+  const shell = getEl("peOnboardingTour");
+  if (!shell || shell.classList.contains("hidden")) return;
+  if (e.key === "Escape") {
+    e.preventDefault();
+    skipOnboardingTour();
+  }
+}
+
+function renderOnboardingTourStep(stepIndex) {
+  const stop = ProzaEdit.Onboarding?.getOnboardingTourStop?.(stepIndex);
+  const shell = getEl("peOnboardingTour");
+  if (!stop || !shell) return;
+  onboardingTourActiveStep = stepIndex;
+  const title = getEl("peOnboardingTourTitle");
+  const body = getEl("peOnboardingTourBody");
+  const progress = getEl("peOnboardingTourProgress");
+  const btnNext = getEl("peOnboardingTourNext");
+  const btnDone = getEl("peOnboardingTourDone");
+  const total = ProzaEdit.Onboarding?.onboardingTourStopCount?.() || 3;
+  if (title) title.textContent = stop.title;
+  if (body) body.textContent = stop.body;
+  if (progress) progress.textContent = `Step ${stepIndex + 1} of ${total}`;
+  const isLast = stepIndex >= total - 1;
+  if (btnNext) btnNext.classList.toggle("hidden", isLast);
+  if (btnDone) btnDone.classList.toggle("hidden", !isLast);
+  if (stop.tabId) showTab(stop.tabId);
+  clearOnboardingTourAnchorHighlight();
+  if (stop.anchorSelector) {
+    const anchor = document.querySelector(stop.anchorSelector);
+    if (anchor) {
+      anchor.classList.add("pe-tour-anchor-highlight");
+      try {
+        anchor.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      } catch (_) {}
+    }
+  }
+  btnNext?.focus();
+}
+
+function openOnboardingTour(stepIndex) {
+  const shell = getEl("peOnboardingTour");
+  if (!shell || shell.classList.contains("hidden") === false) return;
+  onboardingTourPreviousFocus = document.activeElement;
+  shell.classList.remove("hidden");
+  shell.setAttribute("aria-hidden", "false");
+  document.body.classList.add("pe-onboarding-tour-open");
+  syncFirstAuditChecklistVisibility();
+  if (!document.body.dataset.peTourKeydown) {
+    document.body.dataset.peTourKeydown = "1";
+    document.addEventListener("keydown", onboardingTourKeydownHandler);
+  }
+  renderOnboardingTourStep(stepIndex || 0);
+}
+
+function maybeInitOnboardingTour() {
+  if (!shouldOfferOnboardingTourNow()) return;
+  const defer = ProzaEdit.Onboarding?.shouldDeferOnboardingTour?.(onboardingTourUiBlockingBanners());
+  if (defer) return;
+  openOnboardingTour(0);
+}
+
+function advanceOnboardingTour() {
+  const total = ProzaEdit.Onboarding?.onboardingTourStopCount?.() || 3;
+  if (onboardingTourActiveStep >= total - 1) {
+    finishOnboardingTour();
+    return;
+  }
+  renderOnboardingTourStep(onboardingTourActiveStep + 1);
+}
+
+function skipOnboardingTour() {
+  markOnboardingTourCompleteAndPersist();
+  closeOnboardingTourShell();
+}
+
+function finishOnboardingTour() {
+  markOnboardingTourCompleteAndPersist();
+  closeOnboardingTourShell();
+}
+
+function setupFirstAuditChecklistDismissTracking() {
+  const el = getEl("peFirstAuditChecklist");
+  if (!el || el.dataset.peTourBound) return;
+  el.dataset.peTourBound = "1";
+  el.addEventListener("toggle", () => {
+    if (!el.open) {
+      try {
+        sessionStorage.setItem(
+          ProzaEdit.Onboarding?.FIRST_AUDIT_CHECKLIST_DISMISSED_KEY || "pe-first-audit-checklist-dismissed",
+          "1"
+        );
+      } catch (_) {}
+    }
+    maybeInitOnboardingTour();
+  });
+}
+
+function updateAuditScopeFootnote() {
+  const el = getEl("peAuditScopeFootnote");
+  if (!el) return;
+  if (!currentAuditSuggestions.length) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+  const mode = lastAuditScopeModeAtRun || getScopeMode();
+  const limit = ProzaEdit.ScopeReader?.getLimit?.(mode) || 450000;
+  const excerptLen = (lastAuditExcerpt || "").length;
+  const opts = {
+    hadTruncation: lastAuditHadTruncation,
+    scopeMode: mode,
+    excerptCharLength: excerptLen,
+    scopeLimit: limit,
+  };
+  const show = ProzaEdit.Onboarding?.shouldShowAuditScopeFootnote?.(opts);
+  if (!show) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+  el.textContent = ProzaEdit.Onboarding?.buildAuditScopeFootnoteCopy?.(opts) || "";
+  el.classList.remove("hidden");
 }
 
 function initDarkAppearanceTip() {
@@ -2737,7 +3287,11 @@ function updateAuditFilterChips() {
       btn.textContent = `All (${currentAuditSuggestions.length})`;
     } else if (btn.dataset.auditFilter === "confirmed") {
       const n = currentAuditSuggestions.filter((s) => s.type === "confirmed").length;
-      btn.textContent = n ? `Critical (${n})` : "Critical";
+      btn.textContent = ProzaEdit.PlainLanguage?.auditFilterChipText
+        ? ProzaEdit.PlainLanguage.auditFilterChipText("confirmed", n, isChecked("simpleMode", false))
+        : n
+          ? `Critical (${n})`
+          : "Critical";
     } else if (btn.dataset.auditFilter === "preference") {
       const n = currentAuditSuggestions.filter((s) => s.type !== "confirmed").length;
       btn.textContent = n ? `Style (${n})` : "Style";
@@ -2756,6 +3310,7 @@ function setAuditCardFilter(mode) {
   syncSettingsDefaultAuditFilterSelect();
   updateAuditDefaultFilterHint();
   updateReviewModeAuditHint();
+  updateSimpleModeAuditBanner();
   persistSettings(false);
 }
 
@@ -3037,7 +3592,8 @@ function finalizeAudit(result, label) {
   } catch (_) {}
   let html = `<h3>${escapeHtml(label)}</h3>`;
   html += `<p>Words: ${metrics.wordCount} · FK grade ~${metrics.fleschKincaidGrade} · FRE ~${metrics.fleschReadingEase}</p>`;
-  html += `<p>🔴 Critical: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
+  const sevLabel = auditFilterDisplayLabel("confirmed");
+  html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
   html += `<p>${escapeHtml(buildManuscriptProfile())}</p>`;
@@ -3068,8 +3624,13 @@ function finalizeAudit(result, label) {
   const summary = getEl("summaryReport");
   if (summary) summary.innerHTML = html;
   setAuditSuggestions(suggestions);
+  updateWorkflowCrossNav(getCurrentActiveTabId() || "tab4");
+  updateChecksPostRunNav();
   cacheAudit(label, html, suggestions, traffic, score);
-  if (suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated")) {
+  lastAuditHadTruncation = suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated");
+  lastAuditScopeModeAtRun = getScopeMode();
+  updateAuditScopeFootnote();
+  if (lastAuditHadTruncation) {
     showPeStatus(
       "Scope hit the character cap — open the Truncated scope card below, or try Selected chapters / Page range.",
       "warn"
@@ -3120,6 +3681,11 @@ function restoreCachedAuditIfEmpty() {
       getEl("miniScores")?.classList.add("hidden");
     }
     setAuditSuggestions(d.suggestions);
+    lastAuditHadTruncation = (d.suggestions || []).some(
+      (s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated"
+    );
+    lastAuditScopeModeAtRun = getScopeMode();
+    updateAuditScopeFootnote();
   } catch (_) {}
 }
 
@@ -3296,6 +3862,11 @@ function renderAuditCards(list) {
           <button type="button" class="btn-go" data-a="chat" title="Optional Gemini">Gemini</button>
           <button type="button" class="btn-dismiss btn-with-icon" data-a="dismiss" data-pe-tip="btn-card-dismiss" aria-label="Dismiss finding">${ic("eye-off")} Dismiss</button>
         </div>
+        ${
+          ProzaEdit.WorkflowNav?.shouldShowCardDictionaryFooter?.(item)
+            ? '<p class="card-footer-trust help-muted"><button type="button" class="btn-linkish" data-a="dict-footer">Manage dictionary</button> for names and terms that should not be flagged.</p>'
+            : ""
+        }
       </div>`;
     div.querySelector('[data-a="goto"]').onclick = () => goToIssue(item.targetText);
     const undoBtn = div.querySelector('[data-a="undo"]');
@@ -3306,6 +3877,8 @@ function renderAuditCards(list) {
     div.querySelector('[data-a="chat"]').onclick = () => sendIssueToChat(item);
     if (canApply) div.querySelector('[data-a="apply"]').onclick = () => applyFix(id, item.targetText, item.replacementText);
     div.querySelector('[data-a="dict"]').onclick = () => addDictionaryWordFromCard(item.targetText);
+    const dictFooter = div.querySelector('[data-a="dict-footer"]');
+    if (dictFooter) dictFooter.onclick = () => openSettingsModal("dictionary");
     if (showHouse) div.querySelector('[data-a="house"]').onclick = () => addCustomStyleFromCard(item);
     div.querySelector('[data-a="mute"]').onclick = () => muteRule(item);
     div.querySelector('[data-a="dismiss"]').onclick = () => dismissCard(item);
@@ -3322,12 +3895,13 @@ async function muteRule(item) {
   await ProzaEdit.Settings.muteRule(item.ruleId);
   if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
   removeAuditCard(item.id);
-  if (!muteDictionaryNudgeShownThisSession) {
+  const showDictNudge = ProzaEdit.PlainLanguage?.shouldShowMuteDictionaryNudge?.(
+    item,
+    muteDictionaryNudgeShownThisSession
+  );
+  if (showDictNudge) {
     muteDictionaryNudgeShownThisSession = true;
-    showPeStatusHtml(
-      'Added to session mutes — <button type="button" class="btn-linkish" onclick="openSettingsModal(\'dictionary\')">add to Dictionary in Settings</button> for this document?',
-      "ok"
-    );
+    showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok");
   } else {
     showPeStatus("Muted on this PC for future audits.", "ok");
   }
@@ -3350,6 +3924,8 @@ function removeAuditCard(id) {
 function clearAuditReport() {
   currentAuditSuggestions = [];
   lastAuditExcerpt = "";
+  lastAuditHadTruncation = false;
+  lastAuditScopeModeAtRun = "";
   lastAuditMeta = {};
   lastFeedbackLetter = "";
   auditCardFilter = isChecked("simpleMode", false) ? "confirmed" : "all";
@@ -3360,6 +3936,7 @@ function clearAuditReport() {
   if (sum) sum.innerHTML = "Audit cleared. Run audit again for a fresh pass.";
   getEl("trafficBar")?.classList.add("hidden");
   getEl("miniScores")?.classList.add("hidden");
+  updateAuditScopeFootnote();
   ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.LAST_AUDIT, "");
   showAuditEmptyIfNeeded();
   updateAuditTabBadge();

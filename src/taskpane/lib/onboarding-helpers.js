@@ -16,13 +16,48 @@ ProzaEdit.Onboarding = {
     showDarkAppearanceTip: "pe-dark-appearance-tip-dismissed",
   },
 
-  ONBOARDING_CONFIG_KEYS: ["showSessionTips", "showWhatsNew", "showPriorSessionSummary", "showDarkAppearanceTip"],
+  ONBOARDING_CONFIG_KEYS: [
+    "showSessionTips",
+    "showWhatsNew",
+    "showPriorSessionSummary",
+    "showDarkAppearanceTip",
+    "onboardingTourComplete",
+  ],
 
   FIRST_RUN_COMPLETE_KEY: "firstRunComplete",
+  ONBOARDING_TOUR_COMPLETE_KEY: "onboardingTourComplete",
+  FIRST_AUDIT_CHECKLIST_DISMISSED_KEY: "pe-first-audit-checklist-dismissed",
   SIMPLE_MODE_FIRST_RUN_DISMISSED_KEY: "pe-simple-mode-first-run-dismissed",
 
+  /** Share of ScopeReader cap treated as “large scope” for post-audit footnote (aligned with truncation). */
+  LARGE_SCOPE_CAP_RATIO: 0.85,
+
+  ONBOARDING_TOUR_STOPS: [
+    {
+      id: "scope",
+      title: "1. Choose what to check",
+      body: "On Target, pick the part of your book to work on — a highlight, one chapter, a page range, or the whole file. Tap Refresh count to see how big it is.",
+      tabId: "tab1",
+      anchorSelector: "#scope",
+    },
+    {
+      id: "run",
+      title: "2. Run audit",
+      body: "On Checks, leave one or two switches on (you do not need them all). Then click Run audit — ProzaEdit waits for you; it does not underline as you type.",
+      tabId: "tab3",
+      anchorSelector: "#btnRunAudit",
+    },
+    {
+      id: "fix",
+      title: "3. Fix what matters",
+      body: "Open Audit for your list. Start with Important items, jump to each spot in Word, then Apply fix when you agree.",
+      tabId: "tab4",
+      anchorSelector: "#cardContainer",
+    },
+  ],
+
   SIMPLE_MODE_FIRST_RUN_BANNER_LEAD:
-    "Simple mode is on — fewer tabs, Critical issues first. Turn off in Settings → Safety.",
+    "Simple mode is on — fewer tabs, important issues first. Turn off in Settings → Essentials.",
 
   FULL_MANUSCRIPT_SCOPE_TIP:
     "For very long documents, try Selected chapters or Page range (common pro workaround).",
@@ -31,10 +66,10 @@ ProzaEdit.Onboarding = {
     "ProzaEdit runs manual audits when you click Run audit — not Grammarly-style realtime underlines.",
 
   FIRST_AUDIT_CHECKLIST_STEPS: [
-    "Set scope on Target (selection, chapters, or page range).",
-    "Enable one or two checks on Checks (you do not need every module).",
-    "Run audit from the toolbar or Checks tab.",
-    "Fix Critical findings first; use Mute or Dictionary for noisy names.",
+    "On Target, choose what to check (highlight, a chapter, or a page range).",
+    "On Checks, turn on one or two checks — not every switch.",
+    "Click Run audit (toolbar or the big button on Checks).",
+    "On Audit, fix Important items first; Mute or Dictionary for names that are correct.",
   ],
 
   PHASE_1_QUICKSTART_URL:
@@ -46,9 +81,101 @@ ProzaEdit.Onboarding = {
       simpleMode: true,
       auditCardFilter: "confirmed",
       firstRunComplete: false,
+      onboardingTourComplete: false,
       auditExtended: false,
       reportDensity: "balanced",
     };
+  },
+
+  applyOnboardingTourCompletePatch(config) {
+    const c = config && typeof config === "object" ? { ...config } : {};
+    c.onboardingTourComplete = true;
+    return c;
+  },
+
+  getOnboardingTourStop(stepIndex) {
+    const stops = ProzaEdit.Onboarding.ONBOARDING_TOUR_STOPS || [];
+    const i = Math.max(0, Math.min(stops.length - 1, parseInt(stepIndex, 10) || 0));
+    return stops[i] || null;
+  },
+
+  onboardingTourStopCount() {
+    return (ProzaEdit.Onboarding.ONBOARDING_TOUR_STOPS || []).length;
+  },
+
+  /**
+   * @param {object} options
+   * @param {boolean} [options.onboardingTourComplete]
+   * @param {boolean} [options.firstRunComplete]
+   * @param {boolean} [options.showSessionTips]
+   * @param {boolean} [options.checklistDismissed]
+   */
+  shouldShowOnboardingTour(options) {
+    options = options || {};
+    if (options.onboardingTourComplete === true) return false;
+    if (options.showSessionTips === false) return false;
+    if (options.checklistDismissed) return false;
+    if (options.firstRunComplete === true) return false;
+    return true;
+  },
+
+  /**
+   * Defer tour while other first-session banners are still showing (avoid stacking).
+   */
+  shouldDeferOnboardingTour(options) {
+    options = options || {};
+    if (options.simpleModeFirstRunBannerVisible) return true;
+    if (options.sessionTipsVisible) return true;
+    if (options.firstAuditChecklistExpanded) return true;
+    if (options.onboardingTourOpen) return true;
+    return false;
+  },
+
+  /** Skip session tips while Simple-mode first-run banner sequence is active (PE-64). */
+  shouldShowSessionTipsOnLoad(options) {
+    options = options || {};
+    if (options.showSessionTips === false) return false;
+    if (options.firstRunComplete === true) return true;
+    if (options.simpleMode) return false;
+    return true;
+  },
+
+  shouldShowFirstAuditChecklist(options) {
+    options = options || {};
+    if (options.simpleModeFirstRunBannerVisible) return false;
+    if (options.onboardingTourOpen) return false;
+    if (options.onboardingTourPending && !options.checklistDismissed) return false;
+    return true;
+  },
+
+  /**
+   * Post-audit footnote when truncation or large scope (threshold aligned with ScopeReader caps).
+   */
+  shouldShowAuditScopeFootnote(options) {
+    options = options || {};
+    if (options.hadTruncation) return true;
+    const limit =
+      typeof options.scopeLimit === "number" && options.scopeLimit > 0
+        ? options.scopeLimit
+        : 450000;
+    const len = typeof options.excerptCharLength === "number" ? options.excerptCharLength : 0;
+    if (len > 0 && len >= limit * ProzaEdit.Onboarding.LARGE_SCOPE_CAP_RATIO) return true;
+    if (options.scopeMode === "full" && len >= 200000) return true;
+    return false;
+  },
+
+  buildAuditScopeFootnoteCopy(options) {
+    options = options || {};
+    const lines = [];
+    if (options.hadTruncation) {
+      lines.push("This run hit the scope character cap — see the Truncated scope card above.");
+    } else if (ProzaEdit.Onboarding.shouldShowAuditScopeFootnote(options)) {
+      lines.push("This was a large scope — runs can take longer on full manuscripts.");
+    }
+    lines.push(
+      "Next run: try Selected chapters or Page range, and keep the Critical filter for a faster first pass."
+    );
+    return lines.join(" ");
   },
 
   /**
@@ -68,7 +195,10 @@ ProzaEdit.Onboarding = {
     if (!p || typeof p !== "object") return { kind: "none" };
     if (p.firstRunComplete === true) return { kind: "none" };
     if (p.firstRunComplete === false) return { kind: "none" };
-    return { kind: "migrate-legacy", patch: { firstRunComplete: true } };
+    return {
+      kind: "migrate-legacy",
+      patch: { firstRunComplete: true, onboardingTourComplete: true },
+    };
   },
 
   shouldShowSimpleModeFirstRunBanner(options) {

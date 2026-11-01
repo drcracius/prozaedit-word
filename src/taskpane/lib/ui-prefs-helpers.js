@@ -5,6 +5,7 @@ ProzaEdit.UiPrefs = {
   TAB_IDS: ["tab1", "tab2", "tab3", "tab4", "tab5", "tab6", "tab7"],
 
   SETTINGS_SECTION_ALIASES: {
+    essentials: "essentials",
     style: "custom-style",
     "custom-style": "custom-style",
     safety: "safety",
@@ -16,7 +17,17 @@ ProzaEdit.UiPrefs = {
     dictionary: "dictionary",
   },
 
-  SETTINGS_GROUP_KEYS: ["safety", "onboarding", "appearance", "audit", "privacy", "reference", "dictionary", "custom-style"],
+  SETTINGS_GROUP_KEYS: [
+    "essentials",
+    "safety",
+    "onboarding",
+    "appearance",
+    "audit",
+    "privacy",
+    "reference",
+    "dictionary",
+    "custom-style",
+  ],
 
   THEME_PREFERENCES: ["light", "dark", "system"],
 

@@ -40,3 +40,30 @@ test("finalizeAudit surfaces truncation in status bar", () => {
   const src = fs.readFileSync(taskpanePath, "utf8");
   assert.match(src, /sys_trunc[\s\S]*showPeStatus\([\s\S]*character cap/);
 });
+
+test("onboarding tour and audit footnote DOM ids wired", () => {
+  const html = fs.readFileSync(path.join("src", "taskpane", "taskpane.html"), "utf8");
+  assert.match(html, /id="peOnboardingTour"/);
+  assert.match(html, /id="peOnboardingTourNext"/);
+  assert.match(html, /id="peAuditScopeFootnote"/);
+  assert.match(html, /plain-language-helpers\.js/);
+  assert.match(html, /id="peChecksRunAuditTagline"/);
+  assert.match(html, /id="btnTurnOffSimpleMode"/);
+  assert.match(html, /id="peHelpNewToEditing"/);
+  assert.match(html, /id="peAuditSeverityLegend"/);
+  assert.match(html, /id="peChecksReportDepthPlainHint"/);
+  assert.match(html, /id="peReportDepthOptionsPlain"/);
+  assert.match(html, /id="peWorkflowCrossNav"/);
+  assert.match(html, /workflow-nav-helpers\.js/);
+  assert.match(html, /data-pe-tab-label/);
+  assert.match(html, /id="peChecksPipelineHint"/);
+  assert.match(html, /id="peAuditPipelineHint"/);
+  const src = fs.readFileSync(taskpanePath, "utf8");
+  assert.match(src, /onboardingTourComplete/);
+  assert.match(src, /maybeInitOnboardingTour/);
+  assert.match(src, /updateAuditScopeFootnote/);
+  assert.match(src, /turnOffSimpleModeFromEssentials/);
+  assert.match(src, /applyPlainLanguageLayer/);
+  assert.match(src, /updateWorkflowCrossNav/);
+  assert.match(src, /applyTabStripOrder/);
+});
