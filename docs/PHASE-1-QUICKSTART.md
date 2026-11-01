@@ -35,6 +35,23 @@ Skim [HOSTED-SMOKE-LAST-RUN.md](./HOSTED-SMOKE-LAST-RUN.md) — last automated p
 
 ---
 
+## Average-user 10-minute path (non-technical)
+
+Use this if you are new to editing add-ins and want the smallest path to a useful audit — no command line required.
+
+| Step | What you do | You are done when |
+|------|-------------|-------------------|
+| **1. Open ProzaEdit** | In Word on the web, open a chapter or highlight a passage → **Home → ProzaEdit** | The task pane loads; **Simple mode** is usually already on |
+| **2. Target — what to check** | On **Target**, pick **One or more chapters** or **Text you selected** → **Refresh count** | The line under the toolbar shows your scope |
+| **3. Checks — run check** | Open **Checks** → leave the four main toggles on → click **Run audit** (big button) | You see a progress line, then the **Audit** tab fills with cards |
+| **4. Audit — fix issues** | On **Audit**, use the **Important** filter (Simple mode) → **Go to** each card → **Apply fix** if you agree | Red **Important** count goes down |
+| **5. Names that are correct** | If a character name is flagged wrongly → **Mute** → follow the hint to **Dictionary** in Settings | That name stops nagging on this document |
+| **6. More power (optional)** | **Settings → Essentials** → turn off **Simple mode** | **Coach**, **Rewrite**, and **Thesaurus** tabs return; filters say **Critical** again |
+
+**Remember:** ProzaEdit runs when you click **Run audit** — it does not underline while you type (unlike Grammarly).
+
+---
+
 ## After quickstart
 
 - Complete remaining sections in [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) (Settings groups, narrow pane, banners, cancel paths, shaper persistence).

@@ -11,6 +11,20 @@ ProzaEdit.PlainLanguage = {
   CHECKS_RUN_AUDIT_TAGLINE:
     "ProzaEdit checks when you click Run — it does not underline while you type.",
 
+  /** Subtle tab hints (Simple mode subtitles + title tooltips). DOM tab ids unchanged. */
+  TAB_HINTS: {
+    tab1: "What to check",
+    tab3: "Run check",
+    tab4: "Fix issues",
+    tab7: "How it works",
+  },
+
+  REPORT_DEPTH_OPTION_HELPER: {
+    light: "Light — quick pass, fewer cards",
+    balanced: "Balanced — recommended for most sessions",
+    dense: "Dense — maximum detail we can show",
+  },
+
   SIMPLE_MODE_ESSENTIALS_INTRO:
     "Simple mode hides extra tabs and optional checks. Turn off to see Coach, Rewrite, and more.",
 
@@ -29,11 +43,63 @@ ProzaEdit.PlainLanguage = {
     return "Simple mode is on — fewer tabs and a simpler layout. Turn off in Settings → Essentials to see every feature.";
   },
 
+  /** User-visible filter name; internal id stays `confirmed`. */
+  auditFilterUserLabel(filterKey, simpleMode) {
+    const key = String(filterKey || "");
+    if (key === "confirmed") return simpleMode ? "Important" : "Critical";
+    if (key === "preference") return "Style";
+    if (key === "styleguide") return "Style guide";
+    return "All";
+  },
+
+  auditFilterChipText(filterKey, count, simpleMode) {
+    const label = ProzaEdit.PlainLanguage.auditFilterUserLabel(filterKey, simpleMode);
+    const n = typeof count === "number" ? count : 0;
+    return n ? `${label} (${n})` : label;
+  },
+
+  auditSeverityLegendLine(simpleMode) {
+    const sev = simpleMode ? "Important" : "Critical";
+    return `Color legend: ${sev} · Style · OK / primary action (card border = severity; green buttons = actions).`;
+  },
+
   auditFilterLanesHint(simpleMode) {
     if (simpleMode) {
-      return "Show one group at a time: Important (Critical), Style, or Style guide — not every category at once.";
+      return "Show one group at a time: Important, Style, or Style guide — not every category at once.";
     }
     return 'Filter lanes: Pick one chip (Critical, Style, Style guide) to work one category at a time — not a full “run every report” pass.';
+  },
+
+  reportDepthOptionHelper(densityKey) {
+    const key = String(densityKey || "balanced").toLowerCase();
+    return (
+      ProzaEdit.PlainLanguage.REPORT_DEPTH_OPTION_HELPER[key] ||
+      ProzaEdit.PlainLanguage.REPORT_DEPTH_OPTION_HELPER.balanced
+    );
+  },
+
+  /** First session mute nudge: name-like tokens only (PE-60 P2). */
+  isNameLikeMuteTarget(item) {
+    if (!item) return false;
+    const ruleId = String(item.ruleId || "");
+    if (ruleId.startsWith("prop:")) return true;
+    const mod = String(item.module || "").toLowerCase();
+    if (mod.includes("proper noun")) return true;
+    const text = String(item.targetText || "").trim();
+    if (!text || text.length > 48 || text === "(truncated)") return false;
+    return /^[A-Z][a-z]+(?:['\u2019][A-Z][a-z]+)*(?:\s+[A-Z][a-z]+){0,2}$/.test(text);
+  },
+
+  shouldShowMuteDictionaryNudge(item, alreadyShownThisSession) {
+    if (alreadyShownThisSession) return false;
+    return ProzaEdit.PlainLanguage.isNameLikeMuteTarget(item);
+  },
+
+  muteDictionaryNudgeStatusHtml() {
+    return (
+      'Add to Dictionary so this name isn\u2019t flagged again \u2014 ' +
+      '<button type="button" class="btn-linkish" onclick="openSettingsModal(\'dictionary\')">Open Dictionary in Settings</button>'
+    );
   },
 
   reportDepthHintLabel(densityKey) {

@@ -266,6 +266,7 @@
         <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpChecks">Cancel</button>
       </div>
       <p id="peChecksRunAuditTagline" class="pe-checks-run-tagline help-muted">ProzaEdit checks when you click Run — it does not underline while you type.</p>
+      <p id="peChecksReportDepthPlainHint" class="pe-checks-depth-plain help-muted hidden" aria-live="polite"></p>
       <p id="activeChecksHint" class="active-checks-hint">Turn on checks below, then Run audit.</p>
     </div>
     <h2 class="pe-section-title">What to check</h2>
@@ -383,6 +384,7 @@
     <div id="trafficBar" class="traffic-bar hidden"></div>
     <div id="miniScores" class="mini-scores hidden"></div>
     <div id="summaryReport" class="summary-report">Highlight text in Word, then Run audit above.</div>
+    <p id="peAuditSeverityLegend" class="pe-severity-legend pe-audit-severity-legend help-muted" aria-label="Severity color legend"></p>
     <div class="audit-toolbar">
       <div class="filter-chips" role="group" aria-label="Filter findings">
         <button type="button" class="chip chip-active" data-audit-filter="all" onclick="setAuditCardFilter('all')">All</button>
@@ -684,6 +686,7 @@
               <option value="dense">Dense</option>
             </select>
             <p id="peReportDensityPlainHint" style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Controls card cap and overview detail on the Audit tab.</p>
+            <p id="peReportDepthOptionsPlain" class="pe-report-depth-options-plain help-muted hidden" style="font-size:10px;margin:4px 0 0;" aria-live="polite"></p>
           </div>
           <div class="form-group">
             <label for="settingsDefaultAuditFilter">Default audit filter</label>

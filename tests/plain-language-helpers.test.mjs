@@ -21,8 +21,38 @@ test("PlainLanguage scope friendly labels", () => {
 
 test("PlainLanguage audit filter hint differs for simple mode", () => {
   const { PlainLanguage } = loadLib("src/taskpane/lib/plain-language-helpers.js");
-  assert.match(PlainLanguage.auditFilterLanesHint(true), /Important \(Critical\)/i);
+  assert.match(PlainLanguage.auditFilterLanesHint(true), /Important/i);
+  assert.doesNotMatch(PlainLanguage.auditFilterLanesHint(true), /Filter lanes/i);
   assert.match(PlainLanguage.auditFilterLanesHint(false), /Filter lanes/i);
+  assert.match(PlainLanguage.auditFilterLanesHint(false), /Critical/i);
+});
+
+test("PlainLanguage Important vs Critical filter labels", () => {
+  const { PlainLanguage } = loadLib("src/taskpane/lib/plain-language-helpers.js");
+  assert.equal(PlainLanguage.auditFilterUserLabel("confirmed", true), "Important");
+  assert.equal(PlainLanguage.auditFilterUserLabel("confirmed", false), "Critical");
+  assert.equal(PlainLanguage.auditFilterChipText("confirmed", 3, true), "Important (3)");
+  assert.match(PlainLanguage.auditSeverityLegendLine(true), /Important/i);
+  assert.match(PlainLanguage.auditSeverityLegendLine(false), /Critical/i);
+});
+
+test("PlainLanguage mute dictionary nudge rules", () => {
+  const { PlainLanguage } = loadLib("src/taskpane/lib/plain-language-helpers.js");
+  assert.equal(PlainLanguage.isNameLikeMuteTarget({ ruleId: "prop:variant:smith", targetText: "Smith" }), true);
+  assert.equal(PlainLanguage.isNameLikeMuteTarget({ ruleId: "spell:double_space", targetText: "  " }), false);
+  assert.equal(PlainLanguage.isNameLikeMuteTarget({ targetText: "Elena" }), true);
+  assert.equal(PlainLanguage.shouldShowMuteDictionaryNudge({ targetText: "Elena" }, false), true);
+  assert.equal(PlainLanguage.shouldShowMuteDictionaryNudge({ targetText: "Elena" }, true), false);
+  assert.equal(PlainLanguage.shouldShowMuteDictionaryNudge({ ruleId: "rep:pleo:test" }, false), false);
+  assert.match(PlainLanguage.muteDictionaryNudgeStatusHtml(), /Dictionary/i);
+});
+
+test("PlainLanguage report depth option helpers", () => {
+  const { PlainLanguage } = loadLib("src/taskpane/lib/plain-language-helpers.js");
+  assert.match(PlainLanguage.reportDepthOptionHelper("light"), /Light/i);
+  assert.match(PlainLanguage.reportDepthOptionHelper("balanced"), /Balanced/i);
+  assert.match(PlainLanguage.reportDepthOptionHelper("dense"), /Dense/i);
+  assert.equal(PlainLanguage.TAB_HINTS.tab3, "Run check");
 });
 
 test("PlainLanguage new-to-editing bullets", () => {

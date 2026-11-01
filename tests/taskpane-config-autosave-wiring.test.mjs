@@ -50,6 +50,9 @@ test("onboarding tour and audit footnote DOM ids wired", () => {
   assert.match(html, /id="peChecksRunAuditTagline"/);
   assert.match(html, /id="btnTurnOffSimpleMode"/);
   assert.match(html, /id="peHelpNewToEditing"/);
+  assert.match(html, /id="peAuditSeverityLegend"/);
+  assert.match(html, /id="peChecksReportDepthPlainHint"/);
+  assert.match(html, /id="peReportDepthOptionsPlain"/);
   const src = fs.readFileSync(taskpanePath, "utf8");
   assert.match(src, /onboardingTourComplete/);
   assert.match(src, /maybeInitOnboardingTour/);

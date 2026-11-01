@@ -50,7 +50,7 @@ ProzaEdit.Onboarding = {
     {
       id: "fix",
       title: "3. Fix what matters",
-      body: "Open Audit for your list. Start with Important (Critical) items, jump to each spot in Word, then Apply fix when you agree.",
+      body: "Open Audit for your list. Start with Important items, jump to each spot in Word, then Apply fix when you agree.",
       tabId: "tab4",
       anchorSelector: "#cardContainer",
     },
@@ -69,7 +69,7 @@ ProzaEdit.Onboarding = {
     "On Target, choose what to check (highlight, a chapter, or a page range).",
     "On Checks, turn on one or two checks — not every switch.",
     "Click Run audit (toolbar or the big button on Checks).",
-    "On Audit, fix Important (Critical) items first; Mute or Dictionary for names that are correct.",
+    "On Audit, fix Important items first; Mute or Dictionary for names that are correct.",
   ],
 
   PHASE_1_QUICKSTART_URL:

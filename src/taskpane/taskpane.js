@@ -493,6 +493,14 @@ const AUDIT_FILTER_LABELS = {
   styleguide: "Style guide",
 };
 
+function auditFilterDisplayLabel(mode) {
+  const key = String(mode || "all");
+  if (ProzaEdit.PlainLanguage?.auditFilterUserLabel) {
+    return ProzaEdit.PlainLanguage.auditFilterUserLabel(key, isChecked("simpleMode", false));
+  }
+  return AUDIT_FILTER_LABELS[key] || "All";
+}
+
 function setupSettingsModal() {
   const modal = getEl("pe-settings-modal");
   if (!modal || modal.dataset.bound) return;
@@ -1627,6 +1635,11 @@ function applyPlainLanguageLayer() {
   updateAuditFilterLanesHintPlain();
   updateSimpleModeAuditBanner();
   updateChecksScopeChip();
+  updateSimpleModeTabHints();
+  updateSettingsPlainLanguageLabels();
+  updateAuditSeverityLegend();
+  updateChecksReportDepthHint();
+  updateAuditFilterChips();
 }
 
 function updatePlainLanguageScopeSelect() {
@@ -1643,18 +1656,88 @@ function updatePlainLanguageScopeSelect() {
 function updatePlainLanguageControlHints() {
   const density = getEl("reportDensity");
   const hint = getEl("peReportDensityPlainHint");
+  const optionsPlain = getEl("peReportDepthOptionsPlain");
   const on = isChecked("simpleMode", false);
   const raw = density?.value || "balanced";
   if (density && on) {
     density.setAttribute("aria-label", ProzaEdit.PlainLanguage.reportDepthHintLabel(raw));
+    density.querySelectorAll("option").forEach((opt) => {
+      const helper = ProzaEdit.PlainLanguage.reportDepthOptionHelper(opt.value);
+      if (helper) opt.title = helper;
+    });
   } else if (density) {
     density.removeAttribute("aria-label");
+    density.querySelectorAll("option").forEach((opt) => {
+      opt.removeAttribute("title");
+    });
   }
   if (hint) {
     hint.textContent = on
       ? ProzaEdit.PlainLanguage.reportDepthHintLabel(raw)
       : "Controls card cap and overview detail on the Audit tab.";
   }
+  if (optionsPlain) {
+    optionsPlain.classList.toggle("hidden", !on);
+    if (on && ProzaEdit.PlainLanguage?.REPORT_DEPTH_OPTION_HELPER) {
+      const lines = ["light", "balanced", "dense"]
+        .map((k) => ProzaEdit.PlainLanguage.reportDepthOptionHelper(k))
+        .filter(Boolean);
+      optionsPlain.textContent = lines.join(" · ");
+    }
+  }
+}
+
+function updateSimpleModeTabHints() {
+  const hints = ProzaEdit.PlainLanguage?.TAB_HINTS;
+  if (!hints) return;
+  const on = isChecked("simpleMode", false);
+  document.querySelectorAll(".tab-btn[data-pe-tab]").forEach((btn) => {
+    const tabId = btn.dataset.peTab;
+    const hintText = hints[tabId];
+    if (hintText) btn.setAttribute("title", hintText);
+    else btn.removeAttribute("title");
+    let sub = btn.querySelector(".pe-tab-hint");
+    if (on && hintText) {
+      if (!sub) {
+        sub = document.createElement("span");
+        sub.className = "pe-tab-hint";
+        btn.appendChild(sub);
+      }
+      sub.textContent = hintText;
+      sub.classList.remove("hidden");
+    } else if (sub) {
+      sub.classList.add("hidden");
+    }
+  });
+}
+
+function updateSettingsPlainLanguageLabels() {
+  const on = isChecked("simpleMode", false);
+  const sel = getEl("settingsDefaultAuditFilter");
+  if (sel) {
+    sel.querySelectorAll("option").forEach((opt) => {
+      if (!opt.dataset.peOriginalLabel) opt.dataset.peOriginalLabel = opt.textContent;
+      if (opt.value === "confirmed") {
+        opt.textContent = on ? "Important" : opt.dataset.peOriginalLabel;
+      }
+    });
+  }
+}
+
+function updateAuditSeverityLegend() {
+  const el = getEl("peAuditSeverityLegend");
+  if (!el || !ProzaEdit.PlainLanguage?.auditSeverityLegendLine) return;
+  el.textContent = ProzaEdit.PlainLanguage.auditSeverityLegendLine(isChecked("simpleMode", false));
+}
+
+function updateChecksReportDepthHint() {
+  const el = getEl("peChecksReportDepthPlainHint");
+  if (!el) return;
+  const on = isChecked("simpleMode", false);
+  el.classList.toggle("hidden", !on);
+  if (!on) return;
+  const raw = getEl("reportDensity")?.value || "balanced";
+  el.textContent = ProzaEdit.PlainLanguage?.reportDepthOptionHelper?.(raw) || "";
 }
 
 function updateAuditFilterLanesHintPlain() {
@@ -1765,15 +1848,17 @@ function updateAuditReportDepthHint() {
     const plain = ProzaEdit.PlainLanguage.reportDepthHintLabel(raw);
     hint.innerHTML = `${plain} (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
     updatePlainLanguageControlHints();
+    updateChecksReportDepthHint();
     return;
   }
+  updateChecksReportDepthHint();
   hint.innerHTML = `Report depth: <strong>${label}</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
 }
 
 function getDefaultAuditFilterLabel() {
   const sel = getEl("settingsDefaultAuditFilter");
   const mode = sel?.value || "all";
-  return AUDIT_FILTER_LABELS[mode] || "All";
+  return auditFilterDisplayLabel(mode);
 }
 
 function updateAuditDefaultFilterHint() {
@@ -1781,7 +1866,7 @@ function updateAuditDefaultFilterHint() {
   if (!hint) return;
   if (isChecked("simpleMode", false)) {
     hint.innerHTML =
-      'Simple mode: Audit opens on <strong>Important (Critical)</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal(\'essentials\')">Settings → Essentials</button>). Filter chips below still work.';
+      'Simple mode: Audit opens on <strong>Important</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal(\'essentials\')">Settings → Essentials</button>). Filter chips below still work.';
     return;
   }
   const label = getDefaultAuditFilterLabel();
@@ -3065,7 +3150,11 @@ function updateAuditFilterChips() {
       btn.textContent = `All (${currentAuditSuggestions.length})`;
     } else if (btn.dataset.auditFilter === "confirmed") {
       const n = currentAuditSuggestions.filter((s) => s.type === "confirmed").length;
-      btn.textContent = n ? `Critical (${n})` : "Critical";
+      btn.textContent = ProzaEdit.PlainLanguage?.auditFilterChipText
+        ? ProzaEdit.PlainLanguage.auditFilterChipText("confirmed", n, isChecked("simpleMode", false))
+        : n
+          ? `Critical (${n})`
+          : "Critical";
     } else if (btn.dataset.auditFilter === "preference") {
       const n = currentAuditSuggestions.filter((s) => s.type !== "confirmed").length;
       btn.textContent = n ? `Style (${n})` : "Style";
@@ -3366,7 +3455,8 @@ function finalizeAudit(result, label) {
   } catch (_) {}
   let html = `<h3>${escapeHtml(label)}</h3>`;
   html += `<p>Words: ${metrics.wordCount} · FK grade ~${metrics.fleschKincaidGrade} · FRE ~${metrics.fleschReadingEase}</p>`;
-  html += `<p>🔴 Critical: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
+  const sevLabel = auditFilterDisplayLabel("confirmed");
+  html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
   html += `<p>${escapeHtml(buildManuscriptProfile())}</p>`;
@@ -3659,12 +3749,13 @@ async function muteRule(item) {
   await ProzaEdit.Settings.muteRule(item.ruleId);
   if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
   removeAuditCard(item.id);
-  if (!muteDictionaryNudgeShownThisSession) {
+  const showDictNudge = ProzaEdit.PlainLanguage?.shouldShowMuteDictionaryNudge?.(
+    item,
+    muteDictionaryNudgeShownThisSession
+  );
+  if (showDictNudge) {
     muteDictionaryNudgeShownThisSession = true;
-    showPeStatusHtml(
-      'Added to session mutes — <button type="button" class="btn-linkish" onclick="openSettingsModal(\'dictionary\')">add to Dictionary in Settings</button> for this document?',
-      "ok"
-    );
+    showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok");
   } else {
     showPeStatus("Muted on this PC for future audits.", "ok");
   }
