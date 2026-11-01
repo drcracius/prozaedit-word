@@ -525,7 +525,6 @@ function buildManuscriptIndexNow() {
   const token = ++msIndexBuildToken;
   msIndexBusy = true;
   const statusEl = getEl("peWorkflowStatusLine");
-  const priorStatus = statusEl?.textContent || "";
   const scopeMode = getScopeMode();
   const indexScoped = scopeMode !== "full";
   wordRun("ms-index", async (ctx) => {
@@ -574,8 +573,8 @@ function buildManuscriptIndexNow() {
     })
     .finally(() => {
       if (token === msIndexBuildToken) msIndexBusy = false;
-      if (statusEl && !activeLongOp && String(statusEl.textContent || "").includes("Building manuscript index")) {
-        statusEl.textContent = priorStatus;
+      if (token === msIndexBuildToken && statusEl && !activeLongOp && /^Building (manuscript|scoped) index/.test(String(statusEl.textContent || ""))) {
+        updateWorkflowStatusLine();
       }
     });
 }
@@ -764,8 +763,8 @@ async function confirmBuildManuscriptContext() {
   });
 }
 
-async function runBuildFullManuscriptContext(userInitiated) {
-  if (mciBuildBusy || isOperationBusy()) {
+async function runBuildFullManuscriptContext(userInitiated, buildOptions) {
+  if (mciBuildBusy || isOperationBusy(false, !!buildOptions?.fromAuditStart)) {
     warnOperationBusy();
     return false;
   }
@@ -840,20 +839,24 @@ async function maybeAutoRefreshManuscriptContextBeforeAudit() {
   if (index) await refreshManuscriptContextFreshness({});
   if (!isChecked("autoRefreshManuscriptContext", false)) return true;
   if (index && mciIsFresh()) return true;
+  let warned = false;
   try {
-    if (localStorage.getItem(MCI_AUTO_WARN_KEY) !== "1") {
-      const ok = await peConfirm({
-        title: "Refresh manuscript context?",
-        message:
-          "Auto-refresh is on and your full-manuscript context is stale or missing.\n\nProzaEdit will run a background read before this audit. Cancel to skip the audit.",
-        confirmLabel: "Refresh & continue",
-        cancelLabel: "Cancel audit",
-      });
-      if (!ok) return false;
-      localStorage.setItem(MCI_AUTO_WARN_KEY, "1");
-    }
+    warned = localStorage.getItem(MCI_AUTO_WARN_KEY) === "1";
   } catch (_) {}
-  return runBuildFullManuscriptContext(false);
+  if (!warned) {
+    const ok = await peConfirm({
+      title: "Refresh manuscript context?",
+      message:
+        "Auto-refresh is on and your full-manuscript context is stale or missing.\n\nProzaEdit will run a background read before this audit. Cancel to skip the audit.",
+      confirmLabel: "Refresh & continue",
+      cancelLabel: "Cancel audit",
+    });
+    if (!ok) return false;
+    try {
+      localStorage.setItem(MCI_AUTO_WARN_KEY, "1");
+    } catch (_) {}
+  }
+  return runBuildFullManuscriptContext(false, { fromAuditStart: true });
 }
 
 function geminiIndexDisclosure() {
@@ -1201,8 +1204,9 @@ let batchRunning = false;
 let auditStarting = false;
 let settingsSaveWarned = false;
 
-function isOperationBusy(ignoreBatch) {
+function isOperationBusy(ignoreBatch, ignoreStarting) {
   return !!(
+    mciBuildBusy ||
     auditBusy ||
     deepBusy ||
     heatmapBusy ||
@@ -1211,7 +1215,7 @@ function isOperationBusy(ignoreBatch) {
     chatBusy ||
     rewriteBusy ||
     (batchRunning && !ignoreBatch) ||
-    auditStarting
+    (auditStarting && !ignoreStarting)
   );
 }
 
@@ -2291,10 +2295,10 @@ async function prepareScopeForAudit(retryOpts) {
   if (scope !== "selection") {
     if (scope === "selected-chapters" || scope === "chapter" || scope === "chapter-range") {
       if (!scopeChapterListCache.length) {
-        try {
-          await refreshChapterScopeLists();
-        } catch (e) {
-          reportActionError(e, "read the chapter list");
+        await refreshChapterScopeLists();
+        if (!scopeChapterListCache.length) {
+          showPeStatus("No chapter list yet. Apply Heading 1–3 to chapter titles, then Reload the chapter list on Target.", "warn");
+          showTab("tab1");
           return false;
         }
       }

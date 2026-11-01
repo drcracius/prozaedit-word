@@ -421,6 +421,9 @@ ProzaEdit.ScopeReader = {
 
     let start = 0;
     let end = total - 1;
+    const stale = () =>
+      new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+    const rangeOk = (a, b) => a >= 0 && b < total && b >= a;
 
     if (mode === "full") {
       start = 0;
@@ -432,6 +435,7 @@ ProzaEdit.ScopeReader = {
       if (!ch) throw new Error(`Chapter ${n} not found. Use Heading 1–3 on chapter titles.`);
       start = ch.startPara;
       end = ch.endPara;
+      if (!rangeOk(start, end)) throw stale();
     } else if (mode === "chapter-range") {
       const list = opts.chapters || (await this.listChapters(context));
       const a = Math.min(parseInt(opts.chapterFrom, 10) || 1, parseInt(opts.chapterTo, 10) || 1);
@@ -441,6 +445,7 @@ ProzaEdit.ScopeReader = {
       if (!startCh || !endCh) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
       start = startCh.startPara;
       end = endCh.endPara;
+      if (!rangeOk(start, end)) throw stale();
     } else if (mode === "selected-chapters") {
       const list = opts.chapters || (await this.listChapters(context));
       const normalized = this.normalizeSelectedChapterIndices(opts.selectedChapterIndices, list);
@@ -449,6 +454,7 @@ ProzaEdit.ScopeReader = {
         .map((n) => list.find((c) => c.index === n))
         .filter(Boolean)
         .sort((x, y) => x.startPara - y.startPara);
+      if (ranges.some((ch) => !rangeOk(ch.startPara, ch.endPara))) throw stale();
       for (let r = 0; r < ranges.length; r++) {
         const ch = ranges[r];
         for (let i = ch.startPara; i <= ch.endPara; i++) {
@@ -524,7 +530,7 @@ ProzaEdit.ScopeReader = {
       if (start < 0) {
         for (let i = 0; i < total && start < 0; i++) if (textAt(i) === firstT) start = i;
       }
-      if (start < 0) start = 0;
+      if (start < 0) throw new Error("Could not locate your selection in the document (it changed). Select the text again.");
       end = Math.min(start + n - 1, total - 1);
     }
 

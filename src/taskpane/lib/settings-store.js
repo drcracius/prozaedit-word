@@ -158,11 +158,12 @@ ProzaEdit.Settings = {
   },
 
   async resetMutedRules() {
-    await this.setAsync(this.KEYS.MUTED, JSON.stringify([]));
+    const ok = await this.setAsyncGuarded(this.KEYS.MUTED, JSON.stringify([]));
     try {
       localStorage.removeItem(this.KEYS.GLOBAL_MUTED);
       localStorage.removeItem(this.KEYS.GLOBAL_DISMISSED);
     } catch (_) {}
+    return ok;
   },
 
   getDictionary() {
@@ -184,7 +185,7 @@ ProzaEdit.Settings = {
   async removeDictionaryWord(word) {
     const w = String(word || "").trim().toLowerCase();
     const next = this.getDictionary().filter((x) => x.toLowerCase() !== w);
-    await this.setAsync(this.KEYS.DICTIONARY, JSON.stringify(next));
+    return this.setAsyncGuarded(this.KEYS.DICTIONARY, JSON.stringify(next));
   },
 
   /** JSON array export for author backup (Settings copy/paste). */
