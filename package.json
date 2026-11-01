@@ -3,7 +3,8 @@
   "private": true,
   "description": "ProzaEdit Word Office add-in (hosted beta) — dev scripts only; task pane runs in Word.",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "verify:wiring": "node scripts/verify-wiring.mjs"
   },
   "engines": {
     "node": ">=20"
