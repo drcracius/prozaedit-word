@@ -3603,6 +3603,7 @@ async function swapTextInScope(fromText, toText, options) {
           ...options,
           selectionOnly: useSelectionEdits(),
         }),
+      anchor: options && options.anchor ? options.anchor : null,
       replaceLocation: Word.InsertLocation.replace,
       sanitize: (t) => ProzaEdit.WordSafeNavigator.sanitizeSearch(t),
     })
@@ -3646,6 +3647,7 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
     }
     if (!(await confirmBeforeApply(`Replace "${before}" with "${after}"?`))) return false;
     const searchOpts = options && options.forceDocument ? { forceDocument: true } : {};
+    if (options && options.anchor) searchOpts.anchor = options.anchor;
     let swapInfo = null;
     try {
       swapInfo = await swapTextInScope(before, after, searchOpts);
@@ -3659,7 +3661,7 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
     clearRetry();
     showPeStatus(
       swapInfo && swapInfo.occurrences > 1
-        ? `Applied: ${label}. This text appears ${swapInfo.occurrences} times; the first was changed — use Go to to check the others.`
+        ? `Applied: ${label}. This text appears ${swapInfo.occurrences} times; the one that matched this card's surrounding text was changed — use Go to to check the others.`
         : `Applied: ${label}`,
       swapInfo && swapInfo.occurrences > 1 ? "warn" : "ok"
     );
@@ -5289,8 +5291,10 @@ function applyFix(cardId, target, replacement) {
     showPeStatus("This card has no automatic replacement.", "warn");
     return Promise.resolve(false);
   }
+  const built = ProzaEdit.EditApply.buildAnchor(lastAuditExcerpt, target);
   return applyDocumentEdit(target, replacement, "Audit fix", {
     forceDocument: true,
+    anchor: built.anchor,
     onSuccess: () => {
       removeAuditCard(cardId);
       scheduleManuscriptIndexBuild(true);
