@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.20";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.21";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1584,8 +1584,10 @@ function onProzaEditOfficeReady(info) {
       sm.dataset.bound = "1";
       sm.addEventListener("change", () => {
         applySimpleMode();
+        auditShowLowConfidence = false;
         if (isChecked("simpleMode", false)) applySimpleModeAuditFilterDefault();
         else markFirstRunCompleteAndPersist();
+        refreshAuditSummaryForMode();
         persistSettings(false);
         initSimpleModeFirstRunBanner();
       });
@@ -2166,7 +2168,9 @@ function setupAutoSaveHandlers() {
       if (el.id === "showHoverTips") applyHoverTips();
       if (el.id === "simpleMode") {
         applySimpleMode();
+        auditShowLowConfidence = false;
         if (isChecked("simpleMode", false)) applySimpleModeAuditFilterDefault();
+        refreshAuditSummaryForMode();
       }
       if (el.id === "reportDensity") updateAuditReportDepthHint();
       if (el.id === "settingsDefaultAuditFilter") {
@@ -4331,19 +4335,19 @@ function updateAuditFilterChips() {
   document.querySelectorAll(".chip[data-audit-filter]").forEach((btn) => {
     btn.classList.toggle("chip-active", btn.dataset.auditFilter === auditCardFilter);
     if (btn.dataset.auditFilter === "all" && currentAuditSuggestions.length) {
-      btn.textContent = `All (${currentAuditSuggestions.length})`;
+      btn.textContent = `All (${modeVisibleSuggestions().length})`;
     } else if (btn.dataset.auditFilter === "confirmed") {
-      const n = currentAuditSuggestions.filter((s) => s.type === "confirmed").length;
+      const n = modeVisibleSuggestions().filter((s) => s.type === "confirmed").length;
       btn.textContent = ProzaEdit.PlainLanguage?.auditFilterChipText
         ? ProzaEdit.PlainLanguage.auditFilterChipText("confirmed", n, isChecked("simpleMode", false))
         : n
           ? `Critical (${n})`
           : "Critical";
     } else if (btn.dataset.auditFilter === "preference") {
-      const n = currentAuditSuggestions.filter((s) => s.type !== "confirmed").length;
+      const n = modeVisibleSuggestions().filter((s) => s.type !== "confirmed").length;
       btn.textContent = n ? `Style (${n})` : "Style";
     } else if (btn.dataset.auditFilter === "styleguide") {
-      const n = currentAuditSuggestions.filter((s) => isStyleGuideFinding(s)).length;
+      const n = modeVisibleSuggestions().filter((s) => isStyleGuideFinding(s)).length;
       btn.textContent = n ? `Style guide (${n})` : "Style guide";
     }
   });
@@ -4387,6 +4391,19 @@ function sortAuditList(list) {
     return String(a.module || "").localeCompare(String(b.module || ""));
   });
   return arr;
+}
+
+function isSimpleCountMode() {
+  return isChecked("simpleMode", false) && !auditShowLowConfidence;
+}
+
+function modeVisibleSuggestions(list) {
+  const src = Array.isArray(list) ? list : currentAuditSuggestions;
+  return isSimpleCountMode() ? src.filter((s) => s && s.confidence !== "low") : src.slice();
+}
+
+function scoreCountsPref(s) {
+  return s.type === "preference" && !String(s.ruleId || "").startsWith("content:");
 }
 
 function filteredAuditSuggestions() {
@@ -4448,7 +4465,7 @@ function buildCopilotAuditText() {
   if (summary) lines.push(summary.innerText.trim());
   lines.push("");
   lines.push("Findings (prioritize in my voice; avoid AI clichés):");
-  const src = filteredAuditSuggestions().length ? filteredAuditSuggestions() : currentAuditSuggestions;
+  const src = filteredAuditSuggestions().length ? filteredAuditSuggestions() : modeVisibleSuggestions();
   src.slice(0, 30).forEach((s, i) => {
     lines.push(`${i + 1}. [${s.type}] ${s.module}: ${s.explanation}`);
     if (s.targetText && s.targetText !== "(truncated)") lines.push(`   Passage: "${s.targetText}"`);
@@ -4489,7 +4506,7 @@ async function copyFeedbackLetter() {
           lastAuditExcerpt,
           buildAuditContext(),
           lastAuditMeta,
-          currentAuditSuggestions
+          modeVisibleSuggestions()
         )
       : "");
   if (!text) return;
@@ -4505,7 +4522,7 @@ async function copyFeedbackLetter() {
 
 function auditReportInput() {
   return {
-    suggestions: currentAuditSuggestions,
+    suggestions: modeVisibleSuggestions(),
     excerpt: lastAuditExcerpt,
     feedbackLetter: lastFeedbackLetter,
     meta: lastAuditMeta,
@@ -4772,28 +4789,48 @@ function renderMiniScores(scores) {
   el.innerHTML = `<span>Correctness ${scores.correctness}/10</span><span>Clarity ${scores.clarity}/10</span><span>Engagement ${scores.engagement}/10</span>`;
 }
 
-function finalizeAudit(result, label) {
+let lastAuditResultForMode = null;
+
+function refreshAuditSummaryForMode() {
+  if (!lastAuditResultForMode || auditBusy || deepBusy) return;
+  const { result, label } = lastAuditResultForMode;
+  const keep = currentAuditSuggestions;
+  finalizeAudit({ ...result, suggestions: keep }, label, { rerender: true });
+}
+
+function finalizeAudit(result, label, fopts) {
+  fopts = fopts || {};
   const suggestions = result.suggestions || [];
   const metrics = result.metrics || ProzaEdit.Metrics.analyze("");
-  const criticalCount = suggestions.filter((s) => s.type === "confirmed").length;
-  const prefCount = suggestions.filter((s) => s.type === "preference").length;
+  const visible = modeVisibleSuggestions(suggestions);
+  const hiddenLow = suggestions.length - visible.length;
+  const criticalCount = visible.filter((s) => s.type === "confirmed").length;
+  const prefCount = visible.filter(scoreCountsPref).length;
+  const isDeep = label === "Deep audit";
   let score = result.score;
-  if (score == null) {
+  if (score == null || hiddenLow > 0 || fopts.rerender) {
     const w =
       ProzaEdit.Audit.PERSONA_WEIGHTS[getEl("criticPersona")?.value] || ProzaEdit.Audit.PERSONA_WEIGHTS["Average Reader"];
-    score = Math.max(5, Math.round((10 - criticalCount * w.c - prefCount * w.p) * 10) / 10);
+    const raw = isDeep ? 10 - criticalCount * 0.45 : 10 - criticalCount * w.c - prefCount * w.p;
+    score = Math.max(5, Math.round(raw * 10) / 10);
   }
-  const traffic = result.traffic || ProzaEdit.Metrics.trafficLight(score);
+  const traffic = ProzaEdit.Metrics.trafficLight(score);
+  const modeNote = isChecked("simpleMode", false)
+    ? hiddenLow > 0
+      ? `Counts and score cover the ${visible.length} findings shown in Simple view (${hiddenLow} lower-confidence hidden).`
+      : "Counts and score cover the findings shown in Simple view."
+    : "Counts and score cover all findings (Advanced view).";
+  lastAuditResultForMode = { result, label };
   renderTraffic(traffic, score);
   if (getReportDensity() !== "light" && ProzaEdit.DocAnalytics?.computeMiniScores) {
-    lastMiniScores = ProzaEdit.DocAnalytics.computeMiniScores(suggestions, metrics, lastAuditExcerpt);
+    lastMiniScores = ProzaEdit.DocAnalytics.computeMiniScores(visible, metrics, lastAuditExcerpt);
     renderMiniScores(lastMiniScores);
   } else {
     lastMiniScores = null;
     getEl("miniScores")?.classList.add("hidden");
   }
-  let compareLine = "";
-  try {
+  let compareLine = fopts.rerender ? lastAuditMeta.compareLine || "" : "";
+  if (!fopts.rerender) try {
     const prevRaw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.LAST_AUDIT_STATS);
     const prev = prevRaw ? (typeof prevRaw === "string" ? JSON.parse(prevRaw) : prevRaw) : null;
     if (prev && prev.critical != null) {
@@ -4814,6 +4851,7 @@ function finalizeAudit(result, label) {
   html += `<p>Words: ${metrics.wordCount} · FK grade ~${metrics.fleschKincaidGrade} · FRE ~${metrics.fleschReadingEase}</p>`;
   const sevLabel = auditFilterDisplayLabel("confirmed");
   html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
+  html += `<p class="help-muted audit-mode-note" style="font-size:11px;">${escapeHtml(modeNote)}</p>`;
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
   if (ProzaEdit.Genres) html += `<p><strong>Genre profile applied:</strong> ${escapeHtml(ProzaEdit.Genres.describe(buildAuditContext()))}</p>`;
@@ -4830,7 +4868,7 @@ function finalizeAudit(result, label) {
     html += `<p style="color:#c5221f;font-weight:600;">Fiction/plot checks are running on a partial scope. Review the full manuscript (or a wide chapter range) before applying changes that affect names, facts, or continuity.</p>`;
   }
   const ctx = buildAuditContext();
-  lastAuditMeta = { label, score, criticalCount, prefCount, metrics, traffic, compareLine, refLine };
+  lastAuditMeta = { label, score, criticalCount, prefCount, metrics, traffic, compareLine, refLine, simpleView: isChecked("simpleMode", false), hiddenLow };
   if (window.ProzaEdit?.ManuscriptOverview?.buildHtml && lastAuditExcerpt) {
     let heatmapHtml = "";
     try {
@@ -4846,13 +4884,14 @@ function finalizeAudit(result, label) {
     });
   }
   lastFeedbackLetter = ProzaEdit.ManuscriptOverview?.buildFeedbackLetter
-    ? ProzaEdit.ManuscriptOverview.buildFeedbackLetter(lastAuditExcerpt, ctx, { ...lastAuditMeta, label }, suggestions)
+    ? ProzaEdit.ManuscriptOverview.buildFeedbackLetter(lastAuditExcerpt, ctx, { ...lastAuditMeta, label }, visible)
     : "";
   const summary = getEl("summaryReport");
   if (summary) summary.innerHTML = html;
   setAuditSuggestions(suggestions);
   updateWorkflowCrossNav(getCurrentActiveTabId() || "tab4");
   updateChecksPostRunNav();
+  if (fopts.rerender) return;
   cacheAudit(label, html, suggestions, traffic, score);
   lastAuditHadTruncation = suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated");
   lastAuditScopeModeAtRun = getScopeMode();
@@ -4874,6 +4913,7 @@ function cacheAudit(label, html, suggestions, traffic, score) {
     traffic,
     score,
     miniScores: lastMiniScores,
+    simpleView: isChecked("simpleMode", false),
     at: new Date().toISOString(),
   });
   if (json.length <= MAX_AUDIT_CACHE_CHARS) {
@@ -4881,8 +4921,9 @@ function cacheAudit(label, html, suggestions, traffic, score) {
     ProzaEdit.Settings.setAsync(
       ProzaEdit.Settings.KEYS.LAST_AUDIT_STATS,
       JSON.stringify({
-        critical: safeList.filter((s) => s.type === "confirmed").length,
-        pref: safeList.filter((s) => s.type !== "confirmed").length,
+        critical: modeVisibleSuggestions(safeList).filter((s) => s.type === "confirmed").length,
+        pref: modeVisibleSuggestions(safeList).filter(scoreCountsPref).length,
+        simpleView: isChecked("simpleMode", false),
         score,
         at: new Date().toISOString(),
       })
@@ -4906,6 +4947,12 @@ function restoreCachedAuditIfEmpty() {
       renderMiniScores(d.miniScores);
     } else {
       getEl("miniScores")?.classList.add("hidden");
+    }
+    if (!!d.simpleView !== isChecked("simpleMode", false)) {
+      const note = document.createElement("p");
+      note.className = "help-muted audit-mode-note";
+      note.textContent = `Counts and score above were saved in ${d.simpleView ? "Simple" : "Advanced"} view. Run the audit again to refresh them for the current view.`;
+      getEl("summaryReport")?.appendChild(note);
     }
     setAuditSuggestions(d.suggestions);
     lastAuditHadTruncation = (d.suggestions || []).some(
@@ -5130,6 +5177,7 @@ function appendLowConfidenceNote(box) {
     note.querySelector("button").addEventListener("click", () => {
       auditShowLowConfidence = true;
       applyAuditCardFilter();
+      refreshAuditSummaryForMode();
     });
     box.appendChild(note);
   }
@@ -5341,6 +5389,7 @@ function clearAuditReport() {
   lastAuditHadTruncation = false;
   lastAuditScopeModeAtRun = "";
   lastAuditMeta = {};
+  lastAuditResultForMode = null;
   lastFeedbackLetter = "";
   auditCardFilter = isChecked("simpleMode", false) ? "confirmed" : "all";
   updateAuditFilterChips();

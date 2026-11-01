@@ -39,3 +39,6 @@ Based on PE-79 (PR #27, not yet merged).
 - New: "Replace all double spaces" on the double-space card (only runs of 2+ plain spaces; indented paragraphs skipped; counts first; confirm; use Ctrl+Z in Word to undo).
 - `read:too_simple` no longer fires on fiction (plain prose is normal in fiction; it fired on every sample).
 - Mutation check: 10 deliberate breakages of apply/anchor/quota/provider/cache/controller code; all caught by the suite.
+
+## 2.0.0.21 (PE-87 Audit 3)
+Score, Style/Critical counts, filter-chip counts, feedback letter, Copilot text and report/export now cover exactly what the current view shows; the summary says whether Simple (lower-confidence hidden) or Advanced (all) is counted and refreshes on toggle. Content notes are no longer counted as Style. Stale chapter lists are refused instead of reading wrong paragraphs; timeline selection scope no longer mismatches duplicate paragraphs; dictionary/style-guide/mute saves roll back on failure. Manifest version bumped: testers re-upload once.

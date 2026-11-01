@@ -244,12 +244,22 @@ ProzaEdit.ScopeReader = {
     return text;
   },
 
-  async textFromParagraphRange(context, startPara, endPara, opts) {
+  async textFromParagraphRange(context, startPara, endPara, opts, expectTitle) {
     opts = opts || {};
     const paras = context.document.body.paragraphs;
     paras.load("items");
     await context.sync();
-    if (startPara < 0 || endPara >= paras.items.length) throw new Error("Chapter range out of document bounds.");
+    if (startPara < 0 || endPara >= paras.items.length || endPara < startPara) {
+      throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+    }
+    if (expectTitle != null) {
+      paras.items[startPara].load("text");
+      await context.sync();
+      const got = (paras.items[startPara].text || "").trim().substring(0, 80);
+      if (got !== String(expectTitle)) {
+        throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+      }
+    }
     const CHUNK = 50;
     let text = "";
     for (let blockStart = startPara; blockStart <= endPara; blockStart += CHUNK) {
@@ -319,7 +329,7 @@ ProzaEdit.ScopeReader = {
     const n = parseInt(chapterNum, 10);
     const ch = list.find((c) => c.index === n);
     if (!ch) throw new Error(`Chapter ${n} not found. Use Heading 1–3 on chapter titles.`);
-    const text = await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts);
+    const text = await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts, ch.title);
     return { text, label: `Ch. ${n}: ${ch.title}` };
   },
 
@@ -331,7 +341,7 @@ ProzaEdit.ScopeReader = {
     const start = list.find((c) => c.index === a);
     const end = list.find((c) => c.index === b);
     if (!start || !end) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
-    const text = await this.textFromParagraphRange(context, start.startPara, end.endPara, opts);
+    const text = await this.textFromParagraphRange(context, start.startPara, end.endPara, opts, start.title);
     return { text, label: `Ch. ${a}–${b}` };
   },
 
@@ -347,7 +357,7 @@ ProzaEdit.ScopeReader = {
       this._cancelCheck(opts);
       const ch = list.find((c) => c.index === normalized[i]);
       if (!ch) continue;
-      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts);
+      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts, ch.title);
       if (typeof opts.onProgress === "function") {
         opts.onProgress({
           paragraphsLoaded: i + 1,
@@ -501,19 +511,21 @@ ProzaEdit.ScopeReader = {
       }
       for (let i = 0; i < selParas.items.length; i++) selParas.items[i].load("text");
       await context.sync();
+      const n = selParas.items.length;
       const firstT = (selParas.items[0].text || "").trim();
-      const lastT = (selParas.items[selParas.items.length - 1].text || "").trim();
+      const lastT = (selParas.items[n - 1].text || "").trim();
       for (let i = 0; i < total; i++) paras.items[i].load("text");
       await context.sync();
+      const textAt = (i) => (paras.items[i].text || "").trim();
       start = -1;
-      end = -1;
-      for (let i = 0; i < total; i++) {
-        const t = (paras.items[i].text || "").trim();
-        if (start < 0 && t === firstT) start = i;
-        if (t === lastT) end = i;
+      for (let i = 0; i < total && start < 0; i++) {
+        if (textAt(i) === firstT && i + n - 1 < total && textAt(i + n - 1) === lastT) start = i;
+      }
+      if (start < 0) {
+        for (let i = 0; i < total && start < 0; i++) if (textAt(i) === firstT) start = i;
       }
       if (start < 0) start = 0;
-      if (end < start) end = Math.min(start + selParas.items.length - 1, total - 1);
+      end = Math.min(start + n - 1, total - 1);
     }
 
     const out = [];

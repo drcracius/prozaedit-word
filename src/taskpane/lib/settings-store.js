@@ -141,7 +141,7 @@ ProzaEdit.Settings = {
     const existing = this._parse(this.get(this.KEYS.MUTED, "[]"), []);
     const setDoc = new Set(Array.isArray(existing) ? existing.filter((x) => typeof x === "string") : []);
     setDoc.add(ruleId);
-    await this.setAsync(this.KEYS.MUTED, JSON.stringify([...setDoc]));
+    await this.setAsyncGuarded(this.KEYS.MUTED, JSON.stringify([...setDoc]));
     if (global) {
       const g = new Set(this.getGlobalMutedRules());
       g.add(ruleId);
@@ -178,8 +178,7 @@ ProzaEdit.Settings = {
     const list = this.getDictionary();
     if (list.some((x) => x.toLowerCase() === w.toLowerCase())) return true;
     list.push(w);
-    await this.setAsync(this.KEYS.DICTIONARY, JSON.stringify(list.slice(-500)));
-    return true;
+    return this.setAsyncGuarded(this.KEYS.DICTIONARY, JSON.stringify(list.slice(-500)));
   },
 
   async removeDictionaryWord(word) {
@@ -212,7 +211,7 @@ ProzaEdit.Settings = {
       added += 1;
     }
     const next = list.slice(-500);
-    const ok = await this.setAsync(this.KEYS.DICTIONARY, JSON.stringify(next));
+    const ok = await this.setAsyncGuarded(this.KEYS.DICTIONARY, JSON.stringify(next));
     return { ok: !!ok, added, total: next.length };
   },
 
@@ -227,6 +226,6 @@ ProzaEdit.Settings = {
     const norm = ProzaEdit.CustomStyleGuide?.normalize ? ProzaEdit.CustomStyleGuide.normalize(data) : data;
     const json = JSON.stringify(norm);
     if (json.length > 48000) return false;
-    return this.setAsync(this.KEYS.CUSTOM_STYLE, json);
+    return this.setAsyncGuarded(this.KEYS.CUSTOM_STYLE, json);
   },
 };
