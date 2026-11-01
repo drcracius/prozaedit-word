@@ -1,5 +1,7 @@
 # ProzaEdit task pane — UI color & typography (PE-37)
 
+**Beta lock (PE-53):** System UI fonts + semantic colors through Phase 1 — see [DESIGN-SYSTEM-BETA.md](./DESIGN-SYSTEM-BETA.md). Typography detail: [TYPOGRAPHY-AND-FONTS.md](./TYPOGRAPHY-AND-FONTS.md).
+
 ## Theme model (PE-50)
 
 - **Light** (default), **Dark**, and **Match system** via Settings → **Appearance**. Preference persists in `PROZAEDIT_CONFIG.themePreference` (`light` | `dark` | `system`); effective palette is `data-pe-theme="light"|"dark"` on `<html>`.
@@ -9,13 +11,16 @@
 
 ## Semantic palette (current)
 
-| Token | Role |
-| --- | --- |
-| `--pe-primary-indigo` / `--primary` | Primary actions (Run audit, links, focus rings) |
-| `--pe-success` / `--pe-success-bg` | OK states, active workflow step, tab underline accent |
-| `--pe-warning` / `--pe-warning-bg` | Caution copy (audit overview, scope warnings) |
-| `--pe-info` / `--pe-info-bg` | Subtle tints (Settings header, secondary hover) |
-| `--red` / `--red-bg`, `--orange` | Audit severity (critical / style) — unchanged traffic semantics |
+One vocabulary for all **seven tabs**, audit hubs, and Settings — **no per-tab accent colors**.
+
+| Token | Role | Do not use for |
+| --- | --- | --- |
+| `--pe-primary-indigo` / `--primary` / `--pe-focus-ring` | Primary actions, links, focus rings, key Settings emphasis | Severity, workflow “success” copy alone |
+| `--pe-success` / `--pe-success-bg` | **Workflow:** active step, current-tab underline, OK / completion states | Audit severity; decorative tab theming |
+| `--pe-warning` / `--pe-warning-bg` | Caution copy (scope warnings, audit overview) | Finding severity (use traffic tokens) |
+| `--pe-info` / `--pe-info-bg` | Secondary hovers, low-priority informational tints | Primary CTAs |
+| `--pe-banner-tint-*`, `--pe-help-box-bg` | Full-width banners (simple mode, long-op, onboarding/help) | Card bodies or tab chrome |
+| `--red` / `--red-bg`, `--orange` (+ style variants) | **Audit severity only** (critical / style traffic semantics) | Navigation, tabs, Settings group headers |
 
 ## Typography (PE-52)
 
