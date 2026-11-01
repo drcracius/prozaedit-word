@@ -24,5 +24,7 @@ jobs:
           cache: npm
       - name: Install dev dependencies (jsdom for the task pane harness)
         run: npm ci
+      - name: Wiring gate (orphan ids, duplicate ids, undefined inline handlers, missing assets)
+        run: node scripts/verify-wiring.mjs
       - name: Run unit and jsdom harness tests (mocked Office.js)
         run: npm test

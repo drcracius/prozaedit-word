@@ -21,7 +21,7 @@ Principles and authoritative references on GitHub `main`. Project Context may mi
 
 **Current hosted release:** **2.0.0.15** (testers re-upload `manifest.hosted.xml` once per manifest bump).
 
-Verify: `bash scripts/verify-version-sync.sh` · **40** tests: `npm test`.
+Verify: `bash scripts/verify-version-sync.sh` · **120** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
 
 ---
 
