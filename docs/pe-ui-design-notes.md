@@ -17,7 +17,14 @@
 | `--pe-info` / `--pe-info-bg` | Subtle tints (Settings header, secondary hover) |
 | `--red` / `--red-bg`, `--orange` | Audit severity (critical / style) — unchanged traffic semantics |
 
-Typography: **12px** body (`line-height` ~1.45), **13px semibold** section titles, **10–11px** muted help.
+## Typography (PE-52)
+
+- **Stack:** `--pe-font-sans` — Segoe UI Variable, Segoe UI, `system-ui`, platform fallbacks (no web fonts; no manifest change).
+- **Scale:** `--pe-font-size-base` **13px** body; `--pe-font-size-section` **14px** headings; `--pe-font-size-tab` **11px** tabs; `--pe-font-size-xs` / `--pe-font-size-2xs` for help and captions.
+- **Rhythm:** `--pe-line-height` **1.5** (body), `--pe-line-height-tight` **1.35** (compact UI).
+- **Weights:** `--pe-font-weight-label` (600) labels/tabs; `--pe-font-weight-heading` (600) section titles; `--pe-font-weight-strong` (700) emphasis.
+- Narrow pane keeps **13px** body; tabs do not drop below **10px**.
+- Optional Inter / Source Sans 3: see [TYPOGRAPHY-AND-FONTS.md](./TYPOGRAPHY-AND-FONTS.md).
 
 ## Navigation
 

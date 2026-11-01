@@ -64,9 +64,10 @@
 - [ ] Help copy mentions scope line, last tab, Settings shortcuts.
 - [ ] Settings → Privacy: opt-in off by default; **Report a problem** copies redacted JSON (no document text in clipboard JSON).
 
-## 7. Narrow pane
+## 7. Narrow pane & typography (PE-52)
 
-- [ ] Drag pane divider narrow (&lt;360px): tabs wrap; controls remain usable (`pe-narrow-pane`).
+- [ ] Drag pane divider narrow (&lt;360px): tabs wrap; controls remain usable (`pe-narrow-pane`); tab labels stay readable (not micro-sized).
+- [ ] Body and Settings/Audit copy readable at default width; **Light** and **Dark** (Settings → Appearance) both look balanced.
 
 ## 8. Interactive controls & banners (UI ↔ Settings sync)
 

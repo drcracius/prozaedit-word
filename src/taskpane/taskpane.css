@@ -3,6 +3,28 @@
 }
 
 :root,
+[data-pe-theme="light"],
+[data-pe-theme="dark"] {
+  --pe-font-sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --pe-font-size-base: 13px;
+  --pe-font-size-sm: 12px;
+  --pe-font-size-xs: 11px;
+  --pe-font-size-2xs: 10px;
+  --pe-font-size-tab: 11px;
+  --pe-font-size-section: 14px;
+  --pe-font-size-overline: 10px;
+  --pe-line-height: 1.5;
+  --pe-line-height-tight: 1.35;
+  --pe-letter-spacing-ui: 0.01em;
+  --pe-letter-spacing-tab: 0.02em;
+  --pe-font-weight-body: 400;
+  --pe-font-weight-label: 600;
+  --pe-font-weight-heading: 600;
+  --pe-font-weight-strong: 700;
+}
+
+:root,
 [data-pe-theme="light"] {
   color-scheme: light;
   --pe-primary-indigo: #4338ca;
@@ -112,15 +134,25 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--pe-font-sans);
   padding: 10px;
   margin: 0;
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: var(--pe-font-size-base);
+  font-weight: var(--pe-font-weight-body);
+  line-height: var(--pe-line-height);
+  letter-spacing: var(--pe-letter-spacing-ui);
   color: var(--text);
   background: var(--surface);
   min-width: 0;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }
 
 .pe-target-section {
@@ -222,7 +254,7 @@ body {
     min-height: 36px;
     padding: 8px 6px;
     scroll-snap-align: start;
-    font-size: 9px;
+    font-size: var(--pe-font-size-2xs);
   }
 
   .tab-btn.active {
@@ -290,7 +322,7 @@ body.pe-narrow-pane .pe-brand-wordmark {
 }
 
 body.pe-narrow-pane .tab-btn {
-  font-size: 8px;
+  font-size: var(--pe-font-size-2xs);
   min-width: 3.75rem;
   padding: 6px 4px;
 }
@@ -445,14 +477,14 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-section-title {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-size: var(--pe-font-size-section);
+  font-weight: var(--pe-font-weight-heading);
+  letter-spacing: var(--pe-letter-spacing-ui);
   color: var(--text);
   margin: 12px 0 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
-  line-height: 1.4;
+  line-height: var(--pe-line-height-tight);
 }
 
 .pe-section-title:first-child {
@@ -475,12 +507,14 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .help-foot {
   margin: 6px 0 0;
-  font-size: 10px;
+  font-size: var(--pe-font-size-2xs);
+  line-height: var(--pe-line-height-tight);
   color: var(--text-muted);
 }
 
 .help-inline {
-  font-size: 10px;
+  font-size: var(--pe-font-size-2xs);
+  line-height: var(--pe-line-height-tight);
   margin: 0 0 6px;
   color: var(--text-muted);
 }
@@ -847,6 +881,9 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .help-muted {
+  font-size: var(--pe-font-size-2xs);
+  line-height: var(--pe-line-height-tight);
+  color: var(--text-muted);
   background: var(--pe-muted-surface);
   border-left-color: var(--text-muted);
 }
@@ -1161,7 +1198,8 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .pe-top-banner-body {
   margin: 0 0 6px;
-  font-size: 11px;
+  font-size: var(--pe-font-size-xs);
+  line-height: var(--pe-line-height-tight);
 }
 
 .pe-top-banner-links {
@@ -1264,10 +1302,11 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .pe-settings-title {
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--pe-font-size-base);
+  font-weight: var(--pe-font-weight-heading);
   color: var(--primary);
   text-align: center;
+  letter-spacing: var(--pe-letter-spacing-ui);
 }
 
 .pe-settings-close {
@@ -1302,12 +1341,13 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .pe-settings-group > summary {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--pe-font-size-sm);
+  font-weight: var(--pe-font-weight-heading);
   color: var(--primary);
   padding: 8px 4px;
   cursor: pointer;
   list-style: none;
+  line-height: var(--pe-line-height-tight);
 }
 
 .pe-settings-group > summary::-webkit-details-marker {
@@ -1392,14 +1432,14 @@ body.pe-settings-open {
   padding: 8px 2px;
   border: none;
   background: none;
-  font-weight: 600;
-  font-size: 10px;
-  letter-spacing: 0.02em;
+  font-weight: var(--pe-font-weight-label);
+  font-size: var(--pe-font-size-tab);
+  letter-spacing: var(--pe-letter-spacing-tab);
   color: var(--text-muted);
   cursor: pointer;
   text-align: center;
   transition: color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  line-height: 1.4;
+  line-height: var(--pe-line-height-tight);
 }
 
 .tab-btn:focus-visible {
@@ -1428,10 +1468,12 @@ body.pe-settings-open {
 }
 
 label {
-  font-weight: 600;
+  font-weight: var(--pe-font-weight-label);
+  font-size: var(--pe-font-size-xs);
   display: block;
   margin-bottom: 3px;
   color: var(--text);
+  line-height: var(--pe-line-height-tight);
 }
 
 select,
@@ -1445,7 +1487,8 @@ textarea {
   box-sizing: border-box;
   border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 11px;
+  font-size: var(--pe-font-size-xs);
+  line-height: var(--pe-line-height-tight);
   margin-bottom: 4px;
   outline: none;
   background: var(--surface-inset, var(--surface));
@@ -1682,13 +1725,13 @@ textarea:focus {
 }
 
 .pe-simple-audit-banner {
-  font-size: 10px;
+  font-size: var(--pe-font-size-xs);
   margin: 0 0 8px;
   padding: 8px 10px;
   background: var(--pe-banner-tint-bg);
   border: 1px solid var(--pe-banner-tint-border);
   border-radius: 6px;
-  line-height: 1.4;
+  line-height: var(--pe-line-height-tight);
 }
 
 .pe-audit-scope-chip {
@@ -1697,21 +1740,24 @@ textarea:focus {
 
 .card-target {
   color: var(--red);
-  font-size: 10px;
+  font-size: var(--pe-font-size-2xs);
   margin: 4px 0 0;
   word-break: break-word;
+  line-height: var(--pe-line-height-tight);
 }
 
 .card-replacement {
   color: var(--green);
-  font-size: 10px;
+  font-size: var(--pe-font-size-2xs);
   margin: 2px 0 0;
   word-break: break-word;
+  line-height: var(--pe-line-height-tight);
 }
 
 .card-explanation {
   margin: 4px 0 0;
-  line-height: 1.4;
+  font-size: var(--pe-font-size-xs);
+  line-height: var(--pe-line-height-tight);
 }
 
 .badge {
@@ -1730,9 +1776,9 @@ textarea:focus {
   background: var(--pe-help-box-bg);
   border-left: 3px solid var(--primary);
   padding: 6px 8px;
-  font-size: 10px;
+  font-size: var(--pe-font-size-xs);
   margin-bottom: 8px;
-  line-height: 1.4;
+  line-height: var(--pe-line-height-tight);
 }
 
 .tag {
