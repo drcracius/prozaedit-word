@@ -138,7 +138,7 @@ ProzaEdit.Audit = {
     const metrics = ProzaEdit.Metrics.analyze(text);
     const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);
     if ((fiction && ctx.mPacing) || ctx.chkSpell) {
-      if (metrics.fleschKincaidGrade < gMin - 2) {
+      if (!fiction && metrics.fleschKincaidGrade < gMin - 2) {
         push({
           ruleId: "read:too_simple",
           module: "Pacing & Readability",

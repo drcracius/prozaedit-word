@@ -32,3 +32,10 @@ Based on PE-79 (PR #27, not yet merged).
 - Default scope is Full manuscript; session tip about re-uploading manifest removed; all 9–11px text raised to 12px; MCI "not built" neutral style.
 - Manifest declares WordApi 1.3 and the pane checks `isSetSupported` at start.
 - Not done: tracked-changes Apply mode, per-chapter incremental index rebuild, live model-list refresh, AppDomains additions (needs real-Word evidence).
+
+### Audit 2 follow-up (still 2.0.0.20)
+- Model ids re-checked against official pages on 2026-11-01 (Gemini models page, Claude models overview, OpenAI models page, OpenRouter `/api/v1/models`). Unconfirmed `claude-haiku-4-5-20251001` removed; OpenAI `gpt-6*` kept as non-default options labelled "Chat Completions support unconfirmed"; OpenAI/OpenRouter defaults stay on `gpt-4o-mini`.
+- Manifest element order confirmed against Microsoft's sample manifests (Hosts, Requirements, DefaultSettings, Permissions). `manifest.xml` version and SupportUrl now match `manifest.hosted.xml` (tests enforce).
+- New: "Replace all double spaces" on the double-space card (only runs of 2+ plain spaces; indented paragraphs skipped; counts first; confirm; use Ctrl+Z in Word to undo).
+- `read:too_simple` no longer fires on fiction (plain prose is normal in fiction; it fired on every sample).
+- Mutation check: 10 deliberate breakages of apply/anchor/quota/provider/cache/controller code; all caught by the suite.

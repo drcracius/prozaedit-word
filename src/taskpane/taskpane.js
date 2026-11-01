@@ -3624,6 +3624,55 @@ async function swapTextInScope(fromText, toText, options) {
   return result;
 }
 
+async function collapseDoubleSpacesInScope() {
+  const release = getEditLock().tryAcquire();
+  if (!release) {
+    showPeStatus("Another edit is still being applied. Wait a moment, then try again.", "warn");
+    return false;
+  }
+  historyBusy = true;
+  updateUndoRedoUi();
+  try {
+    const deps = {
+      replaceLocation: Word.InsertLocation.replace,
+      searchScope: async (c, text) => {
+        if (useSelectionEdits()) {
+          const sel = c.document.getSelection();
+          sel.load("text");
+          await c.sync();
+          if (!String(sel.text || "").trim()) throw new Error("Select text in Word (selection-only edits on), or turn that off to fix the whole document.");
+          const r = sel.search(text, { matchCase: false, matchWildcards: false });
+          r.load("items");
+          await c.sync();
+          return r.items;
+        }
+        const r = c.document.body.search(text, { matchCase: false, matchWildcards: false });
+        r.load("items");
+        await c.sync();
+        return r.items;
+      },
+    };
+    const plan = await wordRun("pe-spaces-count", (c) => ProzaEdit.EditApply.collapseDoubleSpaces(c, deps, true));
+    if (!plan.found) {
+      showPeStatus(plan.skippedIndent ? "No double spaces to fix (indented paragraphs are left alone)." : "No double spaces found in this scope.", "ok");
+      return false;
+    }
+    const ok = await confirmBeforeApply(`Replace ${plan.found} run(s) of two or more spaces with one space? Indented paragraphs (${plan.skippedIndent}) are skipped. This cannot be undone from ProzaEdit — use Ctrl+Z in Word.`);
+    if (!ok) return false;
+    const res = await wordRun("pe-spaces-fix", (c) => ProzaEdit.EditApply.collapseDoubleSpaces(c, deps, false));
+    markManuscriptContextDirty();
+    showPeStatus(`Fixed ${res.fixed} double-space spot(s). Use Ctrl+Z in Word to undo. Run the check again to refresh cards.`, "ok");
+    return true;
+  } catch (e) {
+    reportActionError(e, "fix double spaces");
+    return false;
+  } finally {
+    release();
+    historyBusy = false;
+    updateUndoRedoUi();
+  }
+}
+
 async function applyDocumentEdit(beforeText, afterText, label, options) {
   const before = String(beforeText || "");
   const after = String(afterText || "");
@@ -5141,6 +5190,7 @@ function renderAuditCards(list) {
         <div class="card-actions-primary">
           <button type="button" class="btn-go btn-with-icon" data-a="goto" data-pe-tip="btn-card-goto" aria-label="Go to finding in Word">${ic("locate")} Go to</button>
           ${canRewrite ? `<button type="button" class="btn-go btn-with-icon" data-a="rewrite" data-pe-tip="btn-card-rewrite" aria-label="Rewrite finding">${ic("edit")} Rewrite</button>` : ""}
+          ${item.ruleId === "spell:double_space" ? '<button type="button" class="btn-go" data-a="fixspaces">Replace all double spaces</button>' : ""}
           <button type="button" class="btn-go" data-a="localtip">Local tip</button>
         </div>
         <div class="card-actions-secondary">
@@ -5164,6 +5214,8 @@ function renderAuditCards(list) {
     if (undoBtn) undoBtn.onclick = () => prozaEditUndo();
     const rewriteBtn = div.querySelector('[data-a="rewrite"]');
     if (rewriteBtn) rewriteBtn.onclick = () => sendIssueToRewrite(item);
+    const fixSpacesBtn = div.querySelector('[data-a="fixspaces"]');
+    if (fixSpacesBtn) fixSpacesBtn.onclick = () => collapseDoubleSpacesInScope();
     div.querySelector('[data-a="localtip"]').onclick = () => showLocalTipForIssue(item);
     div.querySelector('[data-a="chat"]').onclick = () => sendIssueToChat(item);
     if (canApply) div.querySelector('[data-a="apply"]').onclick = () => applyFix(id, item.targetText, item.replacementText);

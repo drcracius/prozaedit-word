@@ -16,7 +16,7 @@
   const root = (global.ProzaEdit = global.ProzaEdit || {});
 
   /* MODEL CATALOGUE — edit only this block when vendors retire or add models. Ids/prices taken from vendor pages by the
-   PE-86 review on 2026-11-01 (not re-verified with live keys by the code worker; the "Custom model id" box is the escape hatch). */
+   PE-86 review and re-checked on 2026-11-01 against ai.google.dev/gemini-api/docs/models (gemini-3.8-flash, 3.6-flash, 3.1-flash-lite, 2.5-flash), docs.claude.com models overview (claude-haiku-5-5, claude-sonnet-5-5), platform.openai.com/docs/models (gpt-6-luna, gpt-6.1-terra, gpt-6.1-sol) and openrouter.ai/api/v1/models (all OpenRouter ids). Not tested with live keys. Defaults: Gemini/Claude confirmed current; OpenAI/OpenRouter keep gpt-4o-mini (last known working; confirmed on OpenRouter list, absent from OpenAI's flagship page). The "Custom model id" box is the escape hatch. */
 const MODEL_NOTE = "Prices are approximate (USD per million tokens) and change; check the provider's pricing page. Model list last reviewed 2026-11-01.";
 
   const PROVIDERS = {
@@ -71,8 +71,9 @@ const MODEL_NOTE = "Prices are approximate (USD per million tokens) and change; 
         { id: "gpt-4o-mini", label: "GPT-4o mini", tier: "low", inUsdPerM: 0.15, outUsdPerM: 0.6 },
         { id: "gpt-4.1-mini", label: "GPT-4.1 mini", tier: "mid", inUsdPerM: 0.4, outUsdPerM: 1.6 },
         { id: "gpt-4.1", label: "GPT-4.1", tier: "high", inUsdPerM: 2, outUsdPerM: 8 },
-        { id: "gpt-6-luna", label: "GPT-6 Luna (newer; if your account has it)", tier: "low", inUsdPerM: 0.1, outUsdPerM: 0.5 },
-        { id: "gpt-6.1-terra", label: "GPT-6.1 Terra (newer)", tier: "mid", inUsdPerM: 1, outUsdPerM: 5 },
+        { id: "gpt-6-luna", label: "GPT-6 Luna (listed by OpenAI; Chat Completions support unconfirmed)", tier: "low", inUsdPerM: 0.1, outUsdPerM: 0.5 },
+        { id: "gpt-6.1-terra", label: "GPT-6.1 Terra (listed by OpenAI; Chat Completions support unconfirmed)", tier: "mid", inUsdPerM: 1, outUsdPerM: 5 },
+        { id: "gpt-6.1-sol", label: "GPT-6.1 Sol (listed by OpenAI; Chat Completions support unconfirmed)", tier: "high", inUsdPerM: 2, outUsdPerM: 10 },
       ],
       buildRequest(o) {
         return chatCompletionsRequest("https://api.openai.com/v1/chat/completions", o);
@@ -91,7 +92,6 @@ const MODEL_NOTE = "Prices are approximate (USD per million tokens) and change; 
       models: [
         { id: "claude-haiku-5-5", label: "Claude Haiku 5.5", tier: "low", inUsdPerM: 0.1, outUsdPerM: 0.5 },
         { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5", tier: "high", inUsdPerM: 2, outUsdPerM: 10 },
-        { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5 (older; may be retired)", tier: "mid", inUsdPerM: 1, outUsdPerM: 5 },
       ],
       buildRequest({ apiKey, model, prompt, maxOutputTokens }) {
         return {
@@ -127,6 +127,7 @@ const MODEL_NOTE = "Prices are approximate (USD per million tokens) and change; 
       models: [
         { id: "openai/gpt-4o-mini", label: "GPT-4o mini (via OpenRouter)", tier: "low", inUsdPerM: 0.15, outUsdPerM: 0.6 },
         { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (via OpenRouter)", tier: "mid", inUsdPerM: 0.3, outUsdPerM: 2.5 },
+        { id: "anthropic/claude-haiku-5.5", label: "Claude Haiku 5.5 (via OpenRouter)", tier: "mid", inUsdPerM: 0.1, outUsdPerM: 0.5 },
         { id: "anthropic/claude-haiku-4.5", label: "Claude Haiku 4.5 (via OpenRouter)", tier: "mid", inUsdPerM: 1, outUsdPerM: 5 },
       ],
       buildRequest(o) {

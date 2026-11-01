@@ -231,4 +231,46 @@ ProzaEdit.EditApply = {
     }
     return { occurrences: exact.length, verified, undoAnchor, redoAnchor };
   },
+
+  MAX_SPACE_FIXES: 5000,
+
+  /**
+   * Collapse runs of plain spaces to one space. Ambiguity-safe: only hits whose text is two or more plain spaces are
+   * touched, paragraphs that start with a space run (deliberate indents) are skipped, and the loop stops when a round
+   * makes no progress. With dryRun it only counts. deps.searchScope(ctx, "  ") returns Word search hits.
+   * @returns {Promise<{ found: number, fixed: number, skippedIndent: number }>}
+   */
+  async collapseDoubleSpaces(ctx, deps, dryRun) {
+    let fixed = 0;
+    let skippedIndent = 0;
+    let found = 0;
+    for (let round = 0; round < 6; round++) {
+      let items = await deps.searchScope(ctx, "  ");
+      if (items.length > this.MAX_SPACE_FIXES) throw new Error("There are too many double spaces to fix safely at once. Nothing was changed. Use Find & Replace in Word (Ctrl+H).");
+      items.forEach((it) => it.load("text"));
+      const paras = items.map((it) => it.paragraphs.getFirst());
+      paras.forEach((p) => p.load("text"));
+      await ctx.sync();
+      const todo = [];
+      let skipped = 0;
+      items.forEach((it, i) => {
+        if (!/^ {2,}$/.test(String(it.text))) return;
+        if (/^[ \t\u00a0]{2,}\S/.test(String(paras[i].text)) || /^ +$/.test(String(paras[i].text))) {
+          skipped++;
+          return;
+        }
+        todo.push(it);
+      });
+      if (round === 0) {
+        found = todo.length;
+        skippedIndent = skipped;
+        if (dryRun) return { found, fixed: 0, skippedIndent };
+      }
+      if (!todo.length) break;
+      todo.forEach((it) => it.insertText(" ", deps.replaceLocation));
+      await ctx.sync();
+      fixed += todo.length;
+    }
+    return { found, fixed, skippedIndent };
+  },
 };

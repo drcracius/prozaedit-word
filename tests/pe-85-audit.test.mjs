@@ -160,3 +160,72 @@ test("PE-85: audit engine fuzz - random text never throws and scores stay in ran
     if (r.score != null) assert.ok(r.score >= 0 && r.score <= 10, `score ${r.score}`);
   }
 });
+
+test("PE-85: Replace-all double spaces is ambiguity-safe (runs only, indents skipped, converges, dry run changes nothing)", async () => {
+  const P = load();
+  const paras = ["One  two   three.", "    indented  line here", "Clean line.", "Tail  ", "Quote \"a  b\" end."];
+  const doc = { paras: paras.slice() };
+  const para = (pi) => ({ text: "", load() { this.text = doc.paras[pi]; } });
+  const find = () => {
+    const out = [];
+    doc.paras.forEach((P0, pi) => {
+      let at = P0.indexOf("  ");
+      while (at !== -1) {
+        out.push({ pi, at, text: "", load() { this.text = doc.paras[this.pi].substr(this.at, 2); }, paragraphs: { getFirst: () => para(pi) },
+          insertText(t) { const X = doc.paras[this.pi]; doc.paras[this.pi] = X.slice(0, this.at) + t + X.slice(this.at + 2); } });
+        at = P0.indexOf("  ", at + 2);
+      }
+    });
+    return out;
+  };
+  const deps = { searchScope: async () => find(), replaceLocation: "Replace" };
+  const ctx = { sync: async () => {} };
+  const dry = await P.EditApply.collapseDoubleSpaces(ctx, deps, true);
+  assert.deepEqual(doc.paras, paras);
+  assert.ok(dry.found >= 4 && dry.skippedIndent >= 1);
+  await P.EditApply.collapseDoubleSpaces(ctx, deps, false);
+  assert.deepEqual(doc.paras, ["One two three.", "    indented  line here", "Clean line.", "Tail ", "Quote \"a b\" end."]);
+});
+
+test("PE-85: plain-prose fiction is not told its reading level is too low; non-fiction still is", () => {
+  const P = loadEngine();
+  const fic = "She ran. He ran too. The dog sat. It was hot. They had no map. The sun was low. She said no. He said yes.";
+  for (const g of ["Fiction (General)", "Fiction (Romance)"]) assert.ok(!P.Audit.run(fic, ctxFor(g, {})).suggestions.some((s) => s.ruleId === "read:too_simple"), g);
+  assert.ok(P.Audit.run(fic, ctxFor("Non-Fiction / Memoir", {})).suggestions.some((s) => s.ruleId === "read:too_simple"));
+});
+
+test("PE-85: edit history - failed undo/redo restores stacks exactly; MAX is enforced; anchors travel with entries", () => {
+  const H = load().EditHistory;
+  H._undo = []; H._redo = [];
+  for (let i = 0; i < H.MAX + 5; i++) H.record("a" + i, "b" + i, "e" + i, { undoAnchor: { target: "b" + i }, redoAnchor: { target: "a" + i } });
+  assert.equal(H._undo.length, H.MAX);
+  const e = H.popUndo();
+  assert.equal(e.undoAnchor.target, e.after);
+  H.revertPopUndo(e);
+  assert.equal(H.peekUndo(), e);
+  assert.equal(H._redo.length, 0);
+  const e2 = H.popUndo();
+  const r = H.popRedo();
+  assert.equal(r, e2);
+  H.revertPopRedo(r);
+  assert.equal(H._redo.length, 1);
+  assert.equal(H._undo.length, H.MAX - 1);
+});
+
+test("PE-85: manifest element order matches Microsoft samples (Hosts, Requirements, DefaultSettings, Permissions) and versions/support URLs agree", () => {
+  const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
+  const order = ["<SupportUrl", "<AppDomains>", "<Hosts>", "<Requirements>", "<DefaultSettings>", "<Permissions>", "<VersionOverrides"];
+  for (const f of ["manifest.hosted.xml", "manifest.xml"]) {
+    const m = read(f);
+    let last = -1;
+    for (const tag of order) {
+      const i = m.indexOf(tag);
+      assert.ok(i > last, `${f}: ${tag} out of order`);
+      last = i;
+    }
+  }
+  const ver = (f) => read(f).match(/<Version>([^<]+)</)[1];
+  assert.equal(ver("manifest.xml"), ver("manifest.hosted.xml"));
+  const sup = (f) => read(f).match(/<SupportUrl DefaultValue="([^"]+)"/)[1];
+  assert.equal(sup("manifest.xml"), sup("manifest.hosted.xml"));
+});
