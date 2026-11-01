@@ -1,4 +1,4 @@
-/* Cooperative cancellation for long Word.run / async flows. */
+/* Cooperative cancellation for long Word.run / async flows (also aborts in-flight fetch via abortSignal). */
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.LongOperationController = {
@@ -21,6 +21,22 @@ ProzaEdit.LongOperationController = {
     hooks = hooks || {};
     let aborted = false;
     const abortListeners = [];
+    const nativeController = typeof AbortController === "function" ? new AbortController() : null;
+    const shimListeners = [];
+    const abortSignal = nativeController
+      ? nativeController.signal
+      : {
+          get aborted() {
+            return aborted;
+          },
+          addEventListener(type, fn) {
+            if (type === "abort" && typeof fn === "function") shimListeners.push(fn);
+          },
+          removeEventListener(type, fn) {
+            const i = shimListeners.indexOf(fn);
+            if (type === "abort" && i >= 0) shimListeners.splice(i, 1);
+          },
+        };
     const signal = {
       get aborted() {
         return aborted;
@@ -28,15 +44,29 @@ ProzaEdit.LongOperationController = {
     };
     return {
       signal,
+      abortSignal,
       cancel() {
         if (aborted) return;
         aborted = true;
-        abortListeners.forEach((fn) => {
+        if (nativeController) {
+          try {
+            nativeController.abort();
+          } catch (_) {}
+        } else {
+          shimListeners.slice().forEach((fn) => {
+            try {
+              fn({ type: "abort" });
+            } catch (_) {}
+          });
+        }
+        abortListeners.slice().forEach((fn) => {
           try {
             fn();
           } catch (_) {}
         });
-        hooks.onCancel?.();
+        try {
+          hooks.onCancel?.();
+        } catch (_) {}
       },
       isCancelled() {
         return aborted;
@@ -45,10 +75,17 @@ ProzaEdit.LongOperationController = {
         if (aborted) throw new ProzaEdit.LongOperationController.CancelledError();
       },
       onAbort(fn) {
-        if (typeof fn === "function") abortListeners.push(fn);
+        if (typeof fn !== "function") return () => {};
+        abortListeners.push(fn);
+        return () => {
+          const i = abortListeners.indexOf(fn);
+          if (i >= 0) abortListeners.splice(i, 1);
+        };
       },
       setStatus(msg) {
-        hooks.setStatus?.(msg);
+        try {
+          hooks.setStatus?.(msg);
+        } catch (_) {}
       },
     };
   },

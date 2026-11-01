@@ -7,8 +7,8 @@ ProzaEdit.LongOp = {
 
   /**
    * Known slow actions (audit mandatory; scans and batch optional).
-   * In-flight Gemini HTTP (Coach, Rewrite, Deep audit) uses a client timeout AbortController only —
-   * user Cancel on the long-op row does not abort an active fetch (would need shared signal wiring).
+   * In-flight Gemini HTTP (Coach, Rewrite, Deep audit) shares the long-op AbortSignal, so Cancel aborts the fetch;
+   * the client timeout (90s) is unchanged.
    */
   ACTION_IDS: {
     AUDIT_FULL: "audit-full",
