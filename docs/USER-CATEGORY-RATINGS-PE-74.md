@@ -67,6 +67,18 @@ Coordinator anchors used in this pass: **Trust 8.0**, **False positives 7.0**, *
 
 ---
 
+## PE-75 deltas (agent)
+
+| Category | Was (PE-74) | PE-75 delta | Notes |
+|----------|------------:|------------:|-------|
+| Performance / long docs | 7.6 | **+0.1 → 7.7** | Chunked index read + progress; yields in ScopeReader batches |
+| False positives / dictionary | 7.0 | **+0.05 → 7.05** | Document-settings regression test; Help one-liner |
+| List stability / fix flow | 8.7 | **+0.05 → 8.75** | Show next 100; Go to Try again + Help troubleshooting |
+
+**Updated simple average (12 categories):** ~**8.32** → ~**8.34** (PE-75 agent pass only; still not PE-47 measured).
+
+---
+
 ## Next owner gates
 
 1. **PE-47** — real Word web (+ desktop) FULL-TEST rows.  

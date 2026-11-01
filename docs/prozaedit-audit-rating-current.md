@@ -1,12 +1,12 @@
 # ProzaEdit Word — As-shipped audit & rating (current)
 
-**Date:** 2026-11-01 (PE-74 trust pass on PE-72 `00b2ecd`; PE-69 via PR #19; PE-72 via PR #20)  
+**Date:** 2026-11-01 (PE-75 agent pass on PE-74 `bf9bb14`; PE-74 trust; PE-72 hardening)  
 **Build on `main`:** **2.0.0.15** (`manifest.hosted.xml` + `PROZAEDIT_BUILD_VERSION`)  
-**Scope:** PE-50–67 UX bundle + PE-72 hardening + **PE-74** in-pane confirm, privacy/support Help, dictionary scope clarity. Automated tests (**123**: unit + jsdom task-pane harness with mocked Office host; see CI) + wiring gate + mocked-host smoke. **Validation path:** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **Category scorecard:** [USER-CATEGORY-RATINGS-PE-74.md](./USER-CATEGORY-RATINGS-PE-74.md).
+**Scope:** PE-50–67 UX bundle + PE-72 hardening + PE-74 trust + **PE-75** chunked index/list/Go to polish. Automated tests (**127**: unit + jsdom task-pane harness with mocked Office host; see CI) + wiring gate + mocked-host smoke. **Validation path:** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **Category scorecard:** [USER-CATEGORY-RATINGS-PE-74.md](./USER-CATEGORY-RATINGS-PE-74.md).
 
 ---
 
-## Shipped product score: **~8.6 / 10** (conservative)
+## Shipped product score: **~8.65 / 10** (conservative)
 
 Author-facing beta score for hosted **2.0.0.15**, **estimated by judgment, not measured on a real Word host**.
 
@@ -14,10 +14,11 @@ Author-facing beta score for hosted **2.0.0.15**, **estimated by judgment, not m
 |-------|----------|--------|
 | PE-71 | 8.80 | Three-pass audit |
 | PE-72 merged (PR #20) | ~8.85–8.90 judgment | Cancel, retry, 120 tests, wiring gate — mocked host only |
-| **PE-74 (this pass)** | **~8.5–8.7 conservative** | In-pane confirm, published privacy/support, mute/dictionary clarity |
+| **PE-74** | **~8.5–8.7 conservative** | In-pane confirm, published privacy/support, mute/dictionary clarity |
+| **PE-75 (agent)** | **~8.6–8.65 conservative** | Chunked index, Show next 100, Go to recovery, persistence tests |
 | **After PE-47** | **~8.9 judgment ceiling** | Do not claim 8.9+ until real Word web checklist is green |
 
-**Table floor (weighted dimensions below):** **~8.55**. Use the table as the arithmetic floor; the **~8.6** headline is a conservative beta estimate until PE-47.
+**Table floor (weighted dimensions below):** **~8.60**. Use the table as the arithmetic floor; the **~8.65** headline is a conservative beta estimate until PE-47.
 
 **Separate metric:** **vNext roadmap alignment: ~4.2 / 10 (42%)** — unchanged.
 
@@ -29,11 +30,11 @@ Author-facing beta score for hosted **2.0.0.15**, **estimated by judgment, not m
 |-----------|-------:|------:|-------|
 | **UX** | 28% | **9.00** | PE-67 tab flow; PE-74 Help privacy/support collapsibles. |
 | **Shipped feature set completeness** | 28% | **8.5** | Local-first audit/coach/rewrite — vs [features doc](./prozaedit-features.md). |
-| **Reliability / stability** | 18% | **8.60** | PE-72 cancel/retry/guards; PE-74 confirm no longer blocked by sandbox. Capped: no real-host validation. |
+| **Reliability / stability** | 18% | **8.65** | PE-72 cancel/retry; PE-75 chunked reads + Go to recovery. Capped: no real-host validation. |
 | **Security / privacy** | 13% | **8.2** | [PRIVACY-AND-DATA-PE.md](./PRIVACY-AND-DATA-PE.md); opt-in diagnostics; Remember key off by default. |
-| **Maintainability** | 13% | **8.2** | `pe-confirm-dialog.js` + **120+** tests; wiring gate in CI. |
+| **Maintainability** | 13% | **8.25** | PE-75 ScopeReader/settings regression tests; wiring gate in CI. |
 
-**Weighted shipped index (table arithmetic):** **~8.55**.
+**Weighted shipped index (table arithmetic):** **~8.60**.
 
 ---
 
