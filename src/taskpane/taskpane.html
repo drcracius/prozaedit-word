@@ -483,7 +483,7 @@
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
       <input type="text" id="chatInput" aria-label="Ask the coach a question" placeholder="e.g. How do I fix POV slips?" style="flex:1;margin-bottom:0;">
-      <button id="micBtn" type="button" onclick="toggleVoiceDictation()" title="Dictate">🎤</button>
+      <button id="micBtn" type="button" onclick="toggleVoiceDictation()" title="Dictate (uses your browser's speech service, which may send audio online)" aria-label="Dictate a question (uses your browser's speech service, which may send audio online)">🎤</button>
     </div>
     <div id="tokenEstimate" class="token-estimate">Local Coach: 0 tokens</div>
     <div id="micStatus" class="mic-status"></div>
@@ -621,6 +621,8 @@
         <li><strong>Run audit / Local Coach / paraphrase</strong> — local in your browser; no cloud by default.</li>
         <li><strong>AI provider</strong> (optional: Gemini, OpenAI, Claude or OpenRouter, using your own API key) — sends only the prompt and context you trigger, to the provider you picked, when you click Send / Deep audit / AI rewrite. Keys stay on this device.</li>
         <li><strong>Thesaurus (Datamuse)</strong> — sends a single lookup word when you search synonyms.</li>
+        <li><strong>Voice dictation (🎤, optional)</strong> — handled by your browser's own speech service (Chrome/Edge may send the audio to Google/Microsoft). Never used unless you click the microphone.</li>
+        <li><strong>Update check</strong> — once per session the pane downloads the public manifest from GitHub to compare version numbers; no document data is sent.</li>
         <li><strong>Diagnostics</strong> — opt-in; clipboard JSON is redacted (no document text or API keys).</li>
         <li><strong>Remember API key</strong> — stores the key in this browser profile only (never in the document) when enabled.</li>
         <li><strong>Saved AI replies</strong> — identical AI requests reuse the earlier reply from this device for up to 7 days (never in the document, never with your key). Clear them in Settings → AI.</li>

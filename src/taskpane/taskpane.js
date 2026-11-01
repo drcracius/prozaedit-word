@@ -6712,7 +6712,7 @@ function toggleVoiceDictation() {
     try {
       recognition.start();
       isRecording = true;
-      document.getElementById("micStatus").innerText = "Listening…";
+      document.getElementById("micStatus").innerText = "Listening… (your browser may send audio to its speech service)";
     } catch (_) {}
   }
 }

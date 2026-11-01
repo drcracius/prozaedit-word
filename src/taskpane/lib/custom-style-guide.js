@@ -43,7 +43,7 @@ ProzaEdit.CustomStyleGuide = {
       raw.id ||
       `custom_${find
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/[^\p{L}\p{N}]+/gu, "_")
         .slice(0, 48)}`;
     return { id, find, replace, hint };
   },
