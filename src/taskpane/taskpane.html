@@ -42,7 +42,7 @@
   </div>
   <div id="peSimpleModeFirstRunBanner" class="pe-top-banner help-box hidden" role="region" aria-label="Simple mode first run">
     <p class="pe-top-banner-lead"><strong>Simple mode</strong></p>
-    <p id="peSimpleModeFirstRunBannerBody" class="pe-top-banner-body">Simple mode is on — fewer tabs, Critical issues first. Turn off in Settings → Safety.</p>
+    <p id="peSimpleModeFirstRunBannerBody" class="pe-top-banner-body">Simple mode is on — fewer tabs, important issues first. Turn off in Settings → Essentials.</p>
     <div class="pe-top-banner-actions">
       <button type="button" class="btn-secondary" onclick="dismissSimpleModeFirstRunBanner(false)">Got it</button>
       <button type="button" class="btn-linkish" onclick="dismissSimpleModeFirstRunBanner(true)">Don&apos;t show again</button>
@@ -81,7 +81,7 @@
     <ul class="help-list pe-session-tips-list">
       <li><strong>Target</strong> — set scope and manuscript type, then <strong>Checks</strong> — turn modules on → <strong>Run audit</strong> → fix cards on <strong>Audit</strong>.</li>
       <li>Fiction-only modules and <strong>Timeline scan</strong> appear when manuscript type is Fiction.</li>
-      <li><strong>Simple mode</strong> (Settings → Safety) hides Thesaurus and optional Gemini blocks; other persistent prefs are under toolbar <strong>Settings</strong>.</li>
+      <li><strong>Simple mode</strong> (Settings → Essentials) hides Thesaurus and optional Gemini blocks; other persistent prefs are under toolbar <strong>Settings</strong>.</li>
       <li>After GitHub updates, close and reopen the pane; re-upload <code>manifest.hosted.xml</code> only when the manifest version bumps.</li>
     </ul>
     <div class="pe-top-banner-actions">
@@ -259,12 +259,13 @@
       </ol>
       <p class="help-inline" style="margin:6px 0 0;font-size:10px;">Walkthrough: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/PHASE-1-QUICKSTART.md" target="_blank" rel="noopener">PHASE-1-QUICKSTART.md</a></p>
     </details>
-    <div class="audit-run-hub">
+    <div class="audit-run-hub pe-checks-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
       <div id="peLongOpProgressChecks" class="pe-longop-progress hidden" aria-live="polite">
         <span id="peLongOpProgressLabelChecks" class="pe-longop-progress-label">Reading document…</span>
         <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpChecks">Cancel</button>
       </div>
+      <p id="peChecksRunAuditTagline" class="pe-checks-run-tagline help-muted">ProzaEdit checks when you click Run — it does not underline while you type.</p>
       <p id="activeChecksHint" class="active-checks-hint">Turn on checks below, then Run audit.</p>
     </div>
     <h2 class="pe-section-title">What to check</h2>
@@ -361,7 +362,7 @@
   </div>
 
   <div id="tab4" class="tab-content" role="tabpanel">
-    <p id="peSimpleModeAuditBanner" class="pe-simple-audit-banner hidden" role="status" aria-live="polite"><strong>Simple mode:</strong> Showing <strong>Critical</strong> findings first. Use the filter chips below for All or Style.</p>
+    <p id="peSimpleModeAuditBanner" class="pe-simple-audit-banner hidden" role="status" aria-live="polite"></p>
     <p id="auditScopeChip" class="pe-scope-chip pe-audit-scope-chip help-muted" aria-live="polite">Scope (read-only): —</p>
     <div class="audit-run-hub audit-run-hub-inline">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
@@ -476,6 +477,10 @@
         <li><strong>Audit</strong> — fix <strong>Critical</strong> cards first; use Go to and Apply.</li>
       </ul>
     </div>
+    <details id="peHelpNewToEditing" class="help-box help-muted">
+      <summary>New to editing tools?</summary>
+      <ul class="help-list" id="peHelpNewToEditingList"></ul>
+    </details>
     <div class="help-box">
       <p><strong>Manual audits (not realtime):</strong> ProzaEdit runs <strong>manual audits</strong> when you click <strong>Run audit</strong> — not Grammarly-style realtime underlines in Word.</p>
       <details id="peFirstAuditChecklistHelp" class="help-muted pe-first-audit-checklist" style="margin:8px 0;">
@@ -614,6 +619,8 @@
         <details class="pe-settings-group" id="pe-settings-group-essentials" open>
           <summary>Essentials</summary>
           <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
+          <p id="peSimpleModeEssentialsIntro" class="help-muted pe-simple-mode-essentials-intro" style="font-size:10px;margin:6px 0 4px;">Simple mode hides extra tabs and optional checks. Turn off to see Coach, Rewrite, and more.</p>
+          <button type="button" class="btn-linkish pe-btn" id="btnTurnOffSimpleMode" onclick="turnOffSimpleModeFromEssentials()">Turn off Simple mode</button>
           <div class="form-group" style="margin-top:8px;">
             <label for="apiKey">Gemini API key (optional)</label>
             <input type="password" id="apiKey" placeholder="Leave blank to stay local-only">
@@ -671,12 +678,12 @@
           <summary>Advanced — Audit &amp; reports</summary>
           <div class="form-group" style="margin-top:6px;">
             <label for="reportDensity">Report depth</label>
-            <select id="reportDensity" title="Light = fewer cards and shorter summary; Dense = maximum detail">
+            <select id="reportDensity" title="Light = fewer cards and shorter summary; Dense = maximum detail" aria-describedby="peReportDensityPlainHint">
               <option value="light">Light</option>
               <option value="balanced" selected>Balanced</option>
               <option value="dense">Dense</option>
             </select>
-            <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Controls card cap and overview detail on the Audit tab.</p>
+            <p id="peReportDensityPlainHint" style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Controls card cap and overview detail on the Audit tab.</p>
           </div>
           <div class="form-group">
             <label for="settingsDefaultAuditFilter">Default audit filter</label>
@@ -767,6 +774,7 @@
   <script src="lib/settings-store.js"></script>
   <script src="lib/ui-prefs-helpers.js"></script>
   <script src="lib/onboarding-helpers.js"></script>
+  <script src="lib/plain-language-helpers.js"></script>
   <script src="lib/long-operation-helpers.js"></script>
   <script src="lib/long-operation-controller.js"></script>
   <script src="lib/text-metrics.js"></script>

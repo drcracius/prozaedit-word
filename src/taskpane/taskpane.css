@@ -673,6 +673,41 @@ body.pe-narrow-pane .btn-tool-icon-label {
   border-radius: 6px;
 }
 
+.pe-checks-run-tagline {
+  font-size: 10px;
+  margin: 6px 0 0;
+  line-height: 1.4;
+}
+
+.pe-simple-mode-essentials-intro {
+  line-height: 1.4;
+}
+
+.pe-simple-mode #tab3 .pe-checks-run-hub {
+  padding: 12px 10px;
+  border-color: var(--accent, var(--primary));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, var(--primary)) 25%, transparent);
+}
+
+.pe-simple-mode #tab3 .pe-checks-run-hub .btn-main-hub {
+  width: 100%;
+  justify-content: center;
+  font-size: 13px;
+  padding: 10px 14px;
+}
+
+.pe-simple-mode #tab3 h2.pe-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.pe-simple-mode #tab3 .form-group-flush .toggle-row {
+  font-size: 10px;
+  opacity: 0.95;
+}
+
 .audit-run-hub-inline {
   display: flex;
   flex-wrap: wrap;

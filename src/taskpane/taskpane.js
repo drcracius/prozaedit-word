@@ -337,6 +337,18 @@ function getScopeModeLabel(mode) {
   return m;
 }
 
+function getScopeDisplayLabel(mode) {
+  if (isChecked("simpleMode", false) && ProzaEdit.PlainLanguage?.scopeFriendlyLabel) {
+    const m = mode || getScopeMode();
+    return ProzaEdit.PlainLanguage.scopeFriendlyLabel(m, {
+      pageFrom: getEl("scopePageFrom")?.value || "1",
+      pageTo: getEl("scopePageTo")?.value || "5",
+      chapterCount: getSelectedChapterIndicesFromUi().length,
+    });
+  }
+  return getScopeModeLabel(mode);
+}
+
 function getActiveStyleGuideLabel() {
   const ctx = buildAuditContext();
   if (ProzaEdit.ManuscriptOverview?.styleGuideLabel) {
@@ -360,7 +372,9 @@ function updateWorkflowStatusLine() {
 
 function updateChecksScopeChip() {
   const mode = getScopeMode();
-  const text = `Scope (read-only): ${getScopeModeLabel(mode)}${lastScopePreviewSummary ? ` — ${lastScopePreviewSummary}` : ""}`;
+  const scopeLabel = getScopeDisplayLabel(mode);
+  const prefix = isChecked("simpleMode", false) ? "Checking:" : "Scope (read-only):";
+  const text = `${prefix} ${scopeLabel}${lastScopePreviewSummary ? ` — ${lastScopePreviewSummary}` : ""}`;
   const chip = getEl("checksScopeChip");
   if (chip) chip.textContent = text;
   const auditChip = getEl("auditScopeChip");
@@ -894,6 +908,7 @@ Office.onReady((info) => {
     initPriorSessionBanner();
     initSessionTips();
     initSimpleModeFirstRunBanner();
+    initHelpNewToEditingList();
     initDarkAppearanceTip();
     setupFirstAuditChecklistDismissTracking();
     syncFirstAuditChecklistVisibility();
@@ -1593,13 +1608,96 @@ function applySimpleMode() {
   document.body.classList.toggle("pe-simple-mode", on);
   const label = getEl("targetSimpleModeLabel");
   if (label) label.textContent = on ? "On" : "Off";
-  const banner = getEl("peSimpleModeAuditBanner");
-  if (banner) banner.classList.toggle("hidden", !on);
   const targetHint = getEl("peTargetRecommendedHint");
   if (targetHint) targetHint.classList.toggle("hidden", !on);
   updateAuditDefaultFilterHint();
   if (on && getCurrentActiveTabId() === "tab2") showTab("tab1");
   syncFirstAuditChecklistVisibility();
+  applyPlainLanguageLayer();
+}
+
+function applyPlainLanguageLayer() {
+  const on = isChecked("simpleMode", false);
+  const intro = getEl("peSimpleModeEssentialsIntro");
+  const turnOff = getEl("btnTurnOffSimpleMode");
+  if (intro) intro.classList.toggle("hidden", !on);
+  if (turnOff) turnOff.classList.toggle("hidden", !on);
+  updatePlainLanguageScopeSelect();
+  updatePlainLanguageControlHints();
+  updateAuditFilterLanesHintPlain();
+  updateSimpleModeAuditBanner();
+  updateChecksScopeChip();
+}
+
+function updatePlainLanguageScopeSelect() {
+  const sel = getEl("scope");
+  if (!sel || !ProzaEdit.PlainLanguage?.scopeSelectOptionLabel) return;
+  const on = isChecked("simpleMode", false);
+  sel.querySelectorAll("option").forEach((opt) => {
+    if (!opt.dataset.peOriginalLabel) opt.dataset.peOriginalLabel = opt.textContent;
+    const friendly = ProzaEdit.PlainLanguage.scopeSelectOptionLabel(opt.value);
+    opt.textContent = on && friendly ? friendly : opt.dataset.peOriginalLabel;
+  });
+}
+
+function updatePlainLanguageControlHints() {
+  const density = getEl("reportDensity");
+  const hint = getEl("peReportDensityPlainHint");
+  const on = isChecked("simpleMode", false);
+  const raw = density?.value || "balanced";
+  if (density && on) {
+    density.setAttribute("aria-label", ProzaEdit.PlainLanguage.reportDepthHintLabel(raw));
+  } else if (density) {
+    density.removeAttribute("aria-label");
+  }
+  if (hint) {
+    hint.textContent = on
+      ? ProzaEdit.PlainLanguage.reportDepthHintLabel(raw)
+      : "Controls card cap and overview detail on the Audit tab.";
+  }
+}
+
+function updateAuditFilterLanesHintPlain() {
+  const el = getEl("peAuditFilterLanesHint");
+  if (!el || !ProzaEdit.PlainLanguage?.auditFilterLanesHint) return;
+  el.textContent = ProzaEdit.PlainLanguage.auditFilterLanesHint(isChecked("simpleMode", false));
+}
+
+function updateSimpleModeAuditBanner() {
+  const banner = getEl("peSimpleModeAuditBanner");
+  if (!banner) return;
+  const on = isChecked("simpleMode", false);
+  banner.classList.toggle("hidden", !on);
+  if (!on) {
+    banner.textContent = "";
+    return;
+  }
+  banner.textContent =
+    ProzaEdit.PlainLanguage?.simpleModeAuditBannerText?.(auditCardFilter) ||
+    "Simple mode is on — turn off in Settings → Essentials for all features.";
+}
+
+function turnOffSimpleModeFromEssentials() {
+  const sm = getEl("simpleMode");
+  if (!sm || !sm.checked) return;
+  sm.checked = false;
+  applySimpleMode();
+  if (!isReviewModeProfileActive()) markFirstRunCompleteAndPersist();
+  persistSettings(false);
+  initSimpleModeFirstRunBanner();
+  showPeStatus("Simple mode off — Coach, Rewrite, and Thesaurus tabs are back.", "ok");
+}
+
+function initHelpNewToEditingList() {
+  const list = getEl("peHelpNewToEditingList");
+  const bullets = ProzaEdit.PlainLanguage?.NEW_TO_EDITING_TOOLS_BULLETS;
+  if (!list || !bullets?.length || list.dataset.peFilled) return;
+  list.dataset.peFilled = "1";
+  bullets.forEach((text) => {
+    const li = document.createElement("li");
+    li.textContent = text;
+    list.appendChild(li);
+  });
 }
 
 function decorateRunAuditHubButton(btn) {
@@ -1663,6 +1761,12 @@ function updateAuditReportDepthHint() {
   if (!hint) return;
   const raw = getEl("reportDensity")?.value || "balanced";
   const label = REPORT_DENSITY_LABELS[raw] || "Balanced";
+  if (isChecked("simpleMode", false) && ProzaEdit.PlainLanguage?.reportDepthHintLabel) {
+    const plain = ProzaEdit.PlainLanguage.reportDepthHintLabel(raw);
+    hint.innerHTML = `${plain} (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
+    updatePlainLanguageControlHints();
+    return;
+  }
   hint.innerHTML = `Report depth: <strong>${label}</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">change in Settings</button>)`;
 }
 
@@ -1677,7 +1781,7 @@ function updateAuditDefaultFilterHint() {
   if (!hint) return;
   if (isChecked("simpleMode", false)) {
     hint.innerHTML =
-      'Simple mode: Audit emphasizes <strong>Critical</strong> on load (<button type="button" class="btn-linkish" onclick="openSettingsModal(\'safety\')">Settings → Safety</button>). Saved filter chips still apply.';
+      'Simple mode: Audit opens on <strong>Important (Critical)</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal(\'essentials\')">Settings → Essentials</button>). Filter chips below still work.';
     return;
   }
   const label = getDefaultAuditFilterLabel();
@@ -2980,6 +3084,7 @@ function setAuditCardFilter(mode) {
   syncSettingsDefaultAuditFilterSelect();
   updateAuditDefaultFilterHint();
   updateReviewModeAuditHint();
+  updateSimpleModeAuditBanner();
   persistSettings(false);
 }
 

@@ -35,29 +35,29 @@ ProzaEdit.Onboarding = {
   ONBOARDING_TOUR_STOPS: [
     {
       id: "scope",
-      title: "1. Choose scope",
-      body: "On Target, pick what to analyze — highlight, chapters, page range, or full manuscript. Use Refresh count to see size.",
+      title: "1. Choose what to check",
+      body: "On Target, pick the part of your book to work on — a highlight, one chapter, a page range, or the whole file. Tap Refresh count to see how big it is.",
       tabId: "tab1",
       anchorSelector: "#scope",
     },
     {
       id: "run",
       title: "2. Run audit",
-      body: "Turn on one or two checks on Checks, then Run audit from the toolbar or the Checks button.",
+      body: "On Checks, leave one or two switches on (you do not need them all). Then click Run audit — ProzaEdit waits for you; it does not underline as you type.",
       tabId: "tab3",
       anchorSelector: "#btnRunAudit",
     },
     {
       id: "fix",
-      title: "3. Fix issues",
-      body: "Open Audit for cards. Start with Critical, use Go to on each card, then Apply fix or Rewrite.",
+      title: "3. Fix what matters",
+      body: "Open Audit for your list. Start with Important (Critical) items, jump to each spot in Word, then Apply fix when you agree.",
       tabId: "tab4",
       anchorSelector: "#cardContainer",
     },
   ],
 
   SIMPLE_MODE_FIRST_RUN_BANNER_LEAD:
-    "Simple mode is on — fewer tabs, Critical issues first. Turn off in Settings → Safety.",
+    "Simple mode is on — fewer tabs, important issues first. Turn off in Settings → Essentials.",
 
   FULL_MANUSCRIPT_SCOPE_TIP:
     "For very long documents, try Selected chapters or Page range (common pro workaround).",
@@ -66,10 +66,10 @@ ProzaEdit.Onboarding = {
     "ProzaEdit runs manual audits when you click Run audit — not Grammarly-style realtime underlines.",
 
   FIRST_AUDIT_CHECKLIST_STEPS: [
-    "Set scope on Target (selection, chapters, or page range).",
-    "Enable one or two checks on Checks (you do not need every module).",
-    "Run audit from the toolbar or Checks tab.",
-    "Fix Critical findings first; use Mute or Dictionary for noisy names.",
+    "On Target, choose what to check (highlight, a chapter, or a page range).",
+    "On Checks, turn on one or two checks — not every switch.",
+    "Click Run audit (toolbar or the big button on Checks).",
+    "On Audit, fix Important (Critical) items first; Mute or Dictionary for names that are correct.",
   ],
 
   PHASE_1_QUICKSTART_URL:

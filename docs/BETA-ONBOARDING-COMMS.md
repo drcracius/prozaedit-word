@@ -1,6 +1,6 @@
 # Beta onboarding comms (owner copy-paste)
 
-Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit Word 2.0.0.15** (+ PE-61–64 UX pack). No manifest bump required for these UX changes.
+Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit Word 2.0.0.15** (+ PE-61–65 UX pack). No manifest bump required for these UX changes.
 
 ---
 
@@ -16,6 +16,8 @@ Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit 
 2. **Simple mode banner** — one dismiss; then optional **3-step tour** (Target scope → Run audit → Fix cards). Skip anytime.
 3. **Settings → Essentials** — API key (optional), theme, Simple mode. Everything else is under **Advanced** groups.
 4. **Checks** — turn on **1–2 core checks**, hit **Run audit**. Extended, fiction-only, partner tools, and scans live under **More checks (optional)**.
+
+**Not a Grammarly clone:** under **Run audit**, the pane reminds you that checks run when you click — not while you type. **Help → New to editing tools?** is a short list for authors new to add-ins (one chapter at a time, fix important issues first, dictionary for names). To see **Coach**, **Rewrite**, and **Thesaurus**, open **Settings → Essentials** and turn off **Simple mode** (or use **Turn off Simple mode**).
 
 ---
 
@@ -43,6 +45,7 @@ Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit 
 - [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md)
 - [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md)
 - [RELEASE-NOTES-PE-64-SIMPLIFY.md](./RELEASE-NOTES-PE-64-SIMPLIFY.md)
+- [RELEASE-NOTES-PE-65-AVERAGE-USER.md](./RELEASE-NOTES-PE-65-AVERAGE-USER.md)
 
 ---
 

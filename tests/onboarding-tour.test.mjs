@@ -104,6 +104,9 @@ test("Onboarding tour stops and complete patch", () => {
   const stop = Onboarding.getOnboardingTourStop(1);
   assert.equal(stop.id, "run");
   assert.ok(stop.anchorSelector);
+  assert.match(stop.body, /underline/i);
+  const scopeStop = Onboarding.getOnboardingTourStop(0);
+  assert.match(scopeStop.body, /chapter/i);
   assert.equal(Onboarding.applyOnboardingTourCompletePatch({}).onboardingTourComplete, true);
   assert.equal(Onboarding.buildFirstRunBootstrapPatch().onboardingTourComplete, false);
 });
