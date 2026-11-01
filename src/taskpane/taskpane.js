@@ -3070,7 +3070,10 @@ function finalizeAudit(result, label) {
   setAuditSuggestions(suggestions);
   cacheAudit(label, html, suggestions, traffic, score);
   if (suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated")) {
-    showPeStatus("Scope excerpt truncated at cap — see Audit card or use a smaller scope.", "warn");
+    showPeStatus(
+      "Scope hit the character cap — open the Truncated scope card below, or try Selected chapters / Page range.",
+      "warn"
+    );
   }
 }
 
