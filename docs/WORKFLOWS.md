@@ -11,9 +11,9 @@ This document matches the in-pane **Quick start & editing stack** help. ProzaEdi
 
 1. Open Word (web or desktop, same Microsoft account after one-time manifest upload).
 2. **Home → ProzaEdit** (or **Insert → My Add-ins**).
-3. **Target** — set manuscript type, scope, and style; settings save into the `.docx`.
-4. **Checks → Run audit** (or toolbar **Run audit**).
-5. **Audit** — filter cards, **Go to**, **Apply fix** / **Mute** / **Dict** as needed; **Undo** in the ProzaEdit toolbar for ProzaEdit replacements only.
+3. **Start (Target)** — set manuscript type, scope, and style; settings save into the `.docx`. With **Simple mode** on, tabs read **Start → Run → Fix → Help**.
+4. **Run (Checks) → Run audit** (or toolbar **Run audit**). Use **Related workflow steps** under the toolbar to jump back to scope or forward to issues.
+5. **Fix (Audit)** — filter cards (**Important** first in Simple mode), **Go to**, **Apply fix** / **Mute** / **Dict** as needed; **Undo** in the ProzaEdit toolbar for ProzaEdit replacements only.
 6. Use Word **F7 / Editor** for spelling and grammar; use **Copy for Copilot** from Audit when you want generative help in Word.
 
 After GitHub pushes to `src/` or `assets/`, close and reopen the task pane (Pages may cache 1–3 minutes). Re-upload `manifest.hosted.xml` only when `<Version>` changes on GitHub.

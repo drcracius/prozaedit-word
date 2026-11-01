@@ -1,6 +1,6 @@
 # Phase 1 quickstart (~15 min critical path)
 
-**Web 1.0 RC:** build **2.0.0.15**, **29** tests, PE-48 prep merged; desktop **PE-2** deferred.  
+**Web 1.0 RC:** build **2.0.0.15**, **57** tests, UX bundle PE-63–67 merged; desktop **PE-2** deferred.  
 **Owner:** Word on the web only.  
 **Full checklist:** [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) (~90 min)  
 **Log results:** [templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md) or [Word web validation issue](https://github.com/drcracius/prozaedit-word/issues/new?template=word-web-validation.yml)  
@@ -41,10 +41,10 @@ Use this if you are new to editing add-ins and want the smallest path to a usefu
 
 | Step | What you do | You are done when |
 |------|-------------|-------------------|
-| **1. Open ProzaEdit** | In Word on the web, open a chapter or highlight a passage → **Home → ProzaEdit** | The task pane loads; **Simple mode** is usually already on |
-| **2. Target — what to check** | On **Target**, pick **One or more chapters** or **Text you selected** → **Refresh count** | The line under the toolbar shows your scope |
-| **3. Checks — run check** | Open **Checks** → leave the four main toggles on → click **Run audit** (big button) | You see a progress line, then the **Audit** tab fills with cards |
-| **4. Audit — fix issues** | On **Audit**, use the **Important** filter (Simple mode) → **Go to** each card → **Apply fix** if you agree | Red **Important** count goes down |
+| **1. Open ProzaEdit** | In Word on the web, open a chapter or highlight a passage → **Home → ProzaEdit** | The task pane loads; **Simple mode** is usually already on; tabs read **Start · Run · Fix · Help** |
+| **2. Start — what to check** | On **Start** (Target), pick **One or more chapters** or **Text you selected** → **Refresh count** | The line under the toolbar shows your scope; use **Related workflow steps** to jump back later |
+| **3. Run — run check** | Open **Run** (Checks) → leave the four main toggles on → click **Run audit** (big button) | Progress line, then link **View issues on Fix** or the **Fix** tab fills with cards |
+| **4. Fix — fix issues** | On **Fix** (Audit), use the **Important** filter (Simple mode) → **Go to** each card → **Apply fix** if you agree | Red **Important** count goes down |
 | **5. Names that are correct** | If a character name is flagged wrongly → **Mute** → follow the hint to **Dictionary** in Settings | That name stops nagging on this document |
 | **6. More power (optional)** | **Settings → Essentials** → turn off **Simple mode** | **Coach**, **Rewrite**, and **Thesaurus** tabs return; filters say **Critical** again |
 

@@ -48,4 +48,4 @@ PE-67 makes the **Target → Checks → Audit → Help** path obvious in Simple 
 
 ## Deferred (vNext)
 
-- Five-tab IA merge, manifest bump, Office.js CI (PE-68), new report types.
+- Five-tab IA merge, manifest bump, Office.js CI (**PE-69**), new report types.

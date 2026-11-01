@@ -14,6 +14,8 @@ This document describes what the add-in **actually does today** in the repositor
 
 **Who it is for:** Authors and editors who want structured audit cards, manuscript profiling, and rule-based coaching without sending the full manuscript to a cloud LLM for every pass. Beta testers install once with **`manifest.hosted.xml`**, then open **Home → ProzaEdit** daily.
 
+**Simple mode (default for new documents):** First run keeps **Simple mode** on so the tab strip emphasizes **Start → Run → Fix → Help** (Target, Checks, Audit, Help), hides Thesaurus, de-emphasizes Coach/Rewrite, and shows **Important** instead of **Critical** on Audit filters. Optional 3-step tour and **Settings → Essentials** expose only API key, theme, and Simple toggle until you turn Simple off for the full seven-tab experience. See [RELEASE-NOTES-UX-BUNDLE-2.0.0.15.md](./RELEASE-NOTES-UX-BUNDLE-2.0.0.15.md).
+
 **Hosted vs local development:**
 
 | Mode | How Word loads the add-in | Typical user |

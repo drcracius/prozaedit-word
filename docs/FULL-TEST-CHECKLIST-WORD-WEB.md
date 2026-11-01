@@ -1,9 +1,9 @@
 # ProzaEdit Word — full manual test checklist (Word on the web)
 
 **Audience:** D Cracius beta validation on **Word online** (narrow task pane).  
-**Build:** UI **2.0.0.15** (no manifest re-upload for this UX pack).  
+**Build:** UI **2.0.0.15** (no manifest re-upload for UX bundle PE-63–67).  
 **Pane URL:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html  
-**Final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **29** unit tests on `main` · merged PRs [#2](https://github.com/drcracius/prozaedit-word/pull/2)–[#5](https://github.com/drcracius/prozaedit-word/pull/5) · desktop **PE-2** not required.
+**Final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **57** unit tests on `main` · UX bundle [#18](https://github.com/drcracius/prozaedit-word/pull/18) · desktop **PE-2** not required.
 
 ---
 
@@ -37,9 +37,13 @@
 
 ## 4. Tabs and navigation
 
-- [ ] Switch tabs (e.g. Audit, Coach); close pane; reopen — **last tab** restores (not Thesaurus when Simple mode on).
-- [ ] Simple mode on while on Thesaurus → returns to Target.
+- [ ] **Simple mode on:** tab strip order left→right **Start · Run · Fix · Help** (Coach/Rewrite deemphasized or last); **Simple off:** Target · Checks · Audit · Thesaurus · Coach · Rewrite · Help (PE-67).
+- [ ] **Related workflow steps** strip under toolbar: change scope, run again, view issues (when results exist), dictionary link works (PE-67).
+- [ ] After **Run audit**, Checks shows **View issues on Fix** (or equivalent) when audit completes (PE-67).
+- [ ] Switch tabs (e.g. Fix/Audit, Coach); close pane; reopen — **last tab** restores (not Thesaurus when Simple mode on).
+- [ ] Simple mode on while on Thesaurus → returns to Target/Start.
 - [ ] Audit card **Rewrite** → Rewrite tab → **Back to Audit**.
+- [ ] **PE-63 tour:** fresh CONFIG → after banners, optional 3-stop tour; **Skip tour** persists; does not return on reopen.
 
 ## 5. Checks and audit
 
@@ -86,7 +90,7 @@
 
 ---
 
-*Automated coverage:* `npm test` (**29** tests — includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`, `onboarding-banners.test.mjs`, `long-operation-helpers.test.mjs`, `shaper-config.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).
+*Automated coverage:* `npm test` (**57** tests — includes `workflow-nav-helpers.test.mjs`, `plain-language-helpers.test.mjs`, `onboarding-tour.test.mjs`, onboarding/CONFIG wiring). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md). Office.js smoke: **PE-69** (manual Word web still P0).
 
 ---
 

@@ -143,7 +143,7 @@
 | **P1** | **Phase 1 validation** — [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) / [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) with testers | ✓ | doc sync | Link checklist in beta comms |
 | **P2** | **PE-62 tour** — optional 3-stop skippable tour (PE-60 P2) | — | ✓ | `onboarding-helpers.js`; respect hide-tips |
 | **P2** | **Performance messaging** — post-audit footnote when chars > threshold | — | ✓ | Copy-only; no cap change |
-| **P2** | **Office.js smoke** in CI (read-only fixture) | — | ✓ | F-58-9 |
+| **P2** | **Office.js smoke** in CI (read-only fixture) | — | ✓ | F-58-9 → **PE-69** |
 | **P1** | Deploy diagnostics ingest (optional) | ✓ | template | [DIAGNOSTICS.md](./DIAGNOSTICS.md) |
 | **P2** | **Beta comms** — one paragraph: manual audit, Simple first run, filter lanes | ✓ | draft | Point to PE-61 release notes |
 | **P2** | Remove F-58-4 legacy chapter UI | — | ✓ | After migration window |
@@ -156,3 +156,12 @@
 - **PE-61 release:** [RELEASE-NOTES-PE-61-ONBOARDING.md](./RELEASE-NOTES-PE-61-ONBOARDING.md)  
 - **Rating:** [prozaedit-audit-rating-current.md](./prozaedit-audit-rating-current.md)  
 - **PE-59 review:** [FULL-APP-REVIEW-PE-59.md](./FULL-APP-REVIEW-PE-59.md)  
+
+---
+
+## Superseded by UX bundle (PE-68)
+
+The **PE-63–67** UX bundle on [PR #18](https://github.com/drcracius/prozaedit-word/pull/18) extends PE-61/62 with tour, Essentials, plain language, Important labels, and tab flow. After merge, use:
+
+- **[FULL-APP-REVIEW-PE-68-POST-UX-BUNDLE.md](./FULL-APP-REVIEW-PE-68-POST-UX-BUNDLE.md)** — score **~8.85**, **57** tests, PWA checklist  
+- **[RELEASE-NOTES-UX-BUNDLE-2.0.0.15.md](./RELEASE-NOTES-UX-BUNDLE-2.0.0.15.md)** — single owner-facing release note  
