@@ -20,7 +20,7 @@ ProzaEdit.Audit = {
   },
 
   _stripIneligibleFictionFlags(ctx) {
-    const fiction = String(ctx.manuscriptType || "").includes("Fiction");
+    const fiction = ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(ctx.manuscriptType) : (String(ctx.manuscriptType || "").includes("Fiction") && !/non-?fiction/i.test(String(ctx.manuscriptType)));
     if (fiction) return ctx;
     return {
       ...ctx,
@@ -76,7 +76,7 @@ ProzaEdit.Audit = {
       suggestions.push({ ...item, id: item.id || `sug_${idSeq++}` });
     };
 
-    const fiction = String(ctx.manuscriptType || "").includes("Fiction");
+    const fiction = ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(ctx.manuscriptType) : (String(ctx.manuscriptType || "").includes("Fiction") && !/non-?fiction/i.test(String(ctx.manuscriptType)));
     const anyFiction =
       fiction &&
       (ctx.mPlot || ctx.mMotivation || ctx.mDialogue || ctx.mContinuity || ctx.mPlausibility || ctx.mPacing || ctx.mSpoiler);
@@ -168,7 +168,7 @@ ProzaEdit.Audit = {
     return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext, genre };
   },
 
-  LOW_CONFIDENCE_PREFIXES: ["genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
+  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "plot:weak_hook", "pov:slip", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
 
   /** high = objective (typo-class); medium = style judgment; low = noisy heuristic (hidden in Simple view by default). */
   confidenceFor(item) {
@@ -192,6 +192,8 @@ ProzaEdit.Audit = {
     });
   },
 
+  PAIR_STOPWORDS: new Set("a an the and or but nor so yet of in on at to for from by with as into onto over under about than then that this these those it its is are was were be been being am i me my we us our you your he him his she her they them their will would could should can did do does had has have not no said asked said there here when what who which if up out off down all just".split(" ")),
+
   _repetition(text, lower, push) {
     (ProzaEdit.LexicalBanks?.PLEONASMS || []).forEach(([target, replacement]) => {
       if (lower.includes(target)) {
@@ -211,6 +213,10 @@ ProzaEdit.Audit = {
     for (let i = 0; i < words.length - 1 && n < 16; i++) {
       const pair = `${words[i]} ${words[i + 1]}`;
       const prev = seen.get(pair);
+      if (this.PAIR_STOPWORDS.has(words[i]) || this.PAIR_STOPWORDS.has(words[i + 1])) {
+        seen.set(pair, i);
+        continue;
+      }
       if (prev != null && i - prev <= 50) {
         push({
           ruleId: `rep:pair:${pair}`,
@@ -390,6 +396,7 @@ ProzaEdit.Audit = {
           ruleId: `dlg:long:${longDlg}`,
           module: "Dialogue & Viewpoint (POV)",
           type: "preference",
+          confidence: line.trim().length >= longChars * 2 ? "medium" : "low",
           explanation: "Long dialogue block—possible exposition dump.",
           targetText: line.trim().substring(0, 100),
           replacementText: "(break with beats)",
@@ -399,13 +406,14 @@ ProzaEdit.Audit = {
     const paras = text.split(/\n\n+/);
     paras.forEach((p, idx) => {
       if (idx > 8) return;
-      const hasI = /\b(I|me|my)\b/.test(p);
-      const hasHeShe = /\b(he|she|they|him|her)\b/i.test(p);
-      if (hasI && hasHeShe && p.length > 120) {
+      const narration = p.replace(/["\u201c][^"\u201d]*["\u201d]?/g, " ");
+      const hasI = (narration.match(/\b(I|me|my)\b/g) || []).length >= 2;
+      const hasHeShe = (narration.match(/\b(he|she|him|her)\b/gi) || []).length >= 2;
+      if (hasI && hasHeShe && narration.length > 120) {
         push({
           ruleId: `pov:slip:${idx}`,
           module: "Dialogue & Viewpoint (POV)",
-          type: "confirmed",
+          type: "preference",
           explanation: "Possible POV slip (first + third person in same paragraph).",
           targetText: p.substring(0, 100),
           replacementText: "(align POV)",
@@ -676,7 +684,7 @@ ProzaEdit.Audit = {
   _manuscriptRules(text, lower, push, ctx) {
     const t = ctx.manuscriptType;
     if (t.includes("Academic")) {
-      if (/\b(don't|can't|won't|it's|I'm)\b/i.test(text)) {
+      if (/\b(don't|can't|won't|it's|I'm)\b/i.test(text.replace(/["\u201c][^"\u201d]*["\u201d]/g, " "))) {
         push({
           ruleId: "acad:contraction",
           module: "Academic Paper / Journal",

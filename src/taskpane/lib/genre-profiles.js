@@ -273,6 +273,10 @@
 
   const Genres = {
     REGISTRY,
+    isFiction(type) {
+      const t = String(type || "");
+      return t.includes("Fiction") && !/non-?fiction/i.test(t);
+    },
     JARGON_PACKS,
     DEFAULT_ID,
     list(family) {

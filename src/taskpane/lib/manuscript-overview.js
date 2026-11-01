@@ -81,7 +81,7 @@ ProzaEdit.ManuscriptOverview = {
   genreBenchmarks(manuscriptType, metrics, dialoguePct, targetAudience) {
     const flags = [];
     const t = String(manuscriptType || "");
-    const fiction = t.includes("Fiction");
+    const fiction = ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(t) : t.includes("Fiction") && !/non-?fiction/i.test(t);
     const narrativePct = Math.round((100 - dialoguePct) * 10) / 10;
     const gp = ProzaEdit.Genres?.resolve(t);
     if (fiction) {
@@ -150,7 +150,7 @@ ProzaEdit.ManuscriptOverview = {
     const senses = this.sensoryCounts(text);
     const namePairs = this.similarNamePairs(text, 4);
     const benchmarks = this.genreBenchmarks(ctx.manuscriptType, metrics, dialoguePct, ctx.targetAudience);
-    const fiction = String(ctx.manuscriptType || "").includes("Fiction");
+    const fiction = ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(ctx.manuscriptType) : (String(ctx.manuscriptType || "").includes("Fiction") && !/non-?fiction/i.test(String(ctx.manuscriptType)));
     const setting = ctx.settingAnchor || "(not set)";
 
     let html = `<details class="overview-panel" open><summary>Manuscript overview (local)</summary>`;

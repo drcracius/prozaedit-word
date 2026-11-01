@@ -84,7 +84,7 @@ ProzaEdit.StyleGuideRules = {
     let passive = 0;
     let m;
     while ((m = passiveRe.exec(text)) !== null && passive < 12) passive++;
-    const fiction = String(ctx?.manuscriptType || "").includes("Fiction");
+    const fiction = ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(ctx?.manuscriptType) : false;
     if (!fiction && passive >= 8 && text.length > 400) {
       budget.remaining--;
       push({

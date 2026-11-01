@@ -67,7 +67,7 @@
     return {
       chronoDepth,
       chronoSpoilerGuard: !!ctx.chronoSpoilerGuard,
-      fiction: String(ctx.manuscriptType || "").includes("Fiction"),
+      fiction: ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(ctx.manuscriptType) : (String(ctx.manuscriptType || "").includes("Fiction") && !/non-?fiction/i.test(String(ctx.manuscriptType))),
       mutedRules: ctx.mutedRules || [],
       reportDensity: ctx.reportDensity || "balanced",
     };

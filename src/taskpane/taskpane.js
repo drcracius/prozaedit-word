@@ -24,7 +24,8 @@ const MODULE_IDS = ["chkRep", "chkProp", "chkSpell", "chkAI", "mPlot", "mMotivat
 const FICTION_MODULE_IDS = ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"];
 
 function isFictionManuscriptType(type) {
-  return String(type != null ? type : getEl("manuscriptType")?.value || "").includes("Fiction");
+  const t = String(type != null ? type : getEl("manuscriptType")?.value || "");
+  return ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(t) : t.includes("Fiction") && !/non-?fiction/i.test(t);
 }
 const TAB_IDS = ["tab1", "tab2", "tab3", "tab4", "tab5", "tab6", "tab7"];
 
@@ -2105,7 +2106,7 @@ function setAuditExtended(on) {
 
 function shortManuscriptTypeLabel(type) {
   const t = String(type || "");
-  if (t.includes("Fiction")) return ProzaEdit.Genres ? `Fiction · ${ProzaEdit.Genres.resolve(t).label.replace(/^Fiction — /, "")}` : "Fiction";
+  if (isFictionManuscriptType(t)) return ProzaEdit.Genres ? `Fiction · ${ProzaEdit.Genres.resolve(t).label.replace(/^Fiction — /, "")}` : "Fiction";
   if (t.includes("Academic")) return "Academic";
   if (t.includes("Business")) return "Business";
   if (t.includes("Memoir")) return "Memoir";
@@ -5690,7 +5691,7 @@ function runTimelineScan() {
     warnOperationBusy();
     return;
   }
-  const fiction = (getEl("manuscriptType")?.value || "").includes("Fiction");
+  const fiction = isFictionManuscriptType();
   if (!fiction) {
     showPeStatus("Timeline scan is for fiction manuscripts. Set Manuscript type to Fiction on Target.", "warn");
     return;
