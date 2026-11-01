@@ -39,7 +39,9 @@ test("AuditReview.recoveryMessage gives structured copy and never leaks API keys
   const { AuditReview: A } = loadRecoveryStack();
   assert.equal(A.recoveryMessage({ code: "PE_CANCELLED" }, "x"), "Cancelled.");
   assert.match(A.recoveryMessage(new Error("Gemini request timed out."), "x"), /Nothing was changed.*Try again/i);
-  assert.match(A.recoveryMessage(new TypeError("Failed to fetch"), "x"), /network/i);
+  assert.match(A.recoveryMessage(new TypeError("Failed to fetch"), "get a Gemini reply"), /network/i);
+  assert.doesNotMatch(A.recoveryMessage(new TypeError("Failed to fetch"), "finish this audit"), /gemini/i);
+  assert.doesNotMatch(A.recoveryMessage(new Error("request timed out"), "finish this audit"), /gemini/i);
   assert.match(A.recoveryMessage(Object.assign(new Error("x"), { code: "InvalidObjectPath" }), "x"), /document may have changed/i);
   assert.match(A.recoveryMessage(Object.assign(new Error("x"), { code: "NotImplemented" }), "x"), /Word on the web/i);
   const leaked = A.recoveryMessage(

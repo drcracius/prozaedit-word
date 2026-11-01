@@ -86,18 +86,23 @@ ProzaEdit.AuditReview = {
     }
     const info = R.classifyError(error);
     const raw = R.sanitizeDetail(error?.message || error || "");
+    const viaGemini = /gemini/i.test(task) || /gemini/i.test(raw);
     switch (info.kind) {
       case "cancelled":
         return "Cancelled.";
       case "scope":
         return raw;
       case "timeout":
+        if (!viaGemini) return `Word took too long to respond. Nothing was changed. Try again, or use a smaller scope.`;
         return `Gemini request timed out. Nothing was changed in Word. Try again, or use the free local tools.`;
       case "network":
+        if (!viaGemini) return `The connection to Word was interrupted. Nothing was changed. Check your connection, then Try again.`;
         return `Could not reach Gemini (network problem). Nothing was changed in Word. Check your connection, then Try again.`;
       case "auth":
+        if (!viaGemini) return `Word refused that action (permission). Nothing was changed. Check that the document is not protected, then retry.`;
         return `Gemini rejected the API key. Check it under Settings → Essentials, or use the free local tools.`;
       case "quota":
+        if (!viaGemini) return `Word is busy or rate-limited. Wait a moment, then Try again.`;
         return `Gemini rate limit or quota reached. Wait a minute, then Try again, or use the free local tools.`;
       case "office-missing":
         return `Word could not find that text or object (the document may have changed). Use Go to to locate it, then retry.`;
