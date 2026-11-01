@@ -60,6 +60,7 @@ let msIndexBusy = false;
 let mciCache = null;
 let mciLoaded = false;
 let mciLegacyPending = null;
+const mciCheckpoint = { state: null };
 let mciBuildBusy = false;
 let mciFreshness = { state: "unknown", reason: "", changedSections: [] };
 let mciFreshnessAt = 0;
@@ -780,6 +781,7 @@ async function runBuildFullManuscriptContext(userInitiated) {
     const previous = getManuscriptContextIndex();
     const index = await wordRun("mci-build", async (ctx) => {
       return ProzaEdit.ManuscriptContextIndex.buildFromDocument(ctx, {
+        checkpointStore: mciCheckpoint,
         cancelCheck: () => longOp.throwIfCancelled(),
         onProgress: (partial) => {
           longOp.setStatus(ProzaEdit.ManuscriptContextIndex.formatBuildProgress(partial));
@@ -819,7 +821,7 @@ async function runBuildFullManuscriptContext(userInitiated) {
   } catch (e) {
     if (isLongOpCancelledError(e)) {
       cancelled = true;
-      showPeStatus("Manuscript context build cancelled.", "warn");
+      showPeStatus(mciCheckpoint.state ? "Manuscript context build cancelled. Progress is kept: run it again to resume where it stopped." : "Manuscript context build cancelled.", "warn");
       return false;
     }
     reportActionError(e, "build full manuscript context");

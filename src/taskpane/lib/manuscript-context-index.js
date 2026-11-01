@@ -817,20 +817,39 @@ ProzaEdit.ManuscriptContextIndex = {
     if (!paragraphTotal) throw new Error("Document is empty.");
 
     const batches = SR.planParagraphBatches(paragraphTotal, this.PARAGRAPH_BATCH);
-    const sampler = this.createSampler(paragraphTotal);
-    const names = this.newNameAccumulator();
-    const timeSignals = this.newTimeSignals();
     const probeSet = new Set(this.probeIndexes(paragraphTotal, this.PROBE_MAX));
-    const probePairs = [];
-    const docHasher = this.newHasher();
 
-    const chapterAccs = [];
-    let frontMatter = null;
-    let current = null;
-    const chunkAccs = [];
-    let nonEmptyChars = 0;
+    let st = opts.checkpointStore ? opts.checkpointStore.state : null;
+    let resumed = false;
+    if (st && (await this.checkpointValid(context, items, st, paragraphTotal, batches.length))) {
+      resumed = true;
+    } else {
+      st = {
+        version: this.CHECKPOINT_VERSION,
+        paragraphTotal,
+        createdAt: Date.now(),
+        nextBatch: 0,
+        sampler: this.createSampler(paragraphTotal),
+        names: this.newNameAccumulator(),
+        timeSignals: this.newTimeSignals(),
+        probePairs: [],
+        docHasher: this.newHasher(),
+        chapterAccs: [],
+        frontMatter: null,
+        current: null,
+        chunkAccs: [],
+        nonEmptyChars: 0,
+        checks: [],
+      };
+    }
+    if (opts.checkpointStore) opts.checkpointStore.state = st;
+    const { sampler, names, timeSignals, probePairs, docHasher, chapterAccs, chunkAccs } = st;
+    let { frontMatter, current, nonEmptyChars } = st;
+    if (resumed && onProgress) {
+      onProgress({ phase: "Resuming manuscript read", batchIndex: st.nextBatch, batchCount: batches.length, sectionIndex: 1, sectionTotal: Math.max(1, chapterAccs.length), paragraphsLoaded: batches[st.nextBatch - 1] ? batches[st.nextBatch - 1].end + 1 : 0, paragraphTotal });
+    }
 
-    for (let bi = 0; bi < batches.length; bi++) {
+    for (let bi = st.nextBatch; bi < batches.length; bi++) {
       cancelCheck();
       const { start, end } = batches[bi];
       for (let i = start; i <= end; i++) items[i].load(["text", "styleBuiltIn"]);
@@ -876,6 +895,11 @@ ProzaEdit.ManuscriptContextIndex = {
         }
         sampler.offer(i, trimmed);
       }
+      st.frontMatter = frontMatter;
+      st.current = current;
+      st.nonEmptyChars = nonEmptyChars;
+      st.nextBatch = bi + 1;
+      st.checks.push([start, this.hashString(this.normalizeParagraphText(items[start].text || ""))]);
       if (onProgress) {
         const loaded = end + 1;
         const secCount = Math.max(1, chapterAccs.length || chunkAccs.length);
@@ -892,6 +916,7 @@ ProzaEdit.ManuscriptContextIndex = {
       if (bi + 1 < batches.length) await yieldFn();
     }
 
+    if (opts.checkpointStore) opts.checkpointStore.state = null;
     let accs = chapterAccs.length ? [...(frontMatter && frontMatter.wordCount > 0 ? [frontMatter] : []), ...chapterAccs] : chunkAccs.filter(Boolean);
     accs = accs.map((a) => ({ ...a, hash: a.hasher ? a.hasher.digest() : a.hash }));
     accs = this.mergeSectionAccs(accs, this.MAX_SECTIONS);
@@ -916,6 +941,30 @@ ProzaEdit.ManuscriptContextIndex = {
         fiction: !!opts.fiction,
       })
     );
+  },
+
+  CHECKPOINT_VERSION: 1,
+  CHECKPOINT_MAX_AGE_MS: 30 * 60 * 1000,
+
+  /**
+   * A checkpoint (in-memory only, never written to the document) is reusable when it is the same version, recent, the
+   * paragraph count matches, and a spread of already-processed paragraphs still hash the same. Otherwise discard it.
+   */
+  async checkpointValid(context, items, st, paragraphTotal, batchCount) {
+    try {
+      if (!st || st.version !== this.CHECKPOINT_VERSION || st.paragraphTotal !== paragraphTotal) return false;
+      if (Date.now() - (st.createdAt || 0) > this.CHECKPOINT_MAX_AGE_MS) return false;
+      if (!(st.nextBatch > 0 && st.nextBatch < batchCount) || !Array.isArray(st.checks) || st.checks.length !== st.nextBatch) return false;
+      const step = Math.max(1, Math.floor(st.checks.length / 12));
+      const picks = [];
+      for (let k = 0; k < st.checks.length; k += step) picks.push(st.checks[k]);
+      picks.push(st.checks[st.checks.length - 1]);
+      picks.forEach(([idx]) => items[idx] && items[idx].load("text"));
+      await context.sync();
+      return picks.every(([idx, h]) => items[idx] && this.hashString(this.normalizeParagraphText(items[idx].text || "")) === h);
+    } catch (_) {
+      return false;
+    }
   },
 
   /** Compare two indexes by per-chapter hash (same chapter count only). */
