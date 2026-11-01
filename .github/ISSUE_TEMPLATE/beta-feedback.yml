@@ -1,0 +1,83 @@
+name: Beta feedback (UX-4)
+description: Phase 2 — five prompts + PE-47 decision (mirrors docs/templates/BETA-FEEDBACK.md)
+title: "[Beta feedback] YYYY-MM-DD"
+labels:
+  - beta-feedback
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **After Phase 1 GO beta.** Worksheet: [docs/templates/BETA-FEEDBACK.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/templates/BETA-FEEDBACK.md)
+        **Decision rules:** [FINAL-MILE-PLAN-WEB.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/FINAL-MILE-PLAN-WEB.md) Phase 2
+
+  - type: input
+    id: build_version
+    attributes:
+      label: Build version
+      placeholder: "2.0.0.15"
+    validations:
+      required: true
+
+  - type: input
+    id: respondents
+    attributes:
+      label: Number of respondents (or "owner diary")
+      placeholder: "1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt_1
+    attributes:
+      label: "1 — Simple mode + Audit Critical default"
+      description: Help or confuse?
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt_2
+    attributes:
+      label: "2 — Time to first Apply fix or Undo"
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt_3
+    attributes:
+      label: "3 — Mis-taps on audit cards (Apply vs Mute/Dismiss)"
+    validations:
+      required: false
+
+  - type: textarea
+    id: prompt_4
+    attributes:
+      label: "4 — Checks eligibility callout clarity"
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt_5
+    attributes:
+      label: "5 — Recommend for daily drafting? One change first?"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: pe47
+    attributes:
+      label: Open PE-47 fix PR?
+      options:
+        - "No — ship beta as-is"
+        - "Maybe — need more responses"
+        - "Yes — copy/banner tweak only"
+        - "Yes — code fix (describe in notes)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: roll_up
+    attributes:
+      label: Roll-up notes (same friction ≥2 testers, shaper bug, etc.)
+      placeholder: See scoring rubric in BETA-FEEDBACK.md
+    validations:
+      required: false
