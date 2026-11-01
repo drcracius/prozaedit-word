@@ -169,3 +169,14 @@ for (const [words, auditMs, indexMs] of [[10000, 2500, 3000], [50000, 7000, 8000
     assert.ok(dt < indexMs, `index build took ${dt}ms`);
   });
 }
+
+test("wiring: Content notes toggle is in the page, persisted, reset-able and passed to the audit; genre-checks loads before audit-engine", () => {
+  const html = fs.readFileSync(path.join(root, "src/taskpane/taskpane.html"), "utf8");
+  const js = fs.readFileSync(path.join(root, "src/taskpane/taskpane.js"), "utf8");
+  const prefs = fs.readFileSync(path.join(root, "src/taskpane/lib/ui-prefs-helpers.js"), "utf8");
+  assert.match(html, /id="contentNotes"/);
+  assert.ok(html.indexOf("lib/genre-checks.js") > 0 && html.indexOf("lib/genre-checks.js") < html.indexOf("lib/audit-engine.js"));
+  assert.match(js, /contentNotes: isChecked\("contentNotes", false\)/);
+  assert.match(js, /setC\("contentNotes"/);
+  assert.match(prefs, /contentNotes: false/);
+});
