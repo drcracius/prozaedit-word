@@ -1,8 +1,8 @@
 # ProzaEdit Word — As-shipped audit & rating (current)
 
-**Date:** 2026-10-31 (PE-30 reconciliation)  
-**Build on `main`:** **2.0.0.15** (`manifest.hosted.xml` + `PROZAEDIT_BUILD_VERSION`)  
-**Scope:** Post UX-1–UX-4 polish, anonymous diagnostics client (ingest URL empty by default), minimal GitHub Actions version-sync CI.
+**Date:** 2026-11-01 (PE-46 web-first alignment)  
+**Build on `main`:** **2.0.0.15** (`manifest.hosted.xml` + `PROZAEDIT_BUILD_VERSION`) after PE-43/45  
+**Scope:** Post UX-1–UX-4 polish + PE-45 CONFIG/shaper; **29** unit tests; diagnostics client (ingest URL empty by default); version-sync CI. **Validation path:** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md).
 
 ---
 
@@ -34,9 +34,10 @@ Weights apply **only** to the shipped beta (features doc + hosted add-in scope).
 
 | Lever | Priority |
 |-------|----------|
+| **Word web checklist** — [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) per [final mile plan](./FINAL-MILE-PLAN-WEB.md) | P0 |
 | **Beta UX-4 feedback** — run prompts in [UX rating](./prozaedit-ux-rating-and-recommendations.md); polish only where data shows friction | P0 |
-| **Deploy diagnostics ingest** — worker in `tools/diagnostics-ingest/`, set `DIAGNOSTICS_INGEST_URL`, manifest AppDomain + version bump when ready ([DIAGNOSTICS.md](./DIAGNOSTICS.md)) | P1 |
-| **PE-2 install proof** — Shared Folder on Windows after cache clear ([checklist](./pe-2-shared-folder-checklist.md)) | P0 |
+| **Deploy diagnostics ingest** — worker in `tools/diagnostics-ingest/`, set `DIAGNOSTICS_INGEST_URL`, manifest AppDomain + version bump when ready ([DIAGNOSTICS.md](./DIAGNOSTICS.md)) | P1 (optional) |
+| **PE-2 install proof** — Shared Folder on Windows ([checklist](./pe-2-shared-folder-checklist.md)) | **Deferred** — optional appendix |
 | Optional micro-polish from UX doc (≤ small effort each, no manifest) | P2 |
 | Expand CI later (pure-function tests for banks/shaper/chronology per Phase 7 roadmap) | P2 |
 
@@ -60,7 +61,7 @@ Weights apply **only** to the shipped beta (features doc + hosted add-in scope).
 | Word API / WebView variance | High | `Word.run` failures on selection drift, search miss, long sync; desktop Upload/install friction. |
 | Fiction gating confusion | Medium | Academic users may enable fiction modules before reading inline copy; timeline scan only for Fiction type. |
 | Truncation / performance | Medium | Full manuscript audits cap chars; `sys_trunc` card easy to miss. |
-| Install / PE-2 Shared Folder | Medium | Catalog sideload unproven on owner PC; web Upload path documented but brittle on desktop. |
+| Desktop install variance | Low (web-first) | Primary path is Word on the web upload; Shared Folder (PE-2) deferred optional appendix. |
 | No Office.js in CI | Medium | Regressions in `Word.run` still manual; CI covers version strings only. |
 | vNext expectation drift | Medium | Master spec IA ≠ shipped tabs; keep phased plan as north star only (see **4.2/10** alignment). |
 | Diagnostics ingest | Low (until deploy) | Empty `DIAGNOSTICS_INGEST_URL` — automatic send path inactive until owner deploys worker + manifest AppDomain bump. |
@@ -71,11 +72,11 @@ Weights apply **only** to the shipped beta (features doc + hosted add-in scope).
 
 | Priority | Item |
 |----------|------|
-| **P0** | **PE-2** — Confirm Shared Folder install on Windows ([checklist](./pe-2-shared-folder-checklist.md)). |
+| **P0** | **Word web validation** — [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) + [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md). |
 | **P0** | **Beta UX-4 feedback** — [UX rating](./prozaedit-ux-rating-and-recommendations.md). |
-| **P1** | **Deploy diagnostics ingest** — [DIAGNOSTICS.md](./DIAGNOSTICS.md). |
-| **P1** | **Sync stale docs** — Spec review appendix vs 27 modules; features §8 lib table. |
-| **P2** | Shaper slider persistence across sessions (if beta asks). |
+| **P1** | **Deploy diagnostics ingest** (optional) — [DIAGNOSTICS.md](./DIAGNOSTICS.md). |
+| **P2** | **PE-2 Shared Folder** — optional desktop appendix; not required for web 1.0. |
+| **P2** | Sync stale docs — spec review module count vs `main`. |
 | **P2** | Zipf shaper v2, full quota modal, narrative tab / DAG timeline (vNext phases). |
 
 ---

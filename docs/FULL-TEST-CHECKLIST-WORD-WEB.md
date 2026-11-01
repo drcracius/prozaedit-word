@@ -2,7 +2,8 @@
 
 **Audience:** D Cracius beta validation on **Word online** (narrow task pane).  
 **Build:** UI **2.0.0.15** (no manifest re-upload for this UX pack).  
-**Pane URL:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html
+**Pane URL:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html  
+**Final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)
 
 ---
 
@@ -40,17 +41,21 @@
 
 ## 5. Checks and audit
 
+- [ ] Checks: top **eligibility** callout (`pe-checks-eligibility`) explains fiction vs academic / citation gating for your manuscript type (PE-45).
 - [ ] Checks: enable modules → **Run audit** (toolbar or Audit hub).
 - [ ] Checks **Scope (read-only)** chip matches Target scope / refresh count.
+- [ ] Audit tab **Scope (read-only)** chip matches Checks after refresh (PE-45).
 - [ ] **Run audit** shows **Reading document…** then **Analyzing…**; **Cancel** stops cleanly with status **Cancelled.** (no stuck disabled buttons).
 - [ ] Full manuscript or large scope: **Long operation** banner when **Warn before long operations** is on (Settings → Onboarding); **Continue** / **Not now** / **Don't show again**.
 - [ ] Audit tab **badge** shows open issue count after audit; clears when audit cleared.
+- [ ] **Simple mode on:** Audit shows **Critical**-first banner copy; default-filter hint mentions Simple (PE-45).
 - [ ] Audit: filter chips, sort; read-only **Report depth** and **Default filter** hints match Settings → Audit.
 - [ ] Change report depth / default filter in Settings — hints update on Audit tab.
 - [ ] Empty Audit state: **Run audit from Checks** CTA.
 - [ ] **Apply fix** on a card → **Undo** → **Last edit**.
 - [ ] Optional: **Verify citations** / **Scan timeline** on large scope — warning banner; Cancel during scan.
 - [ ] Optional: **Batch section audits** — warning; **Cancel batch** or hub Cancel stops between sections.
+- [ ] **Rewrite → Advanced lexical shaper:** change Complexity / Intensity / Density → save document → reopen pane → sliders restored; **Reset** in panel → defaults **3 / 4 / 2** (PE-45 CONFIG persistence).
 
 ## 6. Help, About, and diagnostics
 
@@ -77,13 +82,17 @@
 
 ---
 
-*Automated coverage:* `npm test` (includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`, `onboarding-banners.test.mjs`, `long-operation-helpers.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).
+*Automated coverage:* `npm test` (**29** tests — includes `ui-prefs-helpers.test.mjs`, `onboarding-helpers.test.mjs`, `onboarding-banners.test.mjs`, `long-operation-helpers.test.mjs`, `shaper-config.test.mjs`). Five-pass audit: [prozaedit-five-pass-audit-beta-ready.md](prozaedit-five-pass-audit-beta-ready.md).
 
 ---
 
-## Owner-only outstanding (not this checklist)
+## Owner mile after this checklist (web 1.0 — PE-2 not required)
 
-| Item | Owner action |
-|------|----------------|
-| **PE-2 Shared Folder** | On Windows: [Verify-ProzaEdit-Install.bat](../Verify-ProzaEdit-Install.bat) + manual smoke per [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md). |
-| **Diagnostics ingest live** | Deploy worker ([DIAGNOSTICS.md](./DIAGNOSTICS.md)); set `DIAGNOSTICS_INGEST_URL`, manifest AppDomain, bump **2.0.0.16** — client today uses empty URL (clipboard + GitHub issue fallback). |
+Track progress in [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md). Log results: [templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md) · UX-4: [templates/BETA-FEEDBACK.md](./templates/BETA-FEEDBACK.md).
+
+| Item | Owner action | Required for web beta? |
+|------|----------------|------------------------|
+| **Pass/fail log** | Copy template from final-mile plan Phase 1 | **Yes** |
+| **UX-4 beta prompts** | Five questions in [UX rating](./prozaedit-ux-rating-and-recommendations.md) | **Yes** (or owner diary) |
+| **Diagnostics ingest live** | Deploy worker ([DIAGNOSTICS.md](./DIAGNOSTICS.md)); URL + AppDomain + **2.0.0.16** | **Optional** |
+| **PE-2 Shared Folder (desktop)** | [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md) — **deferred**; use web upload if skipped | **No** |

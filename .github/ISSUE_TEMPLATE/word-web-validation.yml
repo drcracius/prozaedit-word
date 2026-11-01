@@ -1,0 +1,65 @@
+name: Word web validation log
+description: Record Phase 1 pass/fail from FULL-TEST-CHECKLIST (copy from docs/templates/VALIDATION-LOG.md)
+title: "[Validation] Word web YYYY-MM-DD"
+labels:
+  - beta-validation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Checklist:** [FULL-TEST-CHECKLIST-WORD-WEB.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/FULL-TEST-CHECKLIST-WORD-WEB.md)
+        **Template:** [docs/templates/VALIDATION-LOG.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/templates/VALIDATION-LOG.md)
+        **Final mile:** [FINAL-MILE-PLAN-WEB.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/FINAL-MILE-PLAN-WEB.md)
+
+  - type: input
+    id: build_version
+    attributes:
+      label: Build version
+      placeholder: "2.0.0.15"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Edge
+        - Chrome
+        - Firefox
+        - Safari
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: sections_1_8
+    attributes:
+      label: "§1–8 pass/fail (paste table or bullets)"
+      description: One line per section — Pass/Fail + short note
+    validations:
+      required: true
+
+  - type: textarea
+    id: pe43_45
+    attributes:
+      label: "§9 PE-43/45 matrix (pass/fail)"
+      description: Long-op, Cancel, shaper persistence, Simple/Critical, scope chips, eligibility
+    validations:
+      required: true
+
+  - type: dropdown
+    id: decision
+    attributes:
+      label: Sign-off decision
+      options:
+        - GO beta
+        - HOLD — re-test needed
+    validations:
+      required: true
+
+  - type: textarea
+    id: p0_blockers
+    attributes:
+      label: P0 blockers (if any)
+      placeholder: None

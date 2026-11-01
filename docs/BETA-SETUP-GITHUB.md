@@ -11,7 +11,8 @@ that confirms this guide is the **correct** path — not an error on your subscr
 
 **Cost:** GitHub + GitHub Pages = **free**.  
 **Result:** Word loads ProzaEdit from the internet — **no** `Start ProzaEdit.bat` for daily writing.  
-**Testers:** Each person uploads **`manifest.hosted.xml`** once (see Part 6).
+**Testers:** Each person uploads **`manifest.hosted.xml`** once (see Part 6).  
+**Owner final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md). Desktop Shared Folder (PE-2) is **optional/deferred**.
 
 ---
 

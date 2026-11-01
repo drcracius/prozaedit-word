@@ -40,7 +40,7 @@ Shaper sliders use `oninput="syncShaperSliderLabels()"` — present.
 | `PROZAEDIT_REFERENCE_STYLE` | Capture reference style |
 | `PROZAEDIT_CUSTOM_STYLE` | Custom house rules |
 
-**Not persisted in CONFIG:** lexical shaper slider values (DOM defaults only) — intentional Phase 3 behavior.
+**Shaper sliders (PE-45):** `shaperComplexity` / `shaperIntensity` / `shaperDensity` persist in `PROZAEDIT_CONFIG` with document; panel **Reset** restores defaults.
 
 **Session-only (not document settings):** `pe-session-tips-dismissed` (onboarding), `PROZAEDIT_UPDATE_CHECK`, `PROZAEDIT_FULL_OK`, `pe_ai_session_tokens` (quota).
 

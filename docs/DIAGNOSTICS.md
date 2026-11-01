@@ -2,6 +2,8 @@
 
 Safe, **opt-in** crash and problem reporting for the Word task pane. **Default: off.** Nothing sends until the user enables **Send anonymous crash reports** on the Help tab.
 
+**Web 1.0:** Network ingest is **optional** — see Phase 3 in [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md). Clipboard + GitHub issue fallback works without deploy.
+
 ## What is sent (and what is not)
 
 | Included (redacted) | Never sent |
@@ -28,6 +30,8 @@ When ingest is not configured, Help also shows **Report on GitHub** → [new iss
 ## Owner: enable network ingest
 
 Shipped config keeps `DIAGNOSTICS_INGEST_URL` **empty** in `src/taskpane/lib/diagnostics-config.js` — no extra manifest `AppDomain` is required for that default.
+
+**Step checklist (2.0.0.16):** [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) — use only when a live Worker URL exists.
 
 ### Option A — GitHub Actions (one workflow run)
 

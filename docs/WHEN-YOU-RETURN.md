@@ -1,6 +1,8 @@
 # When you return — ~5 minutes to finish beta in Word
 
-Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** on this PC.
+Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
+
+**After install:** run the web validation checklist and final-mile plan — [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md), [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md).
 
 Implementation roadmap: `docs/prozaedit-implementation-plan-audited.md`
 
@@ -54,7 +56,7 @@ Send them:
 | Helper | Purpose |
 |--------|---------|
 | **`Install-ProzaEdit-Desktop-GitHub.bat`** | Download [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) to `Documents\ProzaEdit\catalog\` + upload instructions |
-| **`Fix-ProzaEdit-SharedFolder.bat`** | Re-download manifest + register local TrustedCatalog (desktop Shared Folder — **PE-2**, test on your PC) |
+| **`Fix-ProzaEdit-SharedFolder.bat`** | Optional desktop appendix — Shared Folder catalog (**PE-2 deferred**); web upload is the primary beta path |
 | **`scripts/install/README.md`** | PowerShell parameters, cache paths, LAN share **examples only** (e.g. OTHP15) |
 
 Localhost dev bats remain in `_archive/local-dev/` only.

@@ -41,8 +41,9 @@
 | Cancel citation / timeline / batch / deep read phase | **Done** |
 | Long-operation warning banner + Settings toggle | **Done** |
 
-## Owner / manual
+## Owner / manual (web-first)
 
-- **PE-2** Shared Folder on Windows — [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md)
-- **Diagnostics ingest** — not deployed; [DIAGNOSTICS.md](./DIAGNOSTICS.md)
-- **Full Word web checklist** — [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md)
+- **Final mile plan** — [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)
+- **Full Word web checklist** — [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) (**required** for web 1.0)
+- **Diagnostics ingest** — optional; not deployed; [DIAGNOSTICS.md](./DIAGNOSTICS.md)
+- **PE-2** Shared Folder (desktop) — **deferred** optional appendix — [pe-2-shared-folder-checklist.md](./pe-2-shared-folder-checklist.md)
