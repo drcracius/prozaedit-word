@@ -315,3 +315,22 @@ test("perf budget: 100k-word manuscript genre audit under budget", () => {
   Audit.run(text.slice(0, 450000), ctxFor("Fiction (Thriller/Mystery/Crime)"));
   assert.ok(Date.now() - t0 < 6000, `audit took ${Date.now() - t0}ms`);
 });
+
+test("audit: provider errors classify into the friendly recovery messages without leaking keys", async () => {
+  const pe = load({});
+  const { AIProviders } = pe;
+  const mk = (status) => AIProviders.mapError(AIProviders.get("anthropic"), status, { error: { message: `x ${KEY}` } }, [KEY]);
+  const { AuditReview } = (() => { const sb = { ProzaEdit: pe, window: {} }; sb.window = sb; vm.createContext(sb); vm.runInContext(fs.readFileSync(path.join(root, "src/taskpane/lib/audit-review-helpers.js"), "utf8"), sb); return sb.ProzaEdit; })();
+  assert.equal(AuditReview.classifyError(mk(401)).kind, "auth");
+  assert.equal(AuditReview.classifyError(mk(429)).kind, "quota");
+  assert.match(AuditReview.recoveryMessage(mk(401), "get a Claude reply"), /Claude rejected the API key/);
+  assert.ok(!mk(500).message.includes(KEY));
+});
+
+test("audit: key store degrades safely when storage is unavailable", () => {
+  const pe = load({ localStorage: { getItem() { throw new Error("denied"); }, setItem() { throw new Error("denied"); }, removeItem() { throw new Error("denied"); } } });
+  assert.equal(pe.AIKeys.get("openai"), "");
+  assert.equal(pe.AIKeys.set("openai", "k-12345678"), false);
+  assert.equal(pe.AIQuotaManager.getDayTokens(), 0);
+  pe.AIQuotaManager.recordUsage(10);
+});

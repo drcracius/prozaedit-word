@@ -135,7 +135,11 @@ function setupSafeHandlers() {
     remember.addEventListener("change", () => {
       if (remember.checked) {
         const key = getApiKey();
-        if (key) ProzaEdit.AIKeys?.set(aiProviderId(), key);
+        if (key && ProzaEdit.AIKeys?.set(aiProviderId(), key) === false) {
+          showPeStatus("This browser blocks local storage, so the key cannot be remembered. It stays for this session only.", "warn");
+          remember.checked = false;
+          return;
+        }
         showPeStatus("Key remembered on this device only (browser storage). It is never saved in the document. Avoid on shared PCs.", "warn");
         schedulePersistSettings();
       } else {
