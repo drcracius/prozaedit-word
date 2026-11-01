@@ -111,6 +111,62 @@ ProzaEdit.ScopeReader = {
     if (opts && typeof opts.cancelCheck === "function") opts.cancelCheck();
   },
 
+  /** Yield to the browser event loop between Office.js batches (keeps the pane responsive). */
+  microYield() {
+    return new Promise((resolve) => {
+      if (typeof queueMicrotask === "function") queueMicrotask(resolve);
+      else if (typeof setTimeout === "function") setTimeout(resolve, 0);
+      else resolve();
+    });
+  },
+
+  /** Pure helper: inclusive paragraph batch ranges for chunked reads. */
+  planParagraphBatches(totalParagraphs, chunkSize) {
+    const total = Math.max(0, Math.floor(Number(totalParagraphs) || 0));
+    const chunk = Math.max(1, Math.floor(Number(chunkSize) || 40));
+    const batches = [];
+    for (let start = 0; start < total; start += chunk) {
+      batches.push({ start, end: Math.min(start + chunk - 1, total - 1) });
+    }
+    return batches;
+  },
+
+  /**
+   * Read body text in paragraph batches with cooperative cancel and micro-yields.
+   * @param {object} [opts] — cancelCheck, maxChars (default 600000), chunkSize, onProgress({ batchIndex, batchCount, paragraphsLoaded, paragraphTotal })
+   */
+  async readBodyTextChunked(context, opts) {
+    opts = opts || {};
+    const maxChars = opts.maxChars != null ? Number(opts.maxChars) : 600000;
+    const chunkSize = opts.chunkSize != null ? Number(opts.chunkSize) : 40;
+    const paras = context.document.body.paragraphs;
+    paras.load("items");
+    await context.sync();
+    const total = paras.items.length;
+    const batches = this.planParagraphBatches(total, chunkSize);
+    let text = "";
+    for (let bi = 0; bi < batches.length; bi++) {
+      this._cancelCheck(opts);
+      const { start, end } = batches[bi];
+      for (let i = start; i <= end; i++) paras.items[i].load("text");
+      await context.sync();
+      for (let i = start; i <= end; i++) {
+        text += (paras.items[i].text || "") + "\n";
+        if (text.length >= maxChars) return text.substring(0, maxChars);
+      }
+      if (typeof opts.onProgress === "function") {
+        opts.onProgress({
+          batchIndex: bi + 1,
+          batchCount: batches.length,
+          paragraphsLoaded: end + 1,
+          paragraphTotal: total,
+        });
+      }
+      if (bi + 1 < batches.length) await this.microYield();
+    }
+    return text;
+  },
+
   async textFromParagraphRange(context, startPara, endPara, opts) {
     opts = opts || {};
     const paras = context.document.body.paragraphs;
@@ -125,6 +181,7 @@ ProzaEdit.ScopeReader = {
       for (let i = blockStart; i <= blockEnd; i++) paras.items[i].load("text");
       await context.sync();
       for (let i = blockStart; i <= blockEnd; i++) text += (paras.items[i].text || "") + "\n";
+      if (blockEnd < endPara) await this.microYield();
     }
     return text;
   },
@@ -143,6 +200,7 @@ ProzaEdit.ScopeReader = {
       for (let i = start; i <= end; i++) paras.items[i].load("text");
       await context.sync();
       for (let i = start; i <= end; i++) text += (paras.items[i].text || "") + "\n";
+      if (end < total - 1) await this.microYield();
     }
     return { text, label: "full manuscript" };
   },

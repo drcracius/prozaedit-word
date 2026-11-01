@@ -25,8 +25,14 @@ ProzaEdit.AuditReview = {
     const items = Array.isArray(list) ? list : [];
     const limit = Math.max(1, Math.floor(Number(max)) || ProzaEdit.AuditReview.MAX_RENDERED_CARDS);
     if (items.length <= limit) return { shown: items, hiddenCount: 0 };
-    return { shown: items.slice(0, limit), hiddenCount: items.length - limit };
+    return {
+      shown: items.slice(0, limit),
+      hiddenCount: items.length - limit,
+      loadMoreStep: ProzaEdit.AuditReview.LOAD_MORE_STEP,
+    };
   },
+
+  LOAD_MORE_STEP: 100,
 
   /** Strip API keys and cap length before any error text is shown to the user. */
   sanitizeDetail(text, maxLen) {

@@ -39,6 +39,7 @@ let historyBusy = false;
 let peStatusTimer = null;
 let currentAuditSuggestions = [];
 let auditCardFilter = "all";
+let auditCardDisplayLimit = 300;
 let auditCardSort = "priority";
 let batchCancel = false;
 let lastAuditExcerpt = "";
@@ -455,6 +456,7 @@ function refreshScopeCharPreview() {
 }
 
 let msIndexTimer = null;
+let msIndexBuildToken = 0;
 
 function scheduleManuscriptIndexBuild(force) {
   if (force) {
@@ -474,22 +476,55 @@ function scheduleManuscriptIndexBuild(force) {
 }
 
 function buildManuscriptIndexNow() {
+  const token = ++msIndexBuildToken;
   msIndexBusy = true;
+  const statusEl = getEl("peWorkflowStatusLine");
+  const priorStatus = statusEl?.textContent || "";
   wordRun("ms-index", async (ctx) => {
-    const body = ctx.document.body;
-    body.load("text");
-    await ctx.sync();
-    return (body.text || "").substring(0, 600000);
+    return ProzaEdit.ScopeReader.readBodyTextChunked(ctx, {
+      maxChars: 600000,
+      cancelCheck: () => {
+        if (token !== msIndexBuildToken) {
+          const err = new Error("Cancelled.");
+          err.code = "PE_CANCELLED";
+          err.name = "ProzaEditCancelledError";
+          throw err;
+        }
+      },
+      onProgress: ({ paragraphsLoaded, paragraphTotal }) => {
+        if (token !== msIndexBuildToken || activeLongOp) return;
+        if (statusEl) {
+          statusEl.textContent = `Building manuscript index… ${paragraphsLoaded}/${paragraphTotal} paragraphs`;
+        }
+      },
+    });
   })
     .then((text) => {
-      if (text.length < 200) return;
+      if (token !== msIndexBuildToken) return;
+      if (!text || text.length < 200) return;
       msIndexCache = ProzaEdit.ContinuityGuard.buildIndex(text);
       return ProzaEdit.Settings.setAsync(ProzaEdit.ContinuityGuard.KEYS.INDEX, JSON.stringify(msIndexCache));
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (isLongOpCancelledError(e) || e?.code === "PE_CANCELLED") return;
+    })
     .finally(() => {
-      msIndexBusy = false;
+      if (token === msIndexBuildToken) msIndexBusy = false;
+      if (statusEl && !activeLongOp && String(statusEl.textContent || "").includes("Building manuscript index")) {
+        statusEl.textContent = priorStatus;
+      }
     });
+}
+
+function resetAuditCardDisplayLimit() {
+  auditCardDisplayLimit = ProzaEdit.AuditReview?.MAX_RENDERED_CARDS || 300;
+}
+
+function loadMoreAuditCards() {
+  const step = ProzaEdit.AuditReview?.LOAD_MORE_STEP || 100;
+  const list = filteredAuditSuggestions();
+  auditCardDisplayLimit = Math.min(list.length, auditCardDisplayLimit + step);
+  applyAuditCardFilter({ preserveDisplayLimit: true });
 }
 
 function getManuscriptIndex() {
@@ -3737,7 +3772,9 @@ function setAuditSuggestions(list) {
   if (activeTab) updateWorkflowStepper(activeTab);
 }
 
-function applyAuditCardFilter() {
+function applyAuditCardFilter(options) {
+  options = options || {};
+  if (!options.preserveDisplayLimit) resetAuditCardDisplayLimit();
   renderAuditCards(filteredAuditSuggestions());
 }
 
@@ -4283,7 +4320,7 @@ function renderAuditCards(list) {
     }
     return;
   }
-  const capped = ProzaEdit.AuditReview?.capCards?.(list) || { shown: list, hiddenCount: 0 };
+  const capped = ProzaEdit.AuditReview?.capCards?.(list, auditCardDisplayLimit) || { shown: list, hiddenCount: 0 };
   capped.shown.forEach((item, i) => {
     if (!item || typeof item !== "object") return;
     const id = String(item.id || `c${i}`).replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -4354,7 +4391,15 @@ function renderAuditCards(list) {
     const note = document.createElement("p");
     note.className = "pe-card-cap-note";
     note.setAttribute("role", "status");
-    note.textContent = `Showing the first ${capped.shown.length} of ${list.length} findings. Fix or dismiss some, switch the filter, or narrow the scope to see the rest.`;
+    const step = capped.loadMoreStep || 100;
+    note.textContent = `Showing ${capped.shown.length} of ${list.length} findings (${capped.hiddenCount} not shown). `;
+    const loadBtn = document.createElement("button");
+    loadBtn.type = "button";
+    loadBtn.className = "btn-linkish";
+    loadBtn.textContent = `Show next ${Math.min(step, capped.hiddenCount)}`;
+    loadBtn.onclick = () => loadMoreAuditCards();
+    note.appendChild(loadBtn);
+    note.appendChild(document.createTextNode(" — or fix/dismiss cards, change the filter, or narrow scope."));
     box.appendChild(note);
   }
   if (ProzaEdit.TooltipRegistry?.refreshTooltips) {
@@ -4470,9 +4515,22 @@ function goToIssue(target) {
   return wordRun("goto", async (ctx) => {
     await ProzaEdit.WordSafeNavigator.selectFirstInBody(ctx, target);
   })
-    .then(() => true)
+    .then(() => {
+      clearRetry();
+      return true;
+    })
     .catch((e) => {
-      reportActionError(e, "locate this finding");
+      const result = reportActionError(e, "locate this finding", {
+        retry: { label: "Go to", run: () => goToIssue(target) },
+      });
+      if (!result.cancelled) {
+        showPeStatusHtml(
+          `${result.message} Use <strong>Try again</strong> above, or open ` +
+            `<button type="button" class="btn-linkish" onclick="showTab('tab7');var d=document.getElementById('peHelpGotoTroubleshoot');if(d)d.open=true;">Help → Go to troubleshooting</button>.`,
+          "warn",
+          true
+        );
+      }
       return false;
     })
     .finally(release);
