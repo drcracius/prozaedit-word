@@ -15,6 +15,13 @@
     ["free gift", "gift"],
     ["honest truth", "truth"],
     ["true facts", "facts"],
+    ["two twins", "twins"],
+    ["new innovation", "innovation"],
+    ["added bonus", "bonus"],
+    ["join together", "join"],
+    ["return back", "return"],
+    ["returned back", "returned"],
+    ["revert back", "revert"],
   ];
 
   /** Idiomatic doublets: usually deliberate, so shown only in Advanced (low confidence) and never auto-rewritten. */

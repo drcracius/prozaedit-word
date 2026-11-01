@@ -43,6 +43,9 @@
     clearAll() {
       return write({});
     },
+    hasAny() {
+      return Object.values(read()).some((v) => typeof v === "string" && v);
+    },
     has(providerId) {
       return !!this.get(providerId);
     },

@@ -24,7 +24,10 @@ ProzaEdit.AIQuotaManager = {
   },
 
   _today() {
-    return new Date().toISOString().slice(0, 10);
+    // Local calendar date: the daily cap resets at the user's local midnight (documented in Help/shipped notes).
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   },
 
   /* Pane-lifetime counters: the larger of these and browser storage is used, so blocked or failing storage can never

@@ -1,11 +1,11 @@
-/* Safe Word search strings (255-char cap, wildcard strip) and scope-aware search/navigation. */
+/* Safe Word search strings (255-char cap; caret codes stripped; other characters are literal because we never enable wildcards) and scope-aware search/navigation. */
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.WordSafeNavigator = {
   sanitizeSearch(t) {
     return String(t)
       .replace(/[\r\n\u000b\u000c\u2028\u2029]/g, " ")
-      .replace(/[\^?$*[\]{}<>@#]/g, "")
+      .replace(/\^/g, "")
       .trim()
       .substring(0, 255);
   },

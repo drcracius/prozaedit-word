@@ -91,15 +91,15 @@ ProzaEdit.LocalCoach = {
     {
       re: /\b(copilot|gemini|ai|rewrite)\b/i,
       tips: [
-        "Default order: ProzaEdit local audit → Word Copilot for prose → Gemini only if you need API prompts.",
-        "Use ‘Copy for Copilot’ on the Audit tab to paste findings without Deep Audit tokens.",
+        "Suggested order: ProzaEdit local audit, then Word Copilot for prose, then your own AI key only if you want it.",
+        "Use ‘Copy for Copilot’ on the Audit tab to paste findings without using AI tokens.",
       ],
     },
     {
       re: /\b(plot|chapter|structure|arc|midpoint|climax)\b/i,
       tips: [
         "End chapters on unresolved tension; logistics-only endings often flag in local audit.",
-        "Use Select next chapter (Heading) + audit to PMAT-style chunk long manuscripts (0 tokens).",
+        "Audit one chapter at a time (Target → Selected chapters) to keep long manuscripts manageable (0 tokens).",
       ],
     },
     {
@@ -117,7 +117,7 @@ ProzaEdit.LocalCoach = {
       ],
     },
     {
-      re: /\b(setting|world|dialect|idiom|geography|austin|texas)\b/i,
+      re: /\b(setting|world|dialect|idiom|geography)\b/i,
       tips: [
         "Set Setting Anchor on Target tab; long excerpts without anchor terms flag drift.",
         "Sensory counts in overview are heuristic—boost weak senses in action scenes.",
@@ -176,7 +176,7 @@ ProzaEdit.LocalCoach = {
       }
     }
     this.GENERAL.forEach((t) => lines.push(`• ${t}`));
-    lines.push("", "Ask about: POV, pacing, dialogue, show/tell, or Copilot vs Gemini.");
+    lines.push("", "Ask about: POV, pacing, dialogue, or show vs tell.");
     return lines.join("\n");
   },
 };

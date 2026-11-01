@@ -107,6 +107,9 @@ ProzaEdit.EditApply = {
     };
     const applicable = this.isApplicable(fromText, toText);
     if (!applicable.ok) throw tag(new Error(applicable.reason), "before-edit");
+    if (deps.sanitize && this._norm(deps.sanitize(fromText)) !== this._norm(fromText)) {
+      throw tag(new Error("This passage is too long or contains a special code character, so Word cannot search for it exactly. Nothing was changed. Use Go to and edit it in Word."), "before-edit");
+    }
     let items;
     try {
       items = await deps.searchInScope(ctx, fromText);

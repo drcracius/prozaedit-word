@@ -131,7 +131,13 @@ ProzaEdit.EditorHeuristics = {
     let prevOpenS = false;
     let prevOpenC = false;
     paras.forEach((p) => {
-      const q = (p.match(/(^|[^\d])"/g) || []).length;
+      let q = 0;
+      for (let i = 0; i < p.length; i++) {
+        if (p[i] !== '"') continue;
+        // A quote right after a digit is an inch mark (6" tall) unless a quotation is open ("room 14", "in 1998").
+        if (i > 0 && /\d/.test(p[i - 1]) && q % 2 === 0) continue;
+        q++;
+      }
       let sCount = q;
       if (prevOpenS && /^\s*"/.test(p)) sCount -= 1;
       straight += sCount;

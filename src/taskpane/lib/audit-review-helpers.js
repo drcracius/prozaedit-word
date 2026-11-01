@@ -51,6 +51,8 @@ ProzaEdit.AuditReview = {
     const limit = Math.max(20, Number(maxLen) || 200);
     let s = String(text == null ? "" : text)
       .replace(/AIza[0-9A-Za-z_-]{20,}/g, "[redacted]")
+      .replace(/\bsk-[0-9A-Za-z_-]{16,}/g, "[redacted]")
+      .replace(/\bBearer\s+[0-9A-Za-z._~+\/-]{12,}=*/gi, "Bearer [redacted]")
       .replace(/([?&]key=)[^&\s"']+/gi, "$1[redacted]")
       .replace(/\s+/g, " ")
       .trim();

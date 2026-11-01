@@ -50,7 +50,7 @@ ProzaEdit.LongOp = {
     const mode = String(scopeMode || "selection");
     if (mode === "full") return ProzaEdit.LongOp.ACTION_IDS.AUDIT_FULL;
     if (ProzaEdit.LongOp.isSlowScopeMode(mode)) {
-      return extendedLocal ? ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE : ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE;
+      return ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE;
     }
     if (extendedLocal) return ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE;
     return null;
@@ -82,7 +82,7 @@ ProzaEdit.LongOp = {
     if (id === ProzaEdit.LongOp.ACTION_IDS.AUDIT_FULL) {
       return (
         "A full-manuscript audit reads the entire document and may take several minutes on long drafts. " +
-        "For very long documents, try Selected chapters or Page range (common pro workaround)."
+        "For very long documents, try Selected chapters or Page range."
       );
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE) {

@@ -15,6 +15,15 @@ Based on PE-79 (PR #27, not yet merged).
 - Tests: see `npm test` (224 at PE-82; more added by the PE-83 corpus and the PE-84 independent audit).
 - Manifest `AppDomains` unchanged: Gemini already worked without listing its domain, so no re-upload is needed; add the domains only if a provider is blocked in real Word.
 
+## 2.0.0.23 (PE-93 audit 5)
+
+- Apply now searches Word for the exact passage (only `^` codes are removed; `?`, `*`, `$` etc. are literal) and refuses passages Word cannot search exactly (over 255 characters or containing `^`) instead of editing a shortened match.
+- Confirmed long-operation notice now says "nothing has started yet - choose Continue"; Not now says nothing was read or sent.
+- "Fresh reply" clears after every attempt, including failures.
+- Legacy document key with blocked device storage now says to paste the key again; a key left on the device by another document is flagged when Remember is off.
+- Daily AI cap now resets at local midnight (was UTC).
+- Quote-balance check counts a closing quote after a digit ("L-14"); citation scan no longer flags "Results showed" or "(New York)"; timeline year-jump no longer fires for far-apart paragraphs; more pleonasm and business-jargon entries; plain-language copy fixes; no What's-new banner on a brand-new install.
+
 ## PE-84 independent audit fixes (still 2.0.0.19)
 
 - AI budget caps now also hold when the browser blocks or fails storage (counters are kept in memory for the life of the pane as well).

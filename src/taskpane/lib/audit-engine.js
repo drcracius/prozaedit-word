@@ -773,7 +773,7 @@ ProzaEdit.Audit = {
       }
     }
     if (t.includes("Business")) {
-      ["synergy", "leverage", "circle back", "move the needle"].forEach((b) => {
+      ["synergy", "leverage", "circle back", "move the needle", "boil the ocean", "low-hanging fruit", "drill down", "touch base"].forEach((b) => {
         if (lower.includes(b)) {
           push({
             ruleId: `biz:${b}`,

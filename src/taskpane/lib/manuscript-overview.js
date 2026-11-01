@@ -128,9 +128,9 @@ ProzaEdit.ManuscriptOverview = {
     }
     const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(targetAudience);
     const fk = metrics.fleschKincaidGrade;
-    if (fk > gMax + 1.5) flags.push({ level: "orange", text: `FK ~${fk} above target band (${gMin}–${gMax}) for ${targetAudience}.` });
-    else if (fk < gMin - 2) flags.push({ level: "yellow", text: `FK ~${fk} below target band for ${targetAudience}.` });
-    else flags.push({ level: "green", text: `FK ~${fk} aligns with ${targetAudience} target (~${gMin}–${gMax}).` });
+    if (fk > gMax + 1.5) flags.push({ level: "orange", text: `Reading grade ~${fk} above target band (${gMin}–${gMax}) for ${targetAudience}.` });
+    else if (fk < gMin - 2) flags.push({ level: "yellow", text: `Reading grade ~${fk} below target band for ${targetAudience}.` });
+    else flags.push({ level: "green", text: `Reading grade ~${fk} aligns with ${targetAudience} target (~${gMin}–${gMax}).` });
     return flags;
   },
 
@@ -140,7 +140,7 @@ ProzaEdit.ManuscriptOverview = {
     const metrics = meta.metrics || ProzaEdit.Metrics.analyze(text || "");
     if (mode === "minimal") {
       const dialoguePct = this.dialogueRatioPercent(text);
-      return `<details class="overview-panel"><summary>Summary (light report)</summary><p>Words ${metrics.wordCount} · FK ~${metrics.fleschKincaidGrade} · Dialogue ~${dialoguePct}% · Critical ${meta.criticalCount || 0} · Style ${meta.prefCount || 0}</p></details>`;
+      return `<details class="overview-panel"><summary>Summary (light report)</summary><p>Words ${metrics.wordCount} · Reading grade ~${metrics.fleschKincaidGrade} · Dialogue ~${dialoguePct}% · Critical ${meta.criticalCount || 0} · Style ${meta.prefCount || 0}</p></details>`;
     }
     const dialoguePct = this.dialogueRatioPercent(text);
     const narrativePct = Math.round((100 - dialoguePct) * 10) / 10;
@@ -154,7 +154,7 @@ ProzaEdit.ManuscriptOverview = {
     const setting = ctx.settingAnchor || "(not set)";
 
     let html = `<details class="overview-panel" open><summary>Manuscript overview (local)</summary>`;
-    html += `<p class="overview-lead">PMAT-style snapshot — rules &amp; stats only, no API.</p>`;
+    html += `<p class="overview-lead">Quick snapshot — built-in rules &amp; stats only; nothing is sent anywhere.</p>`;
 
     html += `<h4>About this excerpt</h4><ul>`;
     html += `<li><strong>Genre profile applied:</strong> ${this._esc(ProzaEdit.Genres ? ProzaEdit.Genres.describe(ctx) : ctx.manuscriptType)}</li>`;

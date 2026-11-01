@@ -29,8 +29,10 @@ ProzaEdit.ChapterHeatmap = {
     await context.sync();
     const total = paras.items.length;
     if (total > 15000) throw new Error("Too many paragraphs for chapter scan.");
-    for (let i = 0; i < total; i++) paras.items[i].load(["text", "styleBuiltIn"]);
-    await context.sync();
+    for (let i = 0; i < total; i += 500) {
+      for (let j = i; j < Math.min(total, i + 500); j++) paras.items[j].load(["text", "styleBuiltIn"]);
+      await context.sync();
+    }
     const entries = [];
     let current = null;
     const flush = () => {

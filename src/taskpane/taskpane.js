@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.22";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.23";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1184,6 +1184,7 @@ function runAfterLongOperationWarning(actionId, runner) {
     const body = getEl("peLongOpWarningBody");
     if (body) body.textContent = ProzaEdit.LongOp?.warningCopyForAction?.(actionId) || "";
     if (banner) banner.classList.remove("hidden");
+    showPeStatus("Waiting for you: choose Continue in the notice above to start (nothing has been sent yet).", "warn");
   });
 }
 
@@ -1196,6 +1197,7 @@ function setupLongOpWarningBanner() {
   getEl("btnLongOpNotNow")?.addEventListener("click", () => {
     if (pendingLongOpActionId) sessionDismissLongOpAction(pendingLongOpActionId);
     dismissLongOpWarningBanner();
+    showPeStatus("Not started. Nothing was read or sent.", "ok");
   });
   getEl("btnLongOpDontShowAgain")?.addEventListener("click", () => {
     const cb = getEl("showLongOperationWarnings");
@@ -1604,10 +1606,10 @@ function onProzaEditOfficeReady(info) {
     }
     showAuditEmptyIfNeeded();
     initAboutSection();
+    initSimpleModeFirstRunBanner();
     initWhatsNewBanner();
     initPriorSessionBanner();
     initSessionTips();
-    initSimpleModeFirstRunBanner();
     initHelpNewToEditingList();
     initDarkAppearanceTip();
     setupFirstAuditChecklistDismissTracking();
@@ -1914,8 +1916,14 @@ function applyUiConfig(p) {
   const keyMove = ProzaEdit.AIKeys?.migrateFromDocumentConfig?.(p) || { hadDocumentKey: false };
   loadAiKeyIntoField();
   if (keyMove.hadDocumentKey) {
-    showPeStatus("An API key stored in this document by an older version was moved to this device and removed from the document.", "ok");
+    if (keyMove.migrated || ProzaEdit.AIKeys?.has("gemini")) {
+      showPeStatus("An API key stored in this document by an older version was moved to this device and removed from the document.", "ok");
+    } else {
+      showPeStatus("An older version saved an API key inside this document. It has been removed from the document, but this browser blocked device storage, so please paste the key again.", "warn");
+    }
     setTimeout(() => persistSettings(false), 0);
+  } else if (!isChecked("rememberApiKey", false) && ProzaEdit.AIKeys?.hasAny?.()) {
+    showPeStatus("A key remembered from another document is still stored on this device (not used here). Tick then untick 'Remember' to remove it.", "warn");
   }
   if (p.sectionParagraphCount) setV("sectionParagraphCount", p.sectionParagraphCount);
   if (p.batchSectionCount != null) {
@@ -2166,7 +2174,7 @@ function updateActiveChecksHint() {
   const fiction = isFictionManuscriptType(ctx.manuscriptType);
   if (fiction) {
     const mods = FICTION_MODULE_IDS.filter((id) => isModuleEnabled(id));
-    if (mods.length === 7) parts.push("fiction×7");
+    if (mods.length === 7) parts.push("7 fiction checks");
     else if (mods.length) parts.push(`fiction ${mods.length}/7`);
   }
   const citeEligible = ProzaEdit.CitationEngine?.isEligibleManuscript?.(ctx.manuscriptType || "");
@@ -3001,6 +3009,13 @@ function initWhatsNewBanner() {
   });
   if (!show) {
     el.classList.add("hidden");
+    return;
+  }
+  const firstRun = getEl("peSimpleModeFirstRunBanner");
+  if (firstRun && !firstRun.classList.contains("hidden")) {
+    // A brand-new user has nothing "new" to read; one banner at a time.
+    el.classList.add("hidden");
+    markWhatsNewVersionSeen();
     return;
   }
   el.classList.remove("hidden");
@@ -4798,6 +4813,8 @@ async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, sign
   if (!gate.ok) throw new Error(gate.message || "AI limit reached.");
   let res;
   const abortedBeforeSend = !!(signal && signal.aborted);
+  const freshBoxOnce = getEl("aiFreshReply");
+  if (freshBoxOnce) freshBoxOnce.checked = false;
   try {
     res = await ProzaEdit.AIProviders.complete({
       providerId: aiProviderId(),
@@ -4824,8 +4841,6 @@ async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, sign
   updateAiMeter();
   const clean = String(res.text).split(ProzaEdit.AISafety.OPEN).join("").split(ProzaEdit.AISafety.CLOSE).join("").trim();
   if (cacheKey) ProzaEdit.AICache.set(cacheKey, clean, [getApiKey()]);
-  const freshBox = getEl("aiFreshReply");
-  if (freshBox) freshBox.checked = false;
   return clean;
 }
 
