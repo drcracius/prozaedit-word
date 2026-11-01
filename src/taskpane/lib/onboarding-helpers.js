@@ -229,9 +229,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.24",
+    version: "2.0.0.25",
     bullet:
-      "Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Fixes now check their exact spot before editing, and repeated AI requests are reused at no cost. New: tense and viewpoint shifts are flagged only when clearly accidental, and an optional Content notes switch (Settings, off by default) reports strong language and violence neutrally. Accuracy is now measured on a labeled test set. New: Audit next chapter on Checks takes very long books one chapter at a time, keeps your place and combines the results. Some labels were renamed in plain words (Book outline, Deeper checks, Chosen chapters). Everything still works offline.",
+      "Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Fixes now check their exact spot before editing, and repeated AI requests are reused at no cost. New: tense and viewpoint shifts are flagged only when clearly accidental, and an optional Content notes switch (Settings, off by default) reports strong language and violence neutrally. Accuracy is now measured on a labeled test set. New: Audit next chapter on Checks takes very long books one chapter at a time, keeps your place and combines the results. Some labels were renamed in plain words (Book outline, Deeper checks, Chosen chapters). New: if Track Changes is on in Word, Apply leaves a tracked change you can accept or reject. Everything still works offline.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

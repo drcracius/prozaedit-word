@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.24";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.25";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -383,7 +383,7 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
   const fmt = charCount.toLocaleString();
   const lim = limit.toLocaleString();
   el.textContent = over
-    ? `${label}: ~${fmt} characters — over limit (${lim}). Narrow scope or use section loop.`
+    ? `${label}: ~${fmt} characters — over limit (${lim}). Choose a smaller scope, or audit one chapter at a time.`
     : `${label}: ~${fmt} characters (limit ${lim}).`;
   lastScopePreviewSummary =
     charCount > 0
@@ -3915,7 +3915,7 @@ async function readScopeText(context, longOpController) {
     if (mode === "selection") throw new Error("Highlight text in Word, or choose page/chapter/full scope.");
     throw new Error("No text for this scope.");
   }
-  if (text.length > MAX_BODY && mode === "full") throw new Error("Document too large—use chapter range or section loop.");
+  if (text.length > MAX_BODY && mode === "full") throw new Error("This document is too long to read at once. Choose a page range or chosen chapters instead.");
   const soft = ProzaEdit.ScopeReader.softCapThreshold(cap);
   if (longOpController && text.length >= soft && text.length <= cap) {
     longOpController.setStatus(
@@ -5251,7 +5251,7 @@ function runAuditInternalCore(opts) {
       longOp.throwIfCancelled();
       const pn = paras.items.length;
       if (pn <= MAX_PARAS) lastDocStats = { paragraphs: pn, estWords: Math.round(pn * 42) };
-      else lastDocStats = { paragraphs: pn, estWords: "(use section loop)" };
+      else lastDocStats = { paragraphs: pn, estWords: "(not counted for a very long document)" };
     }
     let text = await readScopeText(ctx, longOp);
     longOp.throwIfCancelled();
@@ -5277,7 +5277,7 @@ function runAuditInternalCore(opts) {
         ruleId: "sys:truncated",
         module: "ProzaEdit",
         type: "preference",
-        explanation: "Excerpt truncated for performance. Use selection or section loop for full coverage.",
+        explanation: "Excerpt truncated for performance. Select a smaller part, or audit one chapter at a time, to cover everything.",
         targetText: "(truncated)",
         replacementText: "(smaller scope)",
       });
@@ -5562,7 +5562,7 @@ let peGotoLock = null;
 
 function goToIssue(target) {
   if (!target || String(target).startsWith("(")) {
-    showPeStatus("Cannot locate this item.", "warn");
+    showPeStatus("Could not find this item in the document. Run the check again.", "warn");
     return Promise.resolve(false);
   }
   if (!peGotoLock) peGotoLock = ProzaEdit.Recovery.createLock();
@@ -6225,7 +6225,7 @@ async function scanChapterHeatmap() {
     const entries = await wordRun("heatmap", (ctx) => ProzaEdit.ChapterHeatmap.scanDocument(ctx));
     if (!entries?.length) throw new Error("No Heading 1–3 chapters found. Apply heading styles first.");
     const payload = JSON.stringify(entries.slice(0, 40));
-    if (payload.length > 48000) throw new Error("Heatmap too large to store; use fewer chapters.");
+    if (payload.length > 48000) throw new Error("The chapter chart is too large to save. Use fewer chapters.");
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CHAPTER_HEATMAP, payload);
     showPeStatus(`Heatmap saved (${entries.length} chapters). Re-run audit to view.`, "ok");
   } catch (e) {
@@ -6281,8 +6281,8 @@ function selectNextChapter() {
     paras.load("items");
     await ctx.sync();
     const total = paras.items.length;
-    if (!total) throw new Error("No paragraphs.");
-    if (total > MAX_PARAS) throw new Error("Document too large—use section loop.");
+    if (!total) throw new Error("The document has no text to check.");
+    if (total > MAX_PARAS) throw new Error("This document is too long to read at once. Choose a page range or chosen chapters instead.");
     for (let i = 0; i < total; i++) paras.items[i].load("styleBuiltIn");
     await ctx.sync();
     const headingIdx = [];
@@ -6291,7 +6291,7 @@ function selectNextChapter() {
       if (s === Word.Style.heading1 || s === Word.Style.heading2 || s === Word.Style.heading3) headingIdx.push(i);
     }
     if (!headingIdx.length) {
-      throw new Error("No Heading 1–3 paragraphs. Apply Word heading styles to chapter titles (PMAT-style splits).");
+      throw new Error("No chapter headings found. Give your chapter titles a Heading 1, 2 or 3 style in Word.");
     }
     let ptr = getChapterIndex();
     if (ptr >= headingIdx.length) {
@@ -6385,8 +6385,8 @@ function selectNextSection() {
     paras.load("items");
     await ctx.sync();
     const total = paras.items.length;
-    if (!total) throw new Error("No paragraphs.");
-    if (total > MAX_PARAS) throw new Error("Too many paragraphs—select manually.");
+    if (!total) throw new Error("The document has no text to check.");
+    if (total > MAX_PARAS) throw new Error("This document is too long to read at once. Select the text yourself.");
     let idx = getSectionIndex();
     if (idx >= total) {
       idx = 0;
@@ -6525,7 +6525,7 @@ async function runDeepAuditAICore() {
       ai = checked.findings;
       aiDropped = checked.dropped;
     } catch (_) {
-      throw new Error("Bad AI JSON—use local audit.");
+      throw new Error("The AI reply could not be read. Nothing was changed — use the local audit.");
     }
     const droppedN = aiDropped ? aiDropped.notInSource + aiDropped.unsafe + aiDropped.malformed : 0;
     if (droppedN) showPeStatus(`${droppedN} AI suggestion(s) were ignored because they did not quote your text exactly or looked unsafe.`, "warn");

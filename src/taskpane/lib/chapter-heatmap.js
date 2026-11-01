@@ -28,7 +28,7 @@ ProzaEdit.ChapterHeatmap = {
     paras.load("items");
     await context.sync();
     const total = paras.items.length;
-    if (total > 15000) throw new Error("Too many paragraphs for chapter scan.");
+    if (total > 15000) throw new Error("This document is too long for a chapter chart (limit 15,000 paragraphs). Choose fewer chapters.");
     for (let i = 0; i < total; i += 500) {
       for (let j = i; j < Math.min(total, i + 500); j++) paras.items[j].load(["text", "styleBuiltIn"]);
       await context.sync();

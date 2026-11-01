@@ -300,7 +300,7 @@ ProzaEdit.ScopeReader = {
     paras.load("items");
     await context.sync();
     const total = paras.items.length;
-    if (!total) throw new Error("Document is empty.");
+    if (!total) throw new Error("The document is empty. Add some text first.");
     let charPos = 0;
     let out = "";
     const CHUNK = 50;
@@ -415,7 +415,7 @@ ProzaEdit.ScopeReader = {
     if (mode === "selected-chapters") {
       return this.readBySelectedChapters(context, opts.selectedChapterIndices, opts.chapters, opts);
     }
-    throw new Error("Unknown scope mode.");
+    throw new Error("That scope is not recognised. Pick a scope on Target.");
   },
 
   async _loadParaTexts(context, paras, from, to, opts) {
@@ -436,7 +436,7 @@ ProzaEdit.ScopeReader = {
     paras.load("items");
     await context.sync();
     const total = paras.items.length;
-    if (total > 15000) throw new Error("Too many paragraphs for timeline scan (15,000 cap).");
+    if (total > 15000) throw new Error("This document is too long for a whole-document timeline (limit 15,000 paragraphs). Choose a chapter or page range.");
 
     let start = 0;
     let end = total - 1;

@@ -38,11 +38,11 @@ ProzaEdit.WordSafeNavigator = {
   /** Select first body match for audit card "Go to". */
   async selectFirstInBody(context, target) {
     const q = this.sanitizeSearch(target);
-    if (!q) throw new Error("Cannot locate.");
+    if (!q) throw new Error("There is no text to look for.");
     const r = context.document.body.search(q, { matchCase: false });
     r.load("items");
     await context.sync();
-    if (!r.items.length) throw new Error("Not found.");
+    if (!r.items.length) throw new Error("That text was not found in the document. It may have been edited — run the check again.");
     r.items[0].select();
     await context.sync();
   },

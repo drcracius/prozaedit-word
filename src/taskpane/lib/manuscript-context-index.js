@@ -806,7 +806,7 @@ ProzaEdit.ManuscriptContextIndex = {
   async buildFromDocument(context, opts) {
     opts = opts || {};
     const SR = ProzaEdit.ScopeReader;
-    if (!SR?.planParagraphBatches) throw new Error("ScopeReader unavailable.");
+    if (!SR?.planParagraphBatches) throw new Error("ProzaEdit did not finish loading. Close and reopen the pane.");
     const cancelCheck = () => {
       if (typeof opts.cancelCheck === "function") opts.cancelCheck();
     };
@@ -819,7 +819,7 @@ ProzaEdit.ManuscriptContextIndex = {
     cancelCheck();
     const items = paras.items;
     const paragraphTotal = items.length;
-    if (!paragraphTotal) throw new Error("Document is empty.");
+    if (!paragraphTotal) throw new Error("The document is empty. Add some text first.");
 
     const batches = SR.planParagraphBatches(paragraphTotal, this.PARAGRAPH_BATCH);
     const probeSet = new Set(this.probeIndexes(paragraphTotal, this.PROBE_MAX));

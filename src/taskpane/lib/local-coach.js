@@ -71,7 +71,7 @@ ProzaEdit.LocalCoach = {
       re: /\b(pacing|slow|drag|boring|flat)\b/i,
       tips: [
         "Shorten the middle: add a complication every 500–800 words in thriller pacing.",
-        "Use section loop + local audit to scan one chunk at a time (no API cost).",
+        "Audit one chapter at a time with the local audit (no AI cost).",
       ],
     },
     {
