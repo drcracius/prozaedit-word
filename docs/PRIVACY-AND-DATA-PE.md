@@ -44,6 +44,7 @@ No ProzaEdit-hosted model training pipeline exists in this build; third-party te
 
 - **Global mute list** — merged with per-document mutes for future audits in this browser profile.
 - **Dismissed exact wordings** — browser `localStorage` on this PC.
+- **Saved AI replies (cache)** — to avoid paying twice for the same request, the reply text of an AI request is kept in this browser profile's `localStorage` (up to 40 replies / 400k characters, 7 days, least-recently-used removed first). It holds the reply only: never the document, the prompt, or any API key. It is never written to the Word document or sent anywhere. Clear it with **Settings → AI → Clear saved AI replies** or by clearing site data. A repeated request shows "cached, 0 tokens" in the usage meter.
 - **Session banners**, tour progress flags, optional diagnostics note draft.
 
 Clearing site data for the add-in host may reset browser-side mutes and dismissals.

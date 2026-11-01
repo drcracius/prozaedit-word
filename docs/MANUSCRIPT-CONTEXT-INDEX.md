@@ -27,6 +27,7 @@ Chapter-scoped audits are fast, but suggestions can miss story arc, name continu
 
 The index stores a **per-chapter content hash**, a **document hash**, and a fingerprint of up to **300 evenly spaced probe paragraphs**.
 
+- **Cancel and resume:** cancelling the build keeps finished batches in memory only; running it again resumes if the version, age (30 min), paragraph count and every batch-start hash still match, otherwise it restarts. Never written to the document.
 - A cheap **freshness check** compares the live document with the index (paragraph count plus the probe paragraphs). It runs at most every 20 seconds, immediately before any Gemini request, after you Apply / Undo / Redo a fix, when you return to the pane, and at startup.
 - Editing text **inside** a paragraph (same paragraph count) is detected whenever the edited paragraph is among the probes. Documents of up to 300 paragraphs are checked paragraph by paragraph; in larger documents an edit outside the probed paragraphs is only noticed when the paragraph count changes or you rebuild. When in doubt, rebuild — the status line says so.
 - When the index may be out of date you see **"Manuscript index may be out of date — Refresh index"** on Checks, Coach and Rewrite, and in Settings; the changed chapters are named when known.

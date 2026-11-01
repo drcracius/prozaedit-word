@@ -14,8 +14,8 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.17</span>)</p>
-    <p id="peWhatsNewBullet" class="pe-top-banner-body">Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Everything still works offline.</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.18</span>)</p>
+    <p id="peWhatsNewBullet" class="pe-top-banner-body">Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Fixes now check their exact spot before editing, and repeated AI requests are reused at no cost. Everything still works offline.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-79-WORD-FIXES.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
       <button type="button" class="btn-secondary" onclick="dismissWhatsNewBanner(false)">Got it</button>
@@ -521,8 +521,8 @@
     <div class="help-box" id="peAboutSection">
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.17</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.17</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.18</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.18</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>
@@ -622,7 +622,8 @@
         <li><strong>AI provider</strong> (optional: Gemini, OpenAI, Claude or OpenRouter, using your own API key) — sends only the prompt and context you trigger, to the provider you picked, when you click Send / Deep audit / AI rewrite. Keys stay on this device.</li>
         <li><strong>Thesaurus (Datamuse)</strong> — sends a single lookup word when you search synonyms.</li>
         <li><strong>Diagnostics</strong> — opt-in; clipboard JSON is redacted (no document text or API keys).</li>
-        <li><strong>Remember API key</strong> — stores the key inside this Word document when enabled.</li>
+        <li><strong>Remember API key</strong> — stores the key in this browser profile only (never in the document) when enabled.</li>
+        <li><strong>Saved AI replies</strong> — identical AI requests reuse the earlier reply from this device for up to 7 days (never in the document, never with your key). Clear them in Settings → AI.</li>
       </ul>
       <p class="help-inline"><a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/PRIVACY-AND-DATA-PE.md" target="_blank" rel="noopener">PRIVACY-AND-DATA-PE.md</a> · <button type="button" class="btn-linkish" onclick="openSettingsModal('privacy')">Settings → Privacy</button></p>
     </details>
