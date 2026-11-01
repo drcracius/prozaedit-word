@@ -1,9 +1,11 @@
 # ProzaEdit task pane — UI color & typography (PE-37)
 
-## Theme model
+## Theme model (PE-50)
 
-- **Single light theme** only in shipped builds. Colors come from CSS custom properties in `taskpane.css` (`:root` tokens).
-- **No user theme toggle** in the task pane. Dark mode and a full theme switcher are **deferred to vNext** (would need host-safe contrast testing and manifest/product sign-off).
+- **Light** (default), **Dark**, and **Match system** via Settings → **Appearance**. Preference persists in `PROZAEDIT_CONFIG.themePreference` (`light` | `dark` | `system`); effective palette is `data-pe-theme="light"|"dark"` on `<html>`.
+- Colors come from CSS custom properties in `taskpane.css` (`:root` / `[data-pe-theme="light"]` / `[data-pe-theme="dark"]`). Light values match the pre–PE-50 shipped look.
+- **Scope:** task pane only — Word document canvas and Office host chrome are unchanged.
+- **System mode:** listens to `matchMedia('(prefers-color-scheme: dark)')` without overwriting the saved `system` choice in CONFIG.
 
 ## Semantic palette (current)
 
@@ -31,6 +33,8 @@ Collapsible `<details class="pe-settings-group">`:
 | Group | Contents | Default open |
 | --- | --- | --- |
 | **Safety** | Simple mode, selection-only edits, confirm Apply, hover tips, FK lock, Version History reminder, continuity slider, fiction scope reminder, hide session tips permanently, Gemini session ceiling; **Reset Safety to defaults** | yes |
+| **Onboarding** | Session tips, What's new, prior-session recap, long-operation warnings; **Reset Onboarding** | no |
+| **Appearance** | Light / Dark / Match system; **Reset Appearance** | no |
 | **Audit & reports** | Report depth, default audit filter, extended checks default; **Reset Audit & reports**; Audit tab hints read Settings selects | no |
 | **Privacy & diagnostics** | Crash opt-in, problem report note + button, GitHub fallback; **Reset Privacy** | no |
 | **Reference & citations** | Capture reference style, verify citations shortcut | no |

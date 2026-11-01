@@ -25,8 +25,9 @@
 - [ ] **Ctrl+Shift+,** and **Alt+Shift+S** open Settings (not while focused in a text field).
 - [ ] Help **Open Settings → Privacy** and Target **Custom rules → manage** land in the right group.
 - [ ] Bookmark `#pe-settings-privacy` on reload opens Privacy group.
-- [ ] Each group **Reset … to defaults** (confirm) — Safety, Onboarding, Audit, Privacy, Dictionary, Custom style; Reference shows info only.
+- [ ] Each group **Reset … to defaults** (confirm) — Safety, Onboarding, Appearance, Audit, Privacy, Dictionary, Custom style; Reference shows info only.
 - [ ] **Onboarding** group: **Show new-session tips**, **Show What's new**, **Show prior-session recap**, **Warn before long operations** (all default on); **Reset Onboarding** restores defaults.
+- [ ] **Appearance** group: **Light** / **Dark** / **Match system** — pane updates immediately; **Save & close** persists `themePreference` in `PROZAEDIT_CONFIG` (default **Light** on fresh docs). **Reset Appearance** returns to Light. Reopen pane — theme restores from document settings. With **Match system**, change OS light/dark and confirm pane follows (CONFIG stays `system`). Spot-check dark: top banners, audit cards, Settings modal, long-op banner, workflow strip, focus rings on tabs/buttons.
 - [ ] Settings **Filter settings** box hides non-matching groups (e.g. type `audit`).
 - [ ] Toolbar status line: message auto-clears ~6s; **×** dismisses immediately.
 - [ ] **Got it** on session tips banner hides `#peSessionTips` until next browser session (global `.hidden` utility).

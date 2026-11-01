@@ -494,9 +494,61 @@ function decorateSettingsBackIcon() {
   if (icon) back.insertAdjacentHTML("afterbegin", icon);
 }
 
+let peThemeMediaQuery = null;
+
+function systemPrefersDark() {
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  } catch (_) {
+    return false;
+  }
+}
+
+function getThemePreferenceFromUi() {
+  const checked = document.querySelector('input[name="themePreference"]:checked');
+  return ProzaEdit.UiPrefs?.validateThemePreference?.(checked?.value) || "light";
+}
+
+function setThemePreferenceInUi(pref) {
+  const v = ProzaEdit.UiPrefs?.validateThemePreference?.(pref) || "light";
+  document.querySelectorAll('input[name="themePreference"]').forEach((el) => {
+    el.checked = el.value === v;
+  });
+}
+
+function applyPeTheme(themePreference) {
+  const pref =
+    themePreference != null
+      ? ProzaEdit.UiPrefs?.validateThemePreference?.(themePreference)
+      : getThemePreferenceFromUi();
+  const effective = ProzaEdit.UiPrefs?.resolveEffectiveTheme?.(pref, systemPrefersDark()) || "light";
+  document.documentElement.setAttribute("data-pe-theme", effective);
+}
+
+function setupThemePreference() {
+  applyPeTheme(getThemePreferenceFromUi());
+  if (document.body.dataset.peThemeBound) return;
+  document.body.dataset.peThemeBound = "1";
+  document.querySelectorAll('input[name="themePreference"]').forEach((el) => {
+    el.addEventListener("change", () => {
+      applyPeTheme(getThemePreferenceFromUi());
+      schedulePersistSettings();
+    });
+  });
+  try {
+    peThemeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const onSystemChange = () => {
+      if (getThemePreferenceFromUi() === "system") applyPeTheme("system");
+    };
+    if (peThemeMediaQuery.addEventListener) peThemeMediaQuery.addEventListener("change", onSystemChange);
+    else if (peThemeMediaQuery.addListener) peThemeMediaQuery.addListener(onSystemChange);
+  } catch (_) {}
+}
+
 const PE_SETTINGS_GROUP_IDS = {
   safety: "pe-settings-group-safety",
   onboarding: "pe-settings-group-onboarding",
+  appearance: "pe-settings-group-appearance",
   audit: "pe-settings-group-audit",
   privacy: "pe-settings-group-privacy",
   reference: "pe-settings-group-reference",
@@ -757,6 +809,7 @@ Office.onReady((info) => {
     setupMainTargetSync();
     setupAutoSaveHandlers();
     setupSettingsModal();
+    setupThemePreference();
     setupLongOpWarningBanner();
     setupLongOpCancelButtons();
     setupRunAuditHubButtons();
@@ -978,6 +1031,7 @@ function collectUiConfig() {
     showWhatsNew: isChecked("showWhatsNew", true),
     showPriorSessionSummary: isChecked("showPriorSessionSummary", true),
     showLongOperationWarnings: isChecked("showLongOperationWarnings", true),
+    themePreference: getThemePreferenceFromUi(),
     lastActiveTab: getCurrentActiveTabId(),
     ...ProzaEdit.UiPrefs?.normalizeShaperFields?.({
       shaperComplexity: getEl("slider-shaper-complexity")?.value,
@@ -1051,6 +1105,8 @@ function applyUiConfig(p) {
   setC("showWhatsNew", p.showWhatsNew !== false);
   setC("showPriorSessionSummary", p.showPriorSessionSummary !== false);
   setC("showLongOperationWarnings", p.showLongOperationWarnings !== false);
+  setThemePreferenceInUi(p.themePreference != null ? p.themePreference : "light");
+  applyPeTheme(getThemePreferenceFromUi());
   if (p.continuityWarnLevel) setV("continuityWarnLevel", p.continuityWarnLevel);
   if (p.scopePageFrom) setV("scopePageFrom", p.scopePageFrom);
   if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
@@ -1745,6 +1801,7 @@ function resetSettingsGroup(groupKey) {
   const labels = {
     safety: "Safety",
     onboarding: "Onboarding",
+    appearance: "Appearance",
     audit: "Audit & reports",
     privacy: "Privacy & diagnostics",
     dictionary: "Dictionary",
