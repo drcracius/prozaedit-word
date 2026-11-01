@@ -54,6 +54,10 @@ let persistDebounceTimer = null;
 let skipFullScanConfirm = false;
 let msIndexCache = null;
 let msIndexBusy = false;
+let mciCache = null;
+let mciBuildBusy = false;
+let lastKnownParagraphTotal = null;
+const MCI_AUTO_WARN_KEY = "pe-mci-auto-refresh-warn-ok";
 let scopeChapterListCache = [];
 let pendingSelectedChapterIndices = null;
 let activeLongOp = null;
@@ -562,6 +566,155 @@ function getManuscriptIndex() {
   return msIndexCache;
 }
 
+function getManuscriptContextIndex() {
+  if (mciCache) return mciCache;
+  try {
+    const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
+    const cfg = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
+    if (cfg?.manuscriptContext && ProzaEdit.ManuscriptContextIndex?.normalizeStored) {
+      mciCache = ProzaEdit.ManuscriptContextIndex.normalizeStored(cfg.manuscriptContext);
+    }
+  } catch (_) {}
+  return mciCache;
+}
+
+function setManuscriptContextIndex(index) {
+  mciCache = ProzaEdit.ManuscriptContextIndex?.normalizeStored?.(index) || null;
+  refreshManuscriptContextStatusUi();
+}
+
+async function refreshDocumentParagraphCount() {
+  try {
+    const n = await wordRun("mci-para-count", async (ctx) => {
+      const paras = ctx.document.body.paragraphs;
+      paras.load("items");
+      await ctx.sync();
+      return paras.items.length;
+    });
+    lastKnownParagraphTotal = n;
+    return n;
+  } catch (_) {
+    return lastKnownParagraphTotal;
+  }
+}
+
+function refreshManuscriptContextStatusUi() {
+  const MCI = ProzaEdit.ManuscriptContextIndex;
+  if (!MCI?.formatStatusBadge) return;
+  const pt = lastKnownParagraphTotal;
+  const badge = MCI.formatStatusBadge(getManuscriptContextIndex(), pt);
+  const storage = MCI.formatStorageBlurb(getManuscriptContextIndex());
+  ["peMciStatusTarget", "peMciStatusChecks", "peMciStatusSimple", "peMciStatusSettings"].forEach((id) => {
+    const el = getEl(id);
+    if (!el) return;
+    el.textContent = badge.text;
+    el.classList.remove("pe-mci-ready", "pe-mci-stale");
+    el.classList.add(badge.className || "pe-mci-stale");
+  });
+  const hintTarget = getEl("peMciStorageHintTarget");
+  if (hintTarget) hintTarget.textContent = storage;
+  const hintSettings = getEl("peMciStorageHintSettings");
+  if (hintSettings) hintSettings.textContent = storage;
+}
+
+async function confirmBuildManuscriptContext() {
+  const storageHint = ProzaEdit.ManuscriptContextIndex?.formatStorageBlurb?.(getManuscriptContextIndex()) || "local document settings";
+  return peConfirm({
+    title: "Build full manuscript context?",
+    message:
+      `ProzaEdit will read your document in the background (chunked sections) to build a lightweight story-arc and continuity index for Coach, Rewrite, and chapter-scoped audits.\n\n` +
+      `This may take several minutes on long manuscripts. You can Cancel, keep using Word, or stop anytime from the banner.\n\n` +
+      `Nothing is sent to the cloud unless you use Gemini. Index size: ${storageHint}.`,
+    confirmLabel: "Start background read",
+    cancelLabel: "Cancel",
+  });
+}
+
+async function runBuildFullManuscriptContext(userInitiated) {
+  if (mciBuildBusy || isOperationBusy()) {
+    warnOperationBusy();
+    return false;
+  }
+  if (userInitiated && !(await confirmBuildManuscriptContext())) return false;
+
+  mciBuildBusy = true;
+  let longOp = null;
+  let cancelled = false;
+  try {
+    longOp = beginLongOperation({
+      initialStatus: "Reading manuscript for context…",
+      setStatus: (msg) => showPeStatus(msg),
+    });
+    const index = await wordRun("mci-build", async (ctx) => {
+      return ProzaEdit.ManuscriptContextIndex.buildFromDocument(ctx, {
+        cancelCheck: () => longOp.throwIfCancelled(),
+        onProgress: (partial) => {
+          longOp.setStatus(ProzaEdit.ManuscriptContextIndex.formatBuildProgress(partial));
+        },
+        dictionary: ProzaEdit.Settings.getDictionary(),
+        fiction: isFictionManuscriptType(),
+        yieldFn: () => ProzaEdit.ScopeReader.microYield(),
+      });
+    });
+    if (!index) throw new Error("Could not build manuscript context.");
+    setManuscriptContextIndex(index);
+    lastKnownParagraphTotal = index.paragraphTotal;
+    applyUiConfig({ ...collectUiConfig(), manuscriptContext: index });
+    await persistSettings(false);
+    const msg = index.truncated
+      ? "Full MS context ready (sampled — very long document)."
+      : "Full MS context ready.";
+    showPeStatus(msg, "ok");
+    return true;
+  } catch (e) {
+    if (isLongOpCancelledError(e)) {
+      cancelled = true;
+      showPeStatus("Manuscript context build cancelled.", "warn");
+      return false;
+    }
+    reportActionError(e, "build full manuscript context");
+    return false;
+  } finally {
+    mciBuildBusy = false;
+    endLongOperation(longOp);
+    refreshManuscriptContextStatusUi();
+    if (!cancelled) scheduleManuscriptIndexBuild(true);
+  }
+}
+
+async function maybeAutoRefreshManuscriptContextBeforeAudit() {
+  if (!isChecked("autoRefreshManuscriptContext", false)) return true;
+  const pt = (await refreshDocumentParagraphCount()) ?? lastKnownParagraphTotal;
+  const MCI = ProzaEdit.ManuscriptContextIndex;
+  if (!MCI?.isStale?.(getManuscriptContextIndex(), pt)) return true;
+  try {
+    if (localStorage.getItem(MCI_AUTO_WARN_KEY) !== "1") {
+      const ok = await peConfirm({
+        title: "Refresh manuscript context?",
+        message:
+          "Auto-refresh is on and your full-manuscript context is stale or missing.\n\nProzaEdit will run a background read before this audit. Cancel to skip the audit.",
+        confirmLabel: "Refresh & continue",
+        cancelLabel: "Cancel audit",
+      });
+      if (!ok) return false;
+      localStorage.setItem(MCI_AUTO_WARN_KEY, "1");
+    }
+  } catch (_) {}
+  return runBuildFullManuscriptContext(false);
+}
+
+function appendManuscriptContextToProfile(baseProfile) {
+  const MCI = ProzaEdit.ManuscriptContextIndex;
+  if (!MCI?.injectPromptBlock) return baseProfile;
+  const block = MCI.injectPromptBlock(getManuscriptContextIndex(), {
+    paragraphTotal: lastKnownParagraphTotal,
+    scopeMode: getScopeMode(),
+    allowStale: false,
+  });
+  if (!block) return baseProfile;
+  return `${baseProfile}\n\n${block}`;
+}
+
 function fictionModulesActive() {
   return FICTION_MODULE_IDS.some((id) => isModuleEnabled(id));
 }
@@ -758,6 +911,7 @@ const PE_SETTINGS_GROUP_IDS = {
   privacy: "pe-settings-group-privacy",
   reference: "pe-settings-group-reference",
   dictionary: "pe-settings-group-dictionary",
+  manuscript: "pe-settings-group-manuscript",
   "custom-style": "pe-settings-group-custom-style",
 };
 
@@ -1284,6 +1438,7 @@ function onProzaEditOfficeReady(info) {
     ProzaEdit.Diagnostics?.initDiagnosticsUi?.();
     ProzaEdit.Diagnostics?.flushRetryQueue?.();
     setTimeout(() => scheduleManuscriptIndexBuild(false), 2500);
+    refreshDocumentParagraphCount().then(() => refreshManuscriptContextStatusUi());
     try {
       if (sessionStorage.getItem("PROZAEDIT_UPDATE_CHECK") !== PROZAEDIT_BUILD_VERSION) {
         sessionStorage.setItem("PROZAEDIT_UPDATE_CHECK", PROZAEDIT_BUILD_VERSION);
@@ -1474,8 +1629,10 @@ function collectUiConfig() {
     showPriorSessionSummary: isChecked("showPriorSessionSummary", true),
     showLongOperationWarnings: isChecked("showLongOperationWarnings", true),
     showDarkAppearanceTip: isChecked("showDarkAppearanceTip", true),
+    autoRefreshManuscriptContext: isChecked("autoRefreshManuscriptContext", false),
     themePreference: getThemePreferenceFromUi(),
     lastActiveTab: getCurrentActiveTabId(),
+    manuscriptContext: mciCache && !mciCache.invalid ? mciCache : undefined,
     batchSectionCount: Math.min(8, Math.max(1, parseInt(getEl("batchSectionCount")?.value, 10) || 3)),
     firstRunComplete: configFirstRunComplete,
     onboardingTourComplete: configOnboardingTourComplete,
@@ -1570,6 +1727,10 @@ function applyUiConfig(p) {
   setThemePreferenceInUi(p.themePreference != null ? p.themePreference : "light");
   applyPeTheme(getThemePreferenceFromUi());
   if (p.continuityWarnLevel) setV("continuityWarnLevel", p.continuityWarnLevel);
+  setC("autoRefreshManuscriptContext", !!p.autoRefreshManuscriptContext);
+  if (p.manuscriptContext && ProzaEdit.ManuscriptContextIndex?.normalizeStored) {
+    setManuscriptContextIndex(p.manuscriptContext);
+  }
   if (p.scopePageFrom) setV("scopePageFrom", p.scopePageFrom);
   if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
   setC("auditExtended", p.auditExtended);
@@ -1849,6 +2010,7 @@ function setupAutoSaveHandlers() {
     "showPriorSessionSummary",
     "showLongOperationWarnings",
     "showDarkAppearanceTip",
+    "autoRefreshManuscriptContext",
   ].forEach((id) => bind(getEl(id)));
   const showTipsEl = getEl("showSessionTips");
   if (showTipsEl && !showTipsEl.dataset.peOnboardingFx) {
@@ -1914,6 +2076,7 @@ function setupAutoSaveHandlers() {
 }
 
 async function prepareScopeForAudit(retryOpts) {
+  if (!(await maybeAutoRefreshManuscriptContextBeforeAudit())) return false;
   const scope = getScopeMode();
   if (scope !== "selection") {
     if (scope === "selected-chapters" || scope === "chapter" || scope === "chapter-range") {
@@ -1994,7 +2157,8 @@ function runPrimaryAudit() {
 
 function buildManuscriptProfile() {
   const c = collectUiConfig();
-  return `Type: ${c.manuscriptType}\nAudience: ${c.targetAudience}\nSetting: ${c.settingAnchor}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
+  const base = `Type: ${c.manuscriptType}\nAudience: ${c.targetAudience}\nSetting: ${c.settingAnchor}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
+  return appendManuscriptContextToProfile(base);
 }
 
 function applySimpleMode() {
@@ -2030,6 +2194,8 @@ function applyPlainLanguageLayer() {
   updateTabStripVisibleLabels();
   updatePipelineHints();
   updateSimpleModeAdvancedTabsList();
+  const mciSimple = getEl("peMciSimpleBlock");
+  if (mciSimple) mciSimple.classList.toggle("hidden", !on);
 }
 
 function updatePlainLanguageScopeSelect() {
@@ -2975,6 +3141,7 @@ async function resetSettingsGroup(groupKey) {
     audit: "Audit & reports",
     privacy: "Privacy & diagnostics",
     dictionary: "Dictionary",
+    manuscript: "Manuscript context",
     "custom-style": "Custom style",
   };
   const label = labels[norm] || norm;
@@ -3077,6 +3244,11 @@ function buildAuditContext(options) {
     mPacing: fictionOn("mPacing"),
     mSpoiler: fictionOn("mSpoiler"),
     reportDensity: getEl("reportDensity")?.value || "balanced",
+    manuscriptContextIndex: getManuscriptContextIndex(),
+    manuscriptContextFresh: ProzaEdit.ManuscriptContextIndex?.isFresh?.(
+      getManuscriptContextIndex(),
+      lastKnownParagraphTotal
+    ),
   };
 }
 
@@ -3209,7 +3381,10 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
       showPeStatus("Tip: File → Version History before large edits.", "ok");
     }
     const level = parseInt(getEl("continuityWarnLevel")?.value, 10) || 3;
-    const index = getManuscriptIndex();
+    let index = getManuscriptIndex();
+    if (ProzaEdit.ManuscriptContextIndex?.continuityAugment) {
+      index = ProzaEdit.ManuscriptContextIndex.continuityAugment(index, getManuscriptContextIndex());
+    }
     const warnings = ProzaEdit.ContinuityGuard.assessReplace(before, after, index, level);
     if (warnings.length) {
       const block = ProzaEdit.ContinuityGuard.formatWarningBlock(warnings);

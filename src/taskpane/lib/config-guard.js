@@ -41,6 +41,17 @@ ProzaEdit.ConfigGuard = {
         .filter((n) => Number.isFinite(n) && n > 0)
         .slice(0, 2000);
     }
+    if (out.manuscriptContext != null) {
+      if (typeof out.manuscriptContext !== "object" || Array.isArray(out.manuscriptContext)) {
+        delete out.manuscriptContext;
+      } else {
+        try {
+          if (JSON.stringify(out.manuscriptContext).length > 52000) delete out.manuscriptContext;
+        } catch (_) {
+          delete out.manuscriptContext;
+        }
+      }
+    }
     return out;
   },
 };

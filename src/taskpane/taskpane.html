@@ -164,6 +164,12 @@
       <p id="scopeCharPreview" class="scope-char-preview" aria-live="polite">Select a scope, then click Refresh count.</p>
       <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="refreshScopeCharPreview()">Refresh count</button>
     </div>
+    <details class="help-box help-muted pe-mci-target-block" id="peMciTargetBlock">
+      <summary>Full manuscript context (optional)</summary>
+      <p id="peMciStatusTarget" class="pe-mci-status pe-mci-stale" aria-live="polite">Full MS context not built</p>
+      <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContextTarget" onclick="runBuildFullManuscriptContext(true)">Build full manuscript context</button>
+      <p class="help-inline" style="margin:6px 0 0;font-size:10px;">Background chunked read for story arc and continuity — stored locally in this document (<span id="peMciStorageHintTarget">—</span>). Chapter-scoped audits use it when fresh.</p>
+    </details>
     <div id="scopePagesPanel" class="form-group scope-subpanel hidden">
       <p class="help-inline" style="margin:0 0 6px;font-size:10px;">Word has no page API — pages are estimated at ~2,800 characters each.</p>
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
@@ -283,6 +289,11 @@
       </ol>
       <p class="help-inline" style="margin:6px 0 0;font-size:10px;">Walkthrough: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/PHASE-1-QUICKSTART.md" target="_blank" rel="noopener">PHASE-1-QUICKSTART.md</a></p>
     </details>
+    <div class="form-group pe-mci-checks-block" id="peMciChecksBlock" data-simple-hide>
+      <p id="peMciStatusChecks" class="pe-mci-status pe-mci-stale" aria-live="polite">Full MS context not built</p>
+      <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContext" onclick="runBuildFullManuscriptContext(true)">Build full manuscript context</button>
+      <p class="help-inline" style="margin:4px 0 0;font-size:10px;">Coach, Rewrite, and chapter audits inject this index when it is fresh. Data stays in this document only.</p>
+    </div>
     <div class="audit-run-hub pe-checks-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
       <p id="peChecksRunAuditTagline" class="pe-checks-run-tagline help-muted">ProzaEdit checks when you click Run — it does not underline while you type.</p>
@@ -316,6 +327,12 @@
         <p class="help-inline" style="margin:4px 0 0;font-size:10px;">See <strong>Quick start &amp; editing stack</strong> above or <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORKFLOWS.md" target="_blank" rel="noopener">WORKFLOWS.md</a>.</p>
       </details>
     </div>
+    <details class="help-box help-muted pe-mci-simple-block hidden" id="peMciSimpleBlock">
+      <summary>Full manuscript context (Simple mode)</summary>
+      <p id="peMciStatusSimple" class="pe-mci-status pe-mci-stale" aria-live="polite">Full MS context not built</p>
+      <button type="button" class="btn-secondary pe-btn" onclick="runBuildFullManuscriptContext(true)">Build full manuscript context</button>
+      <p class="help-inline" style="margin:4px 0 0;font-size:10px;">Also in Settings → Manuscript. May take minutes on long docs; you can keep using Word.</p>
+    </details>
     <details class="help-box help-muted" style="margin:8px 0;">
       <summary>Long manuscript tools (optional)</summary>
       <p class="help-inline">Chapter heatmap needs <strong>Heading 1–3</strong> styles on chapter titles.</p>
@@ -515,7 +532,8 @@
       </details>
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
       <p><strong>Analysis scope (Target):</strong> Highlighted selection; <strong>Page range</strong> (From/To pages, ~2,800 chars each); Selected chapters (Heading 1–3 checklist); or Full manuscript.</p>
-      <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards.</p>
+      <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards. <strong>Chapter audit uses full-manuscript context</strong> when you have built the context index and the document has not changed much (paragraph count).</p>
+      <p><strong>Full manuscript context:</strong> Checks or Target → <em>Build full manuscript context</em> runs a cooperative background read (cancel anytime). Stored in this document’s settings — not sent to AI unless you use Gemini with that profile.</p>
       <p><strong>Settings (toolbar gear):</strong> Simple mode, safety toggles (confirm before apply, hover tips, FK lock, continuity slider), audit defaults (report depth, default filter, extended checks), privacy &amp; diagnostics, per-document dictionary, capture reference style, citation scan shortcut, Gemini session ceiling (when Simple mode is off), and custom style rules (add/edit/bulk import). <strong>Target</strong> keeps manuscript profile, analysis scope, and preferred style guide.</p>
       <p><strong>Keyboard shortcuts:</strong> Open Settings — <strong>Ctrl+Shift+,</strong> or <strong>Alt+Shift+S</strong> (when focus is not in a text field). Undo / Redo — toolbar buttons (Word undo still applies to all edits). See checklist §8 for banner and control sync tests.</p>
       <p><strong>Look &amp; navigation:</strong> <strong>Light</strong> (indigo primary) or <strong>Dark</strong> / <strong>Match system</strong> (Settings → Appearance). In dark mode, light green marks primary actions, the active tab, and workflow step — not finding severity. The sticky line under the toolbar shows your active <strong>style guide</strong>, <strong>scope</strong>, and character estimate after <strong>Refresh count</strong>. ProzaEdit remembers your <strong>last tab</strong> per document. Deep links: Help → Privacy, Target → Custom rules, or bookmark <code>#pe-settings-privacy</code>. Settings and Rewrite (from an audit card) offer <strong>Back</strong> when you need to return without hunting tabs.</p>
@@ -748,6 +766,16 @@
           <p class="help-muted" style="font-size:10px;margin:6px 0 4px;">Theme radios live under <strong>Essentials</strong>. Use this group to reset appearance defaults.</p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="appearance" style="margin-top:10px;">Reset Appearance to defaults</button>
         </details>
+        <details class="pe-settings-group" id="pe-settings-group-manuscript">
+          <summary>Manuscript context index</summary>
+          <p class="help-inline" style="font-size:10px;margin:4px 0 8px;">Separate from audit scope: a lightweight full-document profile for Coach, Rewrite, and continuity when you audit one chapter.</p>
+          <p id="peMciStatusSettings" class="pe-mci-status pe-mci-stale" aria-live="polite">Full MS context not built</p>
+          <button type="button" class="btn-secondary pe-btn" style="margin-bottom:8px;" onclick="runBuildFullManuscriptContext(true)">Build full manuscript context</button>
+          <p id="peMciStorageHintSettings" class="help-muted" style="font-size:10px;margin:0 0 8px;">—</p>
+          <div class="toggle-row"><span>Auto-refresh context before audit (when stale)</span><input type="checkbox" id="autoRefreshManuscriptContext"></div>
+          <p class="help-inline" style="font-size:10px;margin:4px 0 0;">Off by default — turning on may start a background read before Run audit. You can cancel from the banner.</p>
+          <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="manuscript" style="margin-top:10px;">Reset Manuscript settings</button>
+        </details>
         <details class="pe-settings-group" id="pe-settings-group-audit">
           <summary>Advanced — Audit &amp; reports</summary>
           <div class="form-group" style="margin-top:6px;">
@@ -883,6 +911,7 @@
   <script src="lib/manuscript-overview.js"></script>
   <script src="lib/report-density.js"></script>
   <script src="lib/scope-reader.js"></script>
+  <script src="lib/manuscript-context-index.js"></script>
   <script src="lib/continuity-guard.js"></script>
   <script src="lib/word-safe-navigator.js"></script>
   <script src="lib/chronology-engine.js"></script>

@@ -930,6 +930,24 @@ body.pe-narrow-pane .btn-tool-icon-label {
   display: none !important;
 }
 
+.pe-mci-status {
+  font-size: var(--pe-font-size-2xs);
+  margin: 4px 0 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, #e0e0e0);
+}
+
+.pe-mci-ready {
+  border-color: var(--green-muted, #1e8e3e);
+  color: var(--text, inherit);
+}
+
+.pe-mci-stale {
+  border-color: var(--orange-muted, #e37400);
+  color: var(--text-muted, #5f6368);
+}
+
 .pe-scope-chip {
   font-size: 10px;
   margin: 0 0 8px;
