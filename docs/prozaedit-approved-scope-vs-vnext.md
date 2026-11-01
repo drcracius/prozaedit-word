@@ -1,7 +1,7 @@
 # Approved Project roadmap vs vNext north star
 
 **Audience:** D Cracius and Project coordinators  
-**Updated:** 2026-11-01 (PE-46 web-first final mile)  
+**Updated:** 2026-11-01 (PE-49 final audit; PE-46 web-first final mile)  
 **Production baseline:** hosted build **2.0.0.15** ([WHEN-YOU-RETURN.md](./WHEN-YOU-RETURN.md))
 
 ---

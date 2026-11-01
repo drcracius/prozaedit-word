@@ -1,6 +1,6 @@
 # ProzaEdit install scripts (GitHub-hosted beta)
 
-**Production UI** loads from GitHub Pages after Office registers **`manifest.hosted.xml`**. **Primary beta path:** Word on the web upload ([FINAL-MILE-PLAN-WEB.md](../../docs/FINAL-MILE-PLAN-WEB.md), [BETA-TESTERS-INSTALL.txt](../../docs/BETA-TESTERS-INSTALL.txt)). These scripts are an **optional desktop appendix** (PE-2 deferred); they download the manifest from GitHub and do **not** replace the one-time web upload for most consumer accounts.
+**Production UI** loads from GitHub Pages after Office registers **`manifest.hosted.xml`**. **Primary beta path:** Word on the web upload ([FINAL-MILE-PLAN-WEB.md](../../docs/FINAL-MILE-PLAN-WEB.md), [BETA-TESTERS-INSTALL.txt](../../docs/BETA-TESTERS-INSTALL.txt)). Web **1.0 RC** on `main` (**2.0.0.15**, **29** tests; merged PRs #2–#5). These scripts are an **optional desktop appendix** (**PE-2 deferred**); they download the manifest from GitHub and do **not** replace the one-time web upload for most consumer accounts.
 
 ---
 

@@ -3,7 +3,7 @@
 **Audience:** D Cracius (author, primary tester, PC + iPad workflows)  
 **Authored:** 2026-10-31 (audit + Phase 2 delivery)  
 **Supersedes as primary roadmap:** [prozaedit-multi-phase-plan.md](/cursor/stores/self/docs/prozaedit-multi-phase-plan.md) (v1 retained as historical)  
-**Production baseline:** hosted build **2.0.0.15** ([source-of-truth](/cursor/stores/self/docs/source-of-truth.md))  
+**Production baseline:** hosted build **2.0.0.15** ([source-of-truth.md](./source-of-truth.md) · [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md))  
 **North star:** [Next-Gen Master Specification](prozaedit-nextgen-master-specification.md) (vNext architecture, post-2.0.0.15)  
 **As-built acceptance:** [Feature Reference](/cursor/stores/self/docs/prozaedit-features.md)  
 **Gap analysis:** [Spec Review](/cursor/stores/self/docs/prozaedit-nextgen-spec-review.md)  

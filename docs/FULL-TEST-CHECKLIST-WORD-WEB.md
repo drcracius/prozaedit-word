@@ -3,7 +3,7 @@
 **Audience:** D Cracius beta validation on **Word online** (narrow task pane).  
 **Build:** UI **2.0.0.15** (no manifest re-upload for this UX pack).  
 **Pane URL:** https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html  
-**Final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)
+**Final mile (web-first):** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **29** unit tests on `main` · merged PRs [#2](https://github.com/drcracius/prozaedit-word/pull/2)–[#5](https://github.com/drcracius/prozaedit-word/pull/5) · desktop **PE-2** not required.
 
 ---
 

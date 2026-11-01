@@ -1,7 +1,7 @@
 # ProzaEdit Word — final mile plan (web-first beta)
 
 **Audience:** D Cracius (owner) and Project coordinators  
-**Baseline:** `main` after **PE-45** · build **2.0.0.15** · **29** unit tests · merged PRs [#2](https://github.com/drcracius/prozaedit-word/pull/2), [#3](https://github.com/drcracius/prozaedit-word/pull/3)  
+**Baseline:** `main` after **PE-49** · build **2.0.0.15** · **29** unit tests · merged PRs [#2](https://github.com/drcracius/prozaedit-word/pull/2)–[#5](https://github.com/drcracius/prozaedit-word/pull/5) (PE-48 prep in [#5](https://github.com/drcracius/prozaedit-word/pull/5))  
 **Primary ship path:** **Word on the web** — upload `manifest.hosted.xml` once; UI from GitHub Pages.  
 **Companion (Project store):** store copy `prozaedit-final-mile-plan.md` mirrors this file for Project Context.
 
@@ -12,6 +12,7 @@
 | Phase | Status | Gate / artifact |
 |-------|--------|-----------------|
 | **Agent prep (PE-48)** | **Done** | [HOSTED-SMOKE-LAST-RUN.md](./HOSTED-SMOKE-LAST-RUN.md) · [BETA-INVITE.md](./BETA-INVITE.md) · [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) · [DIAGNOSTICS-2.0.0.16-MERGE-CHECKLIST.md](./DIAGNOSTICS-2.0.0.16-MERGE-CHECKLIST.md) |
+| **Final audit (PE-49)** | **Done** | [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md) · [source-of-truth.md](./source-of-truth.md) |
 | **1 — Word web validation** | **START** (owner) | [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) · log in [templates/VALIDATION-LOG.md](./templates/VALIDATION-LOG.md) or [GitHub issue form](../.github/ISSUE_TEMPLATE/word-web-validation.yml) |
 | **2 — UX-4 beta feedback** | Pending | After Phase 1 **GO beta** · [templates/BETA-FEEDBACK.md](./templates/BETA-FEEDBACK.md) (scoring rubric) · optional [beta-feedback issue](../.github/ISSUE_TEMPLATE/beta-feedback.yml) |
 | **3 — Diagnostics ingest** | Optional | [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) · [DIAGNOSTICS-2.0.0.16-MERGE-CHECKLIST.md](./DIAGNOSTICS-2.0.0.16-MERGE-CHECKLIST.md) when Worker URL exists |

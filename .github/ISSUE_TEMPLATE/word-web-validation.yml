@@ -9,7 +9,7 @@ body:
       value: |
         **Checklist:** [FULL-TEST-CHECKLIST-WORD-WEB.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/FULL-TEST-CHECKLIST-WORD-WEB.md)
         **Template:** [docs/templates/VALIDATION-LOG.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/templates/VALIDATION-LOG.md)
-        **Final mile:** [FINAL-MILE-PLAN-WEB.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/FINAL-MILE-PLAN-WEB.md)
+        **Final mile:** [FINAL-MILE-PLAN-WEB.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/FINAL-MILE-PLAN-WEB.md) · Web 1.0 RC **2.0.0.15** (PE-48 done; PE-2 desktop deferred)
 
   - type: input
     id: build_version
