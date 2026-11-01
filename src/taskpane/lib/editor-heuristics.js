@@ -48,13 +48,22 @@ ProzaEdit.EditorHeuristics = {
     }
   },
 
+  LEGIT_DOUBLES: new Set("had that bye no yes so very ha hee go now there night boo tut chop pom cha yum hush knock dum hello well yoo hip hurray ho hey ah oh la na tick tock ding dong zig zag bla blah mama papa mum dada baba yo duran".split(" ")),
+
   /** Consecutive duplicate tokens (2- or 3-word), e.g. “the the”, “he said he said”. */
   scanConsecutiveDuplicates(text, push, limit) {
     limit = limit || 8;
     let n = 0;
-    const re2 = /\b([\w'-]+)\s+\1\b/gi;
+    const re2 = /\b([\w'-]{1,40})[ \t]+\1\b/gi;
     let m;
     while ((m = re2.exec(text)) !== null && n < limit) {
+      // Grammatical or lexical doublings ("had had", "that that", "bye bye", "no no") and bare numbers are not typos.
+      if (this.LEGIT_DOUBLES.has(m[1].toLowerCase()) || /^\d+$/.test(m[1])) continue;
+      const after = text.slice(m.index + m[0].length, m.index + m[0].length + m[1].length + 12).toLowerCase();
+      const before = text.slice(Math.max(0, m.index - m[1].length - 12), m.index).toLowerCase();
+      const w1 = m[1].toLowerCase();
+      if (new RegExp("^[ \\t]+").test(after) && after.replace(/^[ \t]+/, "").startsWith(w1)) continue;
+      if (/[ \t]$/.test(before) && before.replace(/[ \t]+$/, "").endsWith(w1)) continue;
       n++;
       push({
         ruleId: `edit:dup1:${m[1].toLowerCase()}:${m.index}`,
@@ -65,8 +74,10 @@ ProzaEdit.EditorHeuristics = {
         replacementText: m[1],
       });
     }
-    const re3 = /\b([\w'-]+\s+[\w'-]+)\s+\1\b/gi;
+    const re3 = /\b([\w'-]{1,40}[ \t]+[\w'-]{1,40})[ \t]+\1\b/gi;
     while ((m = re3.exec(text)) !== null && n < limit) {
+      const parts = m[1].toLowerCase().split(/\s+/);
+      if (parts[0] === parts[1] || this.LEGIT_DOUBLES.has(parts[0]) || this.LEGIT_DOUBLES.has(parts[1])) continue;
       n++;
       push({
         ruleId: `edit:dup2:${m.index}`,
@@ -109,7 +120,28 @@ ProzaEdit.EditorHeuristics = {
   },
 
   scanQuoteBalance(text, push) {
-    const straight = (text.match(/"/g) || []).length;
+    // Multi-paragraph speech: the paragraph that continues a quotation re-opens with a mark while the previous
+    // paragraph stays open. Discount that re-opening mark; skip inch marks (5'10", 6" tall).
+    const paras = text.split(/\n+/);
+    let straight = 0;
+    let curlyOpen = 0;
+    let curlyClose = 0;
+    let prevOpenS = false;
+    let prevOpenC = false;
+    paras.forEach((p) => {
+      const q = (p.match(/(^|[^\d])"/g) || []).length;
+      let sCount = q;
+      if (prevOpenS && /^\s*"/.test(p)) sCount -= 1;
+      straight += sCount;
+      prevOpenS = q % 2 === 1;
+      const o = (p.match(/\u201C/g) || []).length;
+      const c = (p.match(/\u201D/g) || []).length;
+      let oAdj = o;
+      if (prevOpenC && /^\s*\u201C/.test(p)) oAdj -= 1;
+      curlyOpen += oAdj;
+      curlyClose += c;
+      prevOpenC = o > c;
+    });
     if (straight > 0 && straight % 2 !== 0) {
       push({
         ruleId: "edit:quote:double",
@@ -120,8 +152,6 @@ ProzaEdit.EditorHeuristics = {
         replacementText: "(pair quotes)",
       });
     }
-    const curlyOpen = (text.match(/\u201C/g) || []).length;
-    const curlyClose = (text.match(/\u201D/g) || []).length;
     if (curlyOpen + curlyClose > 0 && curlyOpen !== curlyClose) {
       push({
         ruleId: "edit:quote:curly",
@@ -140,9 +170,6 @@ ProzaEdit.EditorHeuristics = {
       ["can not", "cannot"],
       ["all right", "alright"],
       ["a lot", "alot"],
-      ["every day", "everyday"],
-      ["any one", "anyone"],
-      ["some one", "someone"],
     ];
     pairs.forEach(([a, b]) => {
       const hasA = lower.includes(a);

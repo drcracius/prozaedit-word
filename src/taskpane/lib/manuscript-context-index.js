@@ -904,7 +904,9 @@ ProzaEdit.ManuscriptContextIndex = {
       st.current = current;
       st.nonEmptyChars = nonEmptyChars;
       st.nextBatch = bi + 1;
-      st.checks.push([start, this.hashString(this.normalizeParagraphText(items[start].text || ""))]);
+      // Up to CHECK_POINTS evenly spaced paragraphs per finished batch (was: first only) so an edit anywhere in a
+      // finished batch is much more likely to invalidate a resume instead of producing a mixed index.
+      st.checks.push(this.spreadIndexes(start, end, this.CHECK_POINTS).map((idx) => [idx, this.hashString(this.normalizeParagraphText(items[idx].text || ""))]));
       if (onProgress) {
         const loaded = end + 1;
         const secCount = Math.max(1, chapterAccs.length || chunkAccs.length);
@@ -948,7 +950,16 @@ ProzaEdit.ManuscriptContextIndex = {
     );
   },
 
-  CHECKPOINT_VERSION: 1,
+  CHECKPOINT_VERSION: 2,
+  CHECK_POINTS: 8,
+
+  spreadIndexes(start, end, n) {
+    const len = end - start + 1;
+    if (len <= n) return Array.from({ length: Math.max(0, len) }, (_, k) => start + k);
+    const out = [];
+    for (let k = 0; k < n; k++) out.push(start + Math.floor((k * (len - 1)) / (n - 1)));
+    return out;
+  },
   CHECKPOINT_MAX_AGE_MS: 30 * 60 * 1000,
 
   /**
@@ -960,7 +971,14 @@ ProzaEdit.ManuscriptContextIndex = {
       if (!st || st.version !== this.CHECKPOINT_VERSION || st.paragraphTotal !== paragraphTotal) return false;
       if (Date.now() - (st.createdAt || 0) > this.CHECKPOINT_MAX_AGE_MS) return false;
       if (!(st.nextBatch > 0 && st.nextBatch < batchCount) || !Array.isArray(st.checks) || st.checks.length !== st.nextBatch) return false;
-      const picks = st.checks;
+      const picks = [];
+      for (const group of st.checks) {
+        if (!Array.isArray(group) || !group.length) return false;
+        for (const pair of group) {
+          if (!Array.isArray(pair)) return false;
+          picks.push(pair);
+        }
+      }
       picks.forEach(([idx]) => items[idx] && items[idx].load("text"));
       await context.sync();
       return picks.every(([idx, h]) => items[idx] && this.hashString(this.normalizeParagraphText(items[idx].text || "")) === h);

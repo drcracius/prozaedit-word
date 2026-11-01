@@ -13,8 +13,8 @@ ProzaEdit.GenreChecks = {
   // Words that read as past or present only in some contexts are excluded on purpose (had, has, would, could, will).
   FLASHBACK: /\b(years ago|months ago|back then|remember(?:ed|s)?|once upon|that (?:summer|night|winter|spring|autumn|day|morning)|when (?:i|he|she|we|they) (?:was|were)|as a (?:child|boy|girl|kid)|used to|had been|dear [a-z]+|diary|in those days|long before)\b/i,
 
-  PROFANITY: ["fuck", "fucking", "fucked", "shit", "shitty", "bullshit", "asshole", "bastard", "bitch", "goddamn", "motherfucker", "dick", "piss", "pissed", "cunt"],
-  VIOLENCE: ["stab", "stabbed", "stabbing", "slashed", "gunshot", "shot dead", "bleeding", "blood", "corpse", "gore", "gory", "murder", "murdered", "strangled", "beheaded", "dismembered", "skull", "slaughter", "massacre", "torture", "tortured", "wound", "wounded", "killed", "kill"],
+  PROFANITY: ["fuck", "fucking", "fucked", "shit", "shitty", "bullshit", "asshole", "bastard", "bitch", "goddamn", "motherfucker", "piss", "pissed", "cunt"],
+  VIOLENCE: ["stab", "stabbed", "stabbing", "slashed", "gunshot", "shot dead", "bleeding", "blood", "corpse", "gore", "gory", "murder", "murdered", "strangled", "beheaded", "dismembered", "skull", "slaughter", "massacre", "torture", "tortured", "wounded", "killed", "kill"],
 
   /** Allowed density (per 1,000 words) before a violence note appears; profanity uses a single count rule. */
   VIOLENCE_TOLERANCE: { "thriller-suspense": 9, "mystery-crime": 9, fantasy: 8, historical: 8, scifi: 8, romance: 4, "literary-drama": 5, "general-fiction": 5 },
@@ -65,7 +65,10 @@ ProzaEdit.GenreChecks = {
       if (mine < 3 || mine / (mine + theirs) < 0.85) return;
       if (this.FLASHBACK.test(s.nar)) return;
       if ((s.nar.match(/\bhad\b/gi) || []).length >= 2) return;
-      const pure = theirs === 0 && mine >= 5 && share >= 0.8;
+      // "High" (shown in Simple) only for a long, entirely off-tense block with no colon: a colon usually
+      // introduces an embedded letter, message, prophecy or recipe, which is legitimately in another tense.
+      const prevEndsColon = idx > 0 && /:\s*$/.test(paras[idx - 1]);
+      const pure = theirs === 0 && mine >= 8 && share >= 0.8 && !/:/.test(s.p) && !prevEndsColon;
       n++;
       push({
         ruleId: `tense:drift:${idx}`,

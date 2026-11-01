@@ -8,11 +8,31 @@ ProzaEdit.Audit = {
     "Very Harsh Senior Editor (9.0+ Target)": { c: 0.5, p: 0.15 },
   },
 
+  _WORDCH: /[A-Za-z0-9_\u00C0-\u024F]/,
+
+  /**
+   * Whole-word phrase search on the (apostrophe-normalised, lower-cased) text. Returns the phrase as it appears in
+   * the document (so Apply/Find locate it even with curly apostrophes or capitals) or null. Never matches inside a
+   * longer word ("orbs" in "absorbs", "end result" in "friend resulting").
+   */
+  _find(text, lower, phrase) {
+    const p = String(phrase || "").trim().toLowerCase().replace(/[\u2018\u2019]/g, "'");
+    if (!p) return null;
+    const W = this._WORDCH;
+    let i = 0;
+    while ((i = lower.indexOf(p, i)) !== -1) {
+      const b = lower[i - 1];
+      const a = lower[i + p.length];
+      const leftOk = !W.test(p[0]) || !b || !W.test(b);
+      const rightOk = !W.test(p[p.length - 1]) || !a || !W.test(a);
+      if (leftOk && rightOk) return text.length === lower.length ? text.substr(i, p.length) : p;
+      i++;
+    }
+    return null;
+  },
+
   includesWord(text, lower, phrase) {
-    const p = phrase.trim().toLowerCase();
-    if (!p) return false;
-    if (p.includes(" ") || p.length > 8) return lower.includes(p);
-    return new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text);
+    return this._find(text, lower, phrase) != null;
   },
 
   isMuted(ruleId, mutedSet) {
@@ -64,7 +84,7 @@ ProzaEdit.Audit = {
     const muted = new Set(ctx.mutedRules || []);
     const dict = new Set((ctx.dictionary || []).concat(G ? G.jargonTerms(ctx) : []).map((d) => String(d).toLowerCase()));
     if (G && G.jargonTerms(ctx).length) ctx = { ...ctx, dictionary: (ctx.dictionary || []).concat(G.jargonTerms(ctx)) };
-    const lower = text.toLowerCase();
+    const lower = text.toLowerCase().replace(/[\u2018\u2019]/g, "'");
     const push = (item) => {
       if (!item.targetText || item.targetText.length > 255) return;
       if (!item.ruleId) {
@@ -99,7 +119,7 @@ ProzaEdit.Audit = {
       ProzaEdit.ProperNoun.findInconsistencies(text, ctx.dictionary, { knownNames: roster }).forEach(push);
     }
     if (ctx.chkSpell) this._proofing(text, lower, push, ctx.language);
-    if (ctx.chkAI) this._aiVoice(text, lower, push);
+    if (ctx.chkAI) this._aiVoice(text, lower, push, ctx);
     if (ctx.chkAIDetection) this._aiDetectionHeuristic(text, lower, push);
 
     if (fiction) {
@@ -173,7 +193,7 @@ ProzaEdit.Audit = {
     return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext, genre };
   },
 
-  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "plot:weak_hook", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
+  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
 
   /** high = objective (typo-class); medium = style judgment; low = noisy heuristic (hidden in Simple view by default). */
   confidenceFor(item) {
@@ -183,32 +203,49 @@ ProzaEdit.Audit = {
     return item.type === "confirmed" ? "high" : "medium";
   },
 
+  /** Same target + type collapses to one card; the highest-confidence rule wins (a low "AI phrase" card must not hide a medium house-style card). */
   _dedupe(list) {
-    const seen = new Set();
-    return list.filter((s) => {
-      const t = String(s.targetText || "")
-        .toLowerCase()
-        .trim()
-        .slice(0, 80);
-      const key = `${t}|${s.type}`;
-      if (t && seen.has(key)) return false;
-      if (t) seen.add(key);
-      return true;
+    const rank = { high: 3, medium: 2, low: 1 };
+    const bestIdx = new Map();
+    const keys = list.map((s) => {
+      const t = String(s.targetText || "").toLowerCase().trim().slice(0, 80);
+      return t ? `${t}|${s.type}` : null;
     });
+    list.forEach((s, i) => {
+      if (!keys[i]) return;
+      const cur = bestIdx.get(keys[i]);
+      if (cur == null || (rank[this.confidenceFor(s)] || 0) > (rank[this.confidenceFor(list[cur])] || 0)) bestIdx.set(keys[i], i);
+    });
+    return list.filter((s, i) => !keys[i] || bestIdx.get(keys[i]) === i);
   },
 
   PAIR_STOPWORDS: new Set("a an the and or but nor so yet of in on at to for from by with as into onto over under about than then that this these those it its is are was were be been being am i me my we us our you your he him his she her they them their will would could should can did do does had has have not no said asked said there here when what who which if up out off down all just".split(" ")),
 
   _repetition(text, lower, push) {
     (ProzaEdit.LexicalBanks?.PLEONASMS || []).forEach(([target, replacement]) => {
-      if (lower.includes(target)) {
+      const hit = this._find(text, lower, target);
+      if (hit) {
         push({
           ruleId: `rep:pleo:${target}`,
           module: "Repetition & Redundancy",
           type: "confirmed",
           explanation: "Pleonasm / tautology.",
-          targetText: target,
+          targetText: hit,
           replacementText: replacement,
+        });
+      }
+    });
+    (ProzaEdit.LexicalBanks?.PLEONASMS_SOFT || []).forEach(([target, replacement]) => {
+      const hit = this._find(text, lower, target);
+      if (hit) {
+        push({
+          ruleId: `rep:soft:${target}`,
+          module: "Repetition & Redundancy",
+          type: "preference",
+          confidence: "low",
+          explanation: "Common doublet; often deliberate emphasis or a fixed phrase.",
+          targetText: hit,
+          replacementText: "(optional: tighten)",
         });
       }
     });
@@ -238,7 +275,7 @@ ProzaEdit.Audit = {
   },
 
   _proofing(text, lower, push, language) {
-    if (text.includes("  ")) {
+    if (/\S {2,}\S/.test(text)) {
       push({
         ruleId: "spell:double_space",
         module: "Proofreading & Language",
@@ -248,23 +285,41 @@ ProzaEdit.Audit = {
         replacementText: " ",
       });
     }
-    [" ,", " .", " ;", " :"].forEach((bad) => {
-      if (text.includes(bad)) {
+    // A word, closing quote or bracket + one space + punctuation + whitespace/end. Excludes spaced ellipses
+    // (". . ."), decimals (" .5"), emoticons (" :)") and ratios/times (" : " between digits).
+    const spaced = [
+      [",", /[A-Za-z\u00C0-\u024F\d"\u201D)\]] ,(?=\s|$)/],
+      [";", /[A-Za-z\u00C0-\u024F\d"\u201D)\]] ;(?=\s|$)/],
+      [".", /[A-Za-z\u00C0-\u024F"\u201D)\]] \.(?=\s|$)(?! \.)/],
+      [":", /[A-Za-z\u00C0-\u024F] :(?=\s|$)/],
+    ];
+    spaced.forEach(([ch, re]) => {
+      let ok = false;
+      try {
+        ok = re.test(text);
+      } catch (_) {
+        ok = false;
+      }
+      if (ok) {
         push({
-          ruleId: `spell:punct:${bad.trim()}`,
+          ruleId: `spell:punct:${ch}`,
           module: "Proofreading & Language",
           type: "preference",
           explanation: "Space before punctuation.",
-          targetText: bad,
-          replacementText: bad.trim(),
+          targetText: ` ${ch}`,
+          replacementText: ch,
         });
       }
     });
     const uk = ["colour", "centre", "organise", "recognise", "favour", "behaviour", "defence"];
     const us = ["color", "center", "organize", "recognize", "favor", "behavior", "defense"];
     const foreign = language === "en-GB" ? us : uk;
+    const stripped = text.replace(/["\u201C][^"\u201C\u201D]*["\u201D]/g, (q) => " ".repeat(q.length));
     foreign.slice(0, 8).forEach((word) => {
-      if (new RegExp(`\\b${word}\\b`, "i").test(text)) {
+      // Lowercase anywhere, or Capitalised only at a sentence start. Mid-sentence "Centre"/"Defence" is a name
+      // (Pompidou Centre, Ministry of Defence). Words inside quoted speech are a character's dialect, not an error.
+      const re = new RegExp(`(?:\\b${word}\\b|(?:^|[.!?]\\s+)${word[0].toUpperCase()}${word.slice(1)}\\b)`);
+      if (re.test(stripped)) {
         push({
           ruleId: `spell:dialect:${word}`,
           module: "Proofreading & Language",
@@ -277,21 +332,30 @@ ProzaEdit.Audit = {
     });
   },
 
-  _aiVoice(text, lower, push) {
-    let hits = 0;
+  _aiVoice(text, lower, push, ctx) {
+    const found = [];
     (ProzaEdit.LexicalBanks?.AI_PHRASES || []).forEach((phrase) => {
-      if (hits >= 15) return;
-      if (this.includesWord(text, lower, phrase)) {
-        hits++;
-        push({
-          ruleId: `ai:voice:${phrase.trim()}`,
-          module: "Anti-AI Voice Directive",
-          type: "preference",
-          explanation: `AI-voice trope: "${phrase.trim()}".`,
-          targetText: phrase.trim(),
-          replacementText: "(rewrite in human cadence)",
-        });
-      }
+      if (found.length >= 15) return;
+      const gp = ctx && ctx._genre;
+      if (gp && ProzaEdit.Genres.isMuted(gp.profile, `ai:voice:${phrase.trim()}`)) return;
+      const hit = this._find(text, lower, phrase);
+      if (!hit) return;
+      // "The Old/New Testament", "last will and testament" and a literal tapestry/beacon are ordinary nouns.
+      if (/^testament$/i.test(phrase.trim()) && /\b(old|new)\s+testament|will and testament/.test(lower)) return;
+      found.push([phrase.trim(), hit]);
+    });
+    // A single common word ("realm", "beacon") is weak evidence of anything; show cards in Simple only when the
+    // text stacks several template phrases.
+    found.forEach(([phrase, hit]) => {
+      push({
+        ruleId: `ai:voice:${phrase}`,
+        module: "Anti-AI Voice Directive",
+        type: "preference",
+        confidence: found.length >= 3 ? "medium" : "low",
+        explanation: `AI-voice trope: "${phrase}".`,
+        targetText: hit,
+        replacementText: "(rewrite in human cadence)",
+      });
     });
   },
 
@@ -331,7 +395,7 @@ ProzaEdit.Audit = {
       push({
         ruleId: "plot:restroom",
         module: "Plot & Chapter Structure",
-        type: "confirmed",
+        type: "preference",
         explanation: "Scene lacks immediate tension at transition.",
         targetText: "went to the restroom and left",
         replacementText: "stepped into the restroom, leaving her glass unattended on the dark counter",
@@ -366,13 +430,14 @@ ProzaEdit.Audit = {
   _motivation(text, lower, push, ctx) {
     const gp = ctx && ctx._genre;
     (gp ? gp.profile.weakCues : ["suddenly", "for some reason", "somehow", "started to", "began to"]).forEach((w) => {
-      if (lower.includes(w)) {
+      const hit = this._find(text, lower, w);
+      if (hit) {
         push({
           ruleId: `mot:${w}`,
           module: "Characterization & Motivation",
           type: "preference",
           explanation: `Weak agency cue "${w}".`,
-          targetText: w,
+          targetText: hit,
           replacementText: "(show motive)",
         });
       }
@@ -436,13 +501,14 @@ ProzaEdit.Audit = {
 
   _plausibility(text, lower, push) {
     ["without a trace", "in an instant", "inexplicably", "100%", "everyone always", "nobody ever"].forEach((phrase) => {
-      if (lower.includes(phrase)) {
+      const hit = this._find(text, lower, phrase);
+      if (hit) {
         push({
           ruleId: `plaus:${phrase}`,
           module: "Plausibility, Logic & Evidence",
           type: "preference",
           explanation: `Absolute/unearned claim "${phrase}".`,
-          targetText: phrase,
+          targetText: hit,
           replacementText: "(evidence on page)",
         });
       }
@@ -462,6 +528,7 @@ ProzaEdit.Audit = {
           ruleId: `pace:long:${longCount}`,
           module: "Pacing, Readability & Transitions",
           type: "preference",
+          confidence: wc >= threshold * 1.3 ? "medium" : "low",
           explanation: `Long sentence (~${wc} words).`,
           targetText: s.trim().substring(0, 120),
           replacementText: "(split)",
@@ -474,13 +541,14 @@ ProzaEdit.Audit = {
     const p = gp.profile;
     const label = p.label;
     p.cliches.forEach((c) => {
-      if (lower.includes(c)) {
+      const hit = this._find(text, lower, c);
+      if (hit) {
         push({
           ruleId: `genre:cliche:${c}`,
           module: "Genre craft",
           type: "preference",
           explanation: `Common ${label} cliché — a fresher, more specific image will stand out.`,
-          targetText: c,
+          targetText: hit,
           replacementText: "(fresher image)",
         });
       }
@@ -526,13 +594,14 @@ ProzaEdit.Audit = {
 
   _spoiler(text, lower, push) {
     (ProzaEdit.LexicalBanks?.SPOILER_PHRASES || []).forEach((phrase) => {
-      if (lower.includes(phrase)) {
+      const hit = this._find(text, lower, phrase);
+      if (hit) {
         push({
           ruleId: `spoiler:${phrase}`,
           module: "Spoiler Control & Reveal Timing",
           type: "preference",
           explanation: "Narrator telegraphs future outcome.",
-          targetText: phrase,
+          targetText: hit,
           replacementText: "(delay reveal)",
         });
       }
@@ -609,8 +678,9 @@ ProzaEdit.Audit = {
 
   _extendedLocalPass(text, lower, push, ctx) {
     ctx = ctx || {};
+    const narration = text.replace(/["\u201C][^"\u201C\u201D]*["\u201D]/g, (q) => " ".repeat(q.length));
     (ProzaEdit.LexicalBanks?.EXTENDED_FILLERS || []).forEach(([word, hint]) => {
-      if (new RegExp(`\\b${word}\\b`, "i").test(text)) {
+      if (new RegExp(`\\b${word}\\b`, "i").test(narration)) {
         push({
           ruleId: `ext:filler:${word}`,
           module: "Extended local pass",
@@ -626,7 +696,11 @@ ProzaEdit.Audit = {
     words.forEach((w) => freq.set(w, (freq.get(w) || 0) + 1));
     let rep = 0;
     [...freq.entries()]
-      .filter(([w, c]) => c >= 8 && !["that", "with", "from", "they", "this", "have", "were", "been", "would", "could", "about"].includes(w))
+      .filter(([w, c]) => {
+        if (c < 8 || this.PAIR_STOPWORDS.has(w) || ["with", "from", "have", "about", "back", "into", "like", "what", "their"].includes(w)) return false;
+        const cap = (text.match(new RegExp(`\\b${w[0].toUpperCase()}${w.slice(1)}\\b`, "g")) || []).length;
+        return cap < c * 0.5;
+      })
       .sort((a, b) => b[1] - a[1])
       .slice(0, 4)
       .forEach(([w, c]) => {
@@ -673,14 +747,18 @@ ProzaEdit.Audit = {
   _manuscriptRules(text, lower, push, ctx) {
     const t = ctx.manuscriptType;
     if (t.includes("Academic")) {
-      if (/\b(don't|can't|won't|it's|I'm)\b/i.test(text.replace(/["\u201c][^"\u201d]*["\u201d]/g, " "))) {
+      const unquoted = text.replace(/["\u201c][^"\u201d]*["\u201d]/g, (q) => " ".repeat(q.length));
+      const cm = /\b[A-Za-z]+n['\u2019]t\b|\b(?:it|that|there|here|let|I|you|we|they)['\u2019](?:s|m|re|ve|ll|d)\b/i.exec(unquoted);
+      if (cm) {
+        const key = cm[0].toLowerCase().replace(/\u2019/g, "'");
+        const exp = ProzaEdit.LexicalBanks?.CONTRACTIONS?.[key];
         push({
           ruleId: "acad:contraction",
           module: "Academic Paper / Journal",
           type: "preference",
           explanation: "Contractions discouraged in formal academic prose.",
-          targetText: "don't",
-          replacementText: "do not",
+          targetText: cm[0],
+          replacementText: exp || "(spell out)",
         });
       }
       if (!/\([A-Za-z][^)]*\d{4}[a-z]?\)/.test(text) && text.length > 800) {

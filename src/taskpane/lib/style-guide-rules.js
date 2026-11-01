@@ -46,11 +46,14 @@ ProzaEdit.StyleGuideRules = {
     return notes[guideId] || "Style guide";
   },
 
-  _phraseFlags(text, lower, push, budget, guideId, phrases) {
+  _phraseFlags(text, lower, push, budget, guideId, phrases, ctx) {
     let n = 0;
+    // Plain-language/Strunk wording advice targets exposition; in fiction the same phrase is usually voice.
+    const fictionDemote = !!(ctx && ProzaEdit.Genres && ProzaEdit.Genres.isFiction(ctx.manuscriptType)) && (guideId === "plain" || guideId === "strunk");
     for (let i = 0; i < phrases.length && budget.remaining > 0; i++) {
       const [phrase, replacement, hint] = phrases[i];
-      if (!lower.includes(phrase)) continue;
+      const hit = ProzaEdit.Audit?._find ? ProzaEdit.Audit._find(text, lower, phrase) : (lower.includes(phrase) ? phrase : null);
+      if (!hit) continue;
       n++;
       budget.remaining--;
       push({
@@ -58,7 +61,8 @@ ProzaEdit.StyleGuideRules = {
         module: this.MODULE,
         type: "preference",
         explanation: `${hint || "Tighten wording"} (${this.sourceNote(guideId)}).`,
-        targetText: phrase,
+        targetText: hit,
+        ...(fictionDemote ? { confidence: "low" } : {}),
         replacementText: replacement || "(shorten)",
       });
     }
@@ -78,7 +82,7 @@ ProzaEdit.StyleGuideRules = {
       ["subsequent to", "after", "Plain language: common word"],
       ["utilize", "use", "Plain language: simpler verb"],
       ["utilization", "use", "Plain language: simpler noun"],
-    ]);
+    ], ctx);
     if (budget.remaining <= 0) return;
     const passiveRe = /\b(am|is|are|was|were|be|been|being)\s+[\w']+ed\b/gi;
     let passive = 0;
@@ -98,7 +102,7 @@ ProzaEdit.StyleGuideRules = {
     }
   },
 
-  strunk1920(text, lower, push, budget) {
+  strunk1920(text, lower, push, budget, ctx) {
     this._phraseFlags(text, lower, push, budget, "strunk", [
       ["the fact that", "that", "Strunk: omit needless words"],
       ["reason is because", "reason is that", "Strunk: avoid redundant because"],
@@ -106,7 +110,7 @@ ProzaEdit.StyleGuideRules = {
       ["he is a man who", "he", "Strunk: cut padding (adjust gender as needed)"],
       ["she is a woman who", "she", "Strunk: cut padding"],
       ["there is no doubt but that", "no doubt", "Strunk: tighten"],
-    ]);
+    ], ctx);
   },
 
   govuk(text, lower, push, ctx, budget) {
@@ -129,7 +133,7 @@ ProzaEdit.StyleGuideRules = {
     ];
     ukPairs.forEach(([us, uk, hint]) => {
       if (budget.remaining <= 0) return;
-      if (new RegExp(`\\b${us}\\b`, "i").test(text)) {
+      if (new RegExp(`\\b${us}\\b`).test(text)) {
         budget.remaining--;
         push({
           ruleId: `sg:govuk:${us}`,
@@ -266,7 +270,7 @@ ProzaEdit.StyleGuideRules = {
       if (budget.remaining <= 0) return;
       if (g === "custom") this.customPack(text, lower, push, ctx, budget);
       else if (g === "plain") this.plainLanguage(text, lower, push, budget, ctx);
-      else if (g === "strunk") this.strunk1920(text, lower, push, budget);
+      else if (g === "strunk") this.strunk1920(text, lower, push, budget, ctx);
       else if (g === "govuk") this.govuk(text, lower, push, ctx, budget);
       else if (g === "microsoft") this.microsoft(text, lower, push, budget);
       else if (g === "google") this.googleDev(text, lower, push, ctx, budget);
