@@ -468,7 +468,10 @@ function updateAuditTabBadge() {
   badge.setAttribute("aria-label", `${n} open issue${n === 1 ? "" : "s"}`);
 }
 
+let scopePreviewSeq = 0;
+
 function refreshScopeCharPreview() {
+  const seq = ++scopePreviewSeq;
   if (auditBusy) {
     showPeStatus("Wait for audit to finish.", "warn");
     return Promise.resolve();
@@ -490,8 +493,11 @@ function refreshScopeCharPreview() {
     const result = await ProzaEdit.ScopeReader.measureScope(ctx, opts);
     return { len: (result.text || "").length, label: result.label || mode };
   })
-    .then(({ len, label }) => updateScopeCharPreviewDisplay(len, label, mode))
+    .then(({ len, label }) => {
+      if (seq === scopePreviewSeq) updateScopeCharPreviewDisplay(len, label, mode);
+    })
     .catch((e) => {
+      if (seq !== scopePreviewSeq) return;
       const el = getEl("scopeCharPreview");
       if (el) {
         el.textContent = wordRecoveryMessage(e, "measure this scope");
@@ -694,7 +700,7 @@ async function refreshManuscriptContextFreshness(options) {
   const recent = Date.now() - mciFreshnessAt < MCI_FRESHNESS_THROTTLE_MS;
   if (!options.force && recent && mciFreshness.state !== "unknown") return mciFreshness;
   if (mciBuildBusy || (!options.ignoreBusy && isOperationBusy())) return mciFreshness;
-  mciFreshnessPromise = wordRun("mci-fresh-check", (ctx) => MCI.checkFreshness(ctx, index))
+  mciFreshnessPromise = wordRun("mci-fresh-check", (ctx) => MCI.checkFreshness(ctx, index, { fiction: isFictionManuscriptType() }))
     .then((res) => {
       mciFreshness = { state: res.state, reason: res.reason, changedSections: res.changedSections || [] };
       mciFreshnessAt = Date.now();
@@ -1715,6 +1721,12 @@ function showTab(tabId) {
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-selected", on ? "true" : "false");
   });
+  if (tabId !== "tab5" && isRecording) {
+    try {
+      recognition?.stop();
+    } catch (_) {}
+    stopMic();
+  }
   updateWorkflowStepper(tabId);
   schedulePersistLastActiveTab(tabId);
   scheduleLastSessionSummaryPersist();
@@ -1746,15 +1758,26 @@ function updateGenreBlurb() {
   el.textContent = `${p.label}: ${p.blurb} Checks, thresholds and AI prompts follow this choice; it is saved with this document.`;
 }
 
+let fictionModuleMemo = null;
+
 function adaptModules() {
   updateGenreBlurb();
   const fiction = isFictionManuscriptType();
+  if (!fiction && !fictionModuleMemo) {
+    fictionModuleMemo = {};
+    FICTION_MODULE_IDS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && !el.disabled) fictionModuleMemo[id] = !!el.checked;
+    });
+  }
   FICTION_MODULE_IDS.forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.disabled = !fiction;
     if (!fiction) el.checked = false;
+    else if (fictionModuleMemo && id in fictionModuleMemo) el.checked = fictionModuleMemo[id];
   });
+  if (fiction) fictionModuleMemo = null;
   const chronoPanel = getEl("peChronoPanel");
   if (chronoPanel) {
     chronoPanel.hidden = !fiction;
@@ -2161,8 +2184,10 @@ function setupAutoSaveHandlers() {
     if (!el || el.dataset.peAutosave) return;
     el.dataset.peAutosave = "1";
     el.addEventListener("change", () => {
-      if (el.id === "manuscriptType") adaptModules();
-      else if (el.id === "chkCitationScan") adaptModules();
+      if (el.id === "manuscriptType") {
+        adaptModules();
+        refreshManuscriptContextFreshness({ force: true }).catch(() => {});
+      } else if (el.id === "chkCitationScan") adaptModules();
       else updateActiveChecksHint();
       if (el.id === "styleGuideRef") toggleCustomStylePanel();
       if (el.id === "manuscriptType" || el.id === "styleGuideRef") {
@@ -3478,8 +3503,11 @@ function applyHoverTips() {
   }
 }
 
+let auditCtxSnapshot = null;
+
 function buildAuditContext(options) {
   options = options || {};
+  if (auditCtxSnapshot) return { ...auditCtxSnapshot, extendedLocal: !!options.extendedLocal };
   const scopeVal = getEl("scope")?.value || "selection";
   const fiction = isFictionManuscriptType();
   const fictionOn = (id) => fiction && isModuleEnabled(id);
@@ -4851,7 +4879,7 @@ function finalizeAudit(result, label, fopts) {
   let score = result.score;
   if (score == null || hiddenLow > 0 || fopts.rerender) {
     const w =
-      ProzaEdit.Audit.PERSONA_WEIGHTS[getEl("criticPersona")?.value] || ProzaEdit.Audit.PERSONA_WEIGHTS["Average Reader"];
+      ProzaEdit.Audit.PERSONA_WEIGHTS[auditCtxSnapshot?.criticPersona || getEl("criticPersona")?.value] || ProzaEdit.Audit.PERSONA_WEIGHTS["Average Reader"];
     const raw = isDeep ? 10 - criticalCount * 0.45 : 10 - criticalCount * w.c - prefCount * w.p;
     score = Math.max(5, Math.round(raw * 10) / 10);
   }
@@ -5073,6 +5101,12 @@ function runAuditInternal(opts) {
 function runAuditInternalCore(opts) {
   if (auditBusy || deepBusy) return Promise.resolve(false);
   auditBusy = true;
+  auditCtxSnapshot = null;
+  try {
+    auditCtxSnapshot = buildAuditContext({});
+  } catch (_) {
+    auditCtxSnapshot = null;
+  }
   lastDocStats = null;
   clearRetry();
   const timing = createPhaseTiming();
@@ -5087,6 +5121,7 @@ function runAuditInternalCore(opts) {
 
   const finish = () => {
     auditBusy = false;
+    auditCtxSnapshot = null;
     setModuleButtonsDisabled(false);
     endLongOperation(longOp);
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, auditBtnDefault);
@@ -5365,7 +5400,7 @@ async function withCardActionLock(key, action, fn) {
 function muteRule(item) {
   if (!item || !item.ruleId) return Promise.resolve();
   return withCardActionLock(`mute:${item.id}`, "mute this rule", async () => {
-    await ProzaEdit.Settings.muteRule(item.ruleId);
+    const muteSaved = (await ProzaEdit.Settings.muteRule(item.ruleId)) !== false;
     if (item.targetText) {
       await ProzaEdit.Settings.dismissTarget(item.targetText);
       const candidate = String(item.targetText).trim().split(/\s+/)[0];
@@ -5383,6 +5418,8 @@ function muteRule(item) {
     if (showDictNudge) {
       muteDictionaryNudgeShownThisSession = true;
       showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok");
+    } else if (!muteSaved) {
+      showPeStatus("Rule muted in this browser, but Word could not save it in this document. It may return after reopening the file.", "warn");
     } else {
       showPeStatus("Rule muted — saved in this document and this browser (not other PCs or files).", "ok");
     }
@@ -5392,10 +5429,12 @@ function muteRule(item) {
 function dismissCard(item) {
   if (!item) return Promise.resolve();
   return withCardActionLock(`dismiss:${item.id}`, "dismiss this finding", async () => {
-    if (item.ruleId) await ProzaEdit.Settings.muteRule(item.ruleId);
+    let saved = true;
+    if (item.ruleId) saved = (await ProzaEdit.Settings.muteRule(item.ruleId)) !== false;
     if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
     dropSameRuleFindings(item);
     removeAuditCard(item.id);
+    if (!saved) showPeStatus("Dismissed in this browser, but Word could not save it in this document.", "warn");
   });
 }
 
@@ -5501,6 +5540,8 @@ function applyFix(cardId, target, replacement) {
     forceDocument: true,
     anchor: built.anchor,
     onSuccess: () => {
+      const at = lastAuditExcerpt.indexOf(target);
+      if (at >= 0) lastAuditExcerpt = lastAuditExcerpt.slice(0, at) + replacement + lastAuditExcerpt.slice(at + target.length);
       removeAuditCard(cardId);
       scheduleManuscriptIndexBuild(true);
       scheduleLastSessionSummaryPersist();
@@ -6162,6 +6203,19 @@ function openWordProofing() {
 
 /* Optional AI help (bring-your-own key; provider chosen in Settings) */
 
+let aiConfirmPending = false;
+
+/** One AI confirm dialog at a time: a double click must not stack two dialogs (and two paid calls). */
+async function aiConfirmOnce(options) {
+  if (aiConfirmPending) return false;
+  aiConfirmPending = true;
+  try {
+    return await peConfirm(options);
+  } finally {
+    aiConfirmPending = false;
+  }
+}
+
 async function runDeepAuditAI() {
   if (isOperationBusy()) {
     warnOperationBusy();
@@ -6174,7 +6228,7 @@ async function runDeepAuditAI() {
     return;
   }
   if (
-    !(await peConfirm({
+    !(await aiConfirmOnce({
       title: `Deep audit via ${aiLabel()}`,
       message:
         `Deep Audit uses 1 ${aiLabel()} API call and sends up to ${MAX_DEEP.toLocaleString()} characters of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
@@ -6331,7 +6385,7 @@ async function sendChatMessage() {
   }
   if (!key) {
     if (
-      await peConfirm({
+      await aiConfirmOnce({
         title: "No API key",
         message: "No AI API key set. Use free Local Coach instead?",
         confirmLabel: "Use Local Coach",
@@ -6342,7 +6396,7 @@ async function sendChatMessage() {
     return;
   }
   if (
-    !(await peConfirm({
+    !(await aiConfirmOnce({
       title: `Send via ${aiLabel()}`,
       message: `Send via ${aiLabel()} (uses API tokens)? Your question and the chosen context are sent to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_CHAT * 2 + 1500 + aiIndexChars(), 1024)}${geminiIndexDisclosure()}`,
       confirmLabel: "Send",
@@ -6352,7 +6406,7 @@ async function sendChatMessage() {
     return;
   if (
     ProzaEdit.AIProviders.estimateTokens(prompt) > 2000 &&
-    !(await peConfirm({
+    !(await aiConfirmOnce({
       title: "Large prompt",
       message: "Large prompt—continue?",
       confirmLabel: "Continue",
@@ -6507,7 +6561,7 @@ async function runSmartRewrite() {
     return;
   }
   if (
-    !(await peConfirm({
+    !(await aiConfirmOnce({
       title: `Rewrite via ${aiLabel()}`,
       message: `Rewrite via ${aiLabel()} uses API tokens and sends your selected text (up to ${MAX_CHAT.toLocaleString()} characters) to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_CHAT + 1500 + aiIndexChars(), 1024)}${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",

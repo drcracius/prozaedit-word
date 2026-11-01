@@ -169,6 +169,9 @@ ProzaEdit.ManuscriptContextIndex = {
     cancelCheck();
     const items = paras.items;
     const total = items.length;
+    if (typeof opts.fiction === "boolean" && typeof norm.fiction === "boolean" && norm.fiction !== opts.fiction) {
+      return { ...base, paragraphTotal: total, state: "stale", reason: "genre" };
+    }
     if (this.paragraphCountHash(total) !== norm.paragraphCountHash) {
       return { ...base, paragraphTotal: total, state: "stale", reason: "count" };
     }
@@ -225,6 +228,7 @@ ProzaEdit.ManuscriptContextIndex = {
       storageNote: String(raw.storageNote || "").substring(0, 300),
       invalid: false,
     };
+    if (typeof raw.fiction === "boolean") out.fiction = raw.fiction;
     if (Array.isArray(raw.nameSeeds)) {
       out.nameSeeds = raw.nameSeeds
         .map((x) => String(x || "").trim())
@@ -620,6 +624,7 @@ ProzaEdit.ManuscriptContextIndex = {
       sectionTotal: sections.length,
       droppedSections: 0,
       storageNote: "",
+      fiction: !!parts.fiction,
     };
   },
 
@@ -1007,6 +1012,7 @@ ProzaEdit.ManuscriptContextIndex = {
   formatStaleReason(fresh) {
     if (!fresh || fresh.state !== "stale") return "";
     if (fresh.reason === "count") return "paragraph count changed";
+    if (fresh.reason === "genre") return "genre changed since it was built";
     const n = (fresh.changedSections || []).length;
     if (fresh.reason === "edited") return n ? `${n} chapter${n === 1 ? "" : "s"} edited` : "text was edited";
     return "document changed";

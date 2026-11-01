@@ -246,9 +246,12 @@ ProzaEdit.ScopeReader = {
 
   async textFromParagraphRange(context, startPara, endPara, opts, expectTitle) {
     opts = opts || {};
-    const paras = context.document.body.paragraphs;
-    paras.load("items");
-    await context.sync();
+    let paras = opts._paras;
+    if (!paras) {
+      paras = context.document.body.paragraphs;
+      paras.load("items");
+      await context.sync();
+    }
     if (startPara < 0 || endPara >= paras.items.length || endPara < startPara) {
       throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
     }
@@ -353,11 +356,18 @@ ProzaEdit.ScopeReader = {
       throw new Error("Select at least one chapter on Target (Reload chapter list), then check the chapters to include.");
     }
     let text = "";
+    const sharedParas = context.document.body.paragraphs;
+    sharedParas.load("items");
+    await context.sync();
+    const maxChars = opts.maxChars != null ? Number(opts.maxChars) : 600000;
     for (let i = 0; i < normalized.length; i++) {
       this._cancelCheck(opts);
       const ch = list.find((c) => c.index === normalized[i]);
       if (!ch) continue;
-      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts, ch.title);
+      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, { ...opts, _paras: sharedParas }, ch.title);
+      if (text.length > maxChars) {
+        throw new Error(`Selected chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
+      }
       if (typeof opts.onProgress === "function") {
         opts.onProgress({
           paragraphsLoaded: i + 1,

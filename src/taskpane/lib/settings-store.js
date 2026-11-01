@@ -136,17 +136,18 @@ ProzaEdit.Settings = {
 
   async muteRule(ruleId, options) {
     options = options || {};
-    if (!ruleId) return;
+    if (!ruleId) return true;
     const global = options.global !== false;
     const existing = this._parse(this.get(this.KEYS.MUTED, "[]"), []);
     const setDoc = new Set(Array.isArray(existing) ? existing.filter((x) => typeof x === "string") : []);
     setDoc.add(ruleId);
-    await this.setAsyncGuarded(this.KEYS.MUTED, JSON.stringify([...setDoc]));
+    const saved = await this.setAsyncGuarded(this.KEYS.MUTED, JSON.stringify([...setDoc]));
     if (global) {
       const g = new Set(this.getGlobalMutedRules());
       g.add(ruleId);
       this._writeGlobalJson(this.KEYS.GLOBAL_MUTED, [...g]);
     }
+    return saved !== false;
   },
 
   async dismissTarget(targetText) {
