@@ -1,7 +1,7 @@
 /*
  * Manuscript Context Index (MCI) — lightweight, local, HEURISTIC full-document profile.
  * It is NOT an AI summary: chapter titles, word counts, first/last lines, recurring names, motifs and time cues.
- * When you use a Gemini action, the index text is included in that request (see injectPromptBlock).
+ * When you use an AI action, the index text is included in that request (see injectPromptBlock).
  */
 window.ProzaEdit = window.ProzaEdit || {};
 
@@ -624,7 +624,7 @@ ProzaEdit.ManuscriptContextIndex = {
   },
 
   /**
-   * Prompt block for Gemini (and local profile text). A stale or unverified index is INCLUDED but flagged, never silently dropped.
+   * Prompt block for AI requests (and local profile text). A stale or unverified index is INCLUDED but flagged, never silently dropped.
    * options: { freshness | fresh | paragraphTotal, scopeMode, destination: "gemini"|"copilot"|"local", maxChars, dropStale }
    */
   injectPromptBlock(index, options) {
@@ -641,11 +641,12 @@ ProzaEdit.ManuscriptContextIndex = {
     const dest = options.destination || (options.cloud ? "gemini" : "local");
     const where =
       dest === "gemini"
-        ? "included in this Gemini request"
+        ? "included in this AI request"
         : dest === "copilot"
           ? "included in the text you copy"
           : "stays on this device";
     const head = [`Full-manuscript context (heuristic local outline — not an AI summary; ${where}):`];
+    if (options.genre) head.push(`Genre profile: ${String(options.genre).slice(0, 80)} (weigh the outline against this genre's conventions).`);
     if (!fresh) {
       head.push(
         "NOTE: this index may be out of date (the document changed after it was built). Treat names, chapter list and outline as approximate."

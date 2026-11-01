@@ -36,60 +36,21 @@ ProzaEdit.Gemini = {
    */
   async generate(apiKey, userText, generationConfig, options) {
     options = options || {};
-    if (!apiKey || String(apiKey).length < 8) {
-      throw new Error("Invalid or missing API key.");
-    }
-    const external = options.signal || null;
-    if (external && external.aborted) throw this._cancelledError();
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const controller = new AbortController();
-    const timeoutMs = Number.isFinite(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : this.DEFAULT_TIMEOUT_MS;
-    let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, timeoutMs);
-    const onExternalAbort = () => controller.abort();
-    if (external && typeof external.addEventListener === "function") {
-      external.addEventListener("abort", onExternalAbort);
-    }
-    let response;
-    let data = null;
-    try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: this.fitPrompt(userText, this.MAX_PROMPT_CHARS, options.onTrim) }] }],
-          generationConfig: generationConfig || { maxOutputTokens: 1024, temperature: 0.5 },
-        }),
-      });
-      try {
-        data = await response.json();
-      } catch (parseErr) {
-        if (external?.aborted || timedOut || parseErr?.name === "AbortError") throw parseErr;
-        data = null;
-      }
-    } catch (e) {
-      if (external?.aborted) throw this._cancelledError();
-      if (timedOut || e?.name === "AbortError") throw this._timeoutError();
-      throw e;
-    } finally {
-      clearTimeout(timer);
-      if (external && typeof external.removeEventListener === "function") {
-        external.removeEventListener("abort", onExternalAbort);
-      }
-    }
-    if (!response.ok) {
-      throw new Error(data?.error?.message || `Gemini HTTP ${response.status}`);
-    }
-    const parts = data?.candidates?.[0]?.content?.parts;
-    const text = Array.isArray(parts) ? parts.map((p) => p?.text || "").join("").trim() : "";
-    if (!text) {
-      throw new Error(data?.error?.message || data?.promptFeedback?.blockReason || "Empty Gemini response");
-    }
-    return text;
+    const cfg = generationConfig || { maxOutputTokens: 1024, temperature: 0.5 };
+    const result = await ProzaEdit.AIProviders.complete({
+      providerId: "gemini",
+      apiKey,
+      model: options.model || this.MODEL,
+      prompt: userText,
+      maxOutputTokens: cfg.maxOutputTokens,
+      temperature: cfg.temperature,
+      signal: options.signal,
+      timeoutMs: Number.isFinite(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : this.DEFAULT_TIMEOUT_MS,
+      maxPromptChars: this.MAX_PROMPT_CHARS,
+      onTrim: options.onTrim,
+      retries: options.retries || 0,
+    });
+    return result.text;
   },
 
   /**
@@ -100,7 +61,7 @@ ProzaEdit.Gemini = {
     const t = String(text || "");
     const max = Math.max(1000, maxChars || this.MAX_PROMPT_CHARS);
     if (t.length <= max) return t;
-    const marker = `\n[… ${t.length - max} characters omitted from the middle to fit Gemini's prompt limit …]\n`;
+    const marker = `\n[… ${t.length - max} characters omitted from the middle to fit the AI prompt size limit …]\n`;
     const room = max - marker.length;
     const head = Math.floor(room * 0.4);
     const out = `${t.substring(0, head)}${marker}${t.substring(t.length - (room - head))}`;
@@ -111,7 +72,7 @@ ProzaEdit.Gemini = {
   elideMiddle(text, max, label) {
     const t = String(text || "");
     if (t.length <= max) return t;
-    const marker = `\n[… ${t.length - max} characters omitted from the middle${label ? ` of ${label}` : ""} to fit Gemini's prompt limit …]\n`;
+    const marker = `\n[… ${t.length - max} characters omitted from the middle${label ? ` of ${label}` : ""} to fit the AI prompt size limit …]\n`;
     if (max <= marker.length + 40) return "";
     const room = max - marker.length;
     const head = Math.ceil(room * 0.55);
@@ -177,7 +138,7 @@ ProzaEdit.Gemini = {
       const what = names[t.role] || names[t.id] || t.id;
       return t.to === 0 ? `${what} left out` : `${what} shortened`;
     });
-    return `Prompt was over Gemini's size limit: ${bits.join(", ")}. Your instruction, question, and the start and end of your text were kept.`;
+    return `Prompt was over the AI size limit: ${bits.join(", ")}. Your instruction, question, and the start and end of your text were kept.`;
   },
 
   REWRITE_MODES: {

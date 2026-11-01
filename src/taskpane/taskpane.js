@@ -2,14 +2,15 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.16";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.17";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
 const GUARDRAILS = `OPERATIONAL MANDATES:
 Zero plagiarism; original suggestions only.
 Ban AI tropes: delve, tapestry, testament, beacon, nestled, moreover, furthermore, "it is important to note".
-Natural human cadence; active voice.`;
+Natural human cadence; active voice.
+${ProzaEdit.AISafety.UNTRUSTED_RULE}`;
 
 const MAX_BODY = 1000000;
 const MAX_CHAT = 3500;
@@ -39,6 +40,8 @@ let historyBusy = false;
 let peStatusTimer = null;
 let currentAuditSuggestions = [];
 let auditCardFilter = "all";
+let auditShowLowConfidence = false;
+let auditLowConfidenceHidden = 0;
 let auditCardDisplayLimit = 300;
 let auditCardSort = "priority";
 let batchCancel = false;
@@ -126,28 +129,44 @@ async function confirmBeforeApply(actionLabel) {
 }
 
 function setupSafeHandlers() {
+  populateAiProviderOptions();
   const remember = document.getElementById("rememberApiKey");
   if (remember) {
     remember.addEventListener("change", () => {
       if (remember.checked) {
-        showPeStatus("API key will be stored inside this Word document. Use only on your private PC.", "warn");
-        try {
-          alert("API key will be stored inside this Word document. Use only on your private PC.");
-        } catch (_) {}
+        const key = getApiKey();
+        if (key) ProzaEdit.AIKeys?.set(aiProviderId(), key);
+        showPeStatus("Key remembered on this device only (browser storage). It is never saved in the document. Avoid on shared PCs.", "warn");
         schedulePersistSettings();
       } else {
-        const keyEl = getEl("apiKey");
-        if (keyEl) keyEl.value = "";
+        ProzaEdit.AIKeys?.clearAll();
+        showPeStatus("Saved API keys removed from this device. The key you typed stays until you close the pane.", "ok");
         persistSettings(false);
       }
+      updateAiHelpAvailability();
     });
   }
   const keyEl = getEl("apiKey");
   if (keyEl && !keyEl.dataset.peAutosave) {
     keyEl.dataset.peAutosave = "1";
     keyEl.addEventListener("input", () => {
+      aiSessionKeys[aiProviderId()] = keyEl.value.trim();
+      if (isChecked("rememberApiKey", false)) ProzaEdit.AIKeys?.set(aiProviderId(), keyEl.value.trim());
       updateAiHelpAvailability();
-      if (isChecked("rememberApiKey", false)) schedulePersistSettings();
+      updateTokenEstimate();
+    });
+  }
+  const providerEl = getEl("aiProvider");
+  if (providerEl && !providerEl.dataset.peWired) {
+    providerEl.dataset.peWired = "1";
+    providerEl.addEventListener("change", onAiProviderChange);
+  }
+  const modelEl = getEl("aiModel");
+  if (modelEl && !modelEl.dataset.peWired) {
+    modelEl.dataset.peWired = "1";
+    modelEl.addEventListener("change", () => {
+      updateAiModelHint();
+      updateAiHelpAvailability();
     });
   }
   const scope = document.getElementById("scope");
@@ -733,7 +752,7 @@ async function confirmBuildManuscriptContext() {
     message:
       `ProzaEdit will read your whole document in chunks to build a local outline for continuity checks and chapter-scoped audits: chapter list, word counts, first/last lines, recurring names, and time cues. It is rule-based, not an AI summary.\n\n` +
       `This may take several minutes on long manuscripts. You can Cancel from the banner, and Word stays usable.\n\n` +
-      `The index stays in this document's settings (${storageHint}). It is only sent to Google if you use a Gemini action (Coach chat or Rewrite via Gemini), where it is included in that request.`,
+      `The index stays in this document's settings (${storageHint}). It is only sent to your chosen AI provider if you use an AI action (Coach chat, Deep audit, or AI rewrite), where it is included in that request.`,
     confirmLabel: "Start background read",
     cancelLabel: "Cancel",
   });
@@ -845,6 +864,7 @@ function getManuscriptContextBlock(options) {
     freshness: mciFreshness,
     scopeMode: getScopeMode(),
     destination: options.destination || "local",
+    genre: ProzaEdit.Genres ? ProzaEdit.Genres.describe(collectUiConfig()) : "",
   });
 }
 
@@ -1769,8 +1789,14 @@ function collectUiConfig() {
     citationScan: isChecked("chkCitationScan", false),
     citationStyle: getEl("selCitationStyle")?.value || "auto",
     citationReconcileBiblio: isChecked("chkCitationReconcile", true),
-    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", false),
+    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", true),
+    aiBudgetV2: true,
     aiMaxSessionTokens: getEl("aiMaxSessionTokens")?.value || "50000",
+    aiMaxDayTokens: getEl("aiMaxDayTokens")?.value || "150000",
+    aiProvider: aiProviderId(),
+    aiModel: getEl("aiModel")?.value || "",
+    aiModelCustom: getEl("aiModelCustom")?.value.trim() || "",
+    genreJargon: getEl("genreJargon")?.value || "none",
     showSessionTips: isChecked("showSessionTips", true),
     showWhatsNew: isChecked("showWhatsNew", true),
     showPriorSessionSummary: isChecked("showPriorSessionSummary", true),
@@ -1799,11 +1825,7 @@ function collectUiConfig() {
     if (!el) return;
     cfg.modules[id] = FICTION_MODULE_IDS.includes(id) ? isModuleEnabled(id) : !!el.checked;
   });
-  if (cfg.rememberApiKey) {
-    cfg.apiKey = getEl("apiKey")?.value.trim() || "";
-  } else {
-    delete cfg.apiKey;
-  }
+  delete cfg.apiKey;
   return cfg;
 }
 
@@ -1837,8 +1859,12 @@ function applyUiConfig(p) {
   setC("confirmBeforeApply", p.confirmBeforeApply);
   setC("rememberApiKey", p.rememberApiKey);
   if (p.modules) MODULE_IDS.forEach((id) => setC(id, p.modules[id]));
-  if (p.rememberApiKey && p.apiKey) setV("apiKey", p.apiKey);
-  else setV("apiKey", "");
+  const keyMove = ProzaEdit.AIKeys?.migrateFromDocumentConfig?.(p) || { hadDocumentKey: false };
+  loadAiKeyIntoField();
+  if (keyMove.hadDocumentKey) {
+    showPeStatus("An API key stored in this document by an older version was moved to this device and removed from the document.", "ok");
+    setTimeout(() => persistSettings(false), 0);
+  }
   if (p.sectionParagraphCount) setV("sectionParagraphCount", p.sectionParagraphCount);
   if (p.batchSectionCount != null) {
     setV("batchSectionCount", Math.min(8, Math.max(1, parseInt(p.batchSectionCount, 10) || 3)));
@@ -1884,8 +1910,14 @@ function applyUiConfig(p) {
   setC("chkCitationScan", !!p.citationScan);
   if (p.citationStyle) setV("selCitationStyle", p.citationStyle);
   setC("chkCitationReconcile", p.citationReconcileBiblio !== false);
-  setC("aiEnforceSessionCeiling", !!p.aiEnforceSessionCeiling);
+  setC("aiEnforceSessionCeiling", p.aiBudgetV2 ? !!p.aiEnforceSessionCeiling : true);
   if (p.aiMaxSessionTokens != null) setV("aiMaxSessionTokens", p.aiMaxSessionTokens);
+  if (p.aiMaxDayTokens != null) setV("aiMaxDayTokens", p.aiMaxDayTokens);
+  setV("genreJargon", p.genreJargon || "none");
+  if (p.aiProvider && ProzaEdit.AIProviders?.get(p.aiProvider)) setV("aiProvider", p.aiProvider);
+  populateAiModelOptions();
+  if (p.aiModel) setV("aiModel", p.aiModel);
+  setV("aiModelCustom", p.aiModelCustom || "");
   const shaper = ProzaEdit.UiPrefs?.normalizeShaperFields?.(p);
   if (shaper) {
     setV("slider-shaper-complexity", shaper.shaperComplexity);
@@ -2059,7 +2091,7 @@ function setAuditExtended(on) {
 
 function shortManuscriptTypeLabel(type) {
   const t = String(type || "");
-  if (t.includes("Fiction")) return "Fiction";
+  if (t.includes("Fiction")) return ProzaEdit.Genres ? `Fiction · ${ProzaEdit.Genres.resolve(t).label.replace(/^Fiction — /, "")}` : "Fiction";
   if (t.includes("Academic")) return "Academic";
   if (t.includes("Business")) return "Business";
   if (t.includes("Memoir")) return "Memoir";
@@ -2149,6 +2181,10 @@ function setupAutoSaveHandlers() {
     "chkCitationReconcile",
     "aiEnforceSessionCeiling",
     "aiMaxSessionTokens",
+    "aiMaxDayTokens",
+    "aiModel",
+    "aiModelCustom",
+    "genreJargon",
     "settingsDefaultAuditFilter",
     "showSessionTips",
     "showWhatsNew",
@@ -2303,7 +2339,8 @@ function runPrimaryAudit() {
 function buildManuscriptProfile(options) {
   options = options || {};
   const c = collectUiConfig();
-  const base = `Type: ${c.manuscriptType}\nAudience: ${c.targetAudience}\nSetting: ${c.settingAnchor}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
+  const genreNote = ProzaEdit.Genres && !options.noGenreNote ? `\n${ProzaEdit.Genres.promptNote(c)}` : "";
+  const base = `Type: ${c.manuscriptType}${genreNote}\nAudience: ${c.targetAudience}\nSetting: ${c.settingAnchor}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
   if (options.baseOnly) return base;
   const block = getManuscriptContextBlock({ destination: options.destination || "local" });
   return block ? `${base}\n\n${block}` : base;
@@ -2339,7 +2376,7 @@ function updateAiHelpAvailability() {
     if (!title) return;
     if (!title.dataset.peDefault) title.dataset.peDefault = title.textContent;
     title.textContent = simple
-      ? `AI help (optional) — ${hasKey ? "Gemini, uses tokens" : "off until you add a key"}`
+      ? `AI help (optional) — ${hasKey ? `${aiLabel()}, uses tokens` : "off until you add a key"}`
       : title.dataset.peDefault;
   });
 }
@@ -2351,7 +2388,7 @@ function openAiHelpSetup() {
       getEl("apiKey")?.focus();
     } catch (_) {}
   }, 60);
-  showPeStatus("AI help is off until you add a Gemini API key (Settings → Essentials). Local Coach and Rewrite work without it.", "ok");
+  showPeStatus("AI help is off until you add an AI provider API key (Settings → AI help). Local Coach and Rewrite work without it.", "ok");
 }
 
 function applySimpleMode() {
@@ -3416,7 +3453,8 @@ function buildAuditContext(options) {
     extendedLocal: !!options.extendedLocal,
     fkLock: isChecked("fkLock", false),
     scopeSelection: scopeVal === "selection",
-    manuscriptType: getEl("manuscriptType")?.value || "Fiction (Thriller/Mystery/Crime)",
+    manuscriptType: getEl("manuscriptType")?.value || "Fiction (General)",
+    genreJargon: getEl("genreJargon")?.value || "none",
     targetAudience: getEl("targetAudience")?.value || "Adult",
     settingAnchor: getEl("settingAnchor")?.value || "",
     criticPersona: getEl("criticPersona")?.value || "Average Reader",
@@ -3551,6 +3589,7 @@ async function swapTextInScope(fromText, toText, options) {
           selectionOnly: useSelectionEdits(),
         }),
       replaceLocation: Word.InsertLocation.replace,
+      sanitize: (t) => ProzaEdit.WordSafeNavigator.sanitizeSearch(t),
     })
   );
   markManuscriptContextDirty();
@@ -3592,8 +3631,9 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
     }
     if (!(await confirmBeforeApply(`Replace "${before}" with "${after}"?`))) return false;
     const searchOpts = options && options.forceDocument ? { forceDocument: true } : {};
+    let swapInfo = null;
     try {
-      await swapTextInScope(before, after, searchOpts);
+      swapInfo = await swapTextInScope(before, after, searchOpts);
     } catch (e) {
       reportActionError(e, "apply this edit", {
         retry: { label: "Apply", run: () => applyDocumentEdit(before, after, label, options) },
@@ -3602,7 +3642,12 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
     }
     ProzaEdit.EditHistory.record(before, after, label);
     clearRetry();
-    showPeStatus(`Applied: ${label}`, "ok");
+    showPeStatus(
+      swapInfo && swapInfo.occurrences > 1
+        ? `Applied: ${label}. This text appears ${swapInfo.occurrences} times; the first was changed — use Go to to check the others.`
+        : `Applied: ${label}`,
+      swapInfo && swapInfo.occurrences > 1 ? "warn" : "ok"
+    );
     try {
       options?.onSuccess?.();
     } catch (e) {
@@ -4269,6 +4314,12 @@ function filteredAuditSuggestions() {
   if (auditCardFilter === "confirmed") list = list.filter((s) => s.type === "confirmed");
   else if (auditCardFilter === "preference") list = list.filter((s) => s.type !== "confirmed");
   else if (auditCardFilter === "styleguide") list = list.filter((s) => isStyleGuideFinding(s));
+  auditLowConfidenceHidden = 0;
+  if (isChecked("simpleMode", false) && !auditShowLowConfidence) {
+    const kept = list.filter((s) => s.confidence !== "low");
+    auditLowConfidenceHidden = list.length - kept.length;
+    list = kept;
+  }
   return sortAuditList(list);
 }
 
@@ -4408,30 +4459,151 @@ function exportAuditReportPdfGuide() {
 
 function readAiQuotaLimitsFromDom() {
   return ProzaEdit.AIQuotaManager.readLimitsFromConfig({
-    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", false),
+    aiEnforceSessionCeiling: isChecked("aiEnforceSessionCeiling", true),
     aiMaxSessionTokens: getEl("aiMaxSessionTokens")?.value,
+    aiMaxDayTokens: getEl("aiMaxDayTokens")?.value,
   });
 }
 
 function resetAiSessionTokens() {
   ProzaEdit.AIQuotaManager.resetSessionTokens();
-  showPeStatus("Gemini session token counter reset (this browser tab).", "ok");
+  updateAiMeter();
+  showPeStatus("AI session usage counter reset.", "ok");
 }
 
-async function geminiGenerateWithQuota(prompt, generationConfig, outputReserve, signal) {
-  const reserve = outputReserve != null ? outputReserve : generationConfig?.maxOutputTokens || 1024;
-  const estimated = ProzaEdit.AIQuotaManager.estimateTokens(prompt) + reserve;
-  const gate = ProzaEdit.AIQuotaManager.canExecute(estimated, readAiQuotaLimitsFromDom());
-  if (!gate.ok) {
-    const hint = isChecked("simpleMode", false)
-      ? " The ceiling is set under Settings → Safety (switch Simple mode off there to raise or turn it off)."
-      : "";
-    throw new Error(`${gate.message || "Session token ceiling reached."}${hint}`);
-  }
-  const reply = await ProzaEdit.Gemini.generate(getApiKey(), prompt, generationConfig, { signal });
-  ProzaEdit.AIQuotaManager.recordUsage(estimated);
-  return reply;
+const aiSessionKeys = {};
+
+function aiProviderId() {
+  const v = getEl("aiProvider")?.value;
+  return ProzaEdit.AIProviders?.get(v) ? v : ProzaEdit.AIProviders?.DEFAULT_PROVIDER || "gemini";
 }
+
+function aiProviderInfo() {
+  return ProzaEdit.AIProviders.get(aiProviderId());
+}
+
+function aiLabel() {
+  return aiProviderInfo()?.short || "AI";
+}
+
+function aiModelId() {
+  const custom = getEl("aiModelCustom")?.value.trim();
+  return ProzaEdit.AIProviders.normalizeModel(aiProviderId(), custom || getEl("aiModel")?.value);
+}
+
+function getApiKey() {
+  return getEl("apiKey")?.value.trim() || "";
+}
+
+function populateAiProviderOptions() {
+  const sel = getEl("aiProvider");
+  if (!sel || !ProzaEdit.AIProviders) return;
+  if (!sel.options.length) {
+    ProzaEdit.AIProviders.list().forEach((p) => {
+      const o = document.createElement("option");
+      o.value = p.id;
+      o.textContent = p.label;
+      sel.appendChild(o);
+    });
+    sel.value = ProzaEdit.AIProviders.DEFAULT_PROVIDER;
+  }
+  sel.dataset.prev = sel.value;
+  populateAiModelOptions();
+  loadAiKeyIntoField();
+}
+
+function populateAiModelOptions() {
+  const sel = getEl("aiModel");
+  if (!sel || !ProzaEdit.AIProviders) return;
+  const p = aiProviderInfo();
+  const keep = sel.value;
+  sel.innerHTML = "";
+  p.models.forEach((m) => {
+    const o = document.createElement("option");
+    o.value = m.id;
+    o.textContent = `${m.label} — ${m.tier === "low" ? "cheapest" : m.tier === "mid" ? "balanced" : "most capable"}`;
+    sel.appendChild(o);
+  });
+  sel.value = p.models.some((m) => m.id === keep) ? keep : p.defaultModel;
+  updateAiModelHint();
+}
+
+function updateAiModelHint() {
+  const hint = getEl("aiProviderHint");
+  const p = aiProviderInfo();
+  if (!hint || !p) return;
+  const m = ProzaEdit.AIProviders.findModel(p.id, getEl("aiModelCustom")?.value.trim() || getEl("aiModel")?.value);
+  const price = m ? ` ${m.label}: about $${m.inUsdPerM} in / $${m.outUsdPerM} out per million tokens.` : "";
+  hint.textContent = `${p.keyHelp}${price} ${ProzaEdit.AIProviders.MODEL_NOTE}`;
+}
+
+function loadAiKeyIntoField() {
+  const keyEl = getEl("apiKey");
+  if (!keyEl) return;
+  const id = aiProviderId();
+  keyEl.value = aiSessionKeys[id] || (isChecked("rememberApiKey", false) ? ProzaEdit.AIKeys?.get(id) || "" : "");
+  const label = getEl("apiKeyLabel");
+  if (label) label.textContent = `${aiProviderInfo()?.label || "AI"} API key (optional)`;
+  updateAiHelpAvailability();
+}
+
+function onAiProviderChange() {
+  const sel = getEl("aiProvider");
+  const prev = sel?.dataset.prev;
+  if (prev) aiSessionKeys[prev] = getApiKey();
+  if (sel) sel.dataset.prev = sel.value;
+  const custom = getEl("aiModelCustom");
+  if (custom) custom.value = "";
+  populateAiModelOptions();
+  loadAiKeyIntoField();
+  updateTokenEstimate();
+  schedulePersistSettings();
+}
+
+function updateAiMeter() {
+  const el = getEl("aiUsageMeter");
+  if (el) el.textContent = ProzaEdit.AIQuotaManager.meterText(readAiQuotaLimitsFromDom());
+}
+
+/** One-line estimate shown in every AI confirm. maxInputChars is an upper bound; the real prompt may be smaller. */
+function aiEstimateLine(maxInputChars, maxOutputTokens) {
+  const limits = readAiQuotaLimitsFromDom();
+  const chars = Math.min(maxInputChars, ProzaEdit.AIProviders.MAX_PROMPT_CHARS);
+  const est = ProzaEdit.AIProviders.estimate(aiProviderId(), aiModelId(), "x".repeat(chars), Math.min(maxOutputTokens, limits.maxOutputTokens));
+  return `Estimate: up to ~${est.totalTokens.toLocaleString()} tokens (${ProzaEdit.AIProviders.formatUsd(est.usd)}) with ${aiProviderInfo().label}, model ${aiModelId()}.\n${ProzaEdit.AIQuotaManager.meterText(limits)}.`;
+}
+
+function aiIndexChars() {
+  return getManuscriptContextBlock({ destination: "gemini" }).length;
+}
+
+async function aiGenerateWithQuota(prompt, generationConfig, outputReserve, signal) {
+  const limits = readAiQuotaLimitsFromDom();
+  const maxOut = Math.min(limits.maxOutputTokens, outputReserve != null ? outputReserve : generationConfig?.maxOutputTokens || 1024);
+  const est = ProzaEdit.AIProviders.estimate(aiProviderId(), aiModelId(), prompt, maxOut);
+  const gate = ProzaEdit.AIQuotaManager.canExecute(est.totalTokens, limits, {
+    promptChars: String(prompt || "").length,
+    now: Date.now(),
+    lastCallAt: ProzaEdit.AIProviders._lastCallAt,
+  });
+  if (!gate.ok) throw new Error(gate.message || "AI limit reached.");
+  const res = await ProzaEdit.AIProviders.complete({
+    providerId: aiProviderId(),
+    apiKey: getApiKey(),
+    model: aiModelId(),
+    prompt,
+    maxOutputTokens: maxOut,
+    temperature: generationConfig?.temperature,
+    signal,
+    retries: 1,
+  });
+  const used = res.usage ? res.usage.inputTokens + res.usage.outputTokens : est.totalTokens;
+  ProzaEdit.AIQuotaManager.recordUsage(used || est.totalTokens);
+  updateAiMeter();
+  return String(res.text).split(ProzaEdit.AISafety.OPEN).join("").split(ProzaEdit.AISafety.CLOSE).join("").trim();
+}
+
+const geminiGenerateWithQuota = aiGenerateWithQuota;
 
 async function copyAuditForCopilotFromAnywhere() {
   if (!currentAuditSuggestions.length) {
@@ -4525,7 +4697,8 @@ function finalizeAudit(result, label) {
   html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
-  html += `<p>${escapeHtml(buildManuscriptProfile({ baseOnly: true }))}</p>`;
+  if (ProzaEdit.Genres) html += `<p><strong>Genre profile applied:</strong> ${escapeHtml(ProzaEdit.Genres.describe(buildAuditContext()))}</p>`;
+  html += `<p>${escapeHtml(buildManuscriptProfile({ baseOnly: true, noGenreNote: true }))}</p>`;
   const mc = result.manuscriptContext;
   if (mc?.used) {
     html += `<p class="help-muted" style="font-size:11px;">Manuscript index used: ${mc.namesUsed} recurring names checked for spelling variants.</p>`;
@@ -4830,6 +5003,19 @@ function runAuditInternalCore(opts) {
     .then((v) => v !== false);
 }
 
+function appendLowConfidenceNote(box) {
+  if (auditLowConfidenceHidden > 0) {
+    const note = document.createElement("p");
+    note.className = "help-muted audit-hidden-note";
+    note.innerHTML = `${auditLowConfidenceHidden} lower-confidence suggestion${auditLowConfidenceHidden === 1 ? " is" : "s are"} hidden in Simple view. <button type="button" class="btn-linkish" data-a="show-low">Show them</button>`;
+    note.querySelector("button").addEventListener("click", () => {
+      auditShowLowConfidence = true;
+      applyAuditCardFilter();
+    });
+    box.appendChild(note);
+  }
+}
+
 function renderAuditCards(list) {
   const box = document.getElementById("cardContainer");
   if (!box) return;
@@ -4837,6 +5023,10 @@ function renderAuditCards(list) {
   list = Array.isArray(list) ? list : [];
   const ic = (name) => (window.ProzaEdit?.PeIcons?.svg ? ProzaEdit.PeIcons.svg(name) : "");
   if (!list.length) {
+    if (auditLowConfidenceHidden > 0) {
+      appendLowConfidenceNote(box);
+      return;
+    }
     if (currentAuditSuggestions.length && auditCardFilter !== "all") {
       box.innerHTML = "<p class=\"audit-empty\">No items in this filter. Try <strong>All</strong>.</p>";
     } else if (currentAuditSuggestions.length) {
@@ -4846,6 +5036,7 @@ function renderAuditCards(list) {
     }
     return;
   }
+  appendLowConfidenceNote(box);
   const capped = ProzaEdit.AuditReview?.capCards?.(list, auditCardDisplayLimit) || { shown: list, hiddenCount: 0 };
   const renderOne = (item, i) => {
     if (!item || typeof item !== "object") return;
@@ -4869,6 +5060,7 @@ function renderAuditCards(list) {
       <span class="badge ${item.type === "confirmed" ? "badge-confirmed" : "badge-pref"}">${escapeHtml(item.type)}</span>
       <strong>${escapeHtml(item.module)}</strong>
       <p class="card-explanation">${escapeHtml(item.explanation)}</p>
+      ${item.source === "ai" ? '<p class="help-muted card-ai-note">AI suggestion — it quotes your text, but check it before applying.</p>' : ""}
       <p class="card-target">"${escapeHtml(item.targetText)}"</p>
       <p class="card-replacement">"${escapeHtml(item.replacementText)}"</p>
       <div class="card-actions">
@@ -4885,7 +5077,7 @@ function renderAuditCards(list) {
           <button type="button" class="btn-go" data-a="dict">Dict</button>
           ${showHouse ? '<button type="button" class="btn-go" data-a="house">House rule</button>' : ""}
           <button type="button" class="btn-go btn-with-icon" data-a="mute" data-pe-tip="btn-card-mute" aria-label="Mute rule">${ic("bell-off")} Mute</button>
-          <button type="button" class="btn-go" data-a="chat" title="Optional Gemini">Gemini</button>
+          <button type="button" class="btn-go" data-a="chat" title="Optional AI help (uses your API key)">AI</button>
           <button type="button" class="btn-dismiss btn-with-icon" data-a="dismiss" data-pe-tip="btn-card-dismiss" aria-label="Dismiss finding">${ic("eye-off")} Dismiss</button>
         </div>
         ${
@@ -5166,7 +5358,7 @@ function appendCoachMessage(text, isUser) {
 
 function showLocalTipForIssue(item) {
   showTab("tab5");
-  const reply = ProzaEdit.LocalCoach.forIssue(item);
+  const reply = ProzaEdit.LocalCoach.forIssue(item, collectUiConfig());
   appendCoachMessage(`Tip for: ${item.module}`, true);
   appendCoachMessage(reply, false);
   showPeStatus("Local tip (0 tokens).", "ok");
@@ -5192,7 +5384,7 @@ async function sendLocalCoachMessage() {
   } catch (_) {}
   const statusLine = manuscriptContextStatusLine();
   const profile = [buildManuscriptProfile({ baseOnly: true }), statusLine].filter(Boolean).join("\n");
-  const reply = ProzaEdit.LocalCoach.answer(prompt, snippet ? `${profile}\n\nSelection excerpt:\n${snippet}` : profile);
+  const reply = ProzaEdit.LocalCoach.answer(prompt, snippet ? `${profile}\n\nSelection excerpt:\n${snippet}` : profile, collectUiConfig());
   appendCoachMessage(reply, false);
   showPeStatus("Local Coach (0 tokens).", "ok");
 }
@@ -5735,10 +5927,7 @@ function openWordProofing() {
   showPeStatus("In Word: press F7 or Review → Editor (M365).", "ok");
 }
 
-/* Gemini */
-function getApiKey() {
-  return getEl("apiKey")?.value.trim() || "";
-}
+/* Optional AI help (bring-your-own key; provider chosen in Settings) */
 
 async function runDeepAuditAI() {
   if (isOperationBusy()) {
@@ -5747,15 +5936,15 @@ async function runDeepAuditAI() {
   }
   const key = getApiKey();
   if (!key) {
-    showPeStatus("Add a Gemini API key under Settings → Essentials (optional Gemini), or use the free local audit.", "warn");
+    showPeStatus("Add an AI provider API key under Settings → AI help (optional), or use the free local audit.", "warn");
     openAiHelpSetup();
     return;
   }
   if (
     !(await peConfirm({
-      title: "Deep audit via Gemini",
+      title: `Deep audit via ${aiLabel()}`,
       message:
-        `Deep Audit uses 1 Gemini API call and sends the scoped text to Google.\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue with Gemini?`,
+        `Deep Audit uses 1 ${aiLabel()} API call and sends up to ${MAX_DEEP.toLocaleString()} characters of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry Extended local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -5806,7 +5995,7 @@ async function runDeepAuditAICore() {
     }
     timing.mark("read");
     longOp.throwIfCancelled();
-    longOp.setStatus("Waiting for Gemini…");
+    longOp.setStatus(`Waiting for ${aiLabel()}…`);
 
     const prep = await prepareGeminiPrompt(({ profile, index }) => [
       { id: "guardrails", text: GUARDRAILS },
@@ -5814,9 +6003,9 @@ async function runDeepAuditAICore() {
       { id: "index", role: "index", text: index },
       {
         id: "instruction",
-        text: `Return ONLY JSON array (max 6):\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":"","ruleId":""}]`,
+        text: `Return ONLY JSON array (max 6). targetText must be copied EXACTLY from the excerpt:\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":""}]`,
       },
-      { id: "excerpt", role: "excerpt", label: "EXCERPT:", text: excerpt },
+      { id: "excerpt", role: "excerpt", label: "EXCERPT:", text: ProzaEdit.AISafety.wrapUntrusted(excerpt) },
     ]);
     longOp.throwIfCancelled();
     if (prep.note) showPeStatus(prep.note, "warn");
@@ -5824,29 +6013,16 @@ async function runDeepAuditAICore() {
     timing.mark("gemini");
     longOp.throwIfCancelled();
     let ai = [];
+    let aiDropped = null;
     try {
-      const start = reply.indexOf("[");
-      const end = reply.lastIndexOf("]");
-      if (start < 0 || end <= start) throw new Error("Bad AI JSON—use local audit.");
-      const t = reply.substring(start, end + 1);
-      const parsed = JSON.parse(t);
-      if (!Array.isArray(parsed)) throw new Error("Bad AI JSON—use local audit.");
-      ai = parsed
-        .slice(0, 8)
-        .filter((x) => x && typeof x === "object")
-        .map((x, i) => ({
-          id: `ai_${i}`,
-          ruleId: x.ruleId || `ai:${i}`,
-          module: x.module || "Deep audit",
-          type: x.type === "confirmed" ? "confirmed" : "preference",
-          explanation: String(x.explanation || ""),
-          targetText: String(x.targetText || ""),
-          replacementText: String(x.replacementText || ""),
-        }))
-        .filter((x) => x.targetText && x.explanation);
+      const checked = ProzaEdit.AISafety.parseFindings(reply, excerpt, { max: 8 });
+      ai = checked.findings;
+      aiDropped = checked.dropped;
     } catch (_) {
       throw new Error("Bad AI JSON—use local audit.");
     }
+    const droppedN = aiDropped ? aiDropped.notInSource + aiDropped.unsafe + aiDropped.malformed : 0;
+    if (droppedN) showPeStatus(`${droppedN} AI suggestion(s) were ignored because they did not quote your text exactly or looked unsafe.`, "warn");
     lastAuditExcerpt = excerpt;
     const local = ProzaEdit.Audit.run(excerpt, buildAuditContext());
     const merged = ProzaEdit.Audit._dedupe([...local.suggestions, ...ai]).slice(0, 60);
@@ -5892,10 +6068,11 @@ function updateTokenEstimate() {
   if (!el) return;
   const key = getApiKey();
   if (!key) {
-    el.textContent = "Local Coach: 0 tokens (add API key only for Gemini)";
+    el.textContent = "Local Coach: 0 tokens (add an API key only for optional AI help)";
     return;
   }
-  el.textContent = `Gemini est.: ~${ProzaEdit.Gemini.estimateTokens(chat) + 400} tokens if you use Send via Gemini`;
+  const est = ProzaEdit.AIProviders.estimate(aiProviderId(), aiModelId(), chat, 400);
+  el.textContent = `${aiLabel()} est.: ~${est.totalTokens.toLocaleString()} tokens (${ProzaEdit.AIProviders.formatUsd(est.usd)}) if you use Send via AI`;
 }
 
 function appendChatMessage(log, text, cls, isError) {
@@ -5922,7 +6099,7 @@ async function sendChatMessage() {
     if (
       await peConfirm({
         title: "No API key",
-        message: "No Gemini API key. Use free Local Coach instead?",
+        message: "No AI API key set. Use free Local Coach instead?",
         confirmLabel: "Use Local Coach",
         cancelLabel: "Cancel",
       })
@@ -5932,15 +6109,15 @@ async function sendChatMessage() {
   }
   if (
     !(await peConfirm({
-      title: "Send via Gemini",
-      message: `Send via Gemini (uses API tokens)? Your question and the chosen context are sent to Google.${geminiIndexDisclosure()}`,
+      title: `Send via ${aiLabel()}`,
+      message: `Send via ${aiLabel()} (uses API tokens)? Your question and the chosen context are sent to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_CHAT * 2 + 1500 + aiIndexChars(), 1024)}${geminiIndexDisclosure()}`,
       confirmLabel: "Send",
       cancelLabel: "Cancel",
     }))
   )
     return;
   if (
-    ProzaEdit.Gemini.estimateTokens(prompt) > 2000 &&
+    ProzaEdit.AIProviders.estimateTokens(prompt) > 2000 &&
     !(await peConfirm({
       title: "Large prompt",
       message: "Large prompt—continue?",
@@ -5972,7 +6149,7 @@ async function sendChatMessage() {
     { id: "guardrails", text: GUARDRAILS },
     { id: "profile", text: profile },
     { id: "index", role: "index", text: index },
-    { id: "context", role: "context", label: "Context:", text: context },
+    { id: "context", role: "context", label: "Context (untrusted manuscript text):", text: ProzaEdit.AISafety.wrapUntrusted(context) },
     { id: "question", label: "Question:", text: prompt },
   ]);
   if (prep.note) appendChatMessage(log, `Note: ${prep.note}`, "chat-ai");
@@ -5990,15 +6167,15 @@ async function runChatGeminiCall(text) {
   chatBusy = true;
   clearRetry();
   if (sendBtn) sendBtn.disabled = true;
-  const op = beginLongOperation({ initialStatus: "Waiting for Gemini…" });
+  const op = beginLongOperation({ initialStatus: `Waiting for ${aiLabel()}…` });
   try {
     const reply = await geminiGenerateWithQuota(text, { maxOutputTokens: 1024, temperature: 0.5 }, null, op.abortSignal);
     op.throwIfCancelled();
     appendChatMessage(log, reply, "chat-ai");
     return true;
   } catch (e) {
-    const result = reportActionError(e, "get a Gemini reply", {
-      retry: { label: "Gemini chat", run: () => runChatGeminiCall(text) },
+    const result = reportActionError(e, `get a ${aiLabel()} reply`, {
+      retry: { label: "AI chat", run: () => runChatGeminiCall(text) },
     });
     appendChatMessage(log, result.message, "chat-ai", !result.cancelled);
     return false;
@@ -6084,14 +6261,14 @@ async function runSmartRewrite() {
   }
   const key = getApiKey();
   if (!key) {
-    showPeStatus("Add a Gemini API key under Settings → Essentials, or use Local paraphrase (free).", "warn");
+    showPeStatus("Add an AI provider API key under Settings → AI help, or use Local paraphrase (free).", "warn");
     openAiHelpSetup();
     return;
   }
   if (
     !(await peConfirm({
-      title: "Rewrite via Gemini",
-      message: `Rewrite via Gemini uses API tokens and sends your selected text to Google. Continue?${geminiIndexDisclosure()}`,
+      title: `Rewrite via ${aiLabel()}`,
+      message: `Rewrite via ${aiLabel()} uses API tokens and sends your selected text (up to ${MAX_CHAT.toLocaleString()} characters) to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_CHAT + 1500 + aiIndexChars(), 1024)}${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -6122,9 +6299,9 @@ async function runSmartRewrite() {
     rewriteBusy = false;
   }
   const est = getEl("rewriteTokenEstimate");
-  if (est) est.textContent = `Est. tokens: ~${ProzaEdit.Gemini.estimateTokens(excerpt) + 200}`;
+  if (est) est.textContent = `Est. tokens: ~${ProzaEdit.AIProviders.estimateTokens(excerpt) + 200}`;
   const prep = await prepareGeminiPrompt(({ profile, index }) =>
-    ProzaEdit.Gemini.buildRewritePromptDetailed(mode, excerpt, profile, GUARDRAILS, index)
+    ProzaEdit.Gemini.buildRewritePromptDetailed(mode, ProzaEdit.AISafety.wrapUntrusted(excerpt), profile, GUARDRAILS, index)
   );
   if (prep.note) showPeStatus(prep.note, "warn");
   await runRewriteGeminiCall(prep.text);
@@ -6140,18 +6317,18 @@ async function runRewriteGeminiCall(prompt) {
   rewriteBusy = true;
   clearRetry();
   preview.innerText = "Rewriting…";
-  const op = beginLongOperation({ initialStatus: "Waiting for Gemini…" });
+  const op = beginLongOperation({ initialStatus: `Waiting for ${aiLabel()}…` });
   try {
     const text = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1024, temperature: 0.55 }, null, op.abortSignal);
     op.throwIfCancelled();
     lastRewritePreview = text;
     preview.innerText = text;
-    showPeStatus("Gemini rewrite ready.", "ok");
+    showPeStatus("AI rewrite ready. Review it before applying; nothing was changed in Word.", "ok");
     return true;
   } catch (e) {
     lastRewritePreview = "";
-    const result = reportActionError(e, "get a Gemini rewrite", {
-      retry: { label: "Gemini rewrite", run: () => runRewriteGeminiCall(prompt) },
+    const result = reportActionError(e, `get a ${aiLabel()} rewrite`, {
+      retry: { label: "AI rewrite", run: () => runRewriteGeminiCall(prompt) },
     });
     preview.innerText = result.cancelled ? "Cancelled. Nothing was changed in Word." : result.message;
     return false;

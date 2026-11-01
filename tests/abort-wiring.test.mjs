@@ -19,7 +19,7 @@ function loadLibsWithSeed(seed) {
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
-  for (const rel of ["src/taskpane/lib/long-operation-controller.js", "src/taskpane/lib/gemini-client.js"]) {
+  for (const rel of ["src/taskpane/lib/long-operation-controller.js", "src/taskpane/lib/ai-safety.js", "src/taskpane/lib/ai-providers.js", "src/taskpane/lib/gemini-client.js"]) {
     vm.runInContext(fs.readFileSync(path.join(root, rel), "utf8"), sandbox, { filename: rel });
   }
   return sandbox.ProzaEdit;

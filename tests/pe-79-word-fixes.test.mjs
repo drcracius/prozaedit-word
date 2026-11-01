@@ -16,7 +16,10 @@ const LIBS = [
   "src/taskpane/lib/continuity-guard.js",
   "src/taskpane/lib/scope-reader.js",
   "src/taskpane/lib/manuscript-context-index.js",
+  "src/taskpane/lib/genre-profiles.js",
   "src/taskpane/lib/audit-engine.js",
+  "src/taskpane/lib/ai-safety.js",
+  "src/taskpane/lib/ai-providers.js",
   "src/taskpane/lib/gemini-client.js",
   "src/taskpane/lib/config-guard.js",
   "src/taskpane/lib/lexical-shaper.js",
@@ -221,7 +224,7 @@ test("Staleness: a stale index is INCLUDED in the prompt block, flagged; fresh i
   });
   const stale = MCI.injectPromptBlock(index, { freshness: { state: "stale", reason: "edited" }, destination: "gemini" });
   assert.match(stale, /may be out of date/);
-  assert.match(stale, /included in this Gemini request/);
+  assert.match(stale, /included in this AI request/);
   assert.match(stale, /not an AI summary/);
   const fresh = MCI.injectPromptBlock(index, { freshness: { state: "fresh" }, destination: "gemini" });
   assert.ok(!/out of date/.test(fresh));

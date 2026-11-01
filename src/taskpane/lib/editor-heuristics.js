@@ -82,7 +82,7 @@ ProzaEdit.EditorHeuristics = {
   /** Exact duplicate sentences (normalized), min length to skip headings. */
   scanDuplicateSentences(text, push, limit) {
     limit = limit || 3;
-    const parts = text.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length >= 45);
+    const parts = ProzaEdit.Metrics.splitSentences(text).filter((s) => s.trim().length >= 45);
     const map = new Map();
     parts.forEach((s) => {
       const norm = s.replace(/\s+/g, " ").trim().toLowerCase();
@@ -164,7 +164,7 @@ ProzaEdit.EditorHeuristics = {
   scanRepeatedOpenings(text, push, limit) {
     limit = limit || 3;
     const counts = new Map();
-    text.split(/(?<=[.!?])\s+/).forEach((s) => {
+    ProzaEdit.Metrics.splitSentences(text).forEach((s) => {
       const words = s.match(/\b[\w'-]+\b/g);
       if (!words || words.length < 6) return;
       const key = words.slice(0, 5).join(" ").toLowerCase();

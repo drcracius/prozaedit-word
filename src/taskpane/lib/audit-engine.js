@@ -50,6 +50,10 @@ ProzaEdit.Audit = {
     text = String(text || "");
     ctx = this._stripIneligibleFictionFlags(ctx || {});
     const roster = this._manuscriptRoster(ctx);
+    const G = ProzaEdit.Genres;
+    const gp = G ? G.params(ctx) : null;
+    const genre = gp ? { id: gp.profile.id, label: G.describe(ctx), jargon: gp.jargon.id } : null;
+    ctx = gp ? { ...ctx, _genre: gp } : ctx;
     const manuscriptContext = {
       indexPresent: !!(ctx.manuscriptContextIndex && !ctx.manuscriptContextIndex.invalid),
       used: roster.length > 0,
@@ -58,7 +62,8 @@ ProzaEdit.Audit = {
     const suggestions = [];
     let idSeq = 0;
     const muted = new Set(ctx.mutedRules || []);
-    const dict = new Set((ctx.dictionary || []).map((d) => d.toLowerCase()));
+    const dict = new Set((ctx.dictionary || []).concat(G ? G.jargonTerms(ctx) : []).map((d) => String(d).toLowerCase()));
+    if (G && G.jargonTerms(ctx).length) ctx = { ...ctx, dictionary: (ctx.dictionary || []).concat(G.jargonTerms(ctx)) };
     const lower = text.toLowerCase();
     const push = (item) => {
       if (!item.targetText || item.targetText.length > 255) return;
@@ -66,6 +71,7 @@ ProzaEdit.Audit = {
         item.ruleId = `auto:${String(item.module || "rule").slice(0, 40)}:${String(item.targetText).slice(0, 40)}`.toLowerCase();
       }
       if (muted.has(item.ruleId)) return;
+      if (gp && G.isMuted(gp.profile, item.ruleId)) return;
       if (ProzaEdit.Settings?.isTargetDismissedGlobally?.(item.targetText)) return;
       suggestions.push({ ...item, id: item.id || `sug_${idSeq++}` });
     };
@@ -84,6 +90,7 @@ ProzaEdit.Audit = {
         criticalCount: 0,
         prefCount: 0,
         manuscriptContext,
+        genre,
       };
     }
 
@@ -97,12 +104,13 @@ ProzaEdit.Audit = {
 
     if (fiction) {
       if (ctx.mPlot) this._plot(text, lower, push, ctx);
-      if (ctx.mMotivation) this._motivation(text, lower, push);
-      if (ctx.mDialogue) this._dialogue(text, lower, push);
+      if (ctx.mMotivation) this._motivation(text, lower, push, ctx);
+      if (ctx.mDialogue) this._dialogue(text, lower, push, ctx);
       if (ctx.mContinuity) this._continuity(text, lower, push);
       if (ctx.mPlausibility) this._plausibility(text, lower, push);
       if (ctx.mPacing) this._pacing(text, lower, push, ctx);
       if (ctx.mSpoiler) this._spoiler(text, lower, push);
+      if (gp && (ctx.mPacing || ctx.mDialogue || ctx.mMotivation)) this._genreCraft(text, lower, push, ctx, gp);
     }
 
     if (ctx.chkSpell) {
@@ -135,7 +143,7 @@ ProzaEdit.Audit = {
           replacementText: "(raise lexical complexity)",
         });
       }
-      if (metrics.fleschKincaidGrade > gMax + 2) {
+      if (metrics.fleschKincaidGrade > gMax + 2 + (gp ? gp.profile.fkSlack : 0)) {
         push({
           ruleId: "read:too_complex",
           module: "Pacing & Readability",
@@ -148,7 +156,7 @@ ProzaEdit.Audit = {
     }
 
     const maxCards = ProzaEdit.ReportDensity?.maxCards?.(ctx.reportDensity) || 60;
-    const deduped = this._dedupe(suggestions).slice(0, maxCards);
+    const deduped = this._dedupe(suggestions).slice(0, maxCards).map((x) => ({ ...x, confidence: this.confidenceFor(x) }));
     const persona = this.PERSONA_WEIGHTS[ctx.criticPersona] || this.PERSONA_WEIGHTS["Average Reader"];
     const criticalCount = deduped.filter((s) => s.type === "confirmed").length;
     const prefCount = deduped.filter((s) => s.type === "preference").length;
@@ -157,7 +165,17 @@ ProzaEdit.Audit = {
     score = Math.round(score * 10) / 10;
     const traffic = ProzaEdit.Metrics.trafficLight(score);
 
-    return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext };
+    return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext, genre };
+  },
+
+  LOW_CONFIDENCE_PREFIXES: ["genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
+
+  /** high = objective (typo-class); medium = style judgment; low = noisy heuristic (hidden in Simple view by default). */
+  confidenceFor(item) {
+    if (item.confidence) return item.confidence;
+    const id = String(item.ruleId || "");
+    if (this.LOW_CONFIDENCE_PREFIXES.some((p) => id.startsWith(p))) return "low";
+    return item.type === "confirmed" ? "high" : "medium";
   },
 
   _dedupe(list) {
@@ -267,7 +285,7 @@ ProzaEdit.Audit = {
   },
 
   _aiDetectionHeuristic(text, lower, push) {
-    const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const sentences = ProzaEdit.Metrics.splitSentences(text).filter(Boolean);
     if (sentences.length < 4) return;
     const lengths = sentences.map((s) => s.split(/\s+/).length);
     const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
@@ -308,7 +326,7 @@ ProzaEdit.Audit = {
         replacementText: "stepped into the restroom, leaving her glass unattended on the dark counter",
       });
     }
-    const last = text.trim().split(/(?<=[.!?])\s+/).pop() || "";
+    const last = ProzaEdit.Metrics.splitSentences(text.trim()).pop() || "";
     if (last.length > 20 && !/[?!]$/.test(last.trim()) && /\b(went|walked|left|arrived|sat)\b/i.test(last)) {
       push({
         ruleId: "plot:weak_hook",
@@ -334,8 +352,9 @@ ProzaEdit.Audit = {
     }
   },
 
-  _motivation(text, lower, push) {
-    ["suddenly", "for some reason", "somehow", "started to", "began to"].forEach((w) => {
+  _motivation(text, lower, push, ctx) {
+    const gp = ctx && ctx._genre;
+    (gp ? gp.profile.weakCues : ["suddenly", "for some reason", "somehow", "started to", "began to"]).forEach((w) => {
       if (lower.includes(w)) {
         push({
           ruleId: `mot:${w}`,
@@ -348,7 +367,7 @@ ProzaEdit.Audit = {
       }
     });
     const passive = text.match(/\b(was|were|been|being)\s+[a-z]+ed\b/gi) || [];
-    if (passive.length >= 5) {
+    if (passive.length >= (gp ? gp.passiveCluster : 5)) {
       push({
         ruleId: "mot:passive_cluster",
         module: "Characterization & Motivation",
@@ -360,11 +379,12 @@ ProzaEdit.Audit = {
     }
   },
 
-  _dialogue(text, lower, push) {
+  _dialogue(text, lower, push, ctx) {
+    const longChars = (ctx && ctx._genre && ctx._genre.profile.longDialogueChars) || 80;
     const lines = text.split(/\n/);
     let longDlg = 0;
     lines.forEach((line) => {
-      if (/^["\u201c].{80,}["\u201d]?$/.test(line.trim()) && longDlg < 3) {
+      if (new RegExp(`^["\\u201c].{${longChars},}["\\u201d]?$`).test(line.trim()) && longDlg < 3) {
         longDlg++;
         push({
           ruleId: `dlg:long:${longDlg}`,
@@ -434,11 +454,12 @@ ProzaEdit.Audit = {
   },
 
   _pacing(text, lower, push, ctx) {
-    const sentences = text.split(/(?<=[.!?])\s+/);
+    const sentences = ProzaEdit.Metrics.splitSentences(text);
     let longCount = 0;
     sentences.forEach((s) => {
       const wc = s.trim().split(/\s+/).filter(Boolean).length;
-      const threshold = ctx.criticPersona.includes("Harsh") ? 38 : 45;
+      const ls = ctx._genre ? ctx._genre.profile.longSentence : { harsh: 38, normal: 45 };
+      const threshold = String(ctx.criticPersona || "").includes("Harsh") ? ls.harsh : ls.normal;
       if (wc >= threshold && longCount < 4) {
         longCount++;
         push({
@@ -451,6 +472,60 @@ ProzaEdit.Audit = {
         });
       }
     });
+  },
+
+  _genreCraft(text, lower, push, ctx, gp) {
+    const p = gp.profile;
+    const label = p.label;
+    p.cliches.forEach((c) => {
+      if (lower.includes(c)) {
+        push({
+          ruleId: `genre:cliche:${c}`,
+          module: "Genre craft",
+          type: "preference",
+          explanation: `Common ${label} cliché — a fresher, more specific image will stand out.`,
+          targetText: c,
+          replacementText: "(fresher image)",
+        });
+      }
+    });
+    const words = (text.match(/\b[\w'-]+\b/g) || []).length;
+    if (words < 400) return;
+    const per1k = (n) => (n * 1000) / words;
+    const tagAdv = (text.match(/\b(said|asked|replied|whispered|shouted|muttered|answered|cried)\s+\w{3,}ly\b/gi) || []);
+    if (tagAdv.length > p.tagAdverbMax) {
+      push({
+        ruleId: "genre:tag_adverbs",
+        module: "Genre craft",
+        type: "preference",
+        explanation: `${tagAdv.length} dialogue tags carry an adverb (more than the usual ${p.tagAdverbMax} for ${label}); let the line or a beat show the tone.`,
+        targetText: tagAdv[0],
+        replacementText: "(show tone in the line)",
+      });
+    }
+    const filters = text.match(/\b(felt|saw|noticed|watched|realized|realised|wondered|seemed|heard)\b/gi) || [];
+    if (p.filterPer1k && per1k(filters.length) > p.filterPer1k) {
+      push({
+        ruleId: "genre:filter_words",
+        module: "Genre craft",
+        type: "preference",
+        explanation: `Filter words (felt, saw, noticed…) run ~${Math.round(per1k(filters.length))} per 1,000 words; ${label} usually stays under ~${p.filterPer1k}.`,
+        targetText: filters[0],
+        replacementText: "(show the perception directly)",
+      });
+    }
+    const NOT_ADV = /^(only|family|early|likely|lonely|friendly|silly|ugly|holy|july|apply|reply|supply|rely|belly|jelly|bully|ally|fly|lovely|lively|elderly|orderly|daily|gravelly|curly|chilly|hilly|jolly|rally|sally|molly|billy|willy|emily|anomaly|italy|assembly|butterfly|monopoly|multiply|comply|imply|homily|oily|surly|wily|deadly|costly|bubbly|kindly|cowardly)$/i;
+    const adv = (text.match(/\b[a-z]{4,}ly\b/gi) || []).filter((w) => !NOT_ADV.test(w));
+    if (per1k(adv.length) > p.adverbPer1k) {
+      push({
+        ruleId: "genre:adverb_density",
+        module: "Genre craft",
+        type: "preference",
+        explanation: `-ly adverbs run ~${Math.round(per1k(adv.length))} per 1,000 words (${label} norm ~${p.adverbPer1k}); strengthen a few verbs instead.`,
+        targetText: adv[0],
+        replacementText: "(stronger verb)",
+      });
+    }
   },
 
   _spoiler(text, lower, push) {

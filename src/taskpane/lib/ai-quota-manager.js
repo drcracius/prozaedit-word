@@ -1,23 +1,44 @@
-/* Client-side Gemini session token estimate ceiling (optional, default off — v2 parity). */
+/*
+ * AI budget guard — client-side hard limits so optional AI help can never burn tokens unnoticed.
+ * Limits: per-run prompt size + output cap, per-session tokens, per-day tokens (this device), minimum gap between calls.
+ * Counting uses provider-reported usage when available, otherwise the estimate. Nothing runs in the background.
+ */
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.AIQuotaManager = {
   SESSION_TOKEN_KEY: "pe_ai_session_tokens",
+  DAY_TOKEN_KEY: "pe_ai_day_tokens",
 
   DEFAULT_LIMITS: {
     maxSessionTokens: 50000,
-    enforceCeiling: false,
+    maxDayTokens: 150000,
+    maxPromptChars: 32000,
+    maxOutputTokens: 1200,
+    minIntervalMs: 1500,
+    enforceCeiling: true,
   },
 
   estimateTokens(text) {
-    if (ProzaEdit.Gemini?.estimateTokens) return ProzaEdit.Gemini.estimateTokens(text);
     if (!text) return 0;
     return Math.max(1, Math.ceil(String(text).length / 4));
+  },
+
+  _today() {
+    return new Date().toISOString().slice(0, 10);
   },
 
   getSessionTokens() {
     try {
       return parseInt(sessionStorage.getItem(this.SESSION_TOKEN_KEY) || "0", 10) || 0;
+    } catch (_) {
+      return 0;
+    }
+  },
+
+  getDayTokens() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(this.DAY_TOKEN_KEY) || "null");
+      return raw && raw.day === this._today() ? parseInt(raw.tokens, 10) || 0 : 0;
     } catch (_) {
       return 0;
     }
@@ -29,42 +50,85 @@ ProzaEdit.AIQuotaManager = {
     } catch (_) {}
   },
 
+  resetDayTokens() {
+    try {
+      localStorage.removeItem(this.DAY_TOKEN_KEY);
+    } catch (_) {}
+  },
+
   recordUsage(tokensUsed) {
     const add = Math.max(0, parseInt(tokensUsed, 10) || 0);
     if (!add) return;
     try {
-      const current = this.getSessionTokens();
-      sessionStorage.setItem(this.SESSION_TOKEN_KEY, String(current + add));
+      sessionStorage.setItem(this.SESSION_TOKEN_KEY, String(this.getSessionTokens() + add));
     } catch (_) {}
+    try {
+      localStorage.setItem(this.DAY_TOKEN_KEY, JSON.stringify({ day: this._today(), tokens: this.getDayTokens() + add }));
+    } catch (_) {}
+  },
+
+  _clamp(raw, lo, hi, fallback) {
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : fallback;
   },
 
   readLimitsFromConfig(cfg) {
     cfg = cfg || {};
-    const rawMax = parseInt(cfg.aiMaxSessionTokens, 10);
-    const maxSessionTokens = Number.isFinite(rawMax)
-      ? Math.max(1000, Math.min(500000, rawMax))
-      : this.DEFAULT_LIMITS.maxSessionTokens;
+    const d = this.DEFAULT_LIMITS;
     return {
-      maxSessionTokens,
-      enforceCeiling: !!cfg.aiEnforceSessionCeiling,
+      maxSessionTokens: this._clamp(cfg.aiMaxSessionTokens, 1000, 500000, d.maxSessionTokens),
+      maxDayTokens: this._clamp(cfg.aiMaxDayTokens, 1000, 2000000, d.maxDayTokens),
+      maxPromptChars: d.maxPromptChars,
+      maxOutputTokens: d.maxOutputTokens,
+      minIntervalMs: d.minIntervalMs,
+      enforceCeiling: cfg.aiEnforceSessionCeiling !== false,
     };
   },
 
   /**
+   * Pre-flight gate. `cost` is the estimated total (input + max output). With enforceCeiling off only the
+   * per-run prompt cap and call spacing still apply (a runaway prompt is never allowed).
    * @param {number} estimatedCost
-   * @param {{ maxSessionTokens?: number, enforceCeiling?: boolean }} limits
+   * @param {object} [limits]
+   * @param {{ promptChars?: number, now?: number, lastCallAt?: number }} [run]
    */
-  canExecute(estimatedCost, limits) {
-    limits = limits || this.DEFAULT_LIMITS;
-    if (!limits.enforceCeiling) return { ok: true };
+  canExecute(estimatedCost, limits, run) {
+    limits = Object.assign({}, this.DEFAULT_LIMITS, limits || {});
+    run = run || {};
     const cost = Math.max(0, parseInt(estimatedCost, 10) || 0);
-    const current = this.getSessionTokens();
-    if (current + cost > limits.maxSessionTokens) {
+    if (run.promptChars != null && run.promptChars > limits.maxPromptChars) {
       return {
         ok: false,
-        message: `Session token ceiling reached (~${current.toLocaleString()} / ${limits.maxSessionTokens.toLocaleString()} estimated). Reset the counter on Target or turn enforcement off.`,
+        code: "run_cap",
+        message: `This request is too large (${run.promptChars.toLocaleString()} characters). Select a smaller passage or turn off the manuscript index for this call.`,
+      };
+    }
+    if (run.lastCallAt && run.now != null && run.now - run.lastCallAt < limits.minIntervalMs) {
+      return { ok: false, code: "too_fast", message: "Please wait a moment between AI requests." };
+    }
+    if (!limits.enforceCeiling) return { ok: true };
+    const session = this.getSessionTokens();
+    if (session + cost > limits.maxSessionTokens) {
+      return {
+        ok: false,
+        code: "session_cap",
+        message: `Session AI limit reached (~${session.toLocaleString()} / ${limits.maxSessionTokens.toLocaleString()} estimated tokens). Raise it in Settings → AI help, or reset the counter.`,
+      };
+    }
+    const day = this.getDayTokens();
+    if (day + cost > limits.maxDayTokens) {
+      return {
+        ok: false,
+        code: "day_cap",
+        message: `Daily AI limit reached (~${day.toLocaleString()} / ${limits.maxDayTokens.toLocaleString()} estimated tokens on this device). Raise it in Settings → AI help, or try again tomorrow.`,
       };
     }
     return { ok: true };
+  },
+
+  /** Short text for the visible usage meter. */
+  meterText(limits) {
+    limits = Object.assign({}, this.DEFAULT_LIMITS, limits || {});
+    return `AI usage: ~${this.getSessionTokens().toLocaleString()} / ${limits.maxSessionTokens.toLocaleString()} this session · ~${this.getDayTokens().toLocaleString()} / ${limits.maxDayTokens.toLocaleString()} today`;
   },
 };

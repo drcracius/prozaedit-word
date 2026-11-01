@@ -11,7 +11,8 @@ ProzaEdit.ReportDocxExport = {
     const excerpt = input.excerpt || "";
     if (!suggestions.length && !excerpt) return "";
     const ctx = typeof input.buildContext === "function" ? input.buildContext() : {};
-    const header = `ProzaEdit audit report · ${new Date().toLocaleString()}\n${"=".repeat(48)}\n\n`;
+    const genreLine = ProzaEdit.Genres && ctx.manuscriptType ? `Genre profile applied: ${ProzaEdit.Genres.describe(ctx)}\n` : "";
+    const header = `ProzaEdit audit report · ${new Date().toLocaleString()}\n${genreLine}${"=".repeat(48)}\n\n`;
     const body =
       input.feedbackLetter ||
       (ProzaEdit.ManuscriptOverview?.buildFeedbackLetter

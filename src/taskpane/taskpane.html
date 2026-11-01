@@ -14,8 +14,8 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.16</span>)</p>
-    <p id="peWhatsNewBullet" class="pe-top-banner-body">Whole-book names and cues, edit-aware “index may be out of date” notice, safer index storage, AI help reachable from Simple mode, and a Gemini prompt that never loses your question.</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.17</span>)</p>
+    <p id="peWhatsNewBullet" class="pe-top-banner-body">Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Everything still works offline.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-79-WORD-FIXES.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
       <button type="button" class="btn-secondary" onclick="dismissWhatsNewBanner(false)">Got it</button>
@@ -198,15 +198,38 @@
     <details class="pe-target-section" open>
       <summary class="pe-section-title pe-section-summary">Manuscript profile (optional)</summary>
     <div class="form-group">
-      <label for="manuscriptType">Manuscript Type</label>
-      <select id="manuscriptType" onchange="adaptModules()">
-        <option value="Fiction (Thriller/Mystery/Crime)" selected>Fiction (Thriller / Mystery / Crime)</option>
-        <option value="Academic Paper / Journal">Academic Paper / Journal</option>
-        <option value="Business / Corporate Report">Business / Corporate Report</option>
-        <option value="Non-Fiction / Memoir">Non-Fiction / Memoir</option>
-        <option value="Technical / Journalism">Technical / Journalism</option>
+      <label for="manuscriptType">What are you writing?</label>
+      <select id="manuscriptType" onchange="adaptModules()" aria-describedby="peGenreBlurb">
+        <optgroup label="Fiction">
+          <option value="Fiction (General)" selected>Fiction — General (not sure / other)</option>
+          <option value="Fiction (Romance)">Romance</option>
+          <option value="Fiction (Mystery/Crime)">Mystery / Crime</option>
+          <option value="Fiction (Thriller/Mystery/Crime)">Thriller / Suspense</option>
+          <option value="Fiction (Fantasy)">Fantasy</option>
+          <option value="Fiction (Science Fiction)">Science Fiction</option>
+          <option value="Fiction (Literary/Drama)">Literary / Drama</option>
+          <option value="Fiction (Historical)">Historical</option>
+        </optgroup>
+        <optgroup label="Non-fiction and professional">
+          <option value="Non-Fiction / Memoir">Non-fiction / Memoir</option>
+          <option value="Academic Paper / Journal">Academic paper / journal</option>
+          <option value="Business / Corporate Report">Business / corporate report</option>
+          <option value="Technical / Journalism">Technical / journalism</option>
+        </optgroup>
       </select>
+      <p id="peGenreBlurb" class="help-inline" role="status" aria-live="polite">Pick the closest fit — checks, thresholds and AI prompts adjust to it. Saved with this document.</p>
       <p class="help-inline">Plot, character, and spoiler checks run only for <strong>Fiction</strong> types with those modules enabled; Academic and Business audits skip them.</p>
+    </div>
+    <div class="form-group" id="peGenreJargonGroup" data-simple-hide>
+      <label for="genreJargon">Specialist vocabulary (optional)</label>
+      <select id="genreJargon">
+        <option value="none" selected>None</option>
+        <option value="legal">Legal / courtroom</option>
+        <option value="medical">Medical / forensic</option>
+        <option value="science">Science / technology</option>
+        <option value="military">Military / police</option>
+      </select>
+      <p class="help-inline">Adds those terms to the allowed-words list for this document and relaxes passive-voice limits where that genre needs it.</p>
     </div>
     <div class="form-group">
       <label for="targetAudience">Target Reader / Education Level</label>
@@ -293,7 +316,7 @@
     <div class="form-group pe-mci-checks-block" id="peMciChecksBlock" data-simple-hide>
       <p id="peMciStatusChecks" class="pe-mci-status pe-mci-stale" aria-live="polite">Full MS context not built</p>
       <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContext" onclick="runBuildFullManuscriptContext(true)">Build full manuscript context</button>
-      <p class="help-inline" style="margin:4px 0 0;font-size:10px;">A heuristic local outline (not AI): chapter list, word counts, first/last lines, recurring names, time cues. Stored in this document only; included in a Gemini request only if you use Gemini. If it goes stale it is still used but flagged, and you will see a refresh notice.</p>
+      <p class="help-inline" style="margin:4px 0 0;font-size:10px;">A heuristic local outline (not AI): chapter list, word counts, first/last lines, recurring names, time cues. Stored in this document only; included in an AI request only if you use an AI action. If it goes stale it is still used but flagged, and you will see a refresh notice.</p>
     </div>
     <div class="audit-run-hub pe-checks-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
@@ -348,7 +371,7 @@
         <input type="number" id="batchSectionCount" min="1" max="8" value="3">
         <button type="button" class="btn-secondary pe-btn" style="margin-top:4px;" onclick="runBatchSectionAudit()">Run batch</button>
         <button type="button" class="btn-linkish pe-btn" style="margin-top:4px;" onclick="cancelBatchAudit()">Cancel batch</button>
-        <button type="button" class="btn-secondary btn-api-opt" style="margin-top:8px;" onclick="runDeepAuditAI()">Optional: Deep Audit (+1 Gemini)</button>
+        <button type="button" class="btn-secondary btn-api-opt" style="margin-top:8px;" onclick="runDeepAuditAI()">Optional: Deep Audit (+1 AI call)</button>
         <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="scanChapterHeatmap()">Build chapter heatmap (local)</button>
       </div>
     </details>
@@ -455,7 +478,7 @@
 
   <div id="tab5" class="tab-content">
     <div class="pe-mci-stale-notice hidden" role="status" aria-live="polite">Manuscript index may be out of date<span data-pe-mci-stale-why></span>. <button type="button" class="btn-linkish" onclick="runBuildFullManuscriptContext(true)">Refresh index</button></div>
-    <div class="help-box help-muted">Local Coach uses curated rules (0 tokens). Word Copilot or Gemini only when you need generative prose.</div>
+    <div class="help-box help-muted">Local Coach uses curated rules (0 tokens). Word Copilot or optional AI help only when you need generative prose.</div>
     <div id="chatLog" class="chat-log">
       <div class="chat-msg chat-ai"><strong>Local Coach:</strong> Ask about POV, pacing, dialogue, show/tell—no API key needed.</div>
     </div>
@@ -478,16 +501,16 @@
       </details>
     </div>
     <details class="help-box help-muted pe-gemini-block pe-ai-help" id="peAiHelpCoach" style="margin-top:8px;">
-      <summary><span data-pe-ai-help-title>Optional Gemini API (uses tokens)</span></summary>
+      <summary><span data-pe-ai-help-title>Optional AI help (uses your API key and tokens)</span></summary>
       <div class="form-group" style="border:none;padding:0;margin-top:6px;">
-        <p class="help-inline pe-cloud-disclosure">Cloud action: the prompt and chosen context are sent to Google only when you click <strong>Send via Gemini</strong>. Context is selection-only by default; turning that off can send a document excerpt. If you built a manuscript index, that heuristic outline (chapter titles, first/last lines, recurring names) is included in the request too. Local Coach and Run audit never use Gemini.</p>
+        <p class="help-inline pe-cloud-disclosure">Cloud action: the prompt and chosen context are sent to the AI provider you picked in Settings only when you click <strong>Send via AI</strong>. Context is selection-only by default; turning that off can send a document excerpt. If you built a manuscript index, that heuristic outline (chapter titles, first/last lines, recurring names) is included in the request too. Local Coach and Run audit never use AI.</p>
         <div class="pe-ai-help-setup" data-pe-ai-help-setup>
-          <p class="help-inline" style="font-size:10px;margin:0 0 6px;">AI help is <strong>off</strong> until you add a Gemini API key.</p>
+          <p class="help-inline" style="font-size:10px;margin:0 0 6px;">AI help is <strong>off</strong> until you add an AI provider API key.</p>
           <button type="button" class="btn-secondary pe-btn" onclick="openAiHelpSetup()">Set up AI help (add API key)</button>
         </div>
         <div class="pe-ai-help-ready hidden" data-pe-ai-help-ready>
           <div class="toggle-row"><span>Context: selection only</span><input type="checkbox" id="chatSelectionOnly" checked></div>
-          <button class="btn-secondary btn-api-opt" onclick="sendChatMessage()">Send via Gemini</button>
+          <button class="btn-secondary btn-api-opt" onclick="sendChatMessage()">Send via AI</button>
         </div>
       </div>
     </details>
@@ -498,8 +521,8 @@
     <div class="help-box" id="peAboutSection">
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.16</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.16</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.17</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.17</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>
@@ -540,8 +563,8 @@
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
       <p><strong>Analysis scope (Target):</strong> Highlighted selection; <strong>Page range</strong> (From/To pages, ~2,800 chars each); Selected chapters (Heading 1–3 checklist); or Full manuscript.</p>
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards. <strong>Chapter audit uses full-manuscript context</strong> when you have built the context index and the document has not changed much (paragraph count).</p>
-      <p><strong>Full manuscript context:</strong> Checks or Target → <em>Build full manuscript context</em> runs a cooperative background read (cancel anytime). It is a local, heuristic outline (not an AI summary), stored in this document’s own settings key, and it is sent to Google only as part of a Gemini request you click — flagged if it may be out of date.</p>
-      <p><strong>Settings (toolbar gear):</strong> Simple mode, safety toggles (confirm before apply, hover tips, FK lock, continuity slider), audit defaults (report depth, default filter, extended checks), privacy &amp; diagnostics, per-document dictionary, capture reference style, citation scan shortcut, Gemini session ceiling (when Simple mode is off), and custom style rules (add/edit/bulk import). <strong>Target</strong> keeps manuscript profile, analysis scope, and preferred style guide.</p>
+      <p><strong>Full manuscript context:</strong> Checks or Target → <em>Build full manuscript context</em> runs a cooperative background read (cancel anytime). It is a local, heuristic outline (not an AI summary), stored in this document’s own settings key, and it is sent to your chosen AI provider only as part of an AI request you click — flagged if it may be out of date.</p>
+      <p><strong>Settings (toolbar gear):</strong> Simple mode, safety toggles (confirm before apply, hover tips, FK lock, continuity slider), audit defaults (report depth, default filter, extended checks), privacy &amp; diagnostics, per-document dictionary, capture reference style, citation scan shortcut, AI provider, model and token limits (AI help section), and custom style rules (add/edit/bulk import). <strong>Target</strong> keeps manuscript profile, analysis scope, and preferred style guide.</p>
       <p><strong>Keyboard shortcuts:</strong> Open Settings — <strong>Ctrl+Shift+,</strong> or <strong>Alt+Shift+S</strong> (when focus is not in a text field). Undo / Redo — toolbar buttons (Word undo still applies to all edits). See checklist §8 for banner and control sync tests.</p>
       <p><strong>Look &amp; navigation:</strong> <strong>Light</strong> (indigo primary) or <strong>Dark</strong> / <strong>Match system</strong> (Settings → Appearance). In dark mode, light green marks primary actions, the active tab, and workflow step — not finding severity. The sticky line under the toolbar shows your active <strong>style guide</strong>, <strong>scope</strong>, and character estimate after <strong>Refresh count</strong>. ProzaEdit remembers your <strong>last tab</strong> per document. Deep links: Help → Privacy, Target → Custom rules, or bookmark <code>#pe-settings-privacy</code>. Settings and Rewrite (from an audit card) offer <strong>Back</strong> when you need to return without hunting tabs.</p>
       <p class="pe-severity-legend help-muted" aria-label="Severity and action color legend"><strong>Color legend:</strong> <span class="pe-legend-swatch pe-legend-critical">Critical</span> · <span class="pe-legend-swatch pe-legend-style">Style</span> · <span class="pe-legend-swatch pe-legend-ok">OK / primary action</span> (card left border and badges = severity; green/indigo buttons = actions).</p>
@@ -596,7 +619,7 @@
       <summary>Privacy &amp; data (summary)</summary>
       <ul class="help-list">
         <li><strong>Run audit / Local Coach / paraphrase</strong> — local in your browser; no cloud by default.</li>
-        <li><strong>Gemini</strong> (optional) — sends only the prompt and context you trigger to Google when you click Send / Deep audit / Rewrite via Gemini.</li>
+        <li><strong>AI provider</strong> (optional: Gemini, OpenAI, Claude or OpenRouter, using your own API key) — sends only the prompt and context you trigger, to the provider you picked, when you click Send / Deep audit / AI rewrite. Keys stay on this device.</li>
         <li><strong>Thesaurus (Datamuse)</strong> — sends a single lookup word when you search synonyms.</li>
         <li><strong>Diagnostics</strong> — opt-in; clipboard JSON is redacted (no document text or API keys).</li>
         <li><strong>Remember API key</strong> — stores the key inside this Word document when enabled.</li>
@@ -667,14 +690,14 @@
       <button type="button" class="btn-linkish pe-btn" style="margin-top:6px;" onclick="resetShaperSlidersToDefaults()">Reset shaper sliders to defaults</button>
     </details>
     <details class="help-box help-muted pe-gemini-block pe-ai-help" id="peAiHelpRewrite" style="margin-top:8px;">
-      <summary><span data-pe-ai-help-title>Optional Gemini rewrite (uses tokens)</span></summary>
-      <p class="help-inline pe-cloud-disclosure">Cloud action: the selected text and rewrite instructions are sent to Google only when clicked. A built manuscript index (heuristic outline, not an AI summary) is included in that request.</p>
+      <summary><span data-pe-ai-help-title>Optional AI rewrite (uses tokens)</span></summary>
+      <p class="help-inline pe-cloud-disclosure">Cloud action: the selected text and rewrite instructions are sent to the AI provider you picked only when clicked. A built manuscript index (heuristic outline, not an AI summary) is included in that request.</p>
       <div class="pe-ai-help-setup" data-pe-ai-help-setup>
-        <p class="help-inline" style="font-size:10px;margin:0 0 6px;">AI help is <strong>off</strong> until you add a Gemini API key.</p>
+        <p class="help-inline" style="font-size:10px;margin:0 0 6px;">AI help is <strong>off</strong> until you add an AI provider API key.</p>
         <button type="button" class="btn-secondary pe-btn" onclick="openAiHelpSetup()">Set up AI help (add API key)</button>
       </div>
       <div class="pe-ai-help-ready hidden" data-pe-ai-help-ready>
-        <button class="btn-secondary btn-api-opt" style="margin-top:6px;" onclick="runSmartRewrite()">Rewrite via Gemini</button>
+        <button class="btn-secondary btn-api-opt" style="margin-top:6px;" onclick="runSmartRewrite()">Rewrite via AI</button>
       </div>
     </details>
   </div>
@@ -726,11 +749,21 @@
           <p id="peSimpleModeEssentialsIntro" class="help-muted pe-simple-mode-essentials-intro" style="font-size:10px;margin:6px 0 4px;">Simple view hides the Thesaurus tab, the lexical shaper, and extra tuning. Coach, Rewrite and optional AI help stay available. Turn Simple off for every control.</p>
           <p id="peSimpleModeAdvancedTabsList" class="help-muted pe-simple-advanced-tabs hidden" style="font-size:10px;margin:4px 0 6px;"></p>
           <button type="button" class="btn-linkish pe-btn" id="btnTurnOffSimpleMode" onclick="turnOffSimpleModeFromEssentials()">Switch to Advanced view</button>
-          <div class="form-group" style="margin-top:8px;">
-            <label for="apiKey">Gemini API key (optional)</label>
-            <input type="password" id="apiKey" placeholder="Leave blank to stay local-only">
-            <div class="toggle-row"><span>Remember in this document</span><input type="checkbox" id="rememberApiKey"></div>
-            <p class="help-muted pe-cloud-disclosure">Leave blank for local-only use. Gemini actions send only their prompt/context to Google when clicked. “Remember” stores the key in this Word document — leave it <strong>off</strong> on first use and for shared files.</p>
+          <div class="form-group pe-ai-settings" id="peAiSettings" style="margin-top:8px;">
+            <label for="aiProvider">AI help provider (optional)</label>
+            <select id="aiProvider" aria-describedby="aiProviderHint"></select>
+            <label for="apiKey" id="apiKeyLabel">API key (optional)</label>
+            <input type="password" id="apiKey" autocomplete="off" spellcheck="false" placeholder="Leave blank to stay local-only">
+            <div class="toggle-row"><span>Remember on this device only (not in the document)</span><input type="checkbox" id="rememberApiKey"></div>
+            <label for="aiModel">Model</label>
+            <select id="aiModel"></select>
+            <div data-simple-hide>
+              <label for="aiModelCustom">Or a custom model id (advanced)</label>
+              <input type="text" id="aiModelCustom" autocomplete="off" spellcheck="false" placeholder="Leave blank to use the model above">
+            </div>
+            <p id="aiProviderHint" class="help-muted" style="font-size:10px;margin:4px 0;"></p>
+            <p id="aiUsageMeter" class="help-muted" style="font-size:10px;margin:4px 0;" aria-live="polite"></p>
+            <p class="help-muted pe-cloud-disclosure">Everything works offline without a key. A subscription such as ChatGPT Plus, Claude Pro, Gemini Advanced or Copilot is <strong>not</strong> an API key; this feature needs a pay-as-you-go (or free-tier) API key from the provider. Nothing is sent until you click an AI action and confirm; then only the prompt, the passage you chose and (if built) the manuscript outline go to the provider you picked. The key stays in this browser profile only, never in the document. AI suggestions are never applied automatically.</p>
           </div>
           <p class="help-muted" style="font-size:10px;margin:6px 0 4px;">Task pane theme only — Word document canvas stays as Word sets it.</p>
           <fieldset class="pe-theme-options" id="peThemeFieldset">
@@ -754,15 +787,17 @@
           </div>
           <div class="toggle-row"><span>Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" checked></div>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="safety" style="margin-top:10px;">Reset Safety to defaults</button>
-          <details class="help-box help-muted" style="margin-top:8px;">
-            <summary>Optional Gemini session token ceiling</summary>
-            <p style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Off by default (same as v2). When on, blocks Gemini Coach, Deep Audit, and rewrite after an estimated session budget.</p>
-            <div class="toggle-row"><span>Enforce session token ceiling</span><input type="checkbox" id="aiEnforceSessionCeiling"></div>
+          <details class="help-box help-muted" style="margin-top:8px;" id="peAiLimitsBox">
+            <summary>AI help limits (token budget)</summary>
+            <p style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Hard limits keep optional AI help from burning tokens. Counts are estimates (or provider-reported usage). Nothing runs in the background; every call asks first.</p>
+            <div class="toggle-row"><span>Hard stop at the limits (recommended)</span><input type="checkbox" id="aiEnforceSessionCeiling" checked></div>
             <div class="form-group" style="margin-top:6px;">
-              <label for="aiMaxSessionTokens">Max estimated tokens per browser session</label>
+              <label for="aiMaxSessionTokens">Max tokens per session (this pane)</label>
               <input type="number" id="aiMaxSessionTokens" min="1000" max="500000" step="1000" value="50000">
+              <label for="aiMaxDayTokens">Max tokens per day (this device)</label>
+              <input type="number" id="aiMaxDayTokens" min="1000" max="2000000" step="1000" value="150000">
             </div>
-            <button type="button" class="btn-secondary" onclick="resetAiSessionTokens()">Reset session token counter</button>
+            <button type="button" class="btn-secondary" onclick="resetAiSessionTokens()">Reset session counter</button>
           </details>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-onboarding">
@@ -915,6 +950,7 @@
   <script src="lib/config-guard.js"></script>
   <script src="lib/text-metrics.js"></script>
   <script src="lib/proper-noun-analyse.js"></script>
+  <script src="lib/genre-profiles.js"></script>
   <script src="lib/lexical-banks.js"></script>
   <script src="lib/editor-heuristics.js"></script>
   <script src="lib/custom-style-guide.js"></script>
@@ -934,6 +970,9 @@
   <script src="lib/local-rewrite.js"></script>
   <script src="lib/lexical-shaper.js"></script>
   <script src="lib/local-coach.js"></script>
+  <script src="lib/ai-safety.js"></script>
+  <script src="lib/ai-key-store.js"></script>
+  <script src="lib/ai-providers.js"></script>
   <script src="lib/gemini-client.js"></script>
   <script src="lib/ai-quota-manager.js"></script>
   <script src="lib/report-docx-export.js"></script>

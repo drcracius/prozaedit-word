@@ -49,6 +49,10 @@ ProzaEdit.LocalCoach = {
       "a/an and duplicate-word flags are heuristics — read in context before Apply.",
       "For batch find/replace at scale, use Word with your own macros or external editor tools.",
     ],
+    "Genre craft": [
+      "Genre flags compare your excerpt with the usual range for the genre you picked (Target tab); change the genre if it does not fit.",
+      "Clichés are suggestions: keep one if it is deliberate (a parody, a character's voice).",
+    ],
     "Style guide": [
       "Cards cite Plain Language, Strunk (1920), GOV.UK, or Microsoft/Google — see Target → Style basis.",
       "These are suggestions, not legal or Chicago/AP rules; mute noisy rules per document.",
@@ -134,7 +138,14 @@ ProzaEdit.LocalCoach = {
     "Apply fixes with undo available (toolbar ↶ Undo).",
   ],
 
-  forIssue(item) {
+  genreTips(ctx) {
+    const G = ProzaEdit.Genres;
+    if (!G) return [];
+    const p = G.resolve(ctx && ctx.manuscriptType);
+    return p.coachTips || [];
+  },
+
+  forIssue(item, ctx) {
     const mod = item?.module || "";
     let tips = this.MODULE_TIPS[mod];
     if (!tips && mod.startsWith("Style guide")) tips = this.MODULE_TIPS["Style guide"];
@@ -145,17 +156,20 @@ ProzaEdit.LocalCoach = {
     if (item?.targetText && !String(item.targetText).startsWith("(")) {
       lines.push(`Passage: “${String(item.targetText).substring(0, 120)}”`);
     }
+    const gt = this.genreTips(ctx);
+    if (gt.length) lines.push("", `For ${ProzaEdit.Genres.resolve(ctx.manuscriptType).label}:`, ...gt.map((t) => `• ${t}`));
     lines.push("", "Try: local paraphrase (Rewrite tab) or Word Copilot for a full rewrite.");
     return lines.join("\n");
   },
 
-  answer(question, profileText) {
+  answer(question, profileText, ctx) {
     const q = String(question || "").trim();
     const lines = ["**ProzaEdit Local Coach** (0 tokens)", ""];
     if (profileText) lines.push(profileText, "");
     for (const block of this.INTENT_TIPS) {
       if (block.re.test(q)) {
         block.tips.forEach((t) => lines.push(`• ${t}`));
+        this.genreTips(ctx).slice(0, 2).forEach((t) => lines.push(`• (${ProzaEdit.Genres.resolve(ctx.manuscriptType).label}) ${t}`));
         lines.push("");
         lines.push("Need generative prose? Use Word Copilot on the selection.");
         return lines.join("\n");
