@@ -27,19 +27,36 @@ ProzaEdit.EditApply = {
    * deps.trackingSupported === false short-circuits to "unknown" without touching the API.
    */
   async detectTracking(ctx, deps) {
-    if (deps && deps.trackingSupported === false) return "unknown";
+    const doc = this._queueTracking(ctx, deps);
+    if (!doc) return "unknown";
     try {
-      const doc = ctx && ctx.document;
-      if (!doc || typeof doc.load !== "function") return "unknown";
-      doc.load("changeTrackingMode");
       await ctx.sync();
-      const m = String(doc.changeTrackingMode || "");
-      if (m === "Off") return "off";
-      if (m === "TrackAll" || m === "TrackMineOnly") return "on";
-      return "unknown";
     } catch (_) {
       return "unknown";
     }
+    return this._readTracking(doc);
+  },
+
+  /** Queue the Track Changes read on the next sync (no extra round trip). Returns the document or null. */
+  _queueTracking(ctx, deps) {
+    if (deps && deps.trackingSupported === false) return null;
+    try {
+      const doc = ctx && ctx.document;
+      if (!doc || typeof doc.load !== "function") return null;
+      doc.load("changeTrackingMode");
+      return doc;
+    } catch (_) {
+      return null;
+    }
+  },
+
+  _readTracking(doc) {
+    try {
+      const m = String((doc && doc.changeTrackingMode) || "");
+      if (m === "Off") return "off";
+      if (m === "TrackAll" || m === "TrackMineOnly") return "on";
+    } catch (_) {}
+    return "unknown";
   },
 
   _norm(s) {
@@ -143,7 +160,9 @@ ProzaEdit.EditApply = {
       throw tag(new Error("This text appears too many times to apply safely. Nothing was changed. Edit it in Word."), "before-edit");
     }
     const candidates = items;
+    let trackDoc = null;
     try {
+      trackDoc = this._queueTracking(ctx, deps);
       candidates.forEach((it) => it.load("text"));
       await ctx.sync();
     } catch (e) {
@@ -204,7 +223,7 @@ ProzaEdit.EditApply = {
       hit = group[occ.indexOf(at)];
       expectedPara = P.slice(0, at) + this._norm(toText) + P.slice(at + want.length);
     }
-    const tracking = await this.detectTracking(ctx, deps);
+    const tracking = this._readTracking(trackDoc);
     const tracked = tracking === "on";
     let inserted;
     try {

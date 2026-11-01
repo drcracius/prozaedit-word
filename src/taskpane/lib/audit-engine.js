@@ -311,14 +311,14 @@ ProzaEdit.Audit = {
         });
       }
     });
-    const uk = ["colour", "centre", "organise", "recognise", "favour", "behaviour", "defence"];
-    const us = ["color", "center", "organize", "recognize", "favor", "behavior", "defense"];
+    const uk = ["colour", "centre", "organise", "recognise", "favour", "behaviour", "defence", "analyse", "apologise", "neighbour", "honour", "labour", "flavour", "humour", "realise", "jewellery", "aluminium", "travelled", "theatre"];
+    const us = ["color", "center", "organize", "recognize", "favor", "behavior", "defense", "analyze", "apologize", "neighbor", "honor", "labor", "flavor", "humor", "realize", "jewelry", "aluminum", "traveled", "theater"];
     const foreign = language === "en-GB" ? us : uk;
     const stripped = text.replace(/["\u201C][^"\u201C\u201D]*["\u201D]/g, (q) => " ".repeat(q.length));
-    foreign.slice(0, 8).forEach((word) => {
+    foreign.forEach((word) => {
       // Lowercase anywhere, or Capitalised only at a sentence start. Mid-sentence "Centre"/"Defence" is a name
       // (Pompidou Centre, Ministry of Defence). Words inside quoted speech are a character's dialect, not an error.
-      const re = new RegExp(`(?:\\b${word}\\b|(?:^|[.!?]\\s+)${word[0].toUpperCase()}${word.slice(1)}\\b)`);
+      const re = new RegExp(`(?:\\b${word}(?:s|d|ed|ing)?\\b|(?:^|[.!?]\\s+)${word[0].toUpperCase()}${word.slice(1)}(?:s|d|ed|ing)?\\b)`);
       if (re.test(stripped)) {
         push({
           ruleId: `spell:dialect:${word}`,
@@ -772,7 +772,7 @@ ProzaEdit.Audit = {
       }
     }
     if (t.includes("Business")) {
-      ["synergy", "leverage", "circle back", "move the needle", "boil the ocean", "low-hanging fruit", "drill down", "touch base"].forEach((b) => {
+      ["synergy", "leverage", "circle back", "move the needle", "boil the ocean", "low-hanging fruit", "drill down", "touch base", "paradigm shift", "deep dive", "take this offline", "think outside the box", "win-win", "game changer", "game-changer", "value-add", "mission critical"].forEach((b) => {
         if (lower.includes(b)) {
           push({
             ruleId: `biz:${b}`,

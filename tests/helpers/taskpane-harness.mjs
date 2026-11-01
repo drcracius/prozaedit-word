@@ -97,6 +97,9 @@ export function createWordMock(opts = {}) {
       const ctx = {
         document: {
           getSelection: () => makeRange(state.selection),
+          get changeTrackingMode() {
+            return state.trackingMode;
+          },
           body: {
             get text() {
               return state.paragraphs.join("\n");
@@ -136,6 +139,7 @@ export function createWordMock(opts = {}) {
     HostType: { Word: "Word" },
     AsyncResultStatus: { Succeeded: "succeeded", Failed: "failed" },
     context: {
+      requirements: { isSetSupported: (name, ver) => !(state.apiMax && Number(ver) > state.apiMax) },
       document: {
         settings: {
           get: (k) => settings[k],

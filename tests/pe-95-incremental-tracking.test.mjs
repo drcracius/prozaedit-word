@@ -117,3 +117,82 @@ test("PE-95: tracked Apply gives no undo anchors; a wrong result is still refuse
   const strict = ctxWith("Off", "said", (t) => "said" + t);
   await assert.rejects(E.swapText(strict.ctx, "said", "told", { searchInScope: async () => [strict.hit], replaceLocation: "R" }), (e) => e.peApplyPhase === "uncertain");
 });
+
+test("PE-95: tracked Apply with an anchor skips paragraph-equality verify and drops undo; untracked keeps both", async () => {
+  const E = EA();
+  const para = "He said it twice. Then the clerk said hello.";
+  const { anchor } = E.buildAnchor(para, "hello");
+  const mk = (mode, paraAfter) => {
+    const doc = { load() {}, changeTrackingMode: mode };
+    const hit = {
+      text: "hello",
+      load() {},
+      paragraphs: { getFirst: () => ({ text: para, load() {} }) },
+      insertText: (t) => ({ text: t, load() {}, paragraphs: { getFirst: () => ({ text: paraAfter, load() {} }) } }),
+    };
+    return { ctx: { document: doc, sync: async () => {} }, hit };
+  };
+  const messy = para.replace("hello", "goodbye") + " [deleted: hello]";
+  const tr = mk("TrackAll", messy);
+  const r = await E.swapText(tr.ctx, "hello", "goodbye", { searchInScope: async () => [tr.hit], replaceLocation: "R", anchor });
+  assert.equal(r.tracked, true);
+  assert.equal(r.undoAnchor, null);
+  assert.equal(r.redoAnchor, null);
+  const off = mk("Off", messy);
+  await assert.rejects(E.swapText(off.ctx, "hello", "goodbye", { searchInScope: async () => [off.hit], replaceLocation: "R", anchor }), (e) => e.peApplyPhase === "uncertain");
+  const good = mk("Off", para.replace("hello", "goodbye"));
+  const g = await E.swapText(good.ctx, "hello", "goodbye", { searchInScope: async () => [good.hit], replaceLocation: "R", anchor });
+  assert.ok(g.undoAnchor && g.redoAnchor && g.tracked === false);
+});
+
+test("PE-95: reused chapters keep sentence-initial-word filtering (lower-case counts are merged)", async () => {
+  const { ManuscriptContextIndex: MCI } = loadMci();
+  const mk = (extra) => {
+    const t = [], h = [];
+    for (let c = 0; c < 3; c++) {
+      h.push(t.length);
+      t.push(`Chapter ${c + 1}`);
+      t.push("Morning came late. The morning light and the morning air; every morning she walked. Mara Quillon smiled.");
+    }
+    if (extra) t.push(extra);
+    return { t, h };
+  };
+  const cache = { map: new Map() };
+  const a = mk();
+  await MCI.buildFromDocument(makeDoc(a.t, a.h).context, opts({ derivedCache: cache }));
+  const b = mk("Closing note.");
+  const s = {};
+  const inc = await MCI.buildFromDocument(makeDoc(b.t, b.h).context, opts({ derivedCache: cache, statsOut: s }));
+  assert.ok(s.reused >= 2);
+  const full = await MCI.buildFromDocument(makeDoc(b.t, b.h).context, opts());
+  assert.equal(strip(inc), strip(full));
+  assert.ok(!full.nameSeeds.includes("Morning"), "premise: common sentence-initial word is filtered");
+});
+
+test("PE-95: reading Track Changes adds no extra Word round trip to Apply", async () => {
+  const E = EA();
+  const count = async (supported) => {
+    const { ctx, hit } = ctxWith("TrackAll", "said");
+    let n = 0;
+    const sync = ctx.sync;
+    ctx.sync = async () => { n++; return sync(); };
+    await E.swapText(ctx, "said", "told", { searchInScope: async () => [hit], replaceLocation: "R", trackingSupported: supported });
+    return n;
+  };
+  assert.equal(await count(true), await count(false));
+});
+
+test("PE-95: bank growth - UK spellings with endings, new pleonasms, jargon and dialogue length use spoken words only", async () => {
+  const { loadEngine, ctxFor } = await import("./helpers/corpus-harness.mjs");
+  const P = loadEngine();
+  const ids = (t, g = "Fiction (General)") => P.Audit.run(t, ctxFor(g)).suggestions.map((s) => s.ruleId);
+  assert.ok(ids("She realised the neighbours had travelled far.").some((r) => r === "spell:dialect:realise"));
+  assert.ok(ids("She realised the neighbours had travelled far.").some((r) => r === "spell:dialect:neighbour"));
+  assert.ok(!ids('"I realised," she said.').some((r) => r.startsWith("spell:dialect")), "quoted speech is a character's voice");
+  assert.ok(ids("We need advance planning and a general consensus.", "Business / Corporate Report").filter((r) => r.startsWith("rep:pleo")).length >= 2);
+  assert.ok(ids("This is a paradigm shift and a real game changer.", "Business / Corporate Report").some((r) => r.startsWith("biz:")));
+  const narr = `"No." ${"She looked at the long grey road and waited for the bus to come around the bend, "}and then she sighed again.`;
+  assert.ok(!ids(narr).some((r) => r.startsWith("dlg:long")), "narration after a short quote is not a long speech");
+  const speech = `"${"I have waited a very long time to say this and I will say all of it now, without stopping, ".repeat(2)}"`;
+  assert.ok(ids(speech).some((r) => r.startsWith("dlg:long")), "real long speech still flagged");
+});

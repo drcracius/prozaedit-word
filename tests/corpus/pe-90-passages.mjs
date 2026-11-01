@@ -62,7 +62,7 @@ export const PE90 = [
   [GF, "probe-multi-quote", `"I remember the house," Aunt Vera began. "The porch sagged and the swing was always broken.\n\n"My mother hated that swing. She said it sounded like a hurt animal."`, []],
   [RO, "probe-aan", `It was an honest hour to call, a hundred yards from an HTML convention, and a unique offer at that.`, []],
   [SF, "probe-aan", `She wrote an MRI protocol, a UFO report and an FBI request before the unit shipped.`, []],
-  [AC, "probe-testament", `The Old Testament and the New Testament were both compared, and the tapestry of sources was analysed.`, []],
+  [AC, "probe-testament", `The Old Testament and the New Testament were both compared, and the tapestry of sources was analyzed.`, []],
   [HI, "probe-tapestry", `A great tapestry hung above the dais, and a beacon burned on the hill above the realm's northern border.`, []],
   [FA, "probe-realm", `The realm had never been so quiet. A beacon was lit at Harrowmere, and the tapestry in the hall was taken down.`, []],
   [GF, "probe-whether", `"I don't know whether or not he'll come," she said. "Whether or not matters less than you think."`, []],

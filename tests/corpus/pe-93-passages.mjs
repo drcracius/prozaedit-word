@@ -85,7 +85,7 @@ export const PE93_CLEAN = [
   [TJ, "numbers", `The company shipped 1.2 million units in 2023, a 14% increase, and expects 1.5 million this year.`],
   [TJ, "steps", `1. Open Settings.\n2. Choose Network.\n3. Select the Wi-Fi name and enter the password.`],
   // tricky false-positive probes
-  [GF, "probe-had-had", `By the time the police arrived, the neighbours had had their say and the street was quiet.`],
+  [GF, "probe-had-had", `By the time the police arrived, the neighbors had had their say and the street was quiet.`],
   [GF, "probe-that-that", `She wondered whether the claim that that bridge was haunted had any basis at all.`],
   [GF, "probe-very-name", `Very Reverend Alistair Cole blessed the boat, and the crowd, politely, pretended not to be cold.`],
   [GF, "probe-ellipsis", `"I just thought... never mind." He looked at his hands. "It's nothing."`],

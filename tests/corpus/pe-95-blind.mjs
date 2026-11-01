@@ -131,7 +131,7 @@ export const PE95_CLEAN = [
   [GF, "plain", `Outside, the snow kept falling. Inside, the clock kept ticking, and neither of them spoke of the empty chair.`],
   [RO, "plain", `Nina caught his eye across the crowded bookshop and looked quickly down at a shelf of cookery titles she had no intention of buying.`],
   [RO, "plain", `He walked her home the long way, past the canal, and neither of them mentioned the shortcut.`],
-  [RO, "plain", `Her laugh was a surprise, a low unguarded sound, and Theo realised he'd been trying to earn it all evening.`],
+  [RO, "plain", `Her laugh was a surprise, a low unguarded sound, and Theo realized he'd been trying to earn it all evening.`],
   [RO, "plain", `They'd agreed on friends, and for six weeks they'd been very good at it.`],
   [RO, "plain", `The letter was two lines long. She read it eleven times anyway.`],
   [RO, "plain", `On the third date he brought her soup, because she'd mentioned a cold in passing, and that was the moment she knew.`],
