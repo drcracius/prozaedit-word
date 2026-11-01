@@ -1,6 +1,6 @@
 # Beta onboarding comms (owner copy-paste)
 
-Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit Word 2.0.0.15** (+ PE-61–65 UX pack). No manifest bump required for these UX changes.
+Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit Word 2.0.0.15** (+ PE-61–67 UX pack). No manifest bump required for these UX changes.
 
 ---
 
@@ -18,6 +18,8 @@ Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit 
 4. **Checks** — turn on **1–2 core checks**, hit **Run audit**. Extended, fiction-only, partner tools, and scans live under **More checks (optional)**.
 
 **Not a Grammarly clone:** under **Run audit**, the pane reminds you that checks run when you click — not while you type. **Help → New to editing tools?** is a short list for authors new to add-ins (one chapter at a time, fix important issues first, dictionary for names). To see **Coach**, **Rewrite**, and **Thesaurus**, open **Settings → Essentials** and turn off **Simple mode** (or use **Turn off Simple mode**).
+
+**Tab flow (PE-67):** In Simple mode the tab strip reads **Start → Run → Fix → Help** (scope, run check, fix cards, help). Use the **Related workflow steps** line under the toolbar to jump back to scope or run again; full tab names return when Simple mode is off. Details: [RELEASE-NOTES-PE-67-TAB-FLOW.md](./RELEASE-NOTES-PE-67-TAB-FLOW.md).
 
 ---
 
@@ -46,6 +48,7 @@ Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit 
 - [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md)
 - [RELEASE-NOTES-PE-64-SIMPLIFY.md](./RELEASE-NOTES-PE-64-SIMPLIFY.md)
 - [RELEASE-NOTES-PE-65-AVERAGE-USER.md](./RELEASE-NOTES-PE-65-AVERAGE-USER.md)
+- [RELEASE-NOTES-PE-67-TAB-FLOW.md](./RELEASE-NOTES-PE-67-TAB-FLOW.md)
 
 ---
 

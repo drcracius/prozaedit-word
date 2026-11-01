@@ -53,10 +53,17 @@ test("onboarding tour and audit footnote DOM ids wired", () => {
   assert.match(html, /id="peAuditSeverityLegend"/);
   assert.match(html, /id="peChecksReportDepthPlainHint"/);
   assert.match(html, /id="peReportDepthOptionsPlain"/);
+  assert.match(html, /id="peWorkflowCrossNav"/);
+  assert.match(html, /workflow-nav-helpers\.js/);
+  assert.match(html, /data-pe-tab-label/);
+  assert.match(html, /id="peChecksPipelineHint"/);
+  assert.match(html, /id="peAuditPipelineHint"/);
   const src = fs.readFileSync(taskpanePath, "utf8");
   assert.match(src, /onboardingTourComplete/);
   assert.match(src, /maybeInitOnboardingTour/);
   assert.match(src, /updateAuditScopeFootnote/);
   assert.match(src, /turnOffSimpleModeFromEssentials/);
   assert.match(src, /applyPlainLanguageLayer/);
+  assert.match(src, /updateWorkflowCrossNav/);
+  assert.match(src, /applyTabStripOrder/);
 });

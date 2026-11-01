@@ -1582,8 +1582,60 @@ body.pe-simple-first-run-active .pe-first-audit-checklist {
   font-size: 11px;
 }
 
+.pe-workflow-cross-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 10px;
+  margin: 0 0 6px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.pe-workflow-cross-nav.hidden {
+  display: none !important;
+}
+
+.pe-workflow-cross-link-primary {
+  font-weight: 700;
+}
+
+.pe-workflow-cross-sep {
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.pe-pipeline-hint {
+  font-size: 10px;
+  margin: 0 0 6px;
+}
+
+.pe-post-run-nav {
+  font-size: 10px;
+  margin: 0 0 8px;
+}
+
+.card-footer-trust {
+  font-size: 10px;
+  margin: 8px 0 0;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+
+.pe-target-scope-primary {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  background: var(--surface);
+}
+
 .nav-tabs {
   display: flex;
+  flex-wrap: wrap;
   border-bottom: 2px solid var(--border);
   margin-bottom: 10px;
   background: var(--bg);

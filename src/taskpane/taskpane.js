@@ -882,7 +882,9 @@ Office.onReady((info) => {
     setupShaperSliderPersistence();
     setupSettingsKeywordFilter();
     bindWorkflowStepper();
+    bindWorkflowCrossNavDelegation();
     restoreLastActiveTab();
+    updateWorkflowCrossNav(getCurrentActiveTabId() || "tab1");
     updateUndoRedoUi();
     updateAuditFilterChips();
     updateAuditSortChips();
@@ -1019,6 +1021,8 @@ function showTab(tabId) {
   }
   if (tabId === "tab3") updateActiveChecksHint();
   if (tabId === "tab6") updateRewriteBackNav();
+  updateWorkflowCrossNav(tabId);
+  updateChecksPostRunNav();
 }
 
 function bindWorkflowStepper() {
@@ -1640,6 +1644,10 @@ function applyPlainLanguageLayer() {
   updateAuditSeverityLegend();
   updateChecksReportDepthHint();
   updateAuditFilterChips();
+  applyTabStripOrder();
+  updateTabStripVisibleLabels();
+  updatePipelineHints();
+  updateSimpleModeAdvancedTabsList();
 }
 
 function updatePlainLanguageScopeSelect() {
@@ -1694,7 +1702,14 @@ function updateSimpleModeTabHints() {
   document.querySelectorAll(".tab-btn[data-pe-tab]").forEach((btn) => {
     const tabId = btn.dataset.peTab;
     const hintText = hints[tabId];
-    if (hintText) btn.setAttribute("title", hintText);
+    const aria = ProzaEdit.WorkflowNav?.tabAriaLabel?.(
+      tabId,
+      btn.dataset.peTabDefaultLabel || tabId,
+      on
+    );
+    if (aria) btn.setAttribute("aria-label", aria);
+    else btn.removeAttribute("aria-label");
+    if (hintText && on) btn.setAttribute("title", hintText);
     else btn.removeAttribute("title");
     let sub = btn.querySelector(".pe-tab-hint");
     if (on && hintText) {
@@ -1709,6 +1724,128 @@ function updateSimpleModeTabHints() {
       sub.classList.add("hidden");
     }
   });
+}
+
+function applyTabStripOrder() {
+  const nav = ProzaEdit.WorkflowNav;
+  if (!nav?.tabFlexOrder) return;
+  const on = isChecked("simpleMode", false);
+  document.querySelectorAll(".tab-btn[data-pe-tab]").forEach((btn) => {
+    btn.style.order = String(nav.tabFlexOrder(btn.dataset.peTab, on));
+  });
+}
+
+function updateTabStripVisibleLabels() {
+  const nav = ProzaEdit.WorkflowNav;
+  if (!nav?.tabVisibleLabel) return;
+  const on = isChecked("simpleMode", false);
+  document.querySelectorAll(".tab-btn[data-pe-tab]").forEach((btn) => {
+    const tabId = btn.dataset.peTab;
+    const def = btn.dataset.peTabDefaultLabel || tabId;
+    const labelEl = btn.querySelector("[data-pe-tab-label]");
+    if (labelEl) labelEl.textContent = nav.tabVisibleLabel(tabId, def, on);
+  });
+}
+
+function updatePipelineHints() {
+  const on = isChecked("simpleMode", false);
+  const text = on
+    ? ProzaEdit.WorkflowNav?.PIPELINE_HINT_SIMPLE ||
+      ProzaEdit.PlainLanguage?.auditFilterLanesHint?.(true) ||
+      ""
+    : "";
+  ["peChecksPipelineHint", "peAuditPipelineHint"].forEach((id) => {
+    const el = getEl(id);
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle("hidden", !text);
+  });
+  const tagline = getEl("peChecksRunAuditTagline");
+  if (tagline && on && ProzaEdit.PlainLanguage?.CHECKS_RUN_AUDIT_TAGLINE) {
+    tagline.textContent = ProzaEdit.PlainLanguage.CHECKS_RUN_AUDIT_TAGLINE;
+  }
+}
+
+function updateSimpleModeAdvancedTabsList() {
+  const el = getEl("peSimpleModeAdvancedTabsList");
+  if (!el || !ProzaEdit.WorkflowNav?.ADVANCED_TABS_WHEN_SIMPLE_OFF) return;
+  const on = isChecked("simpleMode", false);
+  el.classList.toggle("hidden", !on);
+  if (on) {
+    el.innerHTML = `<strong>All features:</strong> ${escapeHtml(ProzaEdit.WorkflowNav.ADVANCED_TABS_WHEN_SIMPLE_OFF)} Turn off Simple mode above.`;
+  }
+}
+
+function hasAuditResultsForNav() {
+  return currentAuditSuggestions.length > 0 || sessionAuditCompletedThisSession;
+}
+
+function handleWorkflowCrossNavAction(link) {
+  if (!link) return;
+  if (link.targetTab === "__settings_dictionary__") {
+    openSettingsModal("dictionary");
+    return;
+  }
+  if (link.id === "run-audit") {
+    runPrimaryAudit();
+    return;
+  }
+  if (link.targetTab) showTab(link.targetTab);
+}
+
+function bindWorkflowCrossNavDelegation() {
+  const navEl = getEl("peWorkflowCrossNav");
+  if (!navEl || navEl.dataset.peCrossDelegated) return;
+  navEl.dataset.peCrossDelegated = "1";
+  navEl.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("[data-pe-cross-nav]");
+    if (!btn || !navEl.contains(btn)) return;
+    handleWorkflowCrossNavAction({
+      id: btn.dataset.peCrossNav,
+      targetTab: btn.dataset.peCrossTab,
+    });
+  });
+}
+
+function updateWorkflowCrossNav(activeTabId) {
+  const navEl = getEl("peWorkflowCrossNav");
+  const nav = ProzaEdit.WorkflowNav;
+  if (!navEl || !nav?.crossNavLinks) return;
+  bindWorkflowCrossNavDelegation();
+  const links = nav.crossNavLinks(activeTabId, {
+    hasAuditResults: hasAuditResultsForNav(),
+    auditBusy,
+  });
+  if (!links.length) {
+    navEl.classList.add("hidden");
+    navEl.innerHTML = "";
+    return;
+  }
+  navEl.classList.remove("hidden");
+  navEl.innerHTML = links
+    .map(
+      (link) =>
+        `<button type="button" class="btn-linkish pe-workflow-cross-link${link.primary ? " pe-workflow-cross-link-primary" : ""}" data-pe-cross-nav="${escapeHtml(link.id)}" data-pe-cross-tab="${escapeHtml(link.targetTab || "")}">${escapeHtml(link.label)}</button>`
+    )
+    .join('<span class="pe-workflow-cross-sep" aria-hidden="true">·</span>');
+}
+
+function updateChecksPostRunNav() {
+  const el = getEl("peChecksPostRunNav");
+  if (!el) return;
+  const show =
+    sessionAuditCompletedThisSession &&
+    hasAuditResultsForNav() &&
+    !auditBusy &&
+    getCurrentActiveTabId() === "tab3";
+  if (!show) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+  el.classList.remove("hidden");
+  el.innerHTML =
+    'Audit finished — <button type="button" class="btn-linkish" onclick="showTab(\'tab4\')">View issues on Fix</button>';
 }
 
 function updateSettingsPlainLanguageLabels() {
@@ -3487,6 +3624,8 @@ function finalizeAudit(result, label) {
   const summary = getEl("summaryReport");
   if (summary) summary.innerHTML = html;
   setAuditSuggestions(suggestions);
+  updateWorkflowCrossNav(getCurrentActiveTabId() || "tab4");
+  updateChecksPostRunNav();
   cacheAudit(label, html, suggestions, traffic, score);
   lastAuditHadTruncation = suggestions.some((s) => s.id === "sys_trunc" || s.ruleId === "sys:truncated");
   lastAuditScopeModeAtRun = getScopeMode();
@@ -3723,6 +3862,11 @@ function renderAuditCards(list) {
           <button type="button" class="btn-go" data-a="chat" title="Optional Gemini">Gemini</button>
           <button type="button" class="btn-dismiss btn-with-icon" data-a="dismiss" data-pe-tip="btn-card-dismiss" aria-label="Dismiss finding">${ic("eye-off")} Dismiss</button>
         </div>
+        ${
+          ProzaEdit.WorkflowNav?.shouldShowCardDictionaryFooter?.(item)
+            ? '<p class="card-footer-trust help-muted"><button type="button" class="btn-linkish" data-a="dict-footer">Manage dictionary</button> for names and terms that should not be flagged.</p>'
+            : ""
+        }
       </div>`;
     div.querySelector('[data-a="goto"]').onclick = () => goToIssue(item.targetText);
     const undoBtn = div.querySelector('[data-a="undo"]');
@@ -3733,6 +3877,8 @@ function renderAuditCards(list) {
     div.querySelector('[data-a="chat"]').onclick = () => sendIssueToChat(item);
     if (canApply) div.querySelector('[data-a="apply"]').onclick = () => applyFix(id, item.targetText, item.replacementText);
     div.querySelector('[data-a="dict"]').onclick = () => addDictionaryWordFromCard(item.targetText);
+    const dictFooter = div.querySelector('[data-a="dict-footer"]');
+    if (dictFooter) dictFooter.onclick = () => openSettingsModal("dictionary");
     if (showHouse) div.querySelector('[data-a="house"]').onclick = () => addCustomStyleFromCard(item);
     div.querySelector('[data-a="mute"]').onclick = () => muteRule(item);
     div.querySelector('[data-a="dismiss"]').onclick = () => dismissCard(item);

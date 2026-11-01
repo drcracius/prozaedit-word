@@ -116,22 +116,61 @@
     </button>
   </div>
   <p id="peWorkflowStatusLine" class="pe-workflow-status-line help-muted" aria-live="polite">Scope: highlighted selection — refresh count on Target for character estimate.</p>
+  <nav id="peWorkflowCrossNav" class="pe-workflow-cross-nav hidden" aria-label="Related workflow steps"></nav>
   <div class="nav-tabs" role="tablist" aria-label="ProzaEdit sections">
-    <button type="button" class="tab-btn active" data-pe-tab="tab1" role="tab" aria-selected="true" onclick="showTab('tab1')">Target</button>
-    <button type="button" class="tab-btn" data-pe-tab="tab2" data-simple-hide role="tab" onclick="showTab('tab2')">Thesaurus</button>
-    <button type="button" class="tab-btn" data-pe-tab="tab3" role="tab" onclick="showTab('tab3')">Checks</button>
-    <button type="button" class="tab-btn" data-pe-tab="tab4" role="tab" onclick="showTab('tab4')">Audit <span id="peAuditTabBadge" class="pe-tab-badge hidden" aria-label="Open issue count"></span></button>
-    <button type="button" class="tab-btn" data-pe-tab="tab5" data-simple-deemphasize role="tab" onclick="showTab('tab5')">Coach</button>
-    <button type="button" class="tab-btn" data-pe-tab="tab6" data-simple-deemphasize role="tab" onclick="showTab('tab6')">Rewrite</button>
-    <button type="button" class="tab-btn" data-pe-tab="tab7" role="tab" onclick="showTab('tab7')">Help</button>
+    <button type="button" class="tab-btn active" data-pe-tab="tab1" data-pe-tab-default-label="Target" role="tab" aria-selected="true" onclick="showTab('tab1')"><span data-pe-tab-label>Target</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab2" data-pe-tab-default-label="Thesaurus" data-simple-hide role="tab" onclick="showTab('tab2')"><span data-pe-tab-label>Thesaurus</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab3" data-pe-tab-default-label="Checks" role="tab" onclick="showTab('tab3')"><span data-pe-tab-label>Checks</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab4" data-pe-tab-default-label="Audit" role="tab" onclick="showTab('tab4')"><span data-pe-tab-label>Audit</span> <span id="peAuditTabBadge" class="pe-tab-badge hidden" aria-label="Open issue count"></span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab5" data-pe-tab-default-label="Coach" data-simple-deemphasize role="tab" onclick="showTab('tab5')"><span data-pe-tab-label>Coach</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab6" data-pe-tab-default-label="Rewrite" data-simple-deemphasize role="tab" onclick="showTab('tab6')"><span data-pe-tab-label>Rewrite</span></button>
+    <button type="button" class="tab-btn" data-pe-tab="tab7" data-pe-tab-default-label="Help" role="tab" onclick="showTab('tab7')"><span data-pe-tab-label>Help</span></button>
   </div>
 
   <div id="tab1" class="tab-content active" role="tabpanel">
-    <p id="peTargetRecommendedHint" class="pe-target-recommended help-box hidden" style="margin-top:0;" role="status"><strong>Recommended:</strong> <strong>Selected chapters</strong> scope + report depth <strong>Light</strong> or <strong>Balanced</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">Settings → Audit</button>).</p>
-    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Target</strong> is daily profile, scope, and style. Open toolbar <strong>Settings</strong> for safety toggles, dictionary, citation tools, and custom style rules. Changes auto-save or use <strong>Save now</strong>. On Word web, drag the pane divider for width — see Help → Platforms.</p>
-    <p class="pe-target-scope-hint help-muted" style="font-size:10px;margin:0 0 8px;">Profile &amp; scope — advanced options in <strong>Settings</strong> (toolbar)</p>
+    <p id="peTargetRecommendedHint" class="pe-target-recommended help-box hidden" style="margin-top:0;" role="status"><strong>Recommended:</strong> <strong>Selected chapters</strong> scope + report depth <strong>Light</strong> or <strong>Balanced</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">Settings → Audit</button> · <button type="button" class="btn-linkish" onclick="showTab('tab7')">Help: chapter-first</button>).</p>
+    <p class="pe-target-callout help-box" style="margin-top:0;"><strong>Start here:</strong> pick <strong>scope</strong> below, then open <strong>Run</strong> (Checks) to audit. Profile and style guide are under advanced sections. Toolbar <strong>Settings</strong> holds dictionary, safety, and custom rules.</p>
+    <p class="pe-target-scope-hint help-muted" style="font-size:10px;margin:0 0 8px;">Scope first — profile &amp; style below or in <strong>Settings</strong></p>
+    <div class="form-group pe-target-scope-primary">
+      <label for="scope">Analysis scope</label>
+      <select id="scope" data-pe-tip="sel-manuscript-scope" aria-label="Manuscript scope for audit">
+        <option value="selection" selected>Highlighted / selected text</option>
+        <option value="pages">Page range (approximate)</option>
+        <option value="selected-chapters">Selected chapters (Heading 1–3)</option>
+        <option value="full">Full manuscript</option>
+      </select>
+      <p class="help-inline scope-mode-hint">Modes: <strong>highlighted selection</strong>; <strong>approximate page range</strong> (choose Page range, then set <strong>From page</strong> / <strong>To page</strong> — about 2,800 characters per page); <strong>selected chapters</strong> (checklist when that mode is active); or <strong>full manuscript</strong>.</p>
+      <p id="peFullManuscriptScopeTip" class="help-muted pe-full-ms-tip hidden" role="status" aria-live="polite">For very long documents, try <strong>Selected chapters</strong> or <strong>Page range</strong> (common pro workaround). See <button type="button" class="btn-linkish" onclick="showTab('tab7')">Help</button> for chapter-first workflow.</p>
+      <p id="scopeCharPreview" class="scope-char-preview" aria-live="polite">Select a scope, then click Refresh count.</p>
+      <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="refreshScopeCharPreview()">Refresh count</button>
+    </div>
+    <div id="scopePagesPanel" class="form-group scope-subpanel hidden">
+      <p class="help-inline" style="margin:0 0 6px;font-size:10px;">Word has no page API — pages are estimated at ~2,800 characters each.</p>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div>
+          <label for="scopePageFrom">From page</label>
+          <input type="number" id="scopePageFrom" min="1" value="1" style="width:70px;margin:0;" aria-label="From page">
+        </div>
+        <div>
+          <label for="scopePageTo">To page</label>
+          <input type="number" id="scopePageTo" min="1" value="5" style="width:70px;margin:0;" aria-label="To page">
+        </div>
+      </div>
+    </div>
+    <div id="scopeChapterPanel" class="form-group scope-subpanel hidden">
+      <div id="scopeChapterSelectedWrap">
+        <p class="help-inline scope-chapter-hint">Pick any chapters (non-contiguous OK). Reload after you add headings.</p>
+        <div id="scopeChapterChecklist" class="scope-chapter-checklist" role="group" aria-label="Chapters to include in analysis"></div>
+        <p id="scopeChapterEmptyState" class="scope-chapter-empty hidden" role="status">No chapters selected — check at least one below, or reload the chapter list.</p>
+        <div class="scope-chapter-actions">
+          <button type="button" class="btn-linkish" onclick="selectAllChapterChecks(true)">Select all</button>
+          <button type="button" class="btn-linkish" onclick="selectAllChapterChecks(false)">Clear all</button>
+        </div>
+      </div>
+      <button type="button" class="btn-linkish" onclick="refreshChapterScopeLists()">Reload chapter list from document</button>
+    </div>
     <details class="pe-target-section" open>
-      <summary class="pe-section-title pe-section-summary">Manuscript profile</summary>
+      <summary class="pe-section-title pe-section-summary">Manuscript profile (optional)</summary>
     <div class="form-group">
       <label for="manuscriptType">Manuscript Type</label>
       <select id="manuscriptType" onchange="adaptModules()">
@@ -170,44 +209,6 @@
       </select>
     </div>
     </details>
-    <div class="form-group">
-      <label for="scope">Analysis scope</label>
-      <select id="scope" data-pe-tip="sel-manuscript-scope" aria-label="Manuscript scope for audit">
-        <option value="selection" selected>Highlighted / selected text</option>
-        <option value="pages">Page range (approximate)</option>
-        <option value="selected-chapters">Selected chapters (Heading 1–3)</option>
-        <option value="full">Full manuscript</option>
-      </select>
-      <p class="help-inline scope-mode-hint">Modes: <strong>highlighted selection</strong>; <strong>approximate page range</strong> (choose Page range, then set <strong>From page</strong> / <strong>To page</strong> — about 2,800 characters per page); <strong>selected chapters</strong> (checklist when that mode is active); or <strong>full manuscript</strong>.</p>
-      <p id="peFullManuscriptScopeTip" class="help-muted pe-full-ms-tip hidden" role="status" aria-live="polite">For very long documents, try <strong>Selected chapters</strong> or <strong>Page range</strong> (common pro workaround).</p>
-      <p id="scopeCharPreview" class="scope-char-preview" aria-live="polite">Select a scope, then click Refresh count.</p>
-      <button type="button" class="btn-secondary" style="margin-top:4px;" onclick="refreshScopeCharPreview()">Refresh count</button>
-    </div>
-    <div id="scopePagesPanel" class="form-group scope-subpanel hidden">
-      <p class="help-inline" style="margin:0 0 6px;font-size:10px;">Word has no page API — pages are estimated at ~2,800 characters each.</p>
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-        <div>
-          <label for="scopePageFrom">From page</label>
-          <input type="number" id="scopePageFrom" min="1" value="1" style="width:70px;margin:0;" aria-label="From page">
-        </div>
-        <div>
-          <label for="scopePageTo">To page</label>
-          <input type="number" id="scopePageTo" min="1" value="5" style="width:70px;margin:0;" aria-label="To page">
-        </div>
-      </div>
-    </div>
-    <div id="scopeChapterPanel" class="form-group scope-subpanel hidden">
-      <div id="scopeChapterSelectedWrap">
-        <p class="help-inline scope-chapter-hint">Pick any chapters (non-contiguous OK). Reload after you add headings.</p>
-        <div id="scopeChapterChecklist" class="scope-chapter-checklist" role="group" aria-label="Chapters to include in analysis"></div>
-        <p id="scopeChapterEmptyState" class="scope-chapter-empty hidden" role="status">No chapters selected — check at least one below, or reload the chapter list.</p>
-        <div class="scope-chapter-actions">
-          <button type="button" class="btn-linkish" onclick="selectAllChapterChecks(true)">Select all</button>
-          <button type="button" class="btn-linkish" onclick="selectAllChapterChecks(false)">Clear all</button>
-        </div>
-      </div>
-      <button type="button" class="btn-linkish" onclick="refreshChapterScopeLists()">Reload chapter list from document</button>
-    </div>
     <div class="form-group">
       <label for="language">Language Standard</label>
       <select id="language">
@@ -248,7 +249,9 @@
   </div>
 
   <div id="tab3" class="tab-content" role="tabpanel">
+    <p id="peChecksPipelineHint" class="pe-pipeline-hint help-muted hidden" role="note"></p>
     <p id="checksScopeChip" class="pe-scope-chip help-muted" aria-live="polite">Scope: —</p>
+    <p id="peChecksPostRunNav" class="pe-post-run-nav help-muted hidden" role="status" aria-live="polite"></p>
     <details id="peFirstAuditChecklist" class="help-box help-muted pe-first-audit-checklist">
       <summary>First audit checklist</summary>
       <ol class="help-list pe-first-audit-steps">
@@ -363,6 +366,7 @@
   </div>
 
   <div id="tab4" class="tab-content" role="tabpanel">
+    <p id="peAuditPipelineHint" class="pe-pipeline-hint help-muted hidden" role="note"></p>
     <p id="peSimpleModeAuditBanner" class="pe-simple-audit-banner hidden" role="status" aria-live="polite"></p>
     <p id="auditScopeChip" class="pe-scope-chip pe-audit-scope-chip help-muted" aria-live="polite">Scope (read-only): —</p>
     <div class="audit-run-hub audit-run-hub-inline">
@@ -387,10 +391,10 @@
     <p id="peAuditSeverityLegend" class="pe-severity-legend pe-audit-severity-legend help-muted" aria-label="Severity color legend"></p>
     <div class="audit-toolbar">
       <div class="filter-chips" role="group" aria-label="Filter findings">
-        <button type="button" class="chip chip-active" data-audit-filter="all" onclick="setAuditCardFilter('all')">All</button>
         <button type="button" class="chip" data-audit-filter="confirmed" onclick="setAuditCardFilter('confirmed')">Critical</button>
         <button type="button" class="chip" data-audit-filter="preference" onclick="setAuditCardFilter('preference')">Style</button>
         <button type="button" class="chip" data-audit-filter="styleguide" onclick="setAuditCardFilter('styleguide')">Style guide</button>
+        <button type="button" class="chip chip-active" data-audit-filter="all" onclick="setAuditCardFilter('all')">All</button>
       </div>
       <div class="filter-chips" role="group" aria-label="Sort findings">
         <button type="button" class="chip chip-sort chip-active" data-audit-sort="priority" onclick="setAuditCardSort('priority')">Priority</button>
@@ -622,6 +626,7 @@
           <summary>Essentials</summary>
           <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
           <p id="peSimpleModeEssentialsIntro" class="help-muted pe-simple-mode-essentials-intro" style="font-size:10px;margin:6px 0 4px;">Simple mode hides extra tabs and optional checks. Turn off to see Coach, Rewrite, and more.</p>
+          <p id="peSimpleModeAdvancedTabsList" class="help-muted pe-simple-advanced-tabs hidden" style="font-size:10px;margin:4px 0 6px;"></p>
           <button type="button" class="btn-linkish pe-btn" id="btnTurnOffSimpleMode" onclick="turnOffSimpleModeFromEssentials()">Turn off Simple mode</button>
           <div class="form-group" style="margin-top:8px;">
             <label for="apiKey">Gemini API key (optional)</label>
@@ -776,6 +781,7 @@
 
   <script src="lib/settings-store.js"></script>
   <script src="lib/ui-prefs-helpers.js"></script>
+  <script src="lib/workflow-nav-helpers.js"></script>
   <script src="lib/onboarding-helpers.js"></script>
   <script src="lib/plain-language-helpers.js"></script>
   <script src="lib/long-operation-helpers.js"></script>
