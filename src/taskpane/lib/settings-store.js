@@ -27,16 +27,37 @@ ProzaEdit.Settings = {
     }
   },
 
+  SAVE_TIMEOUT_MS: 15000,
+
   get(key, fallback) {
-    return Office.context.document.settings.get(key) ?? fallback;
+    try {
+      return Office.context.document.settings.get(key) ?? fallback;
+    } catch (_) {
+      return fallback;
+    }
   },
 
+  /** Always resolves (never rejects or hangs): false on quota errors, missing Office, or a saveAsync that never calls back. */
   setAsync(key, value) {
-    Office.context.document.settings.set(key, value);
     return new Promise((resolve) => {
-      Office.context.document.settings.saveAsync((r) => {
-        resolve(r.status === Office.AsyncResultStatus.Succeeded);
-      });
+      let done = false;
+      let timer = null;
+      const finish = (ok) => {
+        if (done) return;
+        done = true;
+        if (timer != null && typeof clearTimeout === "function") clearTimeout(timer);
+        resolve(!!ok);
+      };
+      try {
+        const settings = Office.context.document.settings;
+        settings.set(key, value);
+        if (typeof setTimeout === "function") timer = setTimeout(() => finish(false), this.SAVE_TIMEOUT_MS);
+        settings.saveAsync((r) => {
+          finish(r && r.status === Office.AsyncResultStatus.Succeeded);
+        });
+      } catch (_) {
+        finish(false);
+      }
     });
   },
 
@@ -44,7 +65,7 @@ ProzaEdit.Settings = {
     try {
       const raw = localStorage.getItem(key);
       const arr = this._parse(raw, []);
-      return Array.isArray(arr) ? arr.filter((x) => typeof x === "string" && x.length <= 200).slice(0, 800) : [];
+      return Array.isArray(arr) ? arr.filter((x) => typeof x === "string" && x.length <= 200).slice(-800) : [];
     } catch (_) {
       return [];
     }
@@ -52,7 +73,7 @@ ProzaEdit.Settings = {
 
   _writeGlobalJson(key, arr) {
     try {
-      localStorage.setItem(key, JSON.stringify(arr.slice(0, 800)));
+      localStorage.setItem(key, JSON.stringify(arr.slice(-800)));
       return true;
     } catch (_) {
       return false;
@@ -80,7 +101,7 @@ ProzaEdit.Settings = {
     const doc = this._parse(raw, []);
     const docArr = Array.isArray(doc) ? doc : [];
     const merged = new Set([...docArr, ...this.getGlobalMutedRules()]);
-    return [...merged].filter((x) => typeof x === "string" && x.length <= 200).slice(0, 800);
+    return [...merged].filter((x) => typeof x === "string" && x.length <= 200).slice(-800);
   },
 
   isTargetDismissedGlobally(targetText) {
@@ -93,7 +114,8 @@ ProzaEdit.Settings = {
     options = options || {};
     if (!ruleId) return;
     const global = options.global !== false;
-    const setDoc = new Set(this._parse(this.get(this.KEYS.MUTED, "[]"), []));
+    const existing = this._parse(this.get(this.KEYS.MUTED, "[]"), []);
+    const setDoc = new Set(Array.isArray(existing) ? existing.filter((x) => typeof x === "string") : []);
     setDoc.add(ruleId);
     await this.setAsync(this.KEYS.MUTED, JSON.stringify([...setDoc]));
     if (global) {

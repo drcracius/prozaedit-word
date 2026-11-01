@@ -58,6 +58,7 @@ let pendingSelectedChapterIndices = null;
 let activeLongOp = null;
 let pendingLongOpActionId = null;
 let pendingLongOpRunner = null;
+let pendingLongOpResolve = null;
 let configFirstRunComplete = false;
 let configOnboardingTourComplete = false;
 let onboardingTourActiveStep = 0;
@@ -92,7 +93,10 @@ function setupSafeHandlers() {
   if (remember) {
     remember.addEventListener("change", () => {
       if (remember.checked) {
-        alert("API key will be stored inside this Word document. Use only on your private PC.");
+        showPeStatus("API key will be stored inside this Word document. Use only on your private PC.", "warn");
+        try {
+          alert("API key will be stored inside this Word document. Use only on your private PC.");
+        } catch (_) {}
         schedulePersistSettings();
       } else {
         const keyEl = getEl("apiKey");
@@ -295,7 +299,7 @@ function refreshChapterScopeLists() {
       showPeStatus(`Found ${scopeChapterListCache.length} chapter(s).`, "ok");
       refreshScopeCharPreview();
     })
-    .catch((e) => showPeStatus(e.message, "warn"));
+    .catch((e) => reportActionError(e, "read the chapter list"));
 }
 
 function updateScopeCharPreviewDisplay(charCount, label, mode) {
@@ -421,15 +425,33 @@ function refreshScopeCharPreview() {
     .catch((e) => {
       const el = getEl("scopeCharPreview");
       if (el) {
-        el.textContent = e.message;
+        el.textContent = wordRecoveryMessage(e, "measure this scope");
         el.classList.add("over-limit");
         el.classList.remove("pe-scope-ok");
       }
     });
 }
 
+let msIndexTimer = null;
+
 function scheduleManuscriptIndexBuild(force) {
-  if (msIndexBusy && !force) return;
+  if (force) {
+    if (msIndexTimer) clearTimeout(msIndexTimer);
+    msIndexTimer = setTimeout(() => {
+      msIndexTimer = null;
+      if (msIndexBusy || isOperationBusy()) {
+        scheduleManuscriptIndexBuild(true);
+        return;
+      }
+      buildManuscriptIndexNow();
+    }, 1500);
+    return;
+  }
+  if (msIndexBusy || isOperationBusy()) return;
+  buildManuscriptIndexNow();
+}
+
+function buildManuscriptIndexNow() {
   msIndexBusy = true;
   wordRun("ms-index", async (ctx) => {
     const body = ctx.document.body;
@@ -517,10 +539,45 @@ function setupSettingsModal() {
   modal.querySelectorAll("[data-pe-settings-close]").forEach((el) => {
     el.addEventListener("click", () => closeSettingsModal());
   });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || e.defaultPrevented || modal.classList.contains("hidden")) return;
+    if (!getEl("peOnboardingTour")?.classList.contains("hidden")) return;
+    e.preventDefault();
+    closeSettingsModal();
+  });
   modal.querySelectorAll("[data-pe-settings-reset]").forEach((btn) => {
     if (btn.dataset.resetBound) return;
     btn.dataset.resetBound = "1";
     btn.addEventListener("click", () => resetSettingsGroup(btn.dataset.peSettingsReset));
+  });
+}
+
+function setupTabAria() {
+  const tabs = [...document.querySelectorAll(".tab-btn[data-pe-tab]")];
+  tabs.forEach((btn) => {
+    const id = btn.dataset.peTab;
+    if (!btn.id) btn.id = `peTabBtn-${id}`;
+    btn.setAttribute("aria-controls", id);
+    const panel = getEl(id);
+    if (panel && !panel.hasAttribute("aria-labelledby")) panel.setAttribute("aria-labelledby", btn.id);
+    if (!btn.hasAttribute("aria-selected")) btn.setAttribute("aria-selected", btn.classList.contains("active") ? "true" : "false");
+  });
+  const list = document.querySelector('.nav-tabs[role="tablist"]');
+  if (!list || list.dataset.peKeys) return;
+  list.dataset.peKeys = "1";
+  list.addEventListener("keydown", (e) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    const visible = tabs.filter((b) => !b.hidden && b.offsetParent !== null && !b.closest(".hidden"));
+    const current = visible.indexOf(document.activeElement);
+    if (current < 0 || !visible.length) return;
+    let next = current;
+    if (e.key === "ArrowRight") next = (current + 1) % visible.length;
+    else if (e.key === "ArrowLeft") next = (current - 1 + visible.length) % visible.length;
+    else if (e.key === "Home") next = 0;
+    else next = visible.length - 1;
+    e.preventDefault();
+    visible[next].focus();
+    showTab(visible[next].dataset.peTab);
   });
 }
 
@@ -659,8 +716,11 @@ function hideOnboardingBanner(bannerId) {
 
 function dismissLongOpWarningBanner() {
   hideOnboardingBanner("peLongOpWarningBanner");
+  const settle = pendingLongOpResolve;
+  pendingLongOpResolve = null;
   pendingLongOpActionId = null;
   pendingLongOpRunner = null;
+  if (settle) settle(false);
 }
 
 function sessionDismissLongOpAction(actionId) {
@@ -692,13 +752,16 @@ function shouldWarnLongOperation(actionId) {
 
 function runAfterLongOperationWarning(actionId, runner) {
   if (!shouldWarnLongOperation(actionId)) {
-    return Promise.resolve(runner());
+    return Promise.resolve().then(runner);
   }
   return new Promise((resolve) => {
+    dismissLongOpWarningBanner();
     pendingLongOpActionId = actionId;
+    pendingLongOpResolve = resolve;
     pendingLongOpRunner = () => {
+      pendingLongOpResolve = null;
       dismissLongOpWarningBanner();
-      resolve(runner());
+      resolve(Promise.resolve().then(runner));
     };
     const banner = getEl("peLongOpWarningBanner");
     const body = getEl("peLongOpWarningBody");
@@ -710,8 +773,8 @@ function runAfterLongOperationWarning(actionId, runner) {
 function setupLongOpWarningBanner() {
   getEl("btnLongOpContinue")?.addEventListener("click", () => {
     const run = pendingLongOpRunner;
-    dismissLongOpWarningBanner();
     if (run) run();
+    else dismissLongOpWarningBanner();
   });
   getEl("btnLongOpNotNow")?.addEventListener("click", () => {
     if (pendingLongOpActionId) sessionDismissLongOpAction(pendingLongOpActionId);
@@ -725,23 +788,57 @@ function setupLongOpWarningBanner() {
   });
 }
 
+let longOpFocusReturn = null;
+let batchRunning = false;
+let auditStarting = false;
+let settingsSaveWarned = false;
+
+function isOperationBusy(ignoreBatch) {
+  return !!(
+    auditBusy ||
+    deepBusy ||
+    heatmapBusy ||
+    chronologyBusy ||
+    citationBusy ||
+    chatBusy ||
+    rewriteBusy ||
+    (batchRunning && !ignoreBatch) ||
+    auditStarting
+  );
+}
+
+function warnOperationBusy() {
+  if (pendingLongOpRunner) {
+    showPeStatus("Choose Continue or Not now on the long-operation notice first.", "warn");
+    return;
+  }
+  showPeStatus("Another ProzaEdit operation is still running. Cancel it or wait for it to finish.", "warn");
+}
+
 function setLongOpProgressVisible(visible, label) {
-  ["Checks", "Audit"].forEach((suffix) => {
-    const box = getEl(`peLongOpProgress${suffix}`);
-    const lbl = getEl(`peLongOpProgressLabel${suffix}`);
-    const cancel = getEl(`btnCancelLongOp${suffix}`);
-    if (box) box.classList.toggle("hidden", !visible);
-    if (lbl && label) lbl.textContent = label;
-    if (!visible && cancel) cancel.disabled = false;
+  const bar = getEl("peOpBar");
+  const lbl = getEl("peOpBarLabel");
+  const cancel = getEl("btnCancelLongOp");
+  if (bar) {
+    bar.classList.toggle("hidden", !visible);
+    bar.setAttribute("aria-busy", visible ? "true" : "false");
+  }
+  const cancelling = !!(visible && activeLongOp?.isCancelled?.());
+  if (lbl && label && !cancelling) lbl.textContent = label;
+  if (cancel && !cancelling) cancel.disabled = false;
+  ["tab3", "tab4", "cardContainer", "summaryReport"].forEach((id) => {
+    getEl(id)?.setAttribute("aria-busy", visible ? "true" : "false");
   });
-  getEl("tab3")?.setAttribute("aria-busy", visible ? "true" : "false");
-  getEl("tab4")?.setAttribute("aria-busy", visible ? "true" : "false");
   const auditBtns = [getEl("btnRunAudit"), getEl("btnAuditPrimary")];
+  const focusSensitive = [...auditBtns, document.querySelector(".pe-toolbar .btn-tool-accent")];
+  const focusWasOnAuditBtn = !!document.activeElement && focusSensitive.includes(document.activeElement);
+  if (visible && focusWasOnAuditBtn) longOpFocusReturn = document.activeElement;
   auditBtns.forEach((b) => {
     if (!b) return;
     b.classList.toggle("hidden", !!visible);
     b.disabled = !!visible;
   });
+  if (visible && focusWasOnAuditBtn && cancel) cancel.focus({ preventScroll: true });
 }
 
 function beginLongOperation(hooks) {
@@ -759,7 +856,7 @@ function beginLongOperation(hooks) {
 }
 
 function endLongOperation(controller) {
-  if (controller && activeLongOp !== controller) return;
+  if (controller && activeLongOp && activeLongOp !== controller) return;
   activeLongOp = null;
   setLongOpProgressVisible(false);
   const auditBtns = [getEl("btnRunAudit"), getEl("btnAuditPrimary")];
@@ -769,25 +866,162 @@ function endLongOperation(controller) {
       b.disabled = false;
     }
   });
+  const ret = longOpFocusReturn;
+  longOpFocusReturn = null;
+  const active = document.activeElement;
+  if (ret && (!active || active === document.body || active.id === "btnCancelLongOp")) {
+    try {
+      ret.focus({ preventScroll: true });
+    } catch (_) {}
+  }
+}
+
+function requestLongOpCancel() {
+  const op = activeLongOp;
+  if (!op && !batchRunning) return;
+  if (batchRunning) batchCancel = true;
+  op?.cancel?.();
+  const button = getEl("btnCancelLongOp");
+  const label = getEl("peOpBarLabel");
+  if (button) button.disabled = true;
+  if (label) label.textContent = "Cancelling…";
+  showPeStatus("Cancelling after the current Word step…", "warn");
 }
 
 function setupLongOpCancelButtons() {
-  const cancel = () => {
-    activeLongOp?.cancel?.();
-    ["Checks", "Audit"].forEach((suffix) => {
-      const button = getEl(`btnCancelLongOp${suffix}`);
-      const label = getEl(`peLongOpProgressLabel${suffix}`);
-      if (button) button.disabled = true;
-      if (label) label.textContent = "Cancelling…";
+  const button = getEl("btnCancelLongOp");
+  if (!button || button.dataset.peBound) return;
+  button.dataset.peBound = "1";
+  button.addEventListener("click", requestLongOpCancel);
+  if (!document.body.dataset.peEscCancel) {
+    document.body.dataset.peEscCancel = "1";
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (!activeLongOp) return;
+      const modalOpen =
+        !getEl("pe-settings-modal")?.classList.contains("hidden") || !getEl("peOnboardingTour")?.classList.contains("hidden");
+      if (modalOpen) return;
+      const tag = (e.target && e.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      e.preventDefault();
+      requestLongOpCancel();
     });
-    showPeStatus("Cancelling after the current Word step…", "warn");
-  };
-  getEl("btnCancelLongOpChecks")?.addEventListener("click", cancel);
-  getEl("btnCancelLongOpAudit")?.addEventListener("click", cancel);
+  }
 }
 
 function isLongOpCancelledError(err) {
   return ProzaEdit.LongOperationController?.isCancelledError?.(err);
+}
+
+let peRetryController = null;
+
+function getRetryController() {
+  if (!peRetryController && ProzaEdit.Recovery?.createRetryController) {
+    peRetryController = ProzaEdit.Recovery.createRetryController({ onChange: renderRetryBar });
+  }
+  return peRetryController;
+}
+
+function renderRetryBar(state) {
+  const bar = getEl("peRetryBar");
+  if (!bar) return;
+  const label = getEl("peRetryBarLabel");
+  const btn = getEl("btnPeRetry");
+  if (!state) {
+    const hadFocus = bar.contains(document.activeElement);
+    bar.classList.add("hidden");
+    if (hadFocus) document.querySelector(".tab-btn.active")?.focus?.({ preventScroll: true });
+    return;
+  }
+  bar.classList.remove("hidden");
+  if (label) label.textContent = `${state.label} did not finish.`;
+  if (btn) {
+    btn.disabled = !!state.busy;
+    btn.setAttribute("aria-label", `Try again: ${state.label}`);
+    btn.setAttribute("aria-busy", state.busy ? "true" : "false");
+  }
+}
+
+function registerRetry(label, run) {
+  getRetryController()?.set(label, run);
+}
+
+function clearRetry() {
+  getRetryController()?.clear();
+}
+
+function setupRetryBar() {
+  const btn = getEl("btnPeRetry");
+  if (btn && !btn.dataset.peBound) {
+    btn.dataset.peBound = "1";
+    btn.addEventListener("click", () => {
+      getRetryController()?.retry();
+    });
+  }
+  const dismiss = getEl("btnPeRetryDismiss");
+  if (dismiss && !dismiss.dataset.peBound) {
+    dismiss.dataset.peBound = "1";
+    dismiss.addEventListener("click", () => clearRetry());
+  }
+}
+
+/**
+ * Structured failure reporting: recovery copy in the status line (no modal alert), optional Try again.
+ * @param {{ label: string, run: function(): Promise<*> }} [options.retry]
+ */
+function reportActionError(err, action, options) {
+  options = options || {};
+  if (isLongOpCancelledError(err)) {
+    showPeStatus("Cancelled.", "warn");
+    return { cancelled: true, message: "Cancelled.", canRetry: false };
+  }
+  const message = wordRecoveryMessage(err, action);
+  const canRetry = !!(options.retry && ProzaEdit.AuditReview?.isRetryable?.(err));
+  if (canRetry) registerRetry(options.retry.label, options.retry.run);
+  showPeStatus(canRetry ? `${message} Use Try again to repeat it.` : message, "warn");
+  return { cancelled: false, message, canRetry };
+}
+
+function showGlobalError(note) {
+  const box = getEl("peGlobalError");
+  if (!box) return;
+  const msg = getEl("peGlobalErrorMessage");
+  const detail = getEl("peGlobalErrorDetail");
+  if (msg) msg.textContent = note?.message || ProzaEdit.ErrorGuard?.USER_MESSAGE || "Something went wrong.";
+  if (detail) {
+    const extra = note?.suppressed ? ` (${note.suppressed} similar error${note.suppressed === 1 ? "" : "s"} hidden)` : "";
+    detail.textContent = note?.detail ? `${note.detail}${extra}` : extra.trim();
+  }
+  box.classList.remove("hidden");
+}
+
+function ensureControlsUsable() {
+  if (isOperationBusy()) return;
+  const barVisible = !getEl("peOpBar")?.classList.contains("hidden");
+  if (barVisible || activeLongOp) {
+    activeLongOp = null;
+    endLongOperation(null);
+  }
+  setModuleButtonsDisabled(false);
+}
+
+function setupGlobalErrorGuard() {
+  ProzaEdit.ErrorGuard?.bind?.(window, { notify: showGlobalError, onFatal: ensureControlsUsable });
+  const reload = getEl("btnPeGlobalErrorReload");
+  if (reload && !reload.dataset.peBound) {
+    reload.dataset.peBound = "1";
+    reload.addEventListener("click", () => {
+      try {
+        location.reload();
+      } catch (_) {}
+    });
+  }
+  const dismiss = getEl("btnPeGlobalErrorDismiss");
+  if (dismiss && !dismiss.dataset.peBound) {
+    dismiss.dataset.peBound = "1";
+    dismiss.addEventListener("click", () => getEl("peGlobalError")?.classList.add("hidden"));
+  }
+  setupRetryBar();
 }
 
 function setupSettingsKeywordFilter() {
@@ -865,13 +1099,26 @@ function closeSettingsModal() {
   else getEl("btn-settings-open")?.focus();
 }
 
-Office.onReady((info) => {
+let prozaEditBooted = false;
+const PROZAEDIT_BOOT_TIMEOUT_MS = 20000;
+
+function showBootProblem(message) {
+  try {
+    document.body.insertAdjacentHTML(
+      "afterbegin",
+      `<p class="pe-boot-problem" role="alert" style="color:#d93025;">${escapeHtml(message)}</p>`
+    );
+  } catch (_) {}
+}
+
+function onProzaEditOfficeReady(info) {
+  prozaEditBooted = true;
   if (typeof Office === "undefined") {
-    document.body.insertAdjacentHTML("afterbegin", '<p style="color:#d93025;">Office.js failed to load. Check network and reload.</p>');
+    showBootProblem("Office.js failed to load. Check network and reload.");
     return;
   }
-  if (info.host !== Office.HostType.Word) {
-    document.body.insertAdjacentHTML("afterbegin", '<p style="color:#d93025;">Open ProzaEdit inside Microsoft Word.</p>');
+  if (info?.host !== Office.HostType?.Word) {
+    showBootProblem("Open ProzaEdit inside Microsoft Word.");
     return;
   }
   try {
@@ -892,6 +1139,7 @@ Office.onReady((info) => {
     setupMainTargetSync();
     setupAutoSaveHandlers();
     setupSettingsModal();
+    setupTabAria();
     setupThemePreference();
     setupLongOpWarningBanner();
     setupLongOpCancelButtons();
@@ -961,9 +1209,23 @@ Office.onReady((info) => {
   } catch (e) {
     console.error(e);
     ProzaEdit.Diagnostics?.reportMajor?.({ phase: "init" }, e?.message || "Init failure").catch(() => {});
-    alert("ProzaEdit failed to initialize. Reload the task pane.");
+    showBootProblem("ProzaEdit failed to initialize. Reload the task pane.");
+    showGlobalError({ message: "ProzaEdit failed to initialize. Reload the task pane.", detail: ProzaEdit.ErrorGuard?.redact?.(e?.message) || "" });
   }
-});
+}
+
+setupGlobalErrorGuard();
+
+if (typeof Office !== "undefined" && typeof Office.onReady === "function") {
+  Office.onReady(onProzaEditOfficeReady);
+  setTimeout(() => {
+    if (!prozaEditBooted) {
+      showBootProblem("ProzaEdit is still starting. If this message stays, reload the task pane.");
+    }
+  }, PROZAEDIT_BOOT_TIMEOUT_MS);
+} else {
+  showBootProblem("Office.js failed to load. Open ProzaEdit inside Word, or check your network and reload.");
+}
 
 async function reportProzaEditProblem() {
   const noteEl = getEl("peDiagnosticsNote");
@@ -1167,7 +1429,9 @@ function applyUiConfig(p) {
   }
   const setV = (id, v) => {
     const el = document.getElementById(id);
-    if (el && v != null) el.value = v;
+    if (!el || v == null) return;
+    if (el.tagName === "SELECT" && ![...el.options].some((o) => o.value === String(v))) return;
+    el.value = v;
   };
   const setC = (id, v) => {
     const el = document.getElementById(id);
@@ -1293,14 +1557,12 @@ function restoreLastActiveTab() {
 
 function loadSavedSettings() {
   const raw = ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG);
-  let parsed = null;
-  if (raw) {
-    try {
-      parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    } catch (e) {
-      console.warn(e);
-      return;
-    }
+  const guarded = ProzaEdit.ConfigGuard?.parse?.(raw) || { config: raw && typeof raw === "object" ? raw : null, problem: "" };
+  let parsed = guarded.config;
+  if (guarded.problem) {
+    console.warn(`ProzaEdit: saved settings ignored (${guarded.problem}).`);
+    showPeStatus("Saved ProzaEdit settings could not be read, so safe defaults were applied. Your next change will save fresh settings.", "warn");
+    return;
   }
   const firstRun = ProzaEdit.Onboarding?.resolveFirstRunOnLoad?.({ rawConfig: raw, parsedConfig: parsed });
   if (firstRun?.kind === "bootstrap") {
@@ -1345,9 +1607,20 @@ function loadSavedSettings() {
 
 function persistSettings(showAlert) {
   updateActiveChecksHint();
-  return ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CONFIG, JSON.stringify(collectUiConfig())).then((ok) => {
+  let payload = "";
+  try {
+    payload = JSON.stringify(collectUiConfig());
+  } catch (e) {
+    console.warn(e);
+    if (showAlert) showPeStatus("Save failed: settings could not be prepared.", "warn");
+    return Promise.resolve(false);
+  }
+  return ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CONFIG, payload).then((ok) => {
     if (showAlert) {
       showPeStatus(ok ? "Settings saved with this document." : "Save failed.", ok ? "ok" : "warn");
+    } else if (!ok && !settingsSaveWarned) {
+      settingsSaveWarned = true;
+      showPeStatus("Could not save settings to this document (it may be read-only or storage is full). Changes apply until you close the pane.", "warn");
     }
     return ok;
   });
@@ -1556,19 +1829,20 @@ function setupAutoSaveHandlers() {
   });
 }
 
-async function prepareScopeForAudit() {
+async function prepareScopeForAudit(retryOpts) {
   const scope = getScopeMode();
   if (scope !== "selection") {
     if (scope === "selected-chapters" || scope === "chapter" || scope === "chapter-range") {
       if (!scopeChapterListCache.length) {
         try {
           await refreshChapterScopeLists();
-        } catch (_) {
+        } catch (e) {
+          reportActionError(e, "read the chapter list");
           return false;
         }
       }
       if (scope === "selected-chapters" && !getSelectedChapterIndicesFromUi().length) {
-        alert("Select at least one chapter on Target (checklist under Selected chapters), or reload the chapter list.");
+        showPeStatus("Select at least one chapter on Target (checklist under Selected chapters), or reload the chapter list.", "warn");
         showTab("tab1");
         return false;
       }
@@ -1576,7 +1850,7 @@ async function prepareScopeForAudit() {
     await refreshScopeCharPreview();
     const prev = getEl("scopeCharPreview");
     if (prev?.classList.contains("over-limit")) {
-      alert("Scope exceeds character limit. Narrow pages/chapters or use section loop.");
+      showPeStatus("Scope exceeds character limit. Narrow pages/chapters or use section loop.", "warn");
       return false;
     }
     return true;
@@ -1589,7 +1863,10 @@ async function prepareScopeForAudit() {
       return (sel.text || "").trim().length > 20;
     });
     if (has) return true;
-  } catch (_) {
+  } catch (e) {
+    reportActionError(e, "check your selection", {
+      retry: retryOpts ? { label: "Audit", run: () => runAuditInternal({ ...retryOpts, skipLongOpWarning: true }) } : null,
+    });
     return false;
   }
   if (
@@ -1602,7 +1879,7 @@ async function prepareScopeForAudit() {
       await new Promise((r) => setTimeout(r, 200));
       return true;
     } catch (e) {
-      showPeStatus(e.message, "warn");
+      reportActionError(e, "select the next section");
       return false;
     }
   }
@@ -2451,7 +2728,7 @@ function renderOnboardingTourStep(stepIndex) {
       } catch (_) {}
     }
   }
-  btnNext?.focus();
+  (isLast ? btnDone : btnNext)?.focus();
 }
 
 function openOnboardingTour(stepIndex) {
@@ -2731,6 +3008,7 @@ function useSelectionEdits() {
 }
 
 const PE_STATUS_AUTO_CLEAR_MS = 6000;
+const PE_STATUS_WARN_CLEAR_MS = 20000;
 
 function dismissPeStatus() {
   if (peStatusTimer) clearTimeout(peStatusTimer);
@@ -2755,10 +3033,11 @@ function showPeStatusHtml(html, kind, isHtml) {
   else el.textContent = html || "";
   el.classList.remove("ok", "warn");
   if (kind) el.classList.add(kind);
+  el.setAttribute("aria-live", kind === "warn" ? "assertive" : "polite");
   if (peStatusTimer) clearTimeout(peStatusTimer);
   if (html) {
     dismissBtn?.classList.remove("hidden");
-    peStatusTimer = setTimeout(() => dismissPeStatus(), PE_STATUS_AUTO_CLEAR_MS);
+    peStatusTimer = setTimeout(() => dismissPeStatus(), kind === "warn" ? PE_STATUS_WARN_CLEAR_MS : PE_STATUS_AUTO_CLEAR_MS);
   } else {
     dismissBtn?.classList.add("hidden");
   }
@@ -2797,98 +3076,128 @@ function goToLastEdit() {
   goToIssue(nav.target);
 }
 
-async function swapTextInScope(fromText, toText, options) {
-  return wordRun("pe-swap", async (ctx) => {
-    const items = await ProzaEdit.WordSafeNavigator.searchInScope(ctx, fromText, {
-      ...options,
-      selectionOnly: useSelectionEdits(),
-    });
-    if (!items.length) {
-      throw new Error("Text not found—document may have changed. Use Go to, then Apply again.");
-    }
-    const hit = items[0];
-    hit.load("text");
-    await ctx.sync();
-    if (!hit.text) throw new Error("Match lost after sync—try Go to first.");
-    hit.insertText(String(toText), Word.InsertLocation.replace);
-    await ctx.sync();
-  });
+let peEditLock = null;
+
+function getEditLock() {
+  if (!peEditLock) peEditLock = ProzaEdit.Recovery.createLock();
+  return peEditLock;
 }
 
-function applyDocumentEdit(beforeText, afterText, label, options) {
+async function swapTextInScope(fromText, toText, options) {
+  return wordRun("pe-swap", (ctx) =>
+    ProzaEdit.EditApply.swapText(ctx, fromText, toText, {
+      searchInScope: (c, text) =>
+        ProzaEdit.WordSafeNavigator.searchInScope(c, text, {
+          ...options,
+          selectionOnly: useSelectionEdits(),
+        }),
+      replaceLocation: Word.InsertLocation.replace,
+    })
+  );
+}
+
+async function applyDocumentEdit(beforeText, afterText, label, options) {
   const before = String(beforeText || "");
   const after = String(afterText || "");
-  if (!before || before === after) return Promise.resolve(false);
-  if (isChecked("remindVersionHistory", true) && !window._peVersionReminded) {
-    window._peVersionReminded = true;
-    showPeStatus("Tip: File → Version History before large edits.", "ok");
+  if (!before || before === after) return false;
+  const release = getEditLock().tryAcquire();
+  if (!release) {
+    showPeStatus("Another edit is still being applied. Wait a moment, then try again.", "warn");
+    return false;
   }
-  const level = parseInt(getEl("continuityWarnLevel")?.value, 10) || 3;
-  const index = getManuscriptIndex();
-  const warnings = ProzaEdit.ContinuityGuard.assessReplace(before, after, index, level);
-  if (warnings.length) {
-    const block = ProzaEdit.ContinuityGuard.formatWarningBlock(warnings);
-    const proceed = confirm(
-      `Continuity check (local, 0 tokens):\n\n${block}\n\nApply this change anyway?\n(Cancel = skip; use Dismiss on card to silence similar warnings.)`
-    );
-    if (!proceed) return Promise.resolve(false);
-    warnings.forEach((w) => ProzaEdit.ContinuityGuard.dismissWarningKey(w.key));
-  }
-  if (!confirmBeforeApply(`Replace "${before}" with "${after}"?`)) return Promise.resolve(false);
-  const searchOpts = options && options.forceDocument ? { forceDocument: true } : {};
-  return swapTextInScope(before, after, searchOpts)
-    .then(() => {
-      ProzaEdit.EditHistory.record(before, after, label);
-      updateUndoRedoUi();
-      showPeStatus(`Applied: ${label}`, "ok");
-      return true;
-    })
-    .catch((e) => {
-      const message = wordRecoveryMessage(e, "apply this edit");
-      showPeStatus(message, "warn");
-      alert(message);
+  historyBusy = true;
+  updateUndoRedoUi();
+  try {
+    if (isChecked("remindVersionHistory", true) && !window._peVersionReminded) {
+      window._peVersionReminded = true;
+      showPeStatus("Tip: File → Version History before large edits.", "ok");
+    }
+    const level = parseInt(getEl("continuityWarnLevel")?.value, 10) || 3;
+    const index = getManuscriptIndex();
+    const warnings = ProzaEdit.ContinuityGuard.assessReplace(before, after, index, level);
+    if (warnings.length) {
+      const block = ProzaEdit.ContinuityGuard.formatWarningBlock(warnings);
+      const proceed = confirm(
+        `Continuity check (local, 0 tokens):\n\n${block}\n\nApply this change anyway?\n(Cancel = skip; use Dismiss on card to silence similar warnings.)`
+      );
+      if (!proceed) return false;
+      warnings.forEach((w) => ProzaEdit.ContinuityGuard.dismissWarningKey(w.key));
+    }
+    if (!confirmBeforeApply(`Replace "${before}" with "${after}"?`)) return false;
+    const searchOpts = options && options.forceDocument ? { forceDocument: true } : {};
+    try {
+      await swapTextInScope(before, after, searchOpts);
+    } catch (e) {
+      reportActionError(e, "apply this edit", {
+        retry: { label: "Apply", run: () => applyDocumentEdit(before, after, label, options) },
+      });
       return false;
-    });
-}
-
-async function prozaEditUndo() {
-  if (historyBusy || !ProzaEdit.EditHistory.canUndo()) return;
-  const entry = ProzaEdit.EditHistory.popUndo();
-  if (!entry) return;
-  historyBusy = true;
-  updateUndoRedoUi();
-  try {
-    await swapTextInScope(entry.after, entry.before);
-    showPeStatus(`Undid: ${entry.label}`, "ok");
+    }
+    ProzaEdit.EditHistory.record(before, after, label);
+    clearRetry();
+    showPeStatus(`Applied: ${label}`, "ok");
+    try {
+      options?.onSuccess?.();
+    } catch (e) {
+      console.error(e);
+    }
+    return true;
   } catch (e) {
-    ProzaEdit.EditHistory.revertPopUndo(entry);
-    const message = wordRecoveryMessage(e, "undo this edit");
-    showPeStatus(message, "warn");
-    alert(message);
+    reportActionError(e, "apply this edit");
+    return false;
   } finally {
+    release();
     historyBusy = false;
     updateUndoRedoUi();
   }
 }
 
-async function prozaEditRedo() {
-  if (historyBusy || !ProzaEdit.EditHistory.canRedo()) return;
-  const entry = ProzaEdit.EditHistory.popRedo();
-  if (!entry) return;
+async function runHistoryEdit(popFn, revertFn, from, to, doneLabel, action) {
+  if (historyBusy || !popFn.can()) return;
+  const release = getEditLock().tryAcquire();
+  if (!release) return;
+  const entry = popFn.pop();
+  if (!entry) {
+    release();
+    return;
+  }
   historyBusy = true;
   updateUndoRedoUi();
   try {
-    await swapTextInScope(entry.before, entry.after);
-    showPeStatus(`Redid: ${entry.label}`, "ok");
+    await swapTextInScope(entry[from], entry[to]);
+    showPeStatus(`${doneLabel}: ${entry.label}`, "ok");
   } catch (e) {
-    ProzaEdit.EditHistory.revertPopRedo(entry);
-    const message = wordRecoveryMessage(e, "redo this edit");
-    showPeStatus(message, "warn");
-    alert(message);
+    revertFn(entry);
+    reportActionError(e, action);
   } finally {
+    release();
     historyBusy = false;
     updateUndoRedoUi();
   }
+}
+
+function prozaEditUndo() {
+  const hist = ProzaEdit.EditHistory;
+  return runHistoryEdit(
+    { can: () => hist.canUndo(), pop: () => hist.popUndo() },
+    (entry) => hist.revertPopUndo(entry),
+    "after",
+    "before",
+    "Undid",
+    "undo this edit"
+  );
+}
+
+function prozaEditRedo() {
+  const hist = ProzaEdit.EditHistory;
+  return runHistoryEdit(
+    { can: () => hist.canRedo(), pop: () => hist.popRedo() },
+    (entry) => hist.revertPopRedo(entry),
+    "before",
+    "after",
+    "Redid",
+    "redo this edit"
+  );
 }
 
 function setupUndoRedoShortcuts() {
@@ -2996,7 +3305,7 @@ function renderDictionaryList() {
 
 async function resetMutedRules() {
   await ProzaEdit.Settings.resetMutedRules();
-  alert("Muted rules cleared. Re-run audit.");
+  showPeStatus("Muted rules cleared. Re-run audit.", "ok");
 }
 
 /* Custom style guide */
@@ -3137,7 +3446,7 @@ async function copyCustomStyleRulesToClipboard() {
     showPeStatus("Custom rules copied — paste into another doc or bulk import.", "ok");
   } catch (_) {
     if (fallbackCopyText(text)) showPeStatus("Custom rules copied.", "ok");
-    else alert("Copy failed.");
+    else showPeStatus("Copy failed. Select the text and press Ctrl+C.", "warn");
   }
 }
 
@@ -3206,7 +3515,7 @@ function runThesaurusLookup() {
       }
       document.getElementById("thesaurusInput").value = t;
       await renderThesaurus(t, box);
-    }).catch((e) => (box.innerText = e.message));
+    }).catch((e) => (box.innerText = wordRecoveryMessage(e, "read your selection")));
     return;
   }
   renderThesaurus(input, box).catch(() => (box.innerText = "Lookup failed."));
@@ -3381,7 +3690,7 @@ function filteredAuditSuggestions() {
 }
 
 function setAuditSuggestions(list) {
-  currentAuditSuggestions = Array.isArray(list) ? list.slice() : [];
+  currentAuditSuggestions = Array.isArray(list) ? list.filter((s) => s && typeof s === "object") : [];
   updateAuditFilterChips();
   updateAuditTabBadge();
   applyAuditCardFilter();
@@ -3474,7 +3783,7 @@ async function copyFeedbackLetter() {
     showPeStatus("Feedback letter copied (0 tokens).", "ok");
   } catch (_) {
     if (fallbackCopyText(text)) showPeStatus("Feedback letter copied.", "ok");
-    else alert("Copy failed.");
+    else showPeStatus("Copy failed. Select the text and press Ctrl+C.", "warn");
   }
 }
 
@@ -3524,12 +3833,12 @@ function resetAiSessionTokens() {
   showPeStatus("Gemini session token counter reset (this browser tab).", "ok");
 }
 
-async function geminiGenerateWithQuota(prompt, generationConfig, outputReserve) {
+async function geminiGenerateWithQuota(prompt, generationConfig, outputReserve, signal) {
   const reserve = outputReserve != null ? outputReserve : generationConfig?.maxOutputTokens || 1024;
   const estimated = ProzaEdit.AIQuotaManager.estimateTokens(prompt) + reserve;
   const gate = ProzaEdit.AIQuotaManager.canExecute(estimated, readAiQuotaLimitsFromDom());
   if (!gate.ok) throw new Error(gate.message || "Session token ceiling reached.");
-  const reply = await ProzaEdit.Gemini.generate(getApiKey(), prompt, generationConfig);
+  const reply = await ProzaEdit.Gemini.generate(getApiKey(), prompt, generationConfig, { signal });
   ProzaEdit.AIQuotaManager.recordUsage(estimated);
   return reply;
 }
@@ -3556,7 +3865,7 @@ async function copyAuditForCopilot() {
     showPeStatus("Copied — paste into Word Copilot.", "ok");
   } catch (_) {
     if (fallbackCopyText(text)) showPeStatus("Copied — paste into Word Copilot.", "ok");
-    else alert("Copy failed. Use Ctrl+C after selecting the summary text.");
+    else showPeStatus("Copy failed. Use Ctrl+C after selecting the summary text.", "warn");
   }
 }
 
@@ -3733,44 +4042,127 @@ function runExtendedLocalAudit() {
   });
 }
 
+function createPhaseTiming() {
+  const enabled = !!ProzaEdit.PhaseTiming?.isEnabled?.(window);
+  return ProzaEdit.PhaseTiming?.create?.({ enabled }) || { enabled: false, mark() {}, summary: () => "" };
+}
+
+function reportPhaseTiming(label, timing) {
+  const summary = timing?.summary?.() || "";
+  if (!summary) return "";
+  try {
+    console.info(`[ProzaEdit timing] ${label}: ${summary}`);
+  } catch (_) {}
+  return summary;
+}
+
+function restoreScopeModeIfChanged(mode) {
+  const el = getEl("scope");
+  if (!el || !mode || el.value === mode) return;
+  if (![...el.options].some((o) => o.value === mode)) return;
+  el.value = mode;
+  syncScopePanels();
+  updateActiveChecksHint();
+  updateWorkflowStatusLine();
+}
+
 function runAuditInternal(opts) {
-  if (auditBusy || deepBusy) return Promise.resolve(false);
   opts = opts || {};
+  if (isOperationBusy(!!opts.fromBatch)) {
+    warnOperationBusy();
+    return Promise.resolve(false);
+  }
+  auditStarting = true;
   const start = () =>
-    prepareScopeForAudit().then((ready) => {
+    prepareScopeForAudit(opts).then((ready) => {
       if (!ready) return false;
-      return runAuditInternalCore(opts);
+      const run = runAuditInternalCore(opts);
+      auditStarting = false;
+      return run;
     });
-  if (opts.skipLongOpWarning) return start();
-  const actionId = ProzaEdit.LongOp?.actionIdForAudit?.(getScopeMode(), !!opts.extendedLocal);
-  return runAfterLongOperationWarning(actionId, start);
+  const actionId = opts.skipLongOpWarning
+    ? null
+    : ProzaEdit.LongOp?.actionIdForAudit?.(getScopeMode(), !!opts.extendedLocal);
+  return runAfterLongOperationWarning(actionId, start)
+    .catch((e) => {
+      reportActionError(e, "start this audit");
+      return false;
+    })
+    .finally(() => {
+      auditStarting = false;
+    });
 }
 
 function runAuditInternalCore(opts) {
   if (auditBusy || deepBusy) return Promise.resolve(false);
   auditBusy = true;
   lastDocStats = null;
-  setModuleButtonsDisabled(true);
+  clearRetry();
+  const timing = createPhaseTiming();
+  const scopeModeAtStart = getScopeMode();
   const auditBtn = getEl(opts.btnId || "btnRunAudit");
   const auditBtnDefault = opts.btnDone || "Run audit";
-  const longOp = beginLongOperation({
-    initialStatus: "Reading document…",
-    setStatus: (msg) => showPeStatus(msg),
-  });
-  if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Reading…");
   const extBtn = getEl("btnAuditPrimary");
-  if (extBtn) setRunAuditHubButtonLabel(extBtn, "Reading…");
-  showPeStatus(opts.status || "Reading document…");
-  persistSettings(false);
-  showTab("tab4");
-  currentAuditSuggestions = [];
-  const cardBox = getEl("cardContainer");
   const sumEl = getEl("summaryReport");
-  if (cardBox) cardBox.innerHTML = "";
-  if (sumEl) sumEl.innerHTML = opts.status || "Reading document…";
-
+  let longOp = null;
   let cancelled = false;
   let failed = false;
+
+  const finish = () => {
+    auditBusy = false;
+    setModuleButtonsDisabled(false);
+    endLongOperation(longOp);
+    if (auditBtn) setRunAuditHubButtonLabel(auditBtn, auditBtnDefault);
+    const primary = getEl("btnAuditPrimary");
+    if (primary) setRunAuditHubButtonLabel(primary, "Run audit");
+  };
+
+  const handleFailure = (e) => {
+    if (isLongOpCancelledError(e)) {
+      cancelled = true;
+      if (sumEl) sumEl.textContent = "Cancelled.";
+      showAuditEmptyIfNeeded();
+      return false;
+    }
+    failed = true;
+    const message = wordRecoveryMessage(e, "finish this audit");
+    if (ProzaEdit.AuditReview?.isRetryable?.(e)) {
+      registerRetry("Audit", () => {
+        restoreScopeModeIfChanged(scopeModeAtStart);
+        return runAuditInternal({ ...opts, skipLongOpWarning: true });
+      });
+    }
+    const sum = getEl("summaryReport");
+    if (sum) sum.innerHTML = `<span style="color:var(--red)">${escapeHtml(message)}</span>`;
+    showAuditEmptyIfNeeded();
+    ProzaEdit.Diagnostics?.reportMajor?.(
+      { phase: "runAudit", scope: getScopeMode(), label: opts.label },
+      e?.message || "Audit failed"
+    )?.catch?.(() => {});
+    return false;
+  };
+
+  try {
+    setModuleButtonsDisabled(true);
+    longOp = beginLongOperation({
+      initialStatus: "Reading document…",
+      setStatus: (msg) => showPeStatus(msg),
+    });
+    if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Reading…");
+    if (extBtn) setRunAuditHubButtonLabel(extBtn, "Reading…");
+    showPeStatus(opts.status || "Reading document…");
+    persistSettings(false);
+    showTab("tab4");
+    currentAuditSuggestions = [];
+    const cardBox = getEl("cardContainer");
+    if (cardBox) cardBox.innerHTML = "";
+    if (sumEl) sumEl.textContent = opts.status || "Reading document…";
+  } catch (e) {
+    handleFailure(e);
+    finish();
+    showPeStatus("Audit could not start. Try again.", "warn");
+    return Promise.resolve(false);
+  }
 
   return wordRun("audit", async (ctx) => {
     longOp.setStatus("Reading document…");
@@ -3785,10 +4177,11 @@ function runAuditInternalCore(opts) {
     }
     let text = await readScopeText(ctx, longOp);
     longOp.throwIfCancelled();
+    timing.mark("read");
     longOp.setStatus("Analyzing…");
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Analyzing…");
     if (extBtn) setRunAuditHubButtonLabel(extBtn, "Analyzing…");
-    if (sumEl) sumEl.innerHTML = "Analyzing…";
+    if (sumEl) sumEl.textContent = "Analyzing…";
     let truncated = false;
     const cap = getScopeCharLimit(getScopeMode());
     if (text.length > cap) {
@@ -3798,6 +4191,8 @@ function runAuditInternalCore(opts) {
     await new Promise((r) => setTimeout(r, 0));
     longOp.throwIfCancelled();
     const result = ProzaEdit.Audit.run(text, buildAuditContext({ extendedLocal: !!opts.extendedLocal }));
+    timing.mark("analyze");
+    longOp.throwIfCancelled();
     if (truncated) {
       result.suggestions.unshift({
         id: "sys_trunc",
@@ -3811,39 +4206,25 @@ function runAuditInternalCore(opts) {
     }
     lastAuditExcerpt = text;
     finalizeAudit(result, opts.label || "Full audit (local)");
+    timing.mark("render");
     sessionAuditCompletedThisSession = true;
     updateWorkflowNextStepHint();
     lastSessionSummaryRanAudit = true;
     scheduleLastSessionSummaryPersist({ ranAudit: true });
   })
-    .catch((e) => {
-      if (isLongOpCancelledError(e)) {
-        cancelled = true;
-        if (sumEl) sumEl.innerHTML = "Cancelled.";
-        showAuditEmptyIfNeeded();
-        return false;
-      }
-      failed = true;
-      const message = wordRecoveryMessage(e, "finish this audit");
-      const sum = getEl("summaryReport");
-      if (sum) sum.innerHTML = `<span style="color:var(--red)">${escapeHtml(message)}</span>`;
-      showAuditEmptyIfNeeded();
-      ProzaEdit.Diagnostics?.reportMajor?.(
-        { phase: "runAudit", scope: getScopeMode(), label: opts.label },
-        e?.message || "Audit failed"
-      ).catch(() => {});
-      return false;
-    })
+    .catch(handleFailure)
     .finally(() => {
-      auditBusy = false;
-      endLongOperation(longOp);
-      setModuleButtonsDisabled(false);
-      if (auditBtn) setRunAuditHubButtonLabel(auditBtn, auditBtnDefault);
-      const primary = getEl("btnAuditPrimary");
-      if (primary) setRunAuditHubButtonLabel(primary, "Run audit");
+      finish();
+      const timingSummary = reportPhaseTiming(opts.label || "audit", timing);
       if (cancelled) showPeStatus("Cancelled.", "warn");
-      else if (failed) showPeStatus("Audit could not finish. Review the recovery steps above.", "warn");
-      else showPeStatus("Audit finished (0 tokens).", "ok");
+      else if (failed) {
+        showPeStatus(
+          getRetryController()?.has?.()
+            ? "Audit could not finish. Review the recovery steps above, or use Try again."
+            : "Audit could not finish. Review the recovery steps above.",
+          "warn"
+        );
+      } else showPeStatus(timingSummary ? `Audit finished (0 tokens). ${timingSummary}` : "Audit finished (0 tokens).", "ok");
     })
     .then((v) => v !== false);
 }
@@ -3864,20 +4245,27 @@ function renderAuditCards(list) {
     }
     return;
   }
-  list.forEach((item, i) => {
+  const capped = ProzaEdit.AuditReview?.capCards?.(list) || { shown: list, hiddenCount: 0 };
+  capped.shown.forEach((item, i) => {
+    if (!item || typeof item !== "object") return;
     const id = String(item.id || `c${i}`).replace(/[^a-zA-Z0-9_-]/g, "_");
     item.id = id;
+    item.module = String(item.module || "Finding");
+    item.explanation = String(item.explanation || "");
+    item.targetText = String(item.targetText || "");
+    item.replacementText = String(item.replacementText || "");
     const canApply = item.replacementText && !String(item.replacementText).startsWith("(");
     const canRewrite = item.targetText && !String(item.targetText).startsWith("(");
     const showHouse = isStyleGuideFinding(item) && item.targetText && !String(item.targetText).startsWith("(");
     const div = document.createElement("div");
-    div.className = `card ${item.type}`;
+    div.className = `card ${String(item.type || "preference").replace(/[^a-z-]/gi, "")}`;
     div.id = `card_${id}`;
     div.tabIndex = -1;
+    div.setAttribute("role", "group");
     div.setAttribute("aria-label", `${ProzaEdit.AuditReview?.progressLabel?.(i, list.length) || `Finding ${i + 1} of ${list.length}`}: ${item.module}`);
     div.innerHTML = `
       <span class="card-review-progress">${escapeHtml(ProzaEdit.AuditReview?.progressLabel?.(i, list.length) || `Finding ${i + 1} of ${list.length}`)}</span>
-      <span class="badge ${item.type === "confirmed" ? "badge-confirmed" : "badge-pref"}">${item.type}</span>
+      <span class="badge ${item.type === "confirmed" ? "badge-confirmed" : "badge-pref"}">${escapeHtml(item.type)}</span>
       <strong>${escapeHtml(item.module)}</strong>
       <p class="card-explanation">${escapeHtml(item.explanation)}</p>
       <p class="card-target">"${escapeHtml(item.targetText)}"</p>
@@ -3905,6 +4293,9 @@ function renderAuditCards(list) {
             : ""
         }
       </div>`;
+    div.querySelectorAll("[data-a]").forEach((btn) => {
+      btn.setAttribute("aria-label", ProzaEdit.AuditReview?.cardActionLabel?.(btn.dataset.a, item) || btn.textContent.trim());
+    });
     div.querySelector('[data-a="goto"]').onclick = () => goToIssue(item.targetText);
     const undoBtn = div.querySelector('[data-a="undo"]');
     if (undoBtn) undoBtn.onclick = () => prozaEditUndo();
@@ -3921,33 +4312,60 @@ function renderAuditCards(list) {
     div.querySelector('[data-a="dismiss"]').onclick = () => dismissCard(item);
     box.appendChild(div);
   });
+  if (capped.hiddenCount > 0) {
+    const note = document.createElement("p");
+    note.className = "pe-card-cap-note";
+    note.setAttribute("role", "status");
+    note.textContent = `Showing the first ${capped.shown.length} of ${list.length} findings. Fix or dismiss some, switch the filter, or narrow the scope to see the rest.`;
+    box.appendChild(note);
+  }
   if (ProzaEdit.TooltipRegistry?.refreshTooltips) {
     ProzaEdit.TooltipRegistry.refreshTooltips(isChecked("showHoverTips", true));
   }
   updateUndoRedoUi();
 }
 
-async function muteRule(item) {
-  if (!item.ruleId) return;
-  await ProzaEdit.Settings.muteRule(item.ruleId);
-  if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
-  removeAuditCard(item.id);
-  const showDictNudge = ProzaEdit.PlainLanguage?.shouldShowMuteDictionaryNudge?.(
-    item,
-    muteDictionaryNudgeShownThisSession
-  );
-  if (showDictNudge) {
-    muteDictionaryNudgeShownThisSession = true;
-    showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok");
-  } else {
-    showPeStatus("Muted on this PC for future audits.", "ok");
+let peCardActionLock = null;
+
+async function withCardActionLock(key, action, fn) {
+  if (!peCardActionLock) peCardActionLock = ProzaEdit.Recovery.createKeyedLock();
+  const release = peCardActionLock.tryAcquire(key);
+  if (!release) return;
+  try {
+    await fn();
+  } catch (e) {
+    reportActionError(e, action);
+  } finally {
+    release();
   }
 }
 
-async function dismissCard(item) {
-  if (item.ruleId) await ProzaEdit.Settings.muteRule(item.ruleId);
-  if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
-  removeAuditCard(item.id);
+function muteRule(item) {
+  if (!item || !item.ruleId) return Promise.resolve();
+  return withCardActionLock(`mute:${item.id}`, "mute this rule", async () => {
+    await ProzaEdit.Settings.muteRule(item.ruleId);
+    if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
+    removeAuditCard(item.id);
+    const showDictNudge = ProzaEdit.PlainLanguage?.shouldShowMuteDictionaryNudge?.(
+      item,
+      muteDictionaryNudgeShownThisSession
+    );
+    if (showDictNudge) {
+      muteDictionaryNudgeShownThisSession = true;
+      showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok");
+    } else {
+      showPeStatus("Muted on this PC for future audits.", "ok");
+    }
+  });
+}
+
+function dismissCard(item) {
+  if (!item) return Promise.resolve();
+  return withCardActionLock(`dismiss:${item.id}`, "dismiss this finding", async () => {
+    if (item.ruleId) await ProzaEdit.Settings.muteRule(item.ruleId);
+    if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
+    removeAuditCard(item.id);
+  });
 }
 
 function removeAuditCard(id) {
@@ -4001,30 +4419,39 @@ function clearAuditReport() {
   showPeStatus("Audit report cleared.", "ok");
 }
 
+let peGotoLock = null;
+
 function goToIssue(target) {
   if (!target || String(target).startsWith("(")) {
-    alert("Cannot locate this item.");
-    return;
+    showPeStatus("Cannot locate this item.", "warn");
+    return Promise.resolve(false);
   }
-  wordRun("goto", async (ctx) => {
+  if (!peGotoLock) peGotoLock = ProzaEdit.Recovery.createLock();
+  const release = peGotoLock.tryAcquire();
+  if (!release) return Promise.resolve(false);
+  return wordRun("goto", async (ctx) => {
     await ProzaEdit.WordSafeNavigator.selectFirstInBody(ctx, target);
-  }).catch((e) => {
-    const message = wordRecoveryMessage(e, "locate this finding");
-    showPeStatus(message, "warn");
-    alert(message);
-  });
+  })
+    .then(() => true)
+    .catch((e) => {
+      reportActionError(e, "locate this finding");
+      return false;
+    })
+    .finally(release);
 }
 
 function applyFix(cardId, target, replacement) {
   if (!target || String(replacement || "").startsWith("(")) {
     showPeStatus("This card has no automatic replacement.", "warn");
-    return;
+    return Promise.resolve(false);
   }
-  applyDocumentEdit(target, replacement, "Audit fix", { forceDocument: true }).then((ok) => {
-    if (!ok) return;
-    removeAuditCard(cardId);
-    scheduleManuscriptIndexBuild(true);
-    scheduleLastSessionSummaryPersist();
+  return applyDocumentEdit(target, replacement, "Audit fix", {
+    forceDocument: true,
+    onSuccess: () => {
+      removeAuditCard(cardId);
+      scheduleManuscriptIndexBuild(true);
+      scheduleLastSessionSummaryPersist();
+    },
   });
 }
 
@@ -4103,7 +4530,7 @@ function showLocalTipForIssue(item) {
 async function sendLocalCoachMessage() {
   const prompt = getEl("chatInput")?.value.trim() || "";
   if (!prompt) {
-    alert("Enter a question for Local Coach.");
+    showPeStatus("Enter a question for Local Coach.", "warn");
     return;
   }
   appendCoachMessage(prompt, true);
@@ -4131,13 +4558,16 @@ function getChapterIndex() {
 }
 
 async function selectNextChapterAndAudit() {
-  if (auditBusy || deepBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   try {
     await selectNextChapter();
     await new Promise((r) => setTimeout(r, 150));
     runPrimaryAudit();
   } catch (e) {
-    alert(e.message);
+    reportActionError(e, "select the next chapter");
   }
 }
 
@@ -4148,36 +4578,53 @@ function cancelBatchAudit() {
 }
 
 function runBatchSectionAudit() {
-  if (auditBusy || deepBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   const actionId = ProzaEdit.LongOp?.ACTION_IDS?.BATCH_AUDIT;
   return runAfterLongOperationWarning(actionId, () => runBatchSectionAuditCore());
 }
 
 async function runBatchSectionAuditCore() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   const n = Math.min(8, Math.max(1, parseInt(getEl("batchSectionCount")?.value, 10) || 3));
   batchCancel = false;
+  batchRunning = true;
+  clearRetry();
   const batchOp = beginLongOperation({ initialStatus: `Batch 0/${n}…` });
-  for (let i = 0; i < n; i++) {
-    if (batchCancel || batchOp.isCancelled()) break;
-    batchOp.setStatus(`Batch ${i + 1}/${n}…`);
-    try {
-      await selectNextSection();
-      await new Promise((r) => setTimeout(r, 200));
-      const ok = await runAuditInternal({
-        extendedLocal: isAuditExtended(),
-        label: `Batch audit ${i + 1}/${n}`,
-        status: `Batch ${i + 1}/${n}…`,
-        skipLongOpWarning: true,
-      });
-      if (!ok) break;
-    } catch (e) {
-      alert(e.message);
-      break;
+  let failed = false;
+  try {
+    for (let i = 0; i < n; i++) {
+      if (batchCancel || batchOp.isCancelled()) break;
+      batchOp.setStatus(`Batch ${i + 1}/${n}…`);
+      try {
+        await selectNextSection();
+        await new Promise((r) => setTimeout(r, 200));
+        if (batchCancel || batchOp.isCancelled()) break;
+        const ok = await runAuditInternal({
+          extendedLocal: isAuditExtended(),
+          label: `Batch audit ${i + 1}/${n}`,
+          status: `Batch ${i + 1}/${n}…`,
+          skipLongOpWarning: true,
+          fromBatch: true,
+        });
+        if (!ok) break;
+      } catch (e) {
+        failed = true;
+        reportActionError(e, "run the batch audit");
+        break;
+      }
     }
+  } finally {
+    batchRunning = false;
+    endLongOperation(batchOp);
   }
-  endLongOperation(batchOp);
-  if (!batchCancel && !batchOp.isCancelled()) showPeStatus("Batch complete.", "ok");
-  else if (batchOp.isCancelled() || batchCancel) showPeStatus("Cancelled.", "warn");
+  if (batchCancel || batchOp.isCancelled()) showPeStatus("Cancelled.", "warn");
+  else if (!failed) showPeStatus("Batch complete.", "ok");
 }
 
 function buildChronologyContext() {
@@ -4251,7 +4698,7 @@ function renderCitationSamples(inTextCitations) {
 
 function runCitationScanFromTarget() {
   if (!isChecked("chkCitationScan", false)) {
-    alert("Enable “Citation pattern scan (opt-in)” on the Checks tab first.");
+    showPeStatus("Enable “Citation pattern scan (opt-in)” on the Checks tab first.", "warn");
     showTab("tab3");
     return;
   }
@@ -4259,14 +4706,17 @@ function runCitationScanFromTarget() {
 }
 
 function runCitationScan() {
-  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy || citationBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   const manuscriptType = getEl("manuscriptType")?.value || "";
   if (!ProzaEdit.CitationEngine?.isEligibleManuscript?.(manuscriptType)) {
-    alert("Citation verify is for Academic, Business, or Technical/Journalism manuscripts. Set Manuscript type on Target.");
+    showPeStatus("Citation verify is for Academic, Business, or Technical/Journalism manuscripts. Set Manuscript type on Target.", "warn");
     return;
   }
   if (!isChecked("chkCitationScan", false)) {
-    alert("Opt in on Checks: turn on “Enable citation pattern scan”, then run Verify citations.");
+    showPeStatus("Opt in on Checks: turn on “Enable citation pattern scan”, then run Verify citations.", "warn");
     showTab("tab3");
     return;
   }
@@ -4276,7 +4726,12 @@ function runCitationScan() {
 }
 
 async function runCitationScanCore() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   citationBusy = true;
+  clearRetry();
   const longOp = beginLongOperation({ initialStatus: "Citation scan (local)…" });
   const btn = getEl("btnScanCitations");
   const targetBtn = getEl("btnVerifyCitationsTarget");
@@ -4331,7 +4786,9 @@ async function runCitationScanCore() {
       showPeStatus("Cancelled.", "warn");
     } else {
       if (statusEl) statusEl.textContent = "";
-      alert(e.message);
+      reportActionError(e, "finish the citation scan", {
+        retry: { label: "Citation scan", run: () => runCitationScanCore() },
+      });
     }
   } finally {
     citationBusy = false;
@@ -4345,10 +4802,13 @@ async function runCitationScanCore() {
 }
 
 function runTimelineScan() {
-  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy || citationBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   const fiction = (getEl("manuscriptType")?.value || "").includes("Fiction");
   if (!fiction) {
-    alert("Timeline scan is for fiction manuscripts. Set Manuscript type to Fiction on Target.");
+    showPeStatus("Timeline scan is for fiction manuscripts. Set Manuscript type to Fiction on Target.", "warn");
     return;
   }
   const actionId =
@@ -4357,7 +4817,12 @@ function runTimelineScan() {
 }
 
 async function runTimelineScanCore() {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   chronologyBusy = true;
+  clearRetry();
   const longOp = beginLongOperation({ initialStatus: "Timeline scan (local)…" });
   const btn = getEl("btnScanTimeline");
   const statusEl = getEl("chronoScanStatus");
@@ -4406,7 +4871,9 @@ async function runTimelineScanCore() {
       showPeStatus("Cancelled.", "warn");
     } else {
       if (statusEl) statusEl.textContent = "";
-      alert(e.message);
+      reportActionError(e, "finish the timeline scan", {
+        retry: { label: "Timeline scan", run: () => runTimelineScanCore() },
+      });
     }
   } finally {
     chronologyBusy = false;
@@ -4419,7 +4886,10 @@ async function runTimelineScanCore() {
 }
 
 async function scanChapterHeatmap() {
-  if (auditBusy || deepBusy || heatmapBusy || chronologyBusy || citationBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   heatmapBusy = true;
   setModuleButtonsDisabled(true);
   showPeStatus("Building chapter heatmap…");
@@ -4431,7 +4901,9 @@ async function scanChapterHeatmap() {
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CHAPTER_HEATMAP, payload);
     showPeStatus(`Heatmap saved (${entries.length} chapters). Re-run audit to view.`, "ok");
   } catch (e) {
-    alert(e.message);
+    reportActionError(e, "build the chapter heatmap", {
+      retry: { label: "Chapter heatmap", run: () => scanChapterHeatmap() },
+    });
   } finally {
     heatmapBusy = false;
     if (!auditBusy && !deepBusy) setModuleButtonsDisabled(false);
@@ -4461,7 +4933,7 @@ async function captureReferenceStyle() {
     );
     showPeStatus("Reference style captured for this document.", "ok");
   } catch (e) {
-    alert(e.message);
+    reportActionError(e, "capture the reference style");
   }
 }
 
@@ -4486,7 +4958,7 @@ function selectNextChapter() {
     let ptr = getChapterIndex();
     if (ptr >= headingIdx.length) {
       ptr = 0;
-      alert("Wrapped to first chapter.");
+      showPeStatus("Wrapped to the first chapter.", "ok");
     }
     const start = headingIdx[ptr];
     const endPara = ptr + 1 < headingIdx.length ? headingIdx[ptr + 1] - 1 : total - 1;
@@ -4497,7 +4969,7 @@ function selectNextChapter() {
     if (scopeEl) scopeEl.value = "selection";
     const pinScope = getEl("pinScope");
     if (pinScope) pinScope.value = "selection";
-  }).catch((e) => alert(e.message));
+  });
 }
 
 function sendLocalCoachStarter(kind) {
@@ -4529,7 +5001,7 @@ function sendIssueToChat(item) {
 async function sendIssueToRewrite(item) {
   const target = item?.targetText;
   if (!target || String(target).startsWith("(")) {
-    alert("Cannot paraphrase this item.");
+    showPeStatus("Cannot paraphrase this item.", "warn");
     return;
   }
   rewriteFromAuditSession = true;
@@ -4557,8 +5029,8 @@ async function sendIssueToRewrite(item) {
     showPeStatus("Rewrite tab — run Local paraphrase when ready.", "ok");
     getEl("rewriteMode")?.focus();
   } catch (e) {
-    if (preview) preview.innerText = e.message || "Could not select text.";
-    alert(e.message || "Could not select text.");
+    if (preview) preview.innerText = wordRecoveryMessage(e, "select that passage");
+    reportActionError(e, "select that passage");
   }
 }
 
@@ -4585,7 +5057,7 @@ function selectNextSection() {
     let idx = getSectionIndex();
     if (idx >= total) {
       idx = 0;
-      alert("Wrapped to document start.");
+      showPeStatus("Wrapped to the start of the document.", "ok");
     }
     const end = Math.min(idx + getSectionParagraphCount() - 1, total - 1);
     paras.items[idx].getRange("Start").expandTo(paras.items[end].getRange("End")).select();
@@ -4600,13 +5072,16 @@ function selectNextSection() {
 }
 
 async function selectNextSectionAndAudit() {
-  if (auditBusy || deepBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   try {
     await selectNextSection();
     await new Promise((r) => setTimeout(r, 100));
     runPrimaryAudit();
   } catch (e) {
-    alert(e.message);
+    reportActionError(e, "select the next section");
   }
 }
 
@@ -4620,10 +5095,13 @@ function getApiKey() {
 }
 
 function runDeepAuditAI() {
-  if (auditBusy || deepBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   const key = getApiKey();
   if (!key) {
-    alert("Add API key in AI Chat tab.");
+    showPeStatus("Add a Gemini API key under Settings → Essentials (optional Gemini), or use the free local audit.", "warn");
     showTab("tab5");
     return;
   }
@@ -4638,50 +5116,64 @@ function runDeepAuditAI() {
 }
 
 async function runDeepAuditAICore() {
-  deepBusy = true;
-  setModuleButtonsDisabled(true);
-  const longOp = beginLongOperation({ initialStatus: "Reading for deep audit…" });
-  showTab("tab4");
-  currentAuditSuggestions = [];
-  const sumD = getEl("summaryReport");
-  const cardD = getEl("cardContainer");
-  if (sumD) sumD.innerHTML = "Deep audit…";
-  if (cardD) cardD.innerHTML = "";
-
-  let excerpt = "";
-  let cancelled = false;
-  try {
-    excerpt = await wordRun("deep-read", async (ctx) => {
-      longOp.setStatus("Reading for deep audit…");
-      return (await readScopeText(ctx, longOp)).substring(0, MAX_DEEP);
-    });
-  } catch (e) {
-    if (isLongOpCancelledError(e)) {
-      cancelled = true;
-      if (sumD) sumD.innerHTML = "Cancelled.";
-      showPeStatus("Cancelled.", "warn");
-    } else {
-      document.getElementById("summaryReport").innerHTML = escapeHtml(e.message);
-    }
-    deepBusy = false;
-    endLongOperation(longOp);
-    setModuleButtonsDisabled(false);
+  if (isOperationBusy()) {
+    warnOperationBusy();
     return;
   }
-
-  const prompt =
-    `${GUARDRAILS}\n${buildManuscriptProfile()}\nReturn ONLY JSON array (max 6):\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":"","ruleId":""}]\n\nEXCERPT:\n${excerpt}`;
-
+  deepBusy = true;
+  clearRetry();
+  const timing = createPhaseTiming();
+  let longOp = null;
+  let cancelled = false;
+  let failed = false;
+  const sumD = getEl("summaryReport");
   try {
-    const reply = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1200, temperature: 0.3 });
+    setModuleButtonsDisabled(true);
+    longOp = beginLongOperation({ initialStatus: "Reading for deep audit…" });
+    showTab("tab4");
+    currentAuditSuggestions = [];
+    const cardD = getEl("cardContainer");
+    if (sumD) sumD.textContent = "Deep audit…";
+    if (cardD) cardD.innerHTML = "";
+
+    let excerpt = "";
+    try {
+      excerpt = await wordRun("deep-read", async (ctx) => {
+        longOp.setStatus("Reading for deep audit…");
+        return (await readScopeText(ctx, longOp)).substring(0, MAX_DEEP);
+      });
+    } catch (e) {
+      if (isLongOpCancelledError(e)) {
+        cancelled = true;
+        if (sumD) sumD.textContent = "Cancelled.";
+        return;
+      }
+      failed = true;
+      const message = wordRecoveryMessage(e, "read the document for deep audit");
+      if (sumD) sumD.innerHTML = `<span style="color:var(--red)">${escapeHtml(message)}</span>`;
+      if (ProzaEdit.AuditReview?.isRetryable?.(e)) registerRetry("Deep audit", () => runDeepAuditAICore());
+      return;
+    }
+    timing.mark("read");
+    longOp.throwIfCancelled();
+    longOp.setStatus("Waiting for Gemini…");
+
+    const prompt =
+      `${GUARDRAILS}\n${buildManuscriptProfile()}\nReturn ONLY JSON array (max 6):\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":"","ruleId":""}]\n\nEXCERPT:\n${excerpt}`;
+    const reply = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1200, temperature: 0.3 }, null, longOp.abortSignal);
+    timing.mark("gemini");
+    longOp.throwIfCancelled();
     let ai = [];
     try {
       const start = reply.indexOf("[");
       const end = reply.lastIndexOf("]");
       if (start < 0 || end <= start) throw new Error("Bad AI JSON—use local audit.");
       const t = reply.substring(start, end + 1);
-      ai = JSON.parse(t)
+      const parsed = JSON.parse(t);
+      if (!Array.isArray(parsed)) throw new Error("Bad AI JSON—use local audit.");
+      ai = parsed
         .slice(0, 8)
+        .filter((x) => x && typeof x === "object")
         .map((x, i) => ({
           id: `ai_${i}`,
           ruleId: x.ruleId || `ai:${i}`,
@@ -4700,15 +5192,30 @@ async function runDeepAuditAICore() {
     const merged = ProzaEdit.Audit._dedupe([...local.suggestions, ...ai]).slice(0, 60);
     const score = Math.max(5, Math.round((10 - merged.filter((s) => s.type === "confirmed").length * 0.45) * 10) / 10);
     finalizeAudit({ ...local, suggestions: merged, score, traffic: ProzaEdit.Metrics.trafficLight(score) }, "Deep audit");
+    timing.mark("render");
   } catch (e) {
-    const msg = e.name === "AbortError" ? "Gemini request timed out." : e.message;
-    const sum = getEl("summaryReport");
-    if (sum) sum.innerHTML = `<span style="color:var(--red)">${escapeHtml(msg)}</span>`;
+    if (isLongOpCancelledError(e)) {
+      cancelled = true;
+      if (sumD) sumD.textContent = "Cancelled.";
+      showAuditEmptyIfNeeded();
+    } else {
+      failed = true;
+      const message = wordRecoveryMessage(e, "finish the deep audit");
+      if (sumD) sumD.innerHTML = `<span style="color:var(--red)">${escapeHtml(message)}</span>`;
+      if (ProzaEdit.AuditReview?.isRetryable?.(e)) registerRetry("Deep audit", () => runDeepAuditAICore());
+    }
   } finally {
     deepBusy = false;
-    endLongOperation(longOp);
     setModuleButtonsDisabled(false);
-    if (!cancelled) showPeStatus("Deep audit finished.", "ok");
+    endLongOperation(longOp);
+    const timingSummary = reportPhaseTiming("deep audit", timing);
+    if (cancelled) showPeStatus("Cancelled.", "warn");
+    else if (failed) {
+      showPeStatus(
+        getRetryController()?.has?.() ? "Deep audit could not finish. Use Try again, or run the free local audit." : "Deep audit could not finish.",
+        "warn"
+      );
+    } else showPeStatus(timingSummary ? `Deep audit finished. ${timingSummary}` : "Deep audit finished.", "ok");
   }
 }
 
@@ -4731,12 +5238,24 @@ function updateTokenEstimate() {
   el.textContent = `Gemini est.: ~${ProzaEdit.Gemini.estimateTokens(chat) + 400} tokens if you use Send via Gemini`;
 }
 
+function appendChatMessage(log, text, cls, isError) {
+  if (!log) return;
+  const div = document.createElement("div");
+  div.className = `chat-msg ${cls}`;
+  if (isError) div.style.color = "var(--red)";
+  div.textContent = String(text == null ? "" : text);
+  log.appendChild(div);
+}
+
 async function sendChatMessage() {
-  if (chatBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   const key = getApiKey();
   const prompt = getEl("chatInput")?.value.trim() || "";
   if (!prompt) {
-    alert("Enter a message.");
+    showPeStatus("Enter a message first.", "warn");
     return;
   }
   if (!key) {
@@ -4749,25 +5268,54 @@ async function sendChatMessage() {
   const log = getEl("chatLog");
   if (!log) return;
 
-  chatBusy = true;
-  const sendBtn = document.querySelector("#tab5 .btn-main");
-  if (sendBtn) sendBtn.disabled = true;
-  log.innerHTML += `<div class="chat-msg chat-user">${escapeHtml(prompt)}</div>`;
+  appendChatMessage(log, prompt, "chat-user");
   getEl("chatInput").value = "";
-
+  let context = "";
+  auditStarting = true;
   try {
-    const ctx = await wordRun("chat-ctx", readChatContext);
-    const text = `${GUARDRAILS}\n${buildManuscriptProfile()}\n\nContext:\n${ctx}\n\nQuestion:\n${prompt}`;
-    const reply = await geminiGenerateWithQuota(text, { maxOutputTokens: 1024, temperature: 0.5 });
-    log.innerHTML += `<div class="chat-msg chat-ai">${escapeHtml(reply)}</div>`;
+    context = await wordRun("chat-ctx", readChatContext);
   } catch (e) {
-    const msg = e.name === "AbortError" ? "Gemini request timed out." : e.message;
-    log.innerHTML += `<div class="chat-msg chat-ai" style="color:var(--red)">${escapeHtml(msg)}</div>`;
-  } finally {
+    const result = reportActionError(e, "read the chat context");
+    appendChatMessage(log, result.message, "chat-ai", true);
     trimChatLog(log);
     log.scrollTop = log.scrollHeight;
+    return;
+  } finally {
+    auditStarting = false;
+  }
+  const text = `${GUARDRAILS}\n${buildManuscriptProfile()}\n\nContext:\n${context}\n\nQuestion:\n${prompt}`;
+  await runChatGeminiCall(text);
+}
+
+async function runChatGeminiCall(text) {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return false;
+  }
+  const log = getEl("chatLog");
+  if (!log) return false;
+  const sendBtn = document.querySelector("#tab5 .btn-main");
+  chatBusy = true;
+  clearRetry();
+  if (sendBtn) sendBtn.disabled = true;
+  const op = beginLongOperation({ initialStatus: "Waiting for Gemini…" });
+  try {
+    const reply = await geminiGenerateWithQuota(text, { maxOutputTokens: 1024, temperature: 0.5 }, null, op.abortSignal);
+    op.throwIfCancelled();
+    appendChatMessage(log, reply, "chat-ai");
+    return true;
+  } catch (e) {
+    const result = reportActionError(e, "get a Gemini reply", {
+      retry: { label: "Gemini chat", run: () => runChatGeminiCall(text) },
+    });
+    appendChatMessage(log, result.message, "chat-ai", !result.cancelled);
+    return false;
+  } finally {
     chatBusy = false;
     if (sendBtn) sendBtn.disabled = false;
+    endLongOperation(op);
+    trimChatLog(log);
+    log.scrollTop = log.scrollHeight;
     persistSettings(false);
   }
 }
@@ -4796,7 +5344,7 @@ function syncShaperSliderLabels() {
 async function runLocalRewrite() {
   if (rewriteBusy) return;
   if (!window.ProzaEdit?.LocalRewrite?.run) {
-    alert("Local paraphrase failed to load. Reload the task pane.");
+    showPeStatus("Local paraphrase failed to load. Reload the task pane.", "warn");
     return;
   }
   rewriteBusy = true;
@@ -4829,7 +5377,7 @@ async function runLocalRewrite() {
     if (est) est.textContent = "Local paraphrase: 0 tokens";
     showPeStatus("Local paraphrase ready (0 tokens).", "ok");
   } catch (e) {
-    if (preview) preview.innerText = e.message;
+    if (preview) preview.innerText = wordRecoveryMessage(e, "paraphrase this selection");
     lastRewritePreview = "";
     lastRewriteOriginal = "";
   } finally {
@@ -4838,25 +5386,25 @@ async function runLocalRewrite() {
 }
 
 async function runSmartRewrite() {
-  if (rewriteBusy) return;
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return;
+  }
   const key = getApiKey();
   if (!key) {
-    alert("API key required.");
+    showPeStatus("Add a Gemini API key under Settings → Essentials, or use Local paraphrase (free).", "warn");
     showTab("tab5");
     return;
   }
-  if (!getApiKey()) {
-    alert("Add a Gemini API key under Optional Gemini, or use Local paraphrase (free).");
-    return;
-  }
   if (!confirm("Rewrite via Gemini uses API tokens. Continue?")) return;
+  const mode = getEl("rewriteMode")?.value || "fluency";
+  const preview = getEl("rewritePreview");
+  if (!preview) return;
   rewriteBusy = true;
-  const mode = document.getElementById("rewriteMode").value;
-  const preview = document.getElementById("rewritePreview");
-  preview.innerText = "Rewriting…";
-
+  preview.innerText = "Reading selection…";
+  let excerpt = "";
   try {
-    const excerpt = await wordRun("rewrite-read", async (ctx) => {
+    excerpt = await wordRun("rewrite-read", async (ctx) => {
       const sel = ctx.document.getSelection();
       sel.load("text");
       await ctx.sync();
@@ -4866,26 +5414,57 @@ async function runSmartRewrite() {
       lastRewriteOriginal = t;
       return t;
     });
-    document.getElementById("rewriteTokenEstimate").textContent = `Est. tokens: ~${ProzaEdit.Gemini.estimateTokens(excerpt) + 200}`;
-    const prompt = ProzaEdit.Gemini.buildRewritePrompt(mode, excerpt, buildManuscriptProfile(), GUARDRAILS);
-    lastRewritePreview = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1024, temperature: 0.55 });
-    preview.innerText = lastRewritePreview;
   } catch (e) {
-    const msg = e.name === "AbortError" ? "Gemini request timed out." : e.message;
-    preview.innerText = msg;
+    preview.innerText = wordRecoveryMessage(e, "read your selection");
     lastRewritePreview = "";
+    return;
   } finally {
     rewriteBusy = false;
+  }
+  const est = getEl("rewriteTokenEstimate");
+  if (est) est.textContent = `Est. tokens: ~${ProzaEdit.Gemini.estimateTokens(excerpt) + 200}`;
+  const prompt = ProzaEdit.Gemini.buildRewritePrompt(mode, excerpt, buildManuscriptProfile(), GUARDRAILS);
+  await runRewriteGeminiCall(prompt);
+}
+
+async function runRewriteGeminiCall(prompt) {
+  if (isOperationBusy()) {
+    warnOperationBusy();
+    return false;
+  }
+  const preview = getEl("rewritePreview");
+  if (!preview) return false;
+  rewriteBusy = true;
+  clearRetry();
+  preview.innerText = "Rewriting…";
+  const op = beginLongOperation({ initialStatus: "Waiting for Gemini…" });
+  try {
+    const text = await geminiGenerateWithQuota(prompt, { maxOutputTokens: 1024, temperature: 0.55 }, null, op.abortSignal);
+    op.throwIfCancelled();
+    lastRewritePreview = text;
+    preview.innerText = text;
+    showPeStatus("Gemini rewrite ready.", "ok");
+    return true;
+  } catch (e) {
+    lastRewritePreview = "";
+    const result = reportActionError(e, "get a Gemini rewrite", {
+      retry: { label: "Gemini rewrite", run: () => runRewriteGeminiCall(prompt) },
+    });
+    preview.innerText = result.cancelled ? "Cancelled. Nothing was changed in Word." : result.message;
+    return false;
+  } finally {
+    rewriteBusy = false;
+    endLongOperation(op);
   }
 }
 
 function applyRewritePreview() {
   if (!lastRewritePreview) {
-    alert("Run rewrite first.");
+    showPeStatus("Run rewrite first.", "warn");
     return;
   }
   if (!lastRewriteOriginal) {
-    alert("Re-run rewrite on your selection, then apply.");
+    showPeStatus("Re-run rewrite on your selection, then apply.", "warn");
     return;
   }
   applyDocumentEdit(lastRewriteOriginal, lastRewritePreview, "Rewrite").then((ok) => {

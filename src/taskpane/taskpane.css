@@ -434,11 +434,120 @@ body.pe-narrow-pane .btn-tool-icon-label {
   gap: 4px;
 }
 
-.pe-toolbar-sticky {
+.pe-sticky-top {
   position: sticky;
   top: 0;
   z-index: 20;
   box-shadow: var(--pe-toolbar-shadow);
+  background: var(--bg);
+}
+
+.pe-op-bar,
+.pe-retry-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 8px;
+  padding: 6px 8px;
+  font-size: 11px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.pe-op-bar.hidden,
+.pe-retry-bar.hidden,
+.pe-global-error.hidden {
+  display: none !important;
+}
+
+.pe-op-bar-label,
+.pe-retry-bar-label {
+  flex: 1 1 140px;
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.pe-op-bar-cancel,
+.pe-retry-btn {
+  min-height: 32px;
+  min-width: 64px;
+}
+
+.pe-op-bar-cancel:focus-visible,
+.pe-retry-btn:focus-visible,
+.pe-global-error .btn-secondary:focus-visible {
+  outline: 2px solid var(--pe-focus-ring, var(--primary));
+  outline-offset: 2px;
+}
+
+.pe-global-error {
+  padding: 8px;
+  border: 1px solid var(--red);
+  border-left-width: 4px;
+  background: var(--bg);
+  font-size: 11px;
+}
+
+.pe-global-error-message {
+  margin: 0 0 4px;
+  color: var(--red);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.pe-global-error-detail {
+  margin: 0 0 6px;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.card-explanation,
+.card-target,
+.card-replacement,
+.pe-status,
+#summaryReport,
+.chat-msg {
+  overflow-wrap: anywhere;
+}
+
+.pe-card-cap-note {
+  margin: 8px 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .pe-op-bar,
+  .pe-retry-bar,
+  .pe-global-error {
+    border: 1px solid CanvasText;
+  }
+  .pe-op-bar-cancel,
+  .pe-retry-btn,
+  .btn-tool,
+  .btn-go,
+  .btn-apply,
+  .btn-dismiss {
+    border: 1px solid ButtonText;
+  }
+  .pe-op-bar-cancel:focus-visible,
+  .pe-retry-btn:focus-visible,
+  .btn-tool:focus-visible,
+  .tab-btn:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
 }
 
 .scope-char-preview {
@@ -828,28 +937,6 @@ body.pe-narrow-pane .btn-tool-icon-label {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 4px;
-}
-
-.pe-longop-progress {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 6px;
-  padding: 6px 8px;
-  font-size: 10px;
-  background: var(--bg);
-  border: 1px dashed var(--border);
-  border-radius: 4px;
-}
-
-.pe-longop-progress.hidden {
-  display: none !important;
-}
-
-.pe-longop-progress-label {
-  color: var(--text-muted);
-  flex: 1;
 }
 
 .pe-btn.pe-btn-primary {
@@ -2165,10 +2252,13 @@ textarea:focus {
 }
 
 [data-pe-theme="dark"] .pe-toolbar,
+[data-pe-theme="dark"] .pe-op-bar,
+[data-pe-theme="dark"] .pe-retry-bar,
+[data-pe-theme="dark"] .pe-global-error,
+[data-pe-theme="dark"] .pe-sticky-top,
 [data-pe-theme="dark"] .audit-run-hub,
 [data-pe-theme="dark"] .pe-scope-chip,
-[data-pe-theme="dark"] .audit-pins,
-[data-pe-theme="dark"] .pe-longop-progress {
+[data-pe-theme="dark"] .audit-pins {
   background: var(--surface-subtle);
   border-color: var(--border-muted);
 }

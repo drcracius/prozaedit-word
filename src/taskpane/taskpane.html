@@ -89,7 +89,8 @@
       <button type="button" class="btn-linkish" onclick="dismissSessionTips(true)">Don&apos;t show again</button>
     </div>
   </div>
-  <div class="pe-toolbar pe-toolbar-sticky" role="toolbar" aria-label="ProzaEdit actions">
+  <div class="pe-sticky-top">
+  <div class="pe-toolbar" role="toolbar" aria-label="ProzaEdit actions">
     <button type="button" id="btnUndo" class="btn-tool btn-tool-icon" disabled onclick="prozaEditUndo()" aria-label="Undo last ProzaEdit replace" data-pe-tip="btn-undo">
       <svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
       <span class="btn-tool-icon-label">Undo</span>
@@ -114,6 +115,24 @@
       <svg class="pe-icon pe-icon-on-accent" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       <span class="btn-tool-icon-label">Run audit</span>
     </button>
+  </div>
+  <div id="peOpBar" class="pe-op-bar hidden" role="group" aria-label="Operation in progress" aria-busy="false">
+    <span id="peOpBarLabel" class="pe-op-bar-label" role="status" aria-live="polite" aria-atomic="true">Working…</span>
+    <button type="button" id="btnCancelLongOp" class="btn-secondary pe-btn pe-op-bar-cancel" aria-label="Cancel current operation">Cancel</button>
+  </div>
+  <div id="peRetryBar" class="pe-retry-bar hidden" role="group" aria-label="Recovery">
+    <span id="peRetryBarLabel" class="pe-retry-bar-label">The last action did not finish.</span>
+    <button type="button" id="btnPeRetry" class="btn-secondary pe-btn pe-retry-btn" aria-label="Try again">Try again</button>
+    <button type="button" id="btnPeRetryDismiss" class="btn-linkish pe-btn" aria-label="Dismiss recovery options">Dismiss</button>
+  </div>
+  <div id="peGlobalError" class="pe-global-error hidden" role="alert">
+    <p id="peGlobalErrorMessage" class="pe-global-error-message"></p>
+    <p id="peGlobalErrorDetail" class="pe-global-error-detail help-muted"></p>
+    <div class="pe-top-banner-actions">
+      <button type="button" id="btnPeGlobalErrorReload" class="btn-secondary pe-btn">Reload pane</button>
+      <button type="button" id="btnPeGlobalErrorDismiss" class="btn-linkish pe-btn">Dismiss</button>
+    </div>
+  </div>
   </div>
   <p id="peWorkflowStatusLine" class="pe-workflow-status-line help-muted" aria-live="polite">Scope: highlighted selection — refresh count on Target for character estimate.</p>
   <nav id="peWorkflowCrossNav" class="pe-workflow-cross-nav hidden" aria-label="Related workflow steps"></nav>
@@ -265,10 +284,6 @@
     </details>
     <div class="audit-run-hub pe-checks-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
-      <div id="peLongOpProgressChecks" class="pe-longop-progress hidden" role="status" aria-live="polite" aria-atomic="true">
-        <span id="peLongOpProgressLabelChecks" class="pe-longop-progress-label">Reading document…</span>
-        <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpChecks" aria-label="Cancel current operation">Cancel</button>
-      </div>
       <p id="peChecksRunAuditTagline" class="pe-checks-run-tagline help-muted">ProzaEdit checks when you click Run — it does not underline while you type.</p>
       <p id="peChecksReportDepthPlainHint" class="pe-checks-depth-plain help-muted hidden" aria-live="polite"></p>
       <p id="activeChecksHint" class="active-checks-hint">Turn on checks below, then Run audit.</p>
@@ -372,10 +387,6 @@
     <p id="auditScopeChip" class="pe-scope-chip pe-audit-scope-chip help-muted" aria-live="polite">Scope (read-only): —</p>
     <div class="audit-run-hub audit-run-hub-inline">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
-      <div id="peLongOpProgressAudit" class="pe-longop-progress hidden" role="status" aria-live="polite" aria-atomic="true">
-        <span id="peLongOpProgressLabelAudit" class="pe-longop-progress-label">Reading document…</span>
-        <button type="button" class="btn-linkish pe-btn" id="btnCancelLongOpAudit" aria-label="Cancel current operation">Cancel</button>
-      </div>
       <label class="toggle-row compact"><span>Extended checks</span><input type="checkbox" data-audit-extended="1" id="auditExtended"></label>
       <button type="button" class="btn-linkish" onclick="showTab('tab3')">Configure checks →</button>
     </div>
@@ -783,6 +794,7 @@
     </div>
   </div>
 
+  <script src="lib/error-guard.js"></script>
   <script src="lib/settings-store.js"></script>
   <script src="lib/ui-prefs-helpers.js"></script>
   <script src="lib/workflow-nav-helpers.js"></script>
@@ -791,6 +803,10 @@
   <script src="lib/long-operation-helpers.js"></script>
   <script src="lib/long-operation-controller.js"></script>
   <script src="lib/audit-review-helpers.js"></script>
+  <script src="lib/recovery-helpers.js"></script>
+  <script src="lib/edit-apply.js"></script>
+  <script src="lib/phase-timing.js"></script>
+  <script src="lib/config-guard.js"></script>
   <script src="lib/text-metrics.js"></script>
   <script src="lib/proper-noun-analyse.js"></script>
   <script src="lib/lexical-banks.js"></script>
