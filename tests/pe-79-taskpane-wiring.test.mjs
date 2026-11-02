@@ -175,7 +175,7 @@ test("PE-79: AI help is reachable in Simple and Advanced, off until a key is set
     t.peval("applySimpleMode()");
     t.peval("openAiHelpSetup()");
     await t.settle(100);
-    assert.match(t.status(), /AI help is off until you add a Gemini API key/i);
+    assert.match(t.status(), /AI help is off until you add an AI provider API key/i);
     assert.deepEqual(t.errors.map((e) => String(e && (e.message || e))), []);
   } finally {
     t.close();

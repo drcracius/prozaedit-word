@@ -194,7 +194,7 @@
 
 ### Phase 2 — Product polish (P1–P2)
 
-- **Inter font** — [prozaedit-typography-and-fonts.md](./prozaedit-typography-and-fonts.md) / [prozaedit-design-system-beta.md](./prozaedit-design-system-beta.md): optional hosted Inter when egress/policy allows.
+- **Inter font** — [prozaedit-typography-and-fonts.md](./TYPOGRAPHY-AND-FONTS.md) / [prozaedit-design-system-beta.md](./DESIGN-SYSTEM-BETA.md): optional hosted Inter when egress/policy allows.
 - **Diagnostics ingest** — [DIAGNOSTICS.md](./DIAGNOSTICS.md) + [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md); manifest AppDomain when deployed.
 - Persist **batch section count** or simplify UI.
 - Refresh **shipped rating** doc after validation data.
@@ -211,7 +211,7 @@
 |-----|-----|
 | [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) | Web 1.0 execution |
 | [prozaedit-competitive-addin-ui-research.md](https://github.com/drcracius/prozaedit-word/blob/main/docs/prozaedit-competitive-addin-ui-research.md) | PE-56/57 rationale (store mirror) |
-| [prozaedit-design-system-beta.md](./prozaedit-design-system-beta.md) | Semantic colors / dark |
+| [prozaedit-design-system-beta.md](./DESIGN-SYSTEM-BETA.md) | Semantic colors / dark |
 | [pe-ui-enhancement-backlog.md](./pe-ui-enhancement-backlog.md) | UX backlog |
 | [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md) | Prior RC audit |
 

@@ -15,7 +15,7 @@
 
 ## 2. Target and scope
 
-- [ ] Set manuscript type, scope modes: selection, page range, selected chapters (reload list), full manuscript.
+- [ ] Set manuscript type, scope modes: selection, page range, chosen chapters (reload list), full manuscript.
 - [ ] **Refresh count** updates Target preview and the **sticky scope line** under the toolbar (PE-57: line includes **Guide:** + **Scope:**).
 - [ ] Change scope without refresh — line updates label; count refreshes when applicable.
 - [ ] Change **Preferred style guide** on Target — sticky line **Guide:** label updates (custom house name when applicable).

@@ -42,7 +42,7 @@ ProzaEdit.ScopeReader = {
     if (cc > 0) {
       parts.push(`~${cc.toLocaleString()} chars`);
       if (cap > 0 && cc >= this.softCapThreshold(cap)) {
-        parts.push(`(approaching ${cap.toLocaleString()} cap — try Selected chapters)`);
+        parts.push(`(approaching ${cap.toLocaleString()} cap — try Chosen chapters)`);
       }
     }
     if (info.scopeLabel) parts.push(`— ${info.scopeLabel}`);
@@ -244,12 +244,25 @@ ProzaEdit.ScopeReader = {
     return text;
   },
 
-  async textFromParagraphRange(context, startPara, endPara, opts) {
+  async textFromParagraphRange(context, startPara, endPara, opts, expectTitle) {
     opts = opts || {};
-    const paras = context.document.body.paragraphs;
-    paras.load("items");
-    await context.sync();
-    if (startPara < 0 || endPara >= paras.items.length) throw new Error("Chapter range out of document bounds.");
+    let paras = opts._paras;
+    if (!paras) {
+      paras = context.document.body.paragraphs;
+      paras.load("items");
+      await context.sync();
+    }
+    if (startPara < 0 || endPara >= paras.items.length || endPara < startPara) {
+      throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+    }
+    if (expectTitle != null) {
+      paras.items[startPara].load("text");
+      await context.sync();
+      const got = (paras.items[startPara].text || "").trim().substring(0, 80);
+      if (got !== String(expectTitle)) {
+        throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+      }
+    }
     const CHUNK = 50;
     let text = "";
     for (let blockStart = startPara; blockStart <= endPara; blockStart += CHUNK) {
@@ -287,7 +300,7 @@ ProzaEdit.ScopeReader = {
     paras.load("items");
     await context.sync();
     const total = paras.items.length;
-    if (!total) throw new Error("Document is empty.");
+    if (!total) throw new Error("The document is empty. Add some text first.");
     let charPos = 0;
     let out = "";
     const CHUNK = 50;
@@ -319,7 +332,7 @@ ProzaEdit.ScopeReader = {
     const n = parseInt(chapterNum, 10);
     const ch = list.find((c) => c.index === n);
     if (!ch) throw new Error(`Chapter ${n} not found. Use Heading 1–3 on chapter titles.`);
-    const text = await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts);
+    const text = await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts, ch.title);
     return { text, label: `Ch. ${n}: ${ch.title}` };
   },
 
@@ -331,7 +344,7 @@ ProzaEdit.ScopeReader = {
     const start = list.find((c) => c.index === a);
     const end = list.find((c) => c.index === b);
     if (!start || !end) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
-    const text = await this.textFromParagraphRange(context, start.startPara, end.endPara, opts);
+    const text = await this.textFromParagraphRange(context, start.startPara, end.endPara, opts, start.title);
     return { text, label: `Ch. ${a}–${b}` };
   },
 
@@ -343,11 +356,18 @@ ProzaEdit.ScopeReader = {
       throw new Error("Select at least one chapter on Target (Reload chapter list), then check the chapters to include.");
     }
     let text = "";
+    const sharedParas = context.document.body.paragraphs;
+    sharedParas.load("items");
+    await context.sync();
+    const maxChars = opts.maxChars != null ? Number(opts.maxChars) : 600000;
     for (let i = 0; i < normalized.length; i++) {
       this._cancelCheck(opts);
       const ch = list.find((c) => c.index === normalized[i]);
       if (!ch) continue;
-      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts);
+      text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, { ...opts, _paras: sharedParas }, ch.title);
+      if (text.length > maxChars) {
+        throw new Error(`Chosen chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
+      }
       if (typeof opts.onProgress === "function") {
         opts.onProgress({
           paragraphsLoaded: i + 1,
@@ -357,7 +377,7 @@ ProzaEdit.ScopeReader = {
         });
       }
     }
-    if (!text.trim()) throw new Error("Selected chapters contain no text.");
+    if (!text.trim()) throw new Error("Chosen chapters contain no text.");
     const label = this.formatSelectedChaptersLabel(normalized, list);
     return { text, label: `Selected: ${label}` };
   },
@@ -395,7 +415,16 @@ ProzaEdit.ScopeReader = {
     if (mode === "selected-chapters") {
       return this.readBySelectedChapters(context, opts.selectedChapterIndices, opts.chapters, opts);
     }
-    throw new Error("Unknown scope mode.");
+    throw new Error("That scope is not recognised. Pick a scope on Target.");
+  },
+
+  async _loadParaTexts(context, paras, from, to, opts) {
+    for (let b = from; b <= to; b += 200) {
+      this._cancelCheck(opts);
+      const e = Math.min(b + 199, to);
+      for (let i = b; i <= e; i++) paras.items[i].load("text");
+      await context.sync();
+    }
   },
 
   /** Paragraph objects for chronology walk (15k cap; indices are body paragraph indexes). */
@@ -407,10 +436,13 @@ ProzaEdit.ScopeReader = {
     paras.load("items");
     await context.sync();
     const total = paras.items.length;
-    if (total > 15000) throw new Error("Too many paragraphs for timeline scan (15,000 cap).");
+    if (total > 15000) throw new Error("This document is too long for a whole-document timeline (limit 15,000 paragraphs). Choose a chapter or page range.");
 
     let start = 0;
     let end = total - 1;
+    const stale = () =>
+      new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+    const rangeOk = (a, b) => a >= 0 && b < total && b >= a;
 
     if (mode === "full") {
       start = 0;
@@ -422,6 +454,7 @@ ProzaEdit.ScopeReader = {
       if (!ch) throw new Error(`Chapter ${n} not found. Use Heading 1–3 on chapter titles.`);
       start = ch.startPara;
       end = ch.endPara;
+      if (!rangeOk(start, end)) throw stale();
     } else if (mode === "chapter-range") {
       const list = opts.chapters || (await this.listChapters(context));
       const a = Math.min(parseInt(opts.chapterFrom, 10) || 1, parseInt(opts.chapterTo, 10) || 1);
@@ -431,6 +464,7 @@ ProzaEdit.ScopeReader = {
       if (!startCh || !endCh) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
       start = startCh.startPara;
       end = endCh.endPara;
+      if (!rangeOk(start, end)) throw stale();
     } else if (mode === "selected-chapters") {
       const list = opts.chapters || (await this.listChapters(context));
       const normalized = this.normalizeSelectedChapterIndices(opts.selectedChapterIndices, list);
@@ -439,24 +473,32 @@ ProzaEdit.ScopeReader = {
         .map((n) => list.find((c) => c.index === n))
         .filter(Boolean)
         .sort((x, y) => x.startPara - y.startPara);
-      for (let r = 0; r < ranges.length; r++) {
-        const ch = ranges[r];
-        for (let i = ch.startPara; i <= ch.endPara; i++) {
-          paras.items[i].load(["text", "styleBuiltIn"]);
-        }
-      }
-      await context.sync();
+      if (ranges.some((ch) => !rangeOk(ch.startPara, ch.endPara))) throw stale();
+      const maxChars = opts.maxChars != null ? Number(opts.maxChars) : 600000;
       const out = [];
+      let chars = 0;
+      const CH = 50;
       for (let r = 0; r < ranges.length; r++) {
         const ch = ranges[r];
-        for (let i = ch.startPara; i <= ch.endPara; i++) {
-          const p = paras.items[i];
-          const s = p.styleBuiltIn;
-          let headingLevel = 0;
-          if (s === Word.Style.heading1) headingLevel = 1;
-          else if (s === Word.Style.heading2) headingLevel = 2;
-          else if (s === Word.Style.heading3) headingLevel = 3;
-          out.push({ index: i, text: p.text || "", headingLevel });
+        for (let blockStart = ch.startPara; blockStart <= ch.endPara; blockStart += CH) {
+          this._cancelCheck(opts);
+          const blockEnd = Math.min(blockStart + CH - 1, ch.endPara);
+          for (let i = blockStart; i <= blockEnd; i++) paras.items[i].load(["text", "styleBuiltIn"]);
+          await context.sync();
+          for (let i = blockStart; i <= blockEnd; i++) {
+            const p = paras.items[i];
+            const s = p.styleBuiltIn;
+            let headingLevel = 0;
+            if (s === Word.Style.heading1) headingLevel = 1;
+            else if (s === Word.Style.heading2) headingLevel = 2;
+            else if (s === Word.Style.heading3) headingLevel = 3;
+            const text = p.text || "";
+            chars += text.length + 1;
+            out.push({ index: i, text, headingLevel });
+          }
+          if (chars > maxChars) {
+            throw new Error(`Chosen chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
+          }
         }
       }
       return out;
@@ -467,8 +509,7 @@ ProzaEdit.ScopeReader = {
       const endChar = to * this.CHARS_PER_PAGE;
       let charPos = 0;
       let foundStart = false;
-      for (let i = 0; i < total; i++) paras.items[i].load("text");
-      await context.sync();
+      await this._loadParaTexts(context, paras, 0, total - 1, opts);
       for (let i = 0; i < total; i++) {
         const t = paras.items[i].text || "";
         const chunkLen = t.length + 1;
@@ -501,19 +542,20 @@ ProzaEdit.ScopeReader = {
       }
       for (let i = 0; i < selParas.items.length; i++) selParas.items[i].load("text");
       await context.sync();
+      const n = selParas.items.length;
       const firstT = (selParas.items[0].text || "").trim();
-      const lastT = (selParas.items[selParas.items.length - 1].text || "").trim();
-      for (let i = 0; i < total; i++) paras.items[i].load("text");
-      await context.sync();
+      const lastT = (selParas.items[n - 1].text || "").trim();
+      await this._loadParaTexts(context, paras, 0, total - 1, opts);
+      const textAt = (i) => (paras.items[i].text || "").trim();
       start = -1;
-      end = -1;
-      for (let i = 0; i < total; i++) {
-        const t = (paras.items[i].text || "").trim();
-        if (start < 0 && t === firstT) start = i;
-        if (t === lastT) end = i;
+      for (let i = 0; i < total && start < 0; i++) {
+        if (textAt(i) === firstT && i + n - 1 < total && textAt(i + n - 1) === lastT) start = i;
       }
-      if (start < 0) start = 0;
-      if (end < start) end = Math.min(start + selParas.items.length - 1, total - 1);
+      if (start < 0) {
+        for (let i = 0; i < total && start < 0; i++) if (textAt(i) === firstT) start = i;
+      }
+      if (start < 0) throw new Error("Could not locate your selection in the document (it changed). Select the text again.");
+      end = Math.min(start + n - 1, total - 1);
     }
 
     const out = [];

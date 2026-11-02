@@ -52,9 +52,10 @@ export function createWordMock(opts = {}) {
     failRunError: null,
     syncHook: null,
     settingsFail: false,
-    headings: [],
+    headings: opts.headings || [],
   };
   const settings = { ...(opts.settings || {}) };
+  let itemsCache = {};
   const makeRange = (text) => ({
     text,
     load() {},
@@ -96,6 +97,9 @@ export function createWordMock(opts = {}) {
       const ctx = {
         document: {
           getSelection: () => makeRange(state.selection),
+          get changeTrackingMode() {
+            return state.trackingMode;
+          },
           body: {
             get text() {
               return state.paragraphs.join("\n");
@@ -104,12 +108,15 @@ export function createWordMock(opts = {}) {
             paragraphs: {
               load() {},
               get items() {
-                return state.paragraphs.map((t, i) => ({
+                if (itemsCache.src === state.paragraphs && itemsCache.head === state.headings) return itemsCache.items;
+                const items = state.paragraphs.map((t, i) => ({
                   text: t,
                   styleBuiltIn: state.headings.includes(i) ? "Heading1" : "Normal",
                   load() {},
                   getRange: () => makeRange(t),
                 }));
+                itemsCache = { src: state.paragraphs, head: state.headings, items };
+                return items;
               },
             },
             search: (q) => state.bodySearch(q),
@@ -132,6 +139,7 @@ export function createWordMock(opts = {}) {
     HostType: { Word: "Word" },
     AsyncResultStatus: { Succeeded: "succeeded", Failed: "failed" },
     context: {
+      requirements: { isSetSupported: (name, ver) => !(state.apiMax && Number(ver) > state.apiMax) },
       document: {
         settings: {
           get: (k) => settings[k],
@@ -190,6 +198,10 @@ export async function bootTaskpane(opts = {}) {
     } catch (e) {
       errors.push(e);
     }
+  }
+  if (opts.keepDefaultScope !== true) {
+    const sc = window.document.getElementById("scope");
+    if (sc) sc.value = "selection";
   }
   const acceptConfirm = opts.confirm === undefined ? true : !!opts.confirm;
   if (window.ProzaEdit?.ConfirmDialog) {

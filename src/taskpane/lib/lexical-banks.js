@@ -9,16 +9,39 @@
     ["final outcome", "outcome"],
     ["absolutely essential", "essential"],
     ["past history", "history"],
-    ["future plans", "plans"],
     ["completely eliminate", "eliminate"],
     ["repeat again", "repeat"],
-    ["each and every", "each"],
     ["exact same", "same"],
     ["free gift", "gift"],
     ["honest truth", "truth"],
-    ["null and void", "void"],
     ["true facts", "facts"],
-    ["whether or not", "whether"],
+    ["two twins", "twins"],
+    ["new innovation", "innovation"],
+    ["added bonus", "bonus"],
+    ["join together", "join"],
+    ["return back", "return"],
+    ["returned back", "returned"],
+    ["revert back", "revert"],
+    ["basic fundamentals", "fundamentals"],
+    ["advance planning", "planning"],
+    ["blend together", "blend"],
+    ["collaborate together", "collaborate"],
+    ["connect together", "connect"],
+    ["merge together", "merge"],
+    ["general consensus", "consensus"],
+    ["sum total", "total"],
+    ["very unique", "unique"],
+  ];
+
+  /** Idiomatic doublets: usually deliberate, so shown only in Advanced (low confidence) and never auto-rewritten. */
+  const PLEONASMS_SOFT = [
+    ["future plans", "plans"],
+    ["each and every", "each"],
+    ["null and void", "void"],
+    ["reason why", "reason"],
+    ["advance warning", "warning"],
+    ["past experience", "experience"],
+    ["foreign imports", "imports"],
   ];
 
   const AI_PHRASES = [
@@ -69,13 +92,8 @@
     ["for the purpose of", "to"],
   ];
 
-  const INFORMAL_TO_FORMAL = [
-    ["get", "obtain"],
-    ["got", "obtained"],
-    ["a lot of", "many"],
-    ["kind of", "somewhat"],
-    ["sort of", "somewhat"],
-  ];
+  /** Kept for compatibility; the formal rewrite handles "a lot of" and "kind/sort of" by context, not blind substitution. */
+  const INFORMAL_TO_FORMAL = [];
 
   const CONTRACTIONS = {
     "don't": "do not",
@@ -170,6 +188,7 @@
 
   root.LexicalBanks = {
     PLEONASMS,
+    PLEONASMS_SOFT,
     AI_PHRASES,
     SPOILER_PHRASES,
     WORDINESS,

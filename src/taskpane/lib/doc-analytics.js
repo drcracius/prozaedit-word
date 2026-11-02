@@ -3,8 +3,7 @@ window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.DocAnalytics = {
   sentenceWordCounts(text) {
-    const sentences = String(text || "")
-      .split(/(?<=[.!?])\s+/)
+    const sentences = ProzaEdit.Metrics.splitSentences(String(text || ""))
       .map((s) => (s.match(/\b[\w'-]+\b/g) || []).length)
       .filter((n) => n > 0);
     return sentences.slice(0, 500);

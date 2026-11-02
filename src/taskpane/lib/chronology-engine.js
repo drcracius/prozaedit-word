@@ -67,7 +67,7 @@
     return {
       chronoDepth,
       chronoSpoilerGuard: !!ctx.chronoSpoilerGuard,
-      fiction: String(ctx.manuscriptType || "").includes("Fiction"),
+      fiction: ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(ctx.manuscriptType) : (String(ctx.manuscriptType || "").includes("Fiction") && !/non-?fiction/i.test(String(ctx.manuscriptType))),
       mutedRules: ctx.mutedRules || [],
       reportDensity: ctx.reportDensity || "balanced",
     };
@@ -150,7 +150,7 @@
     years.sort((a, b) => a.y - b.y);
     for (let i = 1; i < years.length; i++) {
       const gap = years[i].y - years[i - 1].y;
-      if (gap > 150 && years[i].ev.paraIndex - years[i - 1].ev.paraIndex < 12) {
+      if (gap > 150 && Math.abs(years[i].ev.paraIndex - years[i - 1].ev.paraIndex) < 12) {
         push({
           ruleId: `chrono:year:gap:${years[i].y}`,
           module: "Timeline scan",

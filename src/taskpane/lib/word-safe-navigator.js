@@ -1,11 +1,11 @@
-/* Safe Word search strings (255-char cap, wildcard strip) and scope-aware search/navigation. */
+/* Safe Word search strings (255-char cap; caret codes stripped; other characters are literal because we never enable wildcards) and scope-aware search/navigation. */
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.WordSafeNavigator = {
   sanitizeSearch(t) {
     return String(t)
       .replace(/[\r\n\u000b\u000c\u2028\u2029]/g, " ")
-      .replace(/[\^?$*[\]{}<>@#]/g, "")
+      .replace(/\^/g, "")
       .trim()
       .substring(0, 255);
   },
@@ -38,11 +38,11 @@ ProzaEdit.WordSafeNavigator = {
   /** Select first body match for audit card "Go to". */
   async selectFirstInBody(context, target) {
     const q = this.sanitizeSearch(target);
-    if (!q) throw new Error("Cannot locate.");
+    if (!q) throw new Error("There is no text to look for.");
     const r = context.document.body.search(q, { matchCase: false });
     r.load("items");
     await context.sync();
-    if (!r.items.length) throw new Error("Not found.");
+    if (!r.items.length) throw new Error("That text was not found in the document. It may have been edited — run the check again.");
     r.items[0].select();
     await context.sync();
   },

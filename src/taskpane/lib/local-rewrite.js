@@ -28,11 +28,30 @@ ProzaEdit.LocalRewrite = {
     return text.replace(re, repl);
   },
 
+  /** Whole-word, case-preserving replace ("bandit's" is not "it's"; "Don't" becomes "Do not"). */
+  _replaceWord(text, find, repl) {
+    if (!find) return text;
+    const esc = find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(^|[^A-Za-z0-9_\\u00C0-\\u024F])(${esc})(?![A-Za-z0-9_\\u00C0-\\u024F])`, "gi");
+    return text.replace(re, (m, pre, hit) => pre + (/^[A-Z]/.test(hit) && /^[a-z]/.test(repl) ? repl[0].toUpperCase() + repl.slice(1) : repl));
+  },
+
+  /** Remove matches of `re` (which must capture trailing whitespace) and keep a sentence-start capital on the next word. */
+  _dropPhrase(text, re) {
+    return text.replace(re, (m, offset, whole) => {
+      const startsUpper = /^[A-Z]/.test(m);
+      const before = whole.slice(0, offset);
+      const atStart = !before.trim() || /[.!?]["\u201D')\]]*\s*$/.test(before);
+      if (!(startsUpper || atStart)) return "";
+      return "\u0001";
+    }).replace(/\u0001(\s*)([a-z])/g, (m, sp, ch) => sp + ch.toUpperCase()).replace(/\u0001/g, "");
+  },
+
   _applyPleonasms(text) {
     let t = text;
     const list = ProzaEdit.LexicalBanks?.PLEONASMS || ProzaEdit.Audit?.PLEONASMS || [];
     list.forEach(([target, replacement]) => {
-      t = this._replaceAllInsensitive(t, target, replacement);
+      t = this._replaceWord(t, target, replacement);
     });
     return t;
   },
@@ -40,35 +59,39 @@ ProzaEdit.LocalRewrite = {
   fluency(text) {
     let t = this._normalize(text);
     this.WORDINESS.forEach(([a, b]) => {
-      t = this._replaceAllInsensitive(t, a, b);
+      t = this._replaceWord(t, a, b);
     });
     t = this._applyPleonasms(t);
-    t = t.replace(/\b(in fact|as a matter of fact),?\s*/gi, "");
+    t = this._dropPhrase(t, /\b(?:in fact|as a matter of fact),?[ \t]*/gi);
     return t.trim();
   },
 
   formal(text) {
     let t = this.fluency(text);
+    t = t.replace(/[\u2018\u2019]/g, "'");
     Object.entries(this.CONTRACTIONS).forEach(([c, exp]) => {
-      t = this._replaceAllInsensitive(t, c, exp);
+      t = this._replaceWord(t, c, exp);
     });
-    this.INFORMAL_TO_FORMAL.forEach(([a, b]) => {
-      t = this._replaceAllInsensitive(t, ` ${a} `, ` ${b} `);
+    t = t.replace(/\b(a lot of)\s+([A-Za-z\u00C0-\u024F'-]+)/gi, (m, lot, next) => {
+      const many = /[^s]s$/i.test(next) || /(?:men|women|children|people)$/i.test(next);
+      const word = many ? "many" : "a great deal of";
+      return (/^A/.test(lot) ? word[0].toUpperCase() + word.slice(1) : word) + " " + next;
     });
+    t = t.replace(/\b(is|was|are|were|be|been|seems?|seemed|looks?|looked|feels?|felt)\s+(?:kind|sort) of\s+/gi, "$1 somewhat ");
     return t.trim();
   },
 
   academic(text) {
     let t = this.formal(text);
-    t = t.replace(/\b(very|really|quite|extremely|incredibly)\s+(\w+)/gi, "$2");
-    t = t.replace(/\bI think\b/gi, "The analysis indicates");
-    t = t.replace(/\bI believe\b/gi, "The evidence suggests");
+    for (let i = 0; i < 3; i++) t = this._dropPhrase(t, /\b(?:very|really|quite|extremely|incredibly)[ \t]+(?=[A-Za-z])/gi);
+    t = t.replace(/\bI think\b/g, "The analysis indicates");
+    t = t.replace(/\bI believe\b/g, "The evidence suggests");
     return t.trim();
   },
 
   creative(text) {
     let t = this.fluency(text);
-    t = t.replace(/\b(Suddenly|Instantly|Without warning),?\s*/g, "");
+    t = this._dropPhrase(t, /\b(?:Suddenly|Instantly|Without warning),?[ \t]*/g);
     return t.trim();
   },
 

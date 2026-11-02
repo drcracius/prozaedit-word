@@ -29,7 +29,7 @@ Validation checklist: [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WO
 ## Known host limits (Microsoft)
 
 - Task pane width and dialog behavior are controlled by Word/WebView.
-- Long documents: prefer **Selected chapters** or **Page range** scope; full-manuscript runs are user-tested, not guaranteed.
+- Long documents: prefer **Chosen chapters** or **Page range** scope; full-manuscript runs are user-tested, not guaranteed.
 - In-pane confirmations (PE-74) replace blocked `window.confirm` for Apply and other critical actions.
 
 ---

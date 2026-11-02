@@ -31,8 +31,9 @@
     const fillers = ProzaEdit.LexicalBanks?.DENSITY_FILLERS || [];
     let t = String(text || "");
     fillers.forEach((word) => {
-      const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+`, "gi");
-      t = t.replace(re, "");
+      // "rather than" is a conjunction, not a filler; keep the sentence's capital if the first word is dropped.
+      const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+(?!than\\b)(\\w)`, "gi");
+      t = t.replace(re, (m, next, offset, whole) => (offset === 0 || /[.!?]["')\u201D]*\s*$/.test(whole.slice(0, offset)) ? next.toUpperCase() : next));
     });
     return t;
   }

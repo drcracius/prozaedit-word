@@ -136,17 +136,18 @@ ProzaEdit.Settings = {
 
   async muteRule(ruleId, options) {
     options = options || {};
-    if (!ruleId) return;
+    if (!ruleId) return true;
     const global = options.global !== false;
     const existing = this._parse(this.get(this.KEYS.MUTED, "[]"), []);
     const setDoc = new Set(Array.isArray(existing) ? existing.filter((x) => typeof x === "string") : []);
     setDoc.add(ruleId);
-    await this.setAsync(this.KEYS.MUTED, JSON.stringify([...setDoc]));
+    const saved = await this.setAsyncGuarded(this.KEYS.MUTED, JSON.stringify([...setDoc]));
     if (global) {
       const g = new Set(this.getGlobalMutedRules());
       g.add(ruleId);
       this._writeGlobalJson(this.KEYS.GLOBAL_MUTED, [...g]);
     }
+    return saved !== false;
   },
 
   async dismissTarget(targetText) {
@@ -158,11 +159,12 @@ ProzaEdit.Settings = {
   },
 
   async resetMutedRules() {
-    await this.setAsync(this.KEYS.MUTED, JSON.stringify([]));
+    const ok = await this.setAsyncGuarded(this.KEYS.MUTED, JSON.stringify([]));
     try {
       localStorage.removeItem(this.KEYS.GLOBAL_MUTED);
       localStorage.removeItem(this.KEYS.GLOBAL_DISMISSED);
     } catch (_) {}
+    return ok;
   },
 
   getDictionary() {
@@ -178,14 +180,13 @@ ProzaEdit.Settings = {
     const list = this.getDictionary();
     if (list.some((x) => x.toLowerCase() === w.toLowerCase())) return true;
     list.push(w);
-    await this.setAsync(this.KEYS.DICTIONARY, JSON.stringify(list.slice(-500)));
-    return true;
+    return this.setAsyncGuarded(this.KEYS.DICTIONARY, JSON.stringify(list.slice(-500)));
   },
 
   async removeDictionaryWord(word) {
     const w = String(word || "").trim().toLowerCase();
     const next = this.getDictionary().filter((x) => x.toLowerCase() !== w);
-    await this.setAsync(this.KEYS.DICTIONARY, JSON.stringify(next));
+    return this.setAsyncGuarded(this.KEYS.DICTIONARY, JSON.stringify(next));
   },
 
   /** JSON array export for author backup (Settings copy/paste). */
@@ -212,7 +213,7 @@ ProzaEdit.Settings = {
       added += 1;
     }
     const next = list.slice(-500);
-    const ok = await this.setAsync(this.KEYS.DICTIONARY, JSON.stringify(next));
+    const ok = await this.setAsyncGuarded(this.KEYS.DICTIONARY, JSON.stringify(next));
     return { ok: !!ok, added, total: next.length };
   },
 
@@ -227,6 +228,6 @@ ProzaEdit.Settings = {
     const norm = ProzaEdit.CustomStyleGuide?.normalize ? ProzaEdit.CustomStyleGuide.normalize(data) : data;
     const json = JSON.stringify(norm);
     if (json.length > 48000) return false;
-    return this.setAsync(this.KEYS.CUSTOM_STYLE, json);
+    return this.setAsyncGuarded(this.KEYS.CUSTOM_STYLE, json);
   },
 };

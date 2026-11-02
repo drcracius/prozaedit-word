@@ -65,6 +65,6 @@ test("Onboarding.shouldShowWorkflowNextStep", () => {
 test("LongOp full-manuscript warning mentions chapter workaround", () => {
   const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
   const copy = LongOp.warningCopyForAction(LongOp.ACTION_IDS.AUDIT_FULL);
-  assert.match(copy, /Selected chapters/i);
+  assert.match(copy, /Chosen chapters/i);
   assert.match(copy, /Page range/i);
 });

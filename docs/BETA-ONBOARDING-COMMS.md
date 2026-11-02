@@ -16,7 +16,7 @@ Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit 
 2. **Simple mode banner** — one dismiss; then optional **3-step tour** (Target scope → Run audit → Fix cards). Skip anytime.
 3. **Settings → Essentials** — API key (optional), theme, Simple mode. Everything else is under **Advanced** groups.
 4. **Checks** — turn on **1–2 core checks**, hit **Run audit**. Extended, fiction-only, partner tools, and scans live under **More checks (optional)**.
-5. **Full manuscript context (optional, PE-77)** — when you audit one chapter but want arc/continuity awareness, use **Build full manuscript context** on Checks or Target. ProzaEdit reads the doc in the background (cancel anytime); it is a local, heuristic outline (not AI) stored in the document, and it **is sent with Gemini requests** if you use Gemini. Chapter audits use it when fresh; if you edit afterwards, the pane says *index may be out of date — Refresh index*.
+5. **Book outline (optional, PE-77)** — when you audit one chapter but want arc/continuity awareness, use **Build book outline** on Checks or Target. ProzaEdit reads the doc in the background (cancel anytime); it is a local, heuristic outline (not AI) stored in the document, and it **is sent with Gemini requests** if you use Gemini. Chapter audits use it when fresh; if you edit afterwards, the pane says *index may be out of date — Refresh index*.
 
 **Not a Grammarly clone:** under **Run audit**, the pane reminds you that checks run when you click — not while you type. **Help → New to editing tools?** is a short list for authors new to add-ins (one chapter at a time, fix important issues first, dictionary for names). To see **Coach**, **Rewrite**, and **Thesaurus**, open **Settings → Essentials** and turn off **Simple mode** (or use **Turn off Simple mode**).
 
@@ -28,7 +28,7 @@ Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit 
 
 | Step | Action |
 |------|--------|
-| 1 | **Target** — scope **Selected chapters** (Heading 1–3 checklist) or a highlight; avoid full manuscript on first pass. |
+| 1 | **Target** — scope **Chosen chapters** (Heading 1–3 checklist) or a highlight; avoid full manuscript on first pass. |
 | 2 | **Settings → Audit** — report depth **Light** or **Balanced**. |
 | 3 | **Checks** — enable repetition + proofreading (or one module); **Run audit**. |
 | 4 | **Audit** — work **Critical** filter lane; Mute or Dictionary for noisy names. |

@@ -2,7 +2,9 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Web 1.0 RC on `main`:** build **2.0.0.16**, **168** tests, PE-48 agent prep merged ([#5](https://github.com/drcracius/prozaedit-word/pull/5)); owner Phase 1 (**PE-47**) open; desktop **PE-2** deferred.
+**Build 2.0.0.26** lives on PR #28 (`cursor/pe-81-genres-multi-ai-f10e`, stacked on PR #27); `main` still has the older build until you merge #27 then #28 (see [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md) section 7). 441 tests. Until merged, the hosted pane and `manifest.hosted.xml` on `main` are the old version. Owner Phase 1 (**PE-47**) open; desktop **PE-2** deferred.
+
+**Next:** merge #27, retarget and merge #28, re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
 
 **After install:** [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) → [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md).
 
@@ -50,8 +52,8 @@ Send them:
 
 ## Version alignment (authoritative)
 
-- **Hosted beta:** `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` must match (currently **2.0.0.16**).
-- **Local dev:** `manifest.xml` remains **2.0.0.0** for localhost sideload only; bump it only when you change dev manifest metadata, not for GitHub Pages UI pushes.
+- **Hosted beta:** `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` must match (currently **2.0.0.26**).
+- **Local dev:** `manifest.xml` (local sideload) now tracks the same version as `manifest.hosted.xml` (tests enforce it).
 
 ## Install helpers on GitHub
 

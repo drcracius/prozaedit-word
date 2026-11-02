@@ -1,7 +1,7 @@
 /*
  * Manuscript Context Index (MCI) — lightweight, local, HEURISTIC full-document profile.
  * It is NOT an AI summary: chapter titles, word counts, first/last lines, recurring names, motifs and time cues.
- * When you use a Gemini action, the index text is included in that request (see injectPromptBlock).
+ * When you use an AI action, the index text is included in that request (see injectPromptBlock).
  */
 window.ProzaEdit = window.ProzaEdit || {};
 
@@ -169,6 +169,9 @@ ProzaEdit.ManuscriptContextIndex = {
     cancelCheck();
     const items = paras.items;
     const total = items.length;
+    if (typeof opts.fiction === "boolean" && typeof norm.fiction === "boolean" && norm.fiction !== opts.fiction) {
+      return { ...base, paragraphTotal: total, state: "stale", reason: "genre" };
+    }
     if (this.paragraphCountHash(total) !== norm.paragraphCountHash) {
       return { ...base, paragraphTotal: total, state: "stale", reason: "count" };
     }
@@ -225,6 +228,7 @@ ProzaEdit.ManuscriptContextIndex = {
       storageNote: String(raw.storageNote || "").substring(0, 300),
       invalid: false,
     };
+    if (typeof raw.fiction === "boolean") out.fiction = raw.fiction;
     if (Array.isArray(raw.nameSeeds)) {
       out.nameSeeds = raw.nameSeeds
         .map((x) => String(x || "").trim())
@@ -620,11 +624,12 @@ ProzaEdit.ManuscriptContextIndex = {
       sectionTotal: sections.length,
       droppedSections: 0,
       storageNote: "",
+      fiction: !!parts.fiction,
     };
   },
 
   /**
-   * Prompt block for Gemini (and local profile text). A stale or unverified index is INCLUDED but flagged, never silently dropped.
+   * Prompt block for AI requests (and local profile text). A stale or unverified index is INCLUDED but flagged, never silently dropped.
    * options: { freshness | fresh | paragraphTotal, scopeMode, destination: "gemini"|"copilot"|"local", maxChars, dropStale }
    */
   injectPromptBlock(index, options) {
@@ -641,11 +646,12 @@ ProzaEdit.ManuscriptContextIndex = {
     const dest = options.destination || (options.cloud ? "gemini" : "local");
     const where =
       dest === "gemini"
-        ? "included in this Gemini request"
+        ? "included in this AI request"
         : dest === "copilot"
           ? "included in the text you copy"
           : "stays on this device";
     const head = [`Full-manuscript context (heuristic local outline — not an AI summary; ${where}):`];
+    if (options.genre) head.push(`Genre profile: ${String(options.genre).slice(0, 80)} (weigh the outline against this genre's conventions).`);
     if (!fresh) {
       head.push(
         "NOTE: this index may be out of date (the document changed after it was built). Treat names, chapter list and outline as approximate."
@@ -800,7 +806,7 @@ ProzaEdit.ManuscriptContextIndex = {
   async buildFromDocument(context, opts) {
     opts = opts || {};
     const SR = ProzaEdit.ScopeReader;
-    if (!SR?.planParagraphBatches) throw new Error("ScopeReader unavailable.");
+    if (!SR?.planParagraphBatches) throw new Error("ProzaEdit did not finish loading. Close and reopen the pane.");
     const cancelCheck = () => {
       if (typeof opts.cancelCheck === "function") opts.cancelCheck();
     };
@@ -813,27 +819,47 @@ ProzaEdit.ManuscriptContextIndex = {
     cancelCheck();
     const items = paras.items;
     const paragraphTotal = items.length;
-    if (!paragraphTotal) throw new Error("Document is empty.");
+    if (!paragraphTotal) throw new Error("The document is empty. Add some text first.");
 
     const batches = SR.planParagraphBatches(paragraphTotal, this.PARAGRAPH_BATCH);
-    const sampler = this.createSampler(paragraphTotal);
-    const names = this.newNameAccumulator();
-    const timeSignals = this.newTimeSignals();
     const probeSet = new Set(this.probeIndexes(paragraphTotal, this.PROBE_MAX));
-    const probePairs = [];
-    const docHasher = this.newHasher();
 
-    const chapterAccs = [];
-    let frontMatter = null;
-    let current = null;
-    const chunkAccs = [];
-    let nonEmptyChars = 0;
+    let st = opts.checkpointStore ? opts.checkpointStore.state : null;
+    let resumed = false;
+    if (st && (await this.checkpointValid(context, items, st, paragraphTotal, batches.length))) {
+      resumed = true;
+    } else {
+      st = {
+        version: this.CHECKPOINT_VERSION,
+        paragraphTotal,
+        createdAt: Date.now(),
+        nextBatch: 0,
+        sampler: this.createSampler(paragraphTotal),
+        names: this.newNameAccumulator(),
+        timeSignals: this.newTimeSignals(),
+        probePairs: [],
+        docHasher: this.newHasher(),
+        chapterAccs: [],
+        frontMatter: null,
+        current: null,
+        chunkAccs: [],
+        nonEmptyChars: 0,
+        checks: [],
+      };
+    }
+    if (opts.checkpointStore) opts.checkpointStore.state = st;
+    const { sampler, names, timeSignals, probePairs, docHasher, chapterAccs, chunkAccs } = st;
+    let { frontMatter, current, nonEmptyChars } = st;
+    if (resumed && onProgress) {
+      onProgress({ phase: "Resuming manuscript read", batchIndex: st.nextBatch, batchCount: batches.length, sectionIndex: 1, sectionTotal: Math.max(1, chapterAccs.length), paragraphsLoaded: batches[st.nextBatch - 1] ? batches[st.nextBatch - 1].end + 1 : 0, paragraphTotal });
+    }
 
-    for (let bi = 0; bi < batches.length; bi++) {
+    for (let bi = st.nextBatch; bi < batches.length; bi++) {
       cancelCheck();
       const { start, end } = batches[bi];
       for (let i = start; i <= end; i++) items[i].load(["text", "styleBuiltIn"]);
       await context.sync();
+      try {
       for (let i = start; i <= end; i++) {
         const item = items[i];
         const text = item.text || "";
@@ -870,11 +896,21 @@ ProzaEdit.ManuscriptContextIndex = {
           current.third += pc.third;
           chunkAccs[chunkIdx].first += pc.first;
           chunkAccs[chunkIdx].third += pc.third;
-          this.accumulateNames(trimmed, names);
-          this.scanTimeSignals(trimmed, timeSignals);
+          (current.texts || (current.texts = [])).push(trimmed);
         }
         sampler.offer(i, trimmed);
       }
+      } catch (err) {
+        if (opts.checkpointStore) opts.checkpointStore.state = null;
+        throw err;
+      }
+      st.frontMatter = frontMatter;
+      st.current = current;
+      st.nonEmptyChars = nonEmptyChars;
+      st.nextBatch = bi + 1;
+      // Up to CHECK_POINTS evenly spaced paragraphs per finished batch (was: first only) so an edit anywhere in a
+      // finished batch is much more likely to invalidate a resume instead of producing a mixed index.
+      st.checks.push(this.spreadIndexes(start, end, this.CHECK_POINTS).map((idx) => [idx, this.hashString(this.normalizeParagraphText(items[idx].text || ""))]));
       if (onProgress) {
         const loaded = end + 1;
         const secCount = Math.max(1, chapterAccs.length || chunkAccs.length);
@@ -891,6 +927,8 @@ ProzaEdit.ManuscriptContextIndex = {
       if (bi + 1 < batches.length) await yieldFn();
     }
 
+    if (opts.checkpointStore) opts.checkpointStore.state = null;
+    this.deriveWholeDocumentData([...(frontMatter ? [frontMatter] : []), ...chapterAccs], names, timeSignals, opts.derivedCache, opts.statsOut);
     let accs = chapterAccs.length ? [...(frontMatter && frontMatter.wordCount > 0 ? [frontMatter] : []), ...chapterAccs] : chunkAccs.filter(Boolean);
     accs = accs.map((a) => ({ ...a, hash: a.hasher ? a.hasher.digest() : a.hash }));
     accs = this.mergeSectionAccs(accs, this.MAX_SECTIONS);
@@ -917,6 +955,82 @@ ProzaEdit.ManuscriptContextIndex = {
     );
   },
 
+  DERIVED_CACHE_MAX: 600,
+
+  /**
+   * Whole-document names and time cues, built by merging per-unit (chapter / front matter) partials. A unit whose title,
+   * paragraph count and text hash are unchanged reuses its cached partial (memory only, never stored); everything else is
+   * computed fresh. Addition and set-union are order-independent, so the merged result equals a full single pass.
+   * opts.derivedCache: { map: Map }.
+   */
+  deriveWholeDocumentData(units, names, timeSignals, cache, statsOut) {
+    const stats = { reused: 0, computed: 0 };
+    const useCache = !!(cache && Object.prototype.toString.call(cache.map) === "[object Map]");
+    const keep = new Map();
+    units.forEach((u) => {
+      const texts = u.texts || [];
+      const key = useCache ? `${u.title}|${texts.length}|${this.hashString(texts.join("\n"))}` : "";
+      let part = useCache ? cache.map.get(key) : null;
+      if (part) stats.reused++;
+      else {
+        const nm = this.newNameAccumulator();
+        const ts = this.newTimeSignals();
+        texts.forEach((t) => {
+          this.accumulateNames(t, nm);
+          this.scanTimeSignals(t, ts);
+        });
+        part = { names: nm, time: ts };
+        stats.computed++;
+      }
+      if (useCache) keep.set(key, part);
+      part.names.counts.forEach((c, k) => names.counts.set(k, (names.counts.get(k) || 0) + c));
+      part.names.lower.forEach((c, k) => names.lower.set(k, (names.lower.get(k) || 0) + c));
+      part.time.phrases.forEach((x) => timeSignals.phrases.add(x));
+      part.time.years.forEach((x) => timeSignals.years.add(x));
+      delete u.texts;
+    });
+    if (useCache) cache.map = keep.size <= this.DERIVED_CACHE_MAX ? keep : new Map();
+    if (statsOut && typeof statsOut === "object") Object.assign(statsOut, stats);
+    return stats;
+  },
+
+  CHECKPOINT_VERSION: 2,
+  CHECK_POINTS: 8,
+
+  spreadIndexes(start, end, n) {
+    const len = end - start + 1;
+    if (len <= n) return Array.from({ length: Math.max(0, len) }, (_, k) => start + k);
+    const out = [];
+    for (let k = 0; k < n; k++) out.push(start + Math.floor((k * (len - 1)) / (n - 1)));
+    return out;
+  },
+  CHECKPOINT_MAX_AGE_MS: 30 * 60 * 1000,
+
+  /**
+   * A checkpoint (in-memory only, never written to the document) is reusable when it is the same version, recent, the
+   * paragraph count matches, and a spread of already-processed paragraphs still hash the same. Otherwise discard it.
+   */
+  async checkpointValid(context, items, st, paragraphTotal, batchCount) {
+    try {
+      if (!st || st.version !== this.CHECKPOINT_VERSION || st.paragraphTotal !== paragraphTotal) return false;
+      if (Date.now() - (st.createdAt || 0) > this.CHECKPOINT_MAX_AGE_MS) return false;
+      if (!(st.nextBatch > 0 && st.nextBatch < batchCount) || !Array.isArray(st.checks) || st.checks.length !== st.nextBatch) return false;
+      const picks = [];
+      for (const group of st.checks) {
+        if (!Array.isArray(group) || !group.length) return false;
+        for (const pair of group) {
+          if (!Array.isArray(pair)) return false;
+          picks.push(pair);
+        }
+      }
+      picks.forEach(([idx]) => items[idx] && items[idx].load("text"));
+      await context.sync();
+      return picks.every(([idx, h]) => items[idx] && this.hashString(this.normalizeParagraphText(items[idx].text || "")) === h);
+    } catch (_) {
+      return false;
+    }
+  },
+
   /** Compare two indexes by per-chapter hash (same chapter count only). */
   diffSections(prev, next) {
     const a = this.normalizeStored(prev);
@@ -937,6 +1051,7 @@ ProzaEdit.ManuscriptContextIndex = {
   formatStaleReason(fresh) {
     if (!fresh || fresh.state !== "stale") return "";
     if (fresh.reason === "count") return "paragraph count changed";
+    if (fresh.reason === "genre") return "genre changed since it was built";
     const n = (fresh.changedSections || []).length;
     if (fresh.reason === "edited") return n ? `${n} chapter${n === 1 ? "" : "s"} edited` : "text was edited";
     return "document changed";
@@ -945,7 +1060,7 @@ ProzaEdit.ManuscriptContextIndex = {
   formatStatusBadge(index, fresh) {
     const norm = this.normalizeStored(index);
     if (!norm || norm.invalid) {
-      return { text: "Full MS context not built", className: "pe-mci-stale", state: "none" };
+      return { text: "Book outline not built", className: "pe-mci-stale", state: "none" };
     }
     const f = this.freshnessOf(norm, fresh);
     const built = norm.builtAt ? new Date(norm.builtAt) : null;
@@ -958,7 +1073,7 @@ ProzaEdit.ManuscriptContextIndex = {
         state: "stale",
       };
     }
-    let text = `Full MS context ready · ${stamp}`;
+    let text = `Book outline ready · ${stamp}`;
     if (norm.truncated) text += " · sampled";
     if (norm.storageNote) text += " · trimmed for storage";
     return { text, className: "pe-mci-ready", state: f.state };

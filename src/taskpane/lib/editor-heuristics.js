@@ -12,24 +12,30 @@ ProzaEdit.EditorHeuristics = {
     let n = 0;
     const re = /\b(a|an)\s+([A-Za-z][\w'-]*)/gi;
     let m;
-    const anBeforeConsonantSound = /^(b|c(d|f|g|h|j|k|l|m|n|p|q|r|s|t|v|w|x|y|z)|uni(?!t)|one|once|u[bcdefghjkpqwxyz])/i;
-    const aBeforeVowelSound = /^(a|e|i|o|u)/i;
-    const useAn = /^(hour|honest|honor|heir|html|hmi|mba|mri|nlp|ngo|fbi|fda|eu|uk|un|us|ufo|mp|lp|rt|hr)\b/i;
-    const useA = /^(uni(t|form|verse|ty)|user|euro|one|once|ouija|ukulele)\b/i;
+    // Heuristic by spelling, not a pronunciation dictionary (no cited source): the exception lists below cover
+    // common cases only, so the card is low confidence, hidden in Simple view, and never auto-replaces.
+    // "a" is expected before these vowel-spelled words that start with a consonant sound (/j/, /w/).
+    const useA = /^(uni(?:[cfglopqstvz]|$)|use|usu|usa|uti|ute|uro|ura|uri|ubiq|eu|ewe|one\b|one-|once|ouija|ukulele|uvula|utah|ufo)/i;
+    // "an" is expected before these consonant-spelled words that start with a vowel sound (silent h, spelled letters).
+    const useAn = /^(hour|honest|hono(?:u)?r|heir|herb|hotel|histor|[fhlmnrsx](?![a-z])|html|hmi|mba|mri|nlp|ngo|fbi|fda|hr\b)/i;
+    const aBeforeVowelSound = /^[aeiou]/i;
+    const aNeedsAn = /^(hour|honest|hono(?:u)?r|heir)/i;
+    const anBeforeConsonantLetter = /^[bcdfghjklmnpqrstvwxyz]/i;
 
     while ((m = re.exec(text)) !== null && n < limit) {
       const article = m[1].toLowerCase();
       const word = m[2];
       const wLow = word.toLowerCase();
+      if (word.length > 1 && word === word.toUpperCase() && /[A-Z]/.test(word)) continue;
       let bad = false;
       let hint = "";
       if (article === "a") {
-        if (aBeforeVowelSound.test(wLow) && !useA.test(wLow)) {
+        if ((aBeforeVowelSound.test(wLow) && !useA.test(wLow)) || aNeedsAn.test(wLow)) {
           bad = true;
           hint = `Consider “an ${word}”.`;
         }
       } else if (article === "an") {
-        if ((anBeforeConsonantSound.test(wLow) || /^[bcdfghjklmnpqrstvwxyz]/i.test(wLow)) && !useAn.test(wLow)) {
+        if ((anBeforeConsonantLetter.test(wLow) && !useAn.test(wLow)) || useA.test(wLow)) {
           bad = true;
           hint = `Consider “a ${word}”.`;
         }
@@ -48,13 +54,22 @@ ProzaEdit.EditorHeuristics = {
     }
   },
 
+  LEGIT_DOUBLES: new Set("had that bye no yes so very ha hee go now there night boo tut chop pom cha yum hush knock dum hello well yoo hip hurray ho hey ah oh la na tick tock ding dong zig zag bla blah mama papa mum dada baba yo duran".split(" ")),
+
   /** Consecutive duplicate tokens (2- or 3-word), e.g. “the the”, “he said he said”. */
   scanConsecutiveDuplicates(text, push, limit) {
     limit = limit || 8;
     let n = 0;
-    const re2 = /\b([\w'-]+)\s+\1\b/gi;
+    const re2 = /\b([\w'-]{1,40})[ \t]+\1\b/gi;
     let m;
     while ((m = re2.exec(text)) !== null && n < limit) {
+      // Grammatical or lexical doublings ("had had", "that that", "bye bye", "no no") and bare numbers are not typos.
+      if (this.LEGIT_DOUBLES.has(m[1].toLowerCase()) || /^\d+$/.test(m[1])) continue;
+      const after = text.slice(m.index + m[0].length, m.index + m[0].length + m[1].length + 12).toLowerCase();
+      const before = text.slice(Math.max(0, m.index - m[1].length - 12), m.index).toLowerCase();
+      const w1 = m[1].toLowerCase();
+      if (new RegExp("^[ \\t]+").test(after) && after.replace(/^[ \t]+/, "").startsWith(w1)) continue;
+      if (/[ \t]$/.test(before) && before.replace(/[ \t]+$/, "").endsWith(w1)) continue;
       n++;
       push({
         ruleId: `edit:dup1:${m[1].toLowerCase()}:${m.index}`,
@@ -65,8 +80,10 @@ ProzaEdit.EditorHeuristics = {
         replacementText: m[1],
       });
     }
-    const re3 = /\b([\w'-]+\s+[\w'-]+)\s+\1\b/gi;
+    const re3 = /\b([\w'-]{1,40}[ \t]+[\w'-]{1,40})[ \t]+\1\b/gi;
     while ((m = re3.exec(text)) !== null && n < limit) {
+      const parts = m[1].toLowerCase().split(/\s+/);
+      if (parts[0] === parts[1] || this.LEGIT_DOUBLES.has(parts[0]) || this.LEGIT_DOUBLES.has(parts[1])) continue;
       n++;
       push({
         ruleId: `edit:dup2:${m.index}`,
@@ -82,7 +99,7 @@ ProzaEdit.EditorHeuristics = {
   /** Exact duplicate sentences (normalized), min length to skip headings. */
   scanDuplicateSentences(text, push, limit) {
     limit = limit || 3;
-    const parts = text.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length >= 45);
+    const parts = ProzaEdit.Metrics.splitSentences(text).filter((s) => s.trim().length >= 45);
     const map = new Map();
     parts.forEach((s) => {
       const norm = s.replace(/\s+/g, " ").trim().toLowerCase();
@@ -109,7 +126,34 @@ ProzaEdit.EditorHeuristics = {
   },
 
   scanQuoteBalance(text, push) {
-    const straight = (text.match(/"/g) || []).length;
+    // Multi-paragraph speech: the paragraph that continues a quotation re-opens with a mark while the previous
+    // paragraph stays open. Discount that re-opening mark; skip inch marks (5'10", 6" tall).
+    const paras = text.split(/\n+/);
+    let straight = 0;
+    let curlyOpen = 0;
+    let curlyClose = 0;
+    let prevOpenS = false;
+    let prevOpenC = false;
+    paras.forEach((p) => {
+      let q = 0;
+      for (let i = 0; i < p.length; i++) {
+        if (p[i] !== '"') continue;
+        // A quote right after a digit is an inch mark (6" tall) unless a quotation is open ("room 14", "in 1998").
+        if (i > 0 && /\d/.test(p[i - 1]) && q % 2 === 0) continue;
+        q++;
+      }
+      let sCount = q;
+      if (prevOpenS && /^\s*"/.test(p)) sCount -= 1;
+      straight += sCount;
+      prevOpenS = q % 2 === 1;
+      const o = (p.match(/\u201C/g) || []).length;
+      const c = (p.match(/\u201D/g) || []).length;
+      let oAdj = o;
+      if (prevOpenC && /^\s*\u201C/.test(p)) oAdj -= 1;
+      curlyOpen += oAdj;
+      curlyClose += c;
+      prevOpenC = o > c;
+    });
     if (straight > 0 && straight % 2 !== 0) {
       push({
         ruleId: "edit:quote:double",
@@ -120,8 +164,6 @@ ProzaEdit.EditorHeuristics = {
         replacementText: "(pair quotes)",
       });
     }
-    const curlyOpen = (text.match(/\u201C/g) || []).length;
-    const curlyClose = (text.match(/\u201D/g) || []).length;
     if (curlyOpen + curlyClose > 0 && curlyOpen !== curlyClose) {
       push({
         ruleId: "edit:quote:curly",
@@ -140,9 +182,6 @@ ProzaEdit.EditorHeuristics = {
       ["can not", "cannot"],
       ["all right", "alright"],
       ["a lot", "alot"],
-      ["every day", "everyday"],
-      ["any one", "anyone"],
-      ["some one", "someone"],
     ];
     pairs.forEach(([a, b]) => {
       const hasA = lower.includes(a);
@@ -164,7 +203,7 @@ ProzaEdit.EditorHeuristics = {
   scanRepeatedOpenings(text, push, limit) {
     limit = limit || 3;
     const counts = new Map();
-    text.split(/(?<=[.!?])\s+/).forEach((s) => {
+    ProzaEdit.Metrics.splitSentences(text).forEach((s) => {
       const words = s.match(/\b[\w'-]+\b/g);
       if (!words || words.length < 6) return;
       const key = words.slice(0, 5).join(" ").toLowerCase();

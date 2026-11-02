@@ -1,6 +1,13 @@
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.Metrics = {
+  /** Sentence split without regex lookbehind (older Office WebViews lack it). */
+  splitSentences(text) {
+    return String(text == null ? "" : text)
+      .replace(/([.!?])\s+/g, "$1\u0001")
+      .split("\u0001");
+  },
+
   countSyllables(word) {
     const w = word.toLowerCase().replace(/[^a-z]/g, "");
     if (!w) return 0;
@@ -13,7 +20,7 @@ ProzaEdit.Metrics = {
   },
 
   analyze(text) {
-    const sentences = text.split(/(?<=[.!?])\s+/).filter((s) => s.trim());
+    const sentences = ProzaEdit.Metrics.splitSentences(text).filter((s) => s.trim());
     const words = text.match(/\b[\w'-]+\b/g) || [];
     const wordCount = words.length;
     const sentenceCount = Math.max(1, sentences.length);

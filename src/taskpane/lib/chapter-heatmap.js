@@ -6,17 +6,20 @@ ProzaEdit.ChapterHeatmap = {
 
   heatmapHtml(entries) {
     if (!entries?.length) return "";
-    const maxW = Math.max(...entries.map((e) => e.words || 0), 1);
+    const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+    const maxW = Math.max(...entries.slice(0, this.MAX).map((e) => num(e && e.words)), 1);
     let html = '<details class="overview-panel"><summary>Chapter pacing heatmap (local)</summary><ul class="heatmap-list">';
     entries.slice(0, this.MAX).forEach((e, i) => {
-      const w = e.words || 0;
+      e = e || {};
+      const w = num(e.words);
       const pct = Math.round((100 * w) / maxW);
       const t = String(e.title || "Chapter")
         .substring(0, 28)
         .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;");
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
       html += `<li><span class="hm-label">${i + 1}. ${t}</span>`;
-      html += `<span class="hm-bar" style="width:${Math.max(8, pct)}%" title="${w} words, ~${e.asl || "?"} w/sent"></span>`;
+      html += `<span class="hm-bar" style="width:${Math.max(8, pct)}%" title="${w} words, ~${num(e.asl) || "?"} w/sent"></span>`;
       html += `<span class="hm-meta">${w}w</span></li>`;
     });
     html += "</ul></details>";
@@ -28,9 +31,11 @@ ProzaEdit.ChapterHeatmap = {
     paras.load("items");
     await context.sync();
     const total = paras.items.length;
-    if (total > 15000) throw new Error("Too many paragraphs for chapter scan.");
-    for (let i = 0; i < total; i++) paras.items[i].load(["text", "styleBuiltIn"]);
-    await context.sync();
+    if (total > 15000) throw new Error("This document is too long for a chapter chart (limit 15,000 paragraphs). Choose fewer chapters.");
+    for (let i = 0; i < total; i += 500) {
+      for (let j = i; j < Math.min(total, i + 500); j++) paras.items[j].load(["text", "styleBuiltIn"]);
+      await context.sync();
+    }
     const entries = [];
     let current = null;
     const flush = () => {
