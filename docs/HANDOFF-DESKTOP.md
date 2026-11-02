@@ -17,7 +17,7 @@ Task-pane add-in for Microsoft Word (Office.js) that gives writers a local-first
 
 ## 3. Current state (2.0.0.27)
 
-- Verdict (PE-96): ready for a wider beta, not a public launch. 448 tests green, `verify:wiring`, `check:contrast`, version sync, `npm audit` clean.
+- Verdict (PE-96): ready for a wider beta, not a public launch. 456 tests green (448 + desktop-manifest and dismiss tests), `verify:wiring`, `check:contrast`, version sync, `npm audit` clean.
 - Biggest unknown: **Apply with Track Changes in real Word** (desktop, web, Mac) has only run against a mock.
 - Also never exercised live: the 4 AI providers (keys, model ids, CORS). Model catalogue last reviewed 2026-11-01.
 - Rule precision measured on 489 labelled passages across 3 corpora (author-written, not a real manuscript), precision >= 0.95.
@@ -37,7 +37,7 @@ Everything runs in the browser. Plain script tags, no bundler; modules attach to
   - Safety/infra: `html-safe.js`, `error-guard.js`, `config-guard.js`, `settings-store.js`, `recovery-helpers.js`, `diagnostics-*.js`.
   - UI helpers: `pe-confirm-dialog.js`, `tooltip-registry.js`, `onboarding-helpers.js`, `plain-language-helpers.js`, `ui-prefs-helpers.js`, `audit-review-helpers.js`, `pe-icons.js`.
 - `tests/`: `node --test`, jsdom for pane tests; corpora in `tests/corpus/`. Names: `pe-NN-*.test.mjs` per audit round.
-- `scripts/`: `verify-wiring.mjs` (every HTML id/script/function referenced exists), `check-contrast.mjs` (WCAG), `verify-version-sync.sh`, `install/` (desktop appendix, deferred).
+- `scripts/`: `verify-wiring.mjs` (every HTML id/script/function referenced exists), `check-contrast.mjs` (WCAG), `verify-version-sync.sh`, `install/` (Word Desktop installers: Shared Folder via UNC share, or no-admin Developer sideload; see DESKTOP-INSTALL.md).
 - `tools/diagnostics-ingest/`: optional Cloudflare worker, **not deployed** (open CORS, no rate limit).
 - `manifest.hosted.xml` (production) and `manifest.xml` (local sideload; must carry the same version).
 - `.github/workflows/`: `tests.yml` (npm ci, test, wiring, version sync), `version-sync.yml`, `deploy-diagnostics-ingest.yml`.
@@ -48,7 +48,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 448 tests expected, 0 fail
+npm test                          # 456 tests expected, 0 fail
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"
 bash scripts/verify-version-sync.sh
@@ -118,6 +118,7 @@ Full text: [PRIVACY-AND-DATA-PE.md](./PRIVACY-AND-DATA-PE.md). Essentials:
 ## 11. Known gaps and open items (ranked)
 
 1. Track Changes Apply untested in real Word (desktop, web, Mac). High, owner-only.
+1b. **Word Desktop install (fixed in source after 2.0.0.27, unverified).** Shared Folder needs a UNC share, not `file:///`, and a manifest resource id was 33 chars (limit 32). See [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md); owner runs `Fix-ProzaEdit-SharedFolder.bat` or `Sideload-ProzaEdit-Desktop.bat` and reports. Microsoft Store/AppSource listing remains deferred (D14).
 2. Real AI providers never run live (keys, model ids, CORS). Medium, owner-only.
 3. Rule precision only on author-written passages; tune from a real manuscript's false positives.
 4. No Content-Security-Policy (needs a trial in desktop Word, web, Mac first).
@@ -171,4 +172,4 @@ Full rationale per decision: roadmap section "Decisions needed from the owner" (
 
 ## 15. Doc index
 
-[README](../README.md) · [WHEN-YOU-RETURN](./WHEN-YOU-RETURN.md) · [source-of-truth](./source-of-truth.md) · [RELEASE-NOTES-PE-81](./RELEASE-NOTES-PE-81.md) · [PRIVACY-AND-DATA-PE](./PRIVACY-AND-DATA-PE.md) · [GENRE-PROFILES](./GENRE-PROFILES.md) · [OWNER-CHECKLIST-2.0.0.26](./OWNER-CHECKLIST-2.0.0.26.md) · [FINAL-READINESS-PE-96](./FINAL-READINESS-PE-96.md) · [prozaedit-features](./prozaedit-features.md) (older feature reference, predates PE-81).
+[README](../README.md) · [WHEN-YOU-RETURN](./WHEN-YOU-RETURN.md) · [source-of-truth](./source-of-truth.md) · [RELEASE-NOTES-PE-81](./RELEASE-NOTES-PE-81.md) · [PRIVACY-AND-DATA-PE](./PRIVACY-AND-DATA-PE.md) · [GENRE-PROFILES](./GENRE-PROFILES.md) · [OWNER-CHECKLIST-2.0.0.26](./OWNER-CHECKLIST-2.0.0.26.md) · [DESKTOP-INSTALL](./DESKTOP-INSTALL.md) · [FINAL-READINESS-PE-96](./FINAL-READINESS-PE-96.md) · [prozaedit-features](./prozaedit-features.md) (older feature reference, predates PE-81).

@@ -1,80 +1,53 @@
-# ProzaEdit install scripts (GitHub-hosted beta)
+# ProzaEdit install scripts (Word Desktop, Windows)
 
-**Production UI** loads from GitHub Pages after Office registers **`manifest.hosted.xml`**. **Primary beta path:** Word on the web upload ([FINAL-MILE-PLAN-WEB.md](../../docs/FINAL-MILE-PLAN-WEB.md), [BETA-TESTERS-INSTALL.txt](../../docs/BETA-TESTERS-INSTALL.txt)). Web **1.0 RC** on `main` (**2.0.0.17**, **168** tests; merged PRs #2–#5). These scripts are an **optional desktop appendix** (**PE-2 deferred**); they download the manifest from GitHub and do **not** replace the one-time web upload for most consumer accounts.
+The task pane loads from GitHub Pages; Word only needs the manifest (`manifest.hosted.xml`). Step-by-step guide and reasons: [docs/DESKTOP-INSTALL.md](../../docs/DESKTOP-INSTALL.md). Owner tick-list: [docs/pe-2-shared-folder-checklist.md](../../docs/pe-2-shared-folder-checklist.md).
 
----
+Word Desktop cannot "Upload My Add-in". Two supported routes (pick one, with Word closed):
 
-## Quick start (Windows)
+| Route | Double-click | Admin | Appears in |
+|---|---|---|---|
+| Shared Folder (Microsoft-documented) | `Fix-ProzaEdit-SharedFolder.bat` | one prompt (creates the share) | Home -> Add-ins -> Advanced -> SHARED FOLDER |
+| Developer sideload | `Sideload-ProzaEdit-Desktop.bat` | none | Home tab -> ProzaEdit |
 
-From repo root (double-click or cmd):
+Other entry points (repo root):
 
-```text
-Install-ProzaEdit-Desktop-GitHub.bat
-```
+- `Install-ProzaEdit-Desktop-GitHub.bat`: copy + validate the manifest only (no registry changes).
+- `Verify-ProzaEdit-Install.bat`: read-only PASS/FAIL report. Send its output when asking for help.
 
-PowerShell directly:
+## What the PowerShell script does
+
+`Install-ProzaEdit-GitHub.ps1`:
+
+1. Copies `manifest.hosted.xml` from this repo (or downloads it with `-Download`) into `%USERPROFILE%\ProzaEditCatalog\`.
+2. Checks it the way Word Desktop does: resource ids max 32 characters, `https`, no `localhost`. Stops with a clear message if it fails.
+3. `-RegisterLocalCatalog`: shares the folder as `\\<this PC>\ProzaEditCatalog` (elevated step only for the share) and writes `HKCU\Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{GUID}` with `Url` = the **UNC path**, `Flags` = 1. Removes the old broken `file:///` entry if present.
+4. `-DeveloperSideload`: writes the manifest path to `HKCU\Software\Microsoft\Office\16.0\Wef\Developer` (value name = add-in id), the same key Microsoft's `office-addin-dev-settings` uses.
+5. `-ClearOfficeCache`: empties `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\` (Word must be closed).
+6. `-Uninstall`: removes the catalog entry, developer entry and share; leaves the folder.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\install\Install-ProzaEdit-GitHub.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install\Install-ProzaEdit-GitHub.ps1 -RegisterLocalCatalog -ClearOfficeCache
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install\Install-ProzaEdit-GitHub.ps1 -DeveloperSideload -ClearOfficeCache
 ```
-
-Optional Shared Folder catalog (desktop, **PE-2 deferred — skip unless you need desktop catalog**):
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\install\Install-ProzaEdit-GitHub.ps1" -RegisterLocalCatalog
-```
-
-Or:
-
-```text
-Fix-ProzaEdit-SharedFolder.bat
-```
-
-Read-only PE-2 verification (manifest + TrustedCatalog registry, no changes):
-
-```text
-Verify-ProzaEdit-Install.bat
-```
-
-See `docs/pe-2-shared-folder-checklist.md` → **Automated verify**.
-
----
 
 ## Defaults
 
 | Setting | Value |
 |---------|--------|
-| Manifest URL | `https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml` |
-| Local catalog folder | `%USERPROFILE%\Documents\ProzaEdit\catalog\` |
+| Manifest source | the repo copy next to the scripts; `-Download` uses `https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml` |
+| Catalog folder | `%USERPROFILE%\ProzaEditCatalog\` |
+| Share | `\\%COMPUTERNAME%\ProzaEditCatalog` |
 | Add-in ID | `d1829e3a-4931-4122-b911-37f22941aa99` |
+| Catalog registry id | `{f4a7d3c1-8b2e-4c59-9a1d-6e0b3c5d7f21}` |
 
----
+## Notes
 
-## Shared Folder / SMB (example only)
-
-Some authors use a **network share** for the Office **SHARED FOLDER** tab (e.g. `\\OTHP15\ProzaEditCatalog\` on a home LAN). **Do not assume that path exists** — it is an example hostname only. Prefer:
-
-1. **Web upload** (see `docs/WHEN-YOU-RETURN.md`), or  
-2. **Local catalog folder** + `-RegisterLocalCatalog` on the PC where Word runs.
-
-If you use a LAN share, copy `manifest.hosted.xml` to the share root and register **that UNC URL** in `HKCU\Software\Microsoft\Office\16.0\WEF\TrustedCatalogs` (see Microsoft docs for Trusted Catalogs). Clear Office cache if the add-in list is stale:
-
-```text
-%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\
-```
-
-(Back up before deleting; restart Word.)
-
----
-
-## Execution policy
-
-Scripts use `-ExecutionPolicy Bypass` from the `.bat` wrappers. Corporate PCs may block downloads; unblock the `.ps1` file properties or run from an elevated PowerShell if your policy requires it.
-
----
+- Group Policy under `HKCU\Software\Policies\Microsoft\Office\16.0\WEF` overrides the per-user keys; the script and verifier warn when it is present.
+- A LAN share on another PC also works: copy the manifest there and add its UNC path under TrustedCatalogs (or via Word -> File -> Options -> Trust Center -> Trusted Add-in Catalogs -> tick "Show in Menu").
+- Execution policy: the `.bat` files pass `-ExecutionPolicy Bypass`. If Windows blocks a downloaded `.ps1`, right-click -> Properties -> Unblock.
+- Status: **desktop loading is unverified in real Word** until the owner logs a result.
 
 ## Related
 
-- `docs/WORKFLOWS.md` — editing stack  
-- `docs/BETA-TESTERS-INSTALL.txt` — tester one-pager  
-- `_archive/local-dev/` — archived localhost Node dev (not required for hosted beta)
+- `docs/WORKFLOWS.md`, `docs/BETA-TESTERS-INSTALL.txt` (Word on the web)
+- `_archive/local-dev/` (archived localhost dev, not needed)

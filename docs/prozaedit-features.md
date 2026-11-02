@@ -402,7 +402,7 @@ Word’s own **Undo** still applies to inserts; ProzaEdit undo is a separate sta
 **Install helpers on `main`**
 
 - **`Install-ProzaEdit-Desktop-GitHub.bat`** — downloads [hosted manifest](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) to `Documents\ProzaEdit\catalog\` and prints upload steps.
-- **`Fix-ProzaEdit-SharedFolder.bat`** — optional desktop appendix: refresh manifest + local TrustedCatalog (PE-2 **deferred**; web upload is primary — [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)).
+- **`Fix-ProzaEdit-SharedFolder.bat`** / **`Sideload-ProzaEdit-Desktop.bat`** — Word Desktop install (network-share catalog, or no-admin developer sideload); see [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md). Web upload remains the main beta path ([FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md)).
 - **`Create-Hosted-Manifest.bat`** and localhost dev server remain under `_archive/local-dev/` only.
 
 **PC-only nuance:** Continuity dismissals and global mutes are **per browser profile on that machine**, not synced across devices. Document dictionary and config travel with the `.docx`.
