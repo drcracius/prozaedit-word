@@ -2,9 +2,9 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Build 2.0.0.26** lives on PR #28 (`cursor/pe-81-genres-multi-ai-f10e`, stacked on PR #27); `main` still has the older build until you merge #27 then #28 (see [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md) section 7). 441 tests. Until merged, the hosted pane and `manifest.hosted.xml` on `main` are the old version. Owner Phase 1 (**PE-47**) open; desktop **PE-2** deferred.
+**Build 2.0.0.26** is merged to `main` (PRs #27 and #28, tag `v2.0.0.26`) and live on GitHub Pages; nothing left to merge. 441 tests. Owner Phase 1 (**PE-47**) open; desktop **PE-2** deferred.
 
-**Next:** merge #27, retarget and merge #28, re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
+**Next:** re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
 
 **After install:** [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) → [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md).
 

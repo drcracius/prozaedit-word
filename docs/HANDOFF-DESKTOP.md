@@ -66,10 +66,9 @@ Version-sync also requires `docs/WHEN-YOU-RETURN.md` to contain the exact phrase
 
 ## 7. Branches, PRs, tags
 
-- `main`: last merged work is PE-77 (#26).
-- **PR #27** `cursor/pe-79-word-fixes-36ae` -> `main` (2.0.0.16), open.
-- **PR #28** `cursor/pe-81-genres-multi-ai-f10e` -> **base `cursor/pe-79-word-fixes-36ae`** (stacked on #27), open, carries everything through 2.0.0.26.
-- **Merge order:** merge #27 into `main` first; then retarget #28 to `main` (GitHub does this automatically if #27's branch is deleted on merge; otherwise change the base by hand and confirm the diff is only the PE-81+ commits); then merge #28. Do not merge #28 first: it would land into the #27 branch, not `main`. After merging, run the verifiers on `main` and re-upload the manifest if needed.
+- `main` (tag `v2.0.0.26`): contains PE-79 ([#27](https://github.com/drcracius/prozaedit-word/pull/27), merge commit `c27332c`) and PE-81 through build 2.0.0.26 ([#28](https://github.com/drcracius/prozaedit-word/pull/28), merge commit `d5ff7fa`). Both PRs merged with merge commits, so commit ids and `pe-81-*` tags are unchanged (no re-tagging needed).
+- Feature branches `cursor/pe-79-word-fixes-36ae` and `cursor/pe-81-genres-multi-ai-f10e` are merged; they are kept for reference (tags preserved).
+- Pages serves build 2.0.0.26 from `main` (verified).
 - PE-79 base commit `d72692c`.
 - Restore tags (annotated, each had a green suite; `git checkout <tag>`; roll back = `git reset --hard <tag>` + force-push, or revert the PR; because the pane loads from Pages, rollback means deploying the older code):
 

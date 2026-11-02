@@ -1,6 +1,6 @@
 # Release notes: PE-81 through PE-96 (latest build 2.0.0.26; sections below are not in chronological order, newest are 2.0.0.26, .25, .24)
 
-Based on PE-79 (PR #27). This branch is PR #28, stacked on #27; see [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md) for merge order.
+Based on PE-79 (PR #27). Merged to `main` as PR #28 (after #27); see [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md).
 
 - **Genre profiles** — see [GENRE-PROFILES.md](./GENRE-PROFILES.md).
 - **Multi-provider AI help** (optional, own API key): Gemini, OpenAI, Claude, OpenRouter. Model picker (cheapest default), estimate-before-run in every confirm, hard session and daily token limits, usage meter, cancel, retry-once on rate limit. Keys stay on the device, never in the document; old document-stored Gemini keys migrate out.
