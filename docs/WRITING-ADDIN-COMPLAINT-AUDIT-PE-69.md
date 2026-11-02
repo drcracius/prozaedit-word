@@ -1,5 +1,7 @@
 # PE-69 — Writing-editor complaint research and ProzaEdit gap audit
 
+> **Status note (2026-11-02).** The research and matrix below are the original build **2.0.0.15** snapshot. Current status for **2.0.0.27** is in the [addendum at the end](#addendum-status-at-build-20027-2026-11-02). Where the two differ, the addendum wins (notably API-key storage: keys are no longer saved in the Word document).
+
 **Research date:** 2026-11-01  
 **Baseline:** `main` at `275ba05` (PE-68 / PR #18), build **2.0.0.15**  
 **Method:** Current public Reddit/forum posts, review aggregators, and vendor support/policy pages. User posts are anecdotes unless corroborated across independent threads or an aggregate; vendor pages establish product behavior, not complaint prevalence.
@@ -108,3 +110,24 @@ Manual owner checks remain necessary:
 ## PE-72 status addendum
 
 Matrix statuses above were updated after PE-72 (Phase 2b hardening and Phase 3 CI gate). Nothing moved to "closed": every host-dependent row still needs owner validation. See [RELEASE-NOTES-PE-72-HARDENING.md](./RELEASE-NOTES-PE-72-HARDENING.md) for the exact change list, residual risks, and what remains for the owner.
+
+## Addendum: status at build 2.0.0.27 (2026-11-02)
+
+Method: read of the current source against each cluster, plus the 456-test suite, wiring and contrast gates (all green on this PC). No claim below was observed in real Word.
+
+| Complaint cluster | Status at 2.0.0.27 | Evidence in the code | Remaining gap |
+|---|---|---|---|
+| Realtime scanning, lag | **Avoided by architecture** | No document-change, selection or timer handlers anywhere under `src/taskpane`; audit runs only on click. | Keep marketing copy from implying realtime checking. |
+| Long documents, freezes | **Mitigated, unmeasured** | Scope caps, chunked reads and cancel checks in `scope-reader.js`; chapter-by-chapter audit (2.0.0.24); resume; incremental index (2.0.0.25). | No timing on a real 80k-word manuscript; cancel cannot interrupt one in-flight Word call. |
+| False positives, ignores that do not stick | **Partially mitigated** | Mute and per-document dictionary with export/import; genre profiles (12); precision 0.95+ on 489 author-written passages (3 corpora). Dismissed phrases now report a failed save instead of failing silently. | Corpus is author-written, not a real manuscript. Dictionary is per document. Advanced rules `rep:pair` and `ext:*` are still noisy (handoff item 10). |
+| List jumping, lost place, failed navigation | **Mitigated in UI** | Finding X of Y, next-card focus after Mute/Dismiss/Apply, safe-search Go to. | jsdom tests only. |
+| Destructive apply, no undo | **Strongest area** | Anchored, exact-match, verify-after Apply; confirm before apply; anchored undo/redo; tracked-change aware (Word's Review pane is the undo in that case). Refuses duplicates, changed paragraphs, over-255-character or `^` text. | Track Changes Apply is mock-tested only. |
+| Privacy, API keys, upsell | **Avoided for core; better than the 2.0.0.15 text above** | Keys live in this device's `localStorage` only, never in the document (`ai-key-store.js`); old document-stored keys migrate out. Saved AI replies are local, 7 days, no keys. Four providers, BYO key, confirm with token estimate before any send; no subscription. Help and Settings copy matches the code. | No Content-Security-Policy yet; diagnostics worker not deployed; AI providers never run live. |
+| AI cancel not wired (PE-71 P2) | **Closed** | `AbortSignal` goes into the provider `complete()`; covered by `tests/pe-99-ai-cancel-cache.test.mjs`. | Mocked fetch only. |
+| Accessibility, 320 px pane, dark mode | **Partially mitigated** | Tab roles, focus traps, reduced-motion and forced-colors rules, contrast gate (469 checked, 0 failures). | CSS reviewed by scan only; screen reader checked by DOM tests only. |
+| Word Web, Mac, Desktop differences | **Desktop install fixed in source, unverified** | Word Desktop could not list ProzaEdit: the Shared Folder script registered a local `file:///` path (Word needs a `\\PC\Share` UNC path) and a manifest resource id was 33 characters (limit 32). Both fixed; guarded by `tests/manifest-desktop.test.mjs`. See [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md). | Owner must confirm in real Word Desktop. Microsoft Store listing deferred (D14). Mac untested. |
+| Support, refunds, discontinued integration | **Owner decision** | No subscription; opt-in diagnostics. | Support SLA, compatibility matrix, refund wording. |
+
+Net: the cluster that most hurts competitors (realtime, hangs, lost place, bulk apply with no undo, cloud ambiguity) is handled by design. What is not yet proven is behaviour in real Word: Track Changes Apply, live AI providers, a real long manuscript, and now the desktop install.
+
+The shipped-score file [prozaedit-audit-rating-current.md](./prozaedit-audit-rating-current.md) was **not re-rated** by this addendum.

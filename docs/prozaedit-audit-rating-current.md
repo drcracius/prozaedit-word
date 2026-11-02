@@ -1,5 +1,7 @@
 # ProzaEdit Word — As-shipped audit & rating (current)
 
+> **Staleness note (2026-11-02).** The scores and the 2.0.0.15 / 127-test figures below are the **PE-75 snapshot and have not been re-rated**. Shipped build is **2.0.0.27** with **456** tests. Since then: genre registry and 4-provider AI, anchored and tracked-change Apply, chapter-by-chapter audit, keys moved out of the document (device-only), security/leak fixes, non-fiction checks, and the Word Desktop install fix. Those raise capability and trust but still have no real-Word evidence, so no new number is claimed here. Current complaint status: [WRITING-ADDIN-COMPLAINT-AUDIT-PE-69.md](./WRITING-ADDIN-COMPLAINT-AUDIT-PE-69.md#addendum-status-at-build-20027-2026-11-02). Later audits: [FINAL-READINESS-PE-96.md](./FINAL-READINESS-PE-96.md).
+
 **Date:** 2026-11-01 (PE-75 agent pass on PE-74 `bf9bb14`; PE-74 trust; PE-72 hardening)  
 **Build on `main`:** **2.0.0.15** (`manifest.hosted.xml` + `PROZAEDIT_BUILD_VERSION`)  
 **Scope:** PE-50–67 UX bundle + PE-72 hardening + PE-74 trust + **PE-75** chunked index/list/Go to polish. Automated tests (**127**: unit + jsdom task-pane harness with mocked Office host; see CI) + wiring gate + mocked-host smoke. **Validation path:** [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · **Category scorecard:** [USER-CATEGORY-RATINGS-PE-74.md](./USER-CATEGORY-RATINGS-PE-74.md).

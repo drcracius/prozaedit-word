@@ -79,3 +79,11 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - Non-fiction genres (Memoir, Academic, Business, Technical/Journalism) now get long-sentence and passive-voice cards (`nf:long`, `nf:passive_cluster`). They are preference severity with the genre's own limits; only clear outliers (1.5x the limit) are visible in Simple view, borderline ones appear in Advanced. Adjectival forms ("was tired") are not counted. Corpus gate: Simple precision 1.00, recall 1.00 on 28 fixtures (gate is >= 0.85 / 0.9; CI gates unchanged).
 - New pane-level test for AI provider x cache x cancel with a mocked fetch: cancel mid-request never caches, a cached repeat costs 0 tokens, cancel then retry works, the key is never stored or shown.
 - 448 tests. Testers re-upload `manifest.hosted.xml` once (version bump).
+
+## After 2.0.0.27: Word Desktop fix and small trust fix (no version bump)
+
+- **Word Desktop could not see ProzaEdit.** Two causes, both fixed. (1) Manifest resource id `ProzaEdit.GetStarted.LearnMoreUrl` was 33 characters (Office's limit is 32), so Word Desktop most likely skipped the add-in; it is now `ProzaEdit.LearnMoreUrl` in `manifest.hosted.xml` and `manifest.xml`. (2) The Shared Folder script registered a local `file:///` address; Word needs a network `\\PC\Share` path. The installer now shares the catalog folder and registers the UNC path, validates the manifest first, and offers a no-admin Developer sideload (`Sideload-ProzaEdit-Desktop.bat`). Guide: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md). Real-Word loading is still unverified until the owner reports.
+- `Verify-ProzaEdit-Install.bat` rewritten (it expected 2.0.0.17 and a file address); it now reads the expected version from the repo.
+- **Dismiss no longer fails silently:** when the browser cannot store a dismissed phrase (storage full or blocked), the pane now says so.
+- `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
+- Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.

@@ -150,12 +150,13 @@ ProzaEdit.Settings = {
     return saved !== false;
   },
 
+  /** Resolves true when saved (or nothing to save); false when browser storage is full or blocked. */
   async dismissTarget(targetText) {
     const key = this.normalizeTargetKey(targetText);
-    if (!key || key.startsWith("(")) return;
+    if (!key || key.startsWith("(")) return true;
     const g = new Set(this.getGlobalDismissedTargets());
     g.add(key);
-    this._writeGlobalJson(this.KEYS.GLOBAL_DISMISSED, [...g]);
+    return this._writeGlobalJson(this.KEYS.GLOBAL_DISMISSED, [...g]);
   },
 
   async resetMutedRules() {

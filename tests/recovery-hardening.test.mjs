@@ -366,6 +366,21 @@ test("Settings tolerates corrupt stored lists and unavailable localStorage", asy
   await assert.doesNotReject(Settings.dismissTarget("anything"));
 });
 
+test("Settings.dismissTarget reports whether the browser could remember the dismissal", async () => {
+  const data = {};
+  const ok = loadLib(lib("settings-store"), { localStorage: { getItem: (k) => data[k] ?? null, setItem: (k, v) => { data[k] = v; } } });
+  assert.equal(await ok.Settings.dismissTarget("Some phrase"), true);
+  assert.equal(ok.Settings.isTargetDismissedGlobally("some  phrase"), true);
+  assert.equal(await ok.Settings.dismissTarget(""), true, "nothing to save counts as success");
+  assert.equal(await ok.Settings.dismissTarget("(whole doc)"), true, "placeholder targets are not stored");
+
+  const full = loadLib(lib("settings-store"), { localStorage: { getItem: () => null, setItem: () => { throw new Error("QuotaExceededError"); } } });
+  assert.equal(await full.Settings.dismissTarget("Some phrase"), false);
+
+  const none = loadLib(lib("settings-store"), {});
+  assert.equal(await none.Settings.dismissTarget("Some phrase"), false, "no localStorage at all");
+});
+
 test("Settings global lists keep the newest 800 entries", () => {
   const writes = {};
   const store = {

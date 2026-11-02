@@ -1,12 +1,15 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Read-only PE-2 install verification for ProzaEdit Shared Folder (Windows).
+  Read-only check of the ProzaEdit Word Desktop install (Shared Folder and Developer sideload).
 
 .DESCRIPTION
-  Checks local catalog manifest, Version 2.0.0.17, manifest URL patterns, and
-  TrustedCatalog registry keys. Prints PASS/FAIL lines for the PE-2 checklist.
-  Does not modify registry or download files.
+  Does not modify files or registry. Checks, in order:
+    - catalog manifest exists, is valid for desktop Word (resource ids <= 32 chars, https, no localhost)
+    - Shared Folder route: network share reachable, TrustedCatalog registry entry is a UNC path
+    - Developer sideload route: Wef\Developer entry points at an existing manifest
+    - leftovers/blockers: old file:// catalog entry, Group Policy overrides, Windows Server service
+  At least one route (Shared Folder or Developer) must pass.
 
 .EXAMPLE
   .\Verify-ProzaEdit-Install.ps1
@@ -14,112 +17,135 @@
 [CmdletBinding()]
 param(
   [string] $CatalogDir = "",
-  [string] $ExpectedVersion = "2.0.0.17"
+  [string] $ShareName = "ProzaEditCatalog",
+  [string] $ExpectedVersion = ""
 )
 
 $ErrorActionPreference = "Continue"
 
-if (-not $CatalogDir) {
-  $CatalogDir = Join-Path $env:USERPROFILE "Documents\ProzaEdit\catalog"
-}
-
-$CatalogId = "{d1829e3a-4931-4122-b911-37f22941aa99}"
-$ExpectedSupportUrl = "https://github.com/drcracius/prozaedit-word"
-$ExpectedIcon32 = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/assets/icon-32.png"
-$ExpectedIcon64 = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/assets/icon-64.png"
+$OfficeVer = "16.0"
+$AddinId = "d1829e3a-4931-4122-b911-37f22941aa99"
+$CatalogGuid = "{f4a7d3c1-8b2e-4c59-9a1d-6e0b3c5d7f21}"
+$MaxResourceIdLength = 32
 $ExpectedSourceLocation = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html"
 
-$failCount = 0
-$passCount = 0
+if (-not $CatalogDir) { $CatalogDir = Join-Path $env:USERPROFILE "ProzaEditCatalog" }
 
-function Write-CheckResult {
+# Default expected version = the repo checkout's manifest, so this script never goes stale.
+$repoManifest = Join-Path $PSScriptRoot "..\..\manifest.hosted.xml"
+if ((-not $ExpectedVersion) -and (Test-Path -LiteralPath $repoManifest)) {
+  try { $ExpectedVersion = [string]([xml](Get-Content -Raw -Path $repoManifest)).OfficeApp.Version } catch {}
+}
+
+$script:fail = 0
+$script:pass = 0
+function Write-Check {
   param([bool]$Ok, [string]$Label, [string]$Detail = "")
-  if ($Ok) {
-    $passCount++
-    if ($Detail) { Write-Host "[PASS] $Label — $Detail" -ForegroundColor Green }
-    else { Write-Host "[PASS] $Label" -ForegroundColor Green }
-  } else {
-    $failCount++
-    if ($Detail) { Write-Host "[FAIL] $Label — $Detail" -ForegroundColor Red }
-    else { Write-Host "[FAIL] $Label" -ForegroundColor Red }
-  }
+  $suffix = ""
+  if ($Detail) { $suffix = " - $Detail" }
+  if ($Ok) { $script:pass++; Write-Host "[PASS] $Label$suffix" -ForegroundColor Green }
+  else { $script:fail++; Write-Host "[FAIL] $Label$suffix" -ForegroundColor Red }
 }
-
-function Get-OfficeWefVersion {
-  foreach ($ver in @("16.0", "15.0")) {
-    $root = "HKCU:\Software\Microsoft\Office\$ver\WEF"
-    if (Test-Path $root) { return $ver }
-  }
-  return "16.0"
-}
+function Write-Info { param([string]$Text) Write-Host "[INFO] $Text" -ForegroundColor Gray }
 
 Write-Host ""
-Write-Host "=== ProzaEdit install verify (read-only, PE-2) ===" -ForegroundColor Cyan
+Write-Host "=== ProzaEdit Word Desktop install verify (read-only) ===" -ForegroundColor Cyan
 Write-Host "Catalog folder: $CatalogDir"
 Write-Host ""
 
+# --- Manifest ---------------------------------------------------------------
 $manifestPath = Join-Path $CatalogDir "manifest.hosted.xml"
-$manifestExists = Test-Path $manifestPath
-Write-CheckResult -Ok $manifestExists -Label "Catalog manifest path" -Detail $(if ($manifestExists) { $manifestPath } else { "missing: $manifestPath" })
+$manifestOk = Test-Path -LiteralPath $manifestPath
+Write-Check -Ok $manifestOk -Label "Catalog manifest exists" -Detail $manifestPath
 
-$xml = $null
-$version = ""
-$icon32 = ""
-$icon64 = ""
-$supportUrl = ""
-$sourceLocation = ""
-
-if ($manifestExists) {
-  try {
-    $xml = [xml](Get-Content -Raw -Path $manifestPath)
+if ($manifestOk) {
+  $text = Get-Content -Raw -Path $manifestPath
+  $xml = $null
+  try { $xml = [xml]$text } catch { Write-Check -Ok $false -Label "Manifest is valid XML" -Detail $_.Exception.Message }
+  if ($xml) {
     $version = [string]$xml.OfficeApp.Version
-    $icon32 = [string]$xml.OfficeApp.IconUrl.DefaultValue
-    $icon64 = [string]$xml.OfficeApp.HighResolutionIconUrl.DefaultValue
-    $supportUrl = [string]$xml.OfficeApp.SupportUrl.DefaultValue
-    $sourceLocation = [string]$xml.OfficeApp.DefaultSettings.SourceLocation.DefaultValue
-  } catch {
-    Write-CheckResult -Ok $false -Label "Manifest XML parse" -Detail $_.Exception.Message
-  }
-}
-
-if ($xml) {
-  Write-CheckResult -Ok ($version -eq $ExpectedVersion) -Label "Manifest Version $ExpectedVersion" -Detail $(if ($version) { "found: $version" } else { "empty" })
-  Write-CheckResult -Ok ($supportUrl -eq $ExpectedSupportUrl) -Label "SupportUrl pattern" -Detail $(if ($supportUrl) { $supportUrl } else { "missing" })
-  Write-CheckResult -Ok ($icon32 -eq $ExpectedIcon32) -Label "IconUrl (icon-32.png on raw GitHub main)" -Detail $(if ($icon32) { $icon32 } else { "missing" })
-  Write-CheckResult -Ok ($icon64 -eq $ExpectedIcon64) -Label "HighResolutionIconUrl (icon-64.png on raw GitHub main)" -Detail $(if ($icon64) { $icon64 } else { "missing" })
-  Write-CheckResult -Ok ($sourceLocation -eq $ExpectedSourceLocation) -Label "SourceLocation (GitHub Pages task pane)" -Detail $(if ($sourceLocation) { $sourceLocation } else { "missing" })
-}
-
-$officeVer = Get-OfficeWefVersion
-$regPath = "HKCU:\Software\Microsoft\Office\$officeVer\WEF\TrustedCatalogs\$CatalogId"
-$regExists = Test-Path $regPath
-Write-CheckResult -Ok $regExists -Label "TrustedCatalog registry key (Office $officeVer)" -Detail $(if ($regExists) { $regPath } else { "missing: $regPath" })
-
-if ($regExists) {
-  $regUrl = (Get-ItemProperty -Path $regPath -Name "Url" -ErrorAction SilentlyContinue).Url
-  $regId = (Get-ItemProperty -Path $regPath -Name "Id" -ErrorAction SilentlyContinue).Id
-  $catalogUri = $null
-  try {
-    if (Test-Path $CatalogDir) {
-      $catalogUri = ([System.Uri]($CatalogDir.TrimEnd('\') + "\")).AbsoluteUri
+    if ($ExpectedVersion) {
+      Write-Check -Ok ($version -eq $ExpectedVersion) -Label "Manifest Version matches repo ($ExpectedVersion)" -Detail "found $version"
+    } else {
+      Write-Info "Manifest Version $version (no repo copy to compare against)"
     }
-  } catch {}
-
-  $urlOk = $false
-  if ($regUrl -and $catalogUri) {
-    $normReg = $regUrl.TrimEnd('/').ToLowerInvariant()
-    $normCat = $catalogUri.TrimEnd('/').ToLowerInvariant()
-    $urlOk = ($normReg -eq $normCat) -or ($normReg.StartsWith($normCat))
+    $tooLong = @()
+    foreach ($m in [regex]::Matches($text, '<bt:(?:Image|Url|String)\s+id="([^"]+)"')) { if ($m.Groups[1].Value.Length -gt $MaxResourceIdLength) { $tooLong += $m.Groups[1].Value } }
+    foreach ($m in [regex]::Matches($text, '\sresid="([^"]+)"')) { if ($m.Groups[1].Value.Length -gt $MaxResourceIdLength) { $tooLong += $m.Groups[1].Value } }
+    $tooLongDetail = "all <= $MaxResourceIdLength chars"
+    if ($tooLong.Count -gt 0) { $tooLongDetail = "too long: " + (($tooLong | Select-Object -Unique) -join ", ") + " (Word Desktop silently skips this manifest; update the repo and re-run the installer)" }
+    Write-Check -Ok ($tooLong.Count -eq 0) -Label "Resource ids valid for Word Desktop" -Detail $tooLongDetail
+    Write-Check -Ok ($text -notmatch 'localhost') -Label "Manifest is the hosted one (no localhost)"
+    $src = [string]$xml.OfficeApp.DefaultSettings.SourceLocation.DefaultValue
+    Write-Check -Ok ($src -eq $ExpectedSourceLocation) -Label "SourceLocation is the GitHub Pages task pane" -Detail $src
+    Write-Check -Ok ([string]$xml.OfficeApp.Id -eq $AddinId) -Label "Add-in Id" -Detail ([string]$xml.OfficeApp.Id)
   }
-  Write-CheckResult -Ok ($regId -eq $CatalogId) -Label "TrustedCatalog Id matches add-in" -Detail $(if ($regId) { $regId } else { "missing Id property" })
-  Write-CheckResult -Ok $urlOk -Label "TrustedCatalog Url points at catalog folder" -Detail $(if ($regUrl) { "Url=$regUrl" } else { "missing Url property" })
 }
 
+# --- Shared Folder route ----------------------------------------------------
 Write-Host ""
-Write-Host "Summary: $passCount passed, $failCount failed" -ForegroundColor $(if ($failCount -eq 0) { "Green" } else { "Yellow" })
-Write-Host "Manual steps still required: Word SHARED FOLDER tab, WEF cache clear, task pane smoke audit."
+Write-Host "-- Shared Folder route --" -ForegroundColor Cyan
+$uncUrl = "\\$env:COMPUTERNAME\$ShareName"
+$catKey = "HKCU:\Software\Microsoft\Office\$OfficeVer\WEF\TrustedCatalogs\$CatalogGuid"
+$sharedRoute = $false
+
+$server = Get-Service -Name LanmanServer -ErrorAction SilentlyContinue
+if ($server) { Write-Info "Windows 'Server' (file sharing) service: $($server.Status)" }
+
+if (Test-Path -LiteralPath $catKey) {
+  $regUrl = (Get-ItemProperty -LiteralPath $catKey -Name Url -ErrorAction SilentlyContinue).Url
+  $regFlags = (Get-ItemProperty -LiteralPath $catKey -Name Flags -ErrorAction SilentlyContinue).Flags
+  $isUnc = ($regUrl -and $regUrl.StartsWith("\\"))
+  Write-Check -Ok $isUnc -Label "TrustedCatalog Url is a network (UNC) path" -Detail "Url=$regUrl"
+  Write-Check -Ok ($regFlags -eq 1) -Label "TrustedCatalog Flags = 1" -Detail "Flags=$regFlags"
+  $reach = $false
+  if ($regUrl) { $reach = Test-Path -LiteralPath (Join-Path $regUrl "manifest.hosted.xml") }
+  Write-Check -Ok $reach -Label "Manifest reachable through the share" -Detail $regUrl
+  $sharedRoute = ($isUnc -and $reach -and ($regFlags -eq 1))
+} else {
+  Write-Info "No Shared Folder catalog registered (fine if you use the Developer sideload)."
+}
+
+$legacy = "HKCU:\Software\Microsoft\Office\$OfficeVer\WEF\TrustedCatalogs\{$AddinId}"
+if (Test-Path -LiteralPath $legacy) {
+  $legacyUrl = (Get-ItemProperty -LiteralPath $legacy -Name Url -ErrorAction SilentlyContinue).Url
+  Write-Check -Ok ($legacyUrl -and $legacyUrl.StartsWith("\\")) -Label "Old catalog entry is not a file:// URI" -Detail "Url=$legacyUrl (run Fix-ProzaEdit-SharedFolder.bat to replace it)"
+}
+
+$policy = "HKCU:\Software\Policies\Microsoft\Office\$OfficeVer\WEF"
+if (Test-Path -LiteralPath $policy) {
+  $pol = Get-ItemProperty -LiteralPath $policy -ErrorAction SilentlyContinue
+  Write-Check -Ok ($pol.DisableAllCatalogs -ne 1) -Label "Policy does not block Shared Folder add-ins" -Detail "DisableAllCatalogs=$($pol.DisableAllCatalogs)"
+  $polCat = Join-Path $policy "TrustedCatalogs"
+  $polHasCatalogs = (Test-Path -LiteralPath $polCat) -and [bool](Get-ChildItem -LiteralPath $polCat -ErrorAction SilentlyContinue)
+  Write-Check -Ok (-not $polHasCatalogs) -Label "No Group Policy Trusted Catalogs overriding this user" -Detail $polCat
+}
+
+# --- Developer sideload route ----------------------------------------------
+Write-Host ""
+Write-Host "-- Developer sideload route --" -ForegroundColor Cyan
+$devKey = "HKCU:\Software\Microsoft\Office\$OfficeVer\Wef\Developer"
+$devRoute = $false
+$devPath = $null
+if (Test-Path -LiteralPath $devKey) { $devPath = (Get-ItemProperty -LiteralPath $devKey -Name $AddinId -ErrorAction SilentlyContinue).$AddinId }
+if ($devPath) {
+  $devExists = Test-Path -LiteralPath $devPath
+  Write-Check -Ok $devExists -Label "Developer entry points at an existing manifest" -Detail $devPath
+  $devRoute = $devExists
+} else {
+  Write-Info "No Developer sideload registered (fine if you use the Shared Folder)."
+}
+
+# --- Result -----------------------------------------------------------------
+Write-Host ""
+Write-Check -Ok ($manifestOk -and ($sharedRoute -or $devRoute)) -Label "At least one working route (Shared Folder or Developer)"
+Write-Host ""
+$color = "Yellow"
+if ($script:fail -eq 0) { $color = "Green" }
+Write-Host "Summary: $($script:pass) passed, $($script:fail) failed" -ForegroundColor $color
+Write-Host "Still manual: restart Word, open the SHARED FOLDER tab (Home - Add-ins - Advanced), run a test audit."
 Write-Host "See docs/pe-2-shared-folder-checklist.md"
 Write-Host ""
 
-if ($failCount -gt 0) { exit 1 }
+if ($script:fail -gt 0) { exit 1 }
 exit 0

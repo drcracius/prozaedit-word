@@ -2017,6 +2017,8 @@ function schedulePersistLastActiveTab(tabId) {
     } catch (_) {
       cfg = collectUiConfig();
     }
+    // Saved config can parse to null, a number or an array; never write a property onto those.
+    if (!cfg || typeof cfg !== "object" || Array.isArray(cfg)) cfg = {};
     cfg.lastActiveTab = tabId;
     ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CONFIG, JSON.stringify(cfg));
   }, 200);
@@ -5464,8 +5466,9 @@ function muteRule(item) {
   if (!item || !item.ruleId) return Promise.resolve();
   return withCardActionLock(`mute:${item.id}`, "mute this rule", async () => {
     const muteSaved = (await ProzaEdit.Settings.muteRule(item.ruleId)) !== false;
+    let dismissSaved = true;
     if (item.targetText) {
-      await ProzaEdit.Settings.dismissTarget(item.targetText);
+      dismissSaved = (await ProzaEdit.Settings.dismissTarget(item.targetText)) !== false;
       const candidate = String(item.targetText).trim().split(/\s+/)[0];
       if (candidate && !candidate.startsWith("(") && candidate.length <= 80) {
         lastMutedDictionaryCandidate = candidate;
@@ -5483,6 +5486,8 @@ function muteRule(item) {
       showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok", true);
     } else if (!muteSaved) {
       showPeStatus("Rule muted in this browser, but Word could not save it in this document. It may return after reopening the file.", "warn");
+    } else if (!dismissSaved) {
+      showPeStatus("Rule muted, but this browser could not remember the dismissed phrase (storage is full or blocked). It may reappear in the next audit.", "warn");
     } else {
       showPeStatus("Rule muted — saved in this document and this browser (not other PCs or files).", "ok");
     }
@@ -5494,10 +5499,12 @@ function dismissCard(item) {
   return withCardActionLock(`dismiss:${item.id}`, "dismiss this finding", async () => {
     let saved = true;
     if (item.ruleId) saved = (await ProzaEdit.Settings.muteRule(item.ruleId)) !== false;
-    if (item.targetText) await ProzaEdit.Settings.dismissTarget(item.targetText);
+    let dismissSaved = true;
+    if (item.targetText) dismissSaved = (await ProzaEdit.Settings.dismissTarget(item.targetText)) !== false;
     dropSameRuleFindings(item);
     removeAuditCard(item.id);
     if (!saved) showPeStatus("Dismissed in this browser, but Word could not save it in this document.", "warn");
+    else if (!dismissSaved) showPeStatus("Dismissed for now, but this browser could not remember it (storage is full or blocked). It may reappear in the next audit.", "warn");
   });
 }
 

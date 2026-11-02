@@ -1,24 +1,29 @@
 @echo off
 setlocal
-title ProzaEdit - refresh manifest and Shared Folder catalog
+title ProzaEdit - Word Desktop Shared Folder setup
 cd /d "%~dp0"
 
 echo.
-echo ProzaEdit - re-download manifest and register local TrustedCatalog
-echo (Shared Folder tab on Word desktop - validate on your PC, PE-2)
+echo ProzaEdit - set up the Word Desktop SHARED FOLDER catalog
+echo ---------------------------------------------------------
+echo Word needs a network share (\\THIS-PC\ProzaEditCatalog).
+echo This creates it (one Windows admin prompt) and registers it.
+echo CLOSE WORD COMPLETELY FIRST (check Task Manager for WINWORD.EXE).
 echo.
+pause
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\install\Install-ProzaEdit-GitHub.ps1" -RegisterLocalCatalog
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\install\Install-ProzaEdit-GitHub.ps1" -RegisterLocalCatalog -ClearOfficeCache
 set ERR=%ERRORLEVEL%
 
 echo.
 if %ERR% NEQ 0 (
-  echo Fix script failed with exit code %ERR%.
+  echo Setup failed with exit code %ERR%. Read the message above.
+  echo No admin rights? Run Sideload-ProzaEdit-Desktop.bat instead.
   pause
   exit /b %ERR%
 )
 
-echo If SHARED FOLDER is still empty, use Word on the web Upload My Add-in instead.
-echo LAN share examples (e.g. OTHP15) are documented in scripts\install\README.md only.
+echo Next: open Word, Home - Add-ins - Advanced - SHARED FOLDER tab - ProzaEdit - Add.
+echo If SHARED FOLDER is still empty, run Verify-ProzaEdit-Install.bat and send me the output.
 pause
 exit /b 0

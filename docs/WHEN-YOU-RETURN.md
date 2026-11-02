@@ -2,9 +2,9 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Build 2.0.0.27** (PE-99) is merged to `main` (builds up to 2.0.0.26 via PRs #27 and #28, tag `v2.0.0.26`) and live on GitHub Pages; nothing left to merge. 448 tests. Owner Phase 1 (**PE-47**) open; desktop **PE-2** deferred.
+**Build 2.0.0.27** (PE-99) is merged to `main` (builds up to 2.0.0.26 via PRs #27 and #28, tag `v2.0.0.26`) and live on GitHub Pages; nothing left to merge. 456 tests. Owner Phase 1 (**PE-47**) open. Word Desktop install fixed in source, awaiting owner test: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
 
-**Next:** re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.27.md](./OWNER-CHECKLIST-2.0.0.27.md) (Track Changes first).
+**Next:** re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
 
 **After install:** [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) → [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md).
 
@@ -59,8 +59,10 @@ Send them:
 
 | Helper | Purpose |
 |--------|---------|
-| **`Install-ProzaEdit-Desktop-GitHub.bat`** | Download [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) to `Documents\ProzaEdit\catalog\` + upload instructions |
-| **`Fix-ProzaEdit-SharedFolder.bat`** | Optional desktop appendix — Shared Folder catalog (**PE-2 deferred**); web upload is the primary beta path |
+| **`Install-ProzaEdit-Desktop-GitHub.bat`** | Copy and check [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) in `%USERPROFILE%\ProzaEditCatalog\` (no registry changes) |
+| **`Fix-ProzaEdit-SharedFolder.bat`** | Word Desktop, Shared Folder route (creates `\\PC\ProzaEditCatalog`, one admin prompt). See [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md) |
+| **`Sideload-ProzaEdit-Desktop.bat`** | Word Desktop, no admin: developer registry sideload |
+| **`Verify-ProzaEdit-Install.bat`** | Read-only PASS/FAIL check of either desktop route |
 | **`scripts/install/README.md`** | PowerShell parameters, cache paths, LAN share **examples only** (e.g. OTHP15) |
 
 Localhost dev bats remain in `_archive/local-dev/` only.
