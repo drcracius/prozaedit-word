@@ -1,4 +1,4 @@
-# ProzaEdit Word: handoff to Desktop Cursor (build 2.0.0.26)
+# ProzaEdit Word: handoff to Desktop Cursor (build 2.0.0.27)
 
 Read this first. It is written for a fresh agent with no chat history. Handoff tag: `pe-81-m22-handoff`.
 
@@ -15,9 +15,9 @@ Read this first. It is written for a fresh agent with no chat history. Handoff t
 
 Task-pane add-in for Microsoft Word (Office.js) that gives writers a local-first editorial audit, Coach, and Rewrite, genre-aware (12 profiles), with optional AI help using the user's own API key (Gemini, OpenAI, Claude, OpenRouter). Hosted on GitHub Pages (`https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html`); registered in Word by uploading `manifest.hosted.xml`. No build step, no backend.
 
-## 3. Current state (2.0.0.26)
+## 3. Current state (2.0.0.27)
 
-- Verdict (PE-96): ready for a wider beta, not a public launch. 441 tests green, `verify:wiring`, `check:contrast`, version sync, `npm audit` clean.
+- Verdict (PE-96): ready for a wider beta, not a public launch. 448 tests green, `verify:wiring`, `check:contrast`, version sync, `npm audit` clean.
 - Biggest unknown: **Apply with Track Changes in real Word** (desktop, web, Mac) has only run against a mock.
 - Also never exercised live: the 4 AI providers (keys, model ids, CORS). Model catalogue last reviewed 2026-11-01.
 - Rule precision measured on 489 labelled passages across 3 corpora (author-written, not a real manuscript), precision >= 0.95.
@@ -48,7 +48,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 441 tests expected, 0 fail
+npm test                          # 448 tests expected, 0 fail
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"
 bash scripts/verify-version-sync.sh
@@ -68,7 +68,7 @@ Version-sync also requires `docs/WHEN-YOU-RETURN.md` to contain the exact phrase
 
 - `main` (tag `v2.0.0.26`): contains PE-79 ([#27](https://github.com/drcracius/prozaedit-word/pull/27), merge commit `c27332c`) and PE-81 through build 2.0.0.26 ([#28](https://github.com/drcracius/prozaedit-word/pull/28), merge commit `d5ff7fa`). Both PRs merged with merge commits, so commit ids and `pe-81-*` tags are unchanged (no re-tagging needed).
 - Feature branches `cursor/pe-79-word-fixes-36ae` and `cursor/pe-81-genres-multi-ai-f10e` are merged; they are kept for reference (tags preserved).
-- Pages serves build 2.0.0.26 from `main` (verified).
+- Pages serves build 2.0.0.27 from `main` (verify after the PE-99 merge).
 - PE-79 base commit `d72692c`.
 - Restore tags (annotated, each had a green suite; `git checkout <tag>`; roll back = `git reset --hard <tag>` + force-push, or revert the PR; because the pane loads from Pages, rollback means deploying the older code):
 
@@ -113,7 +113,7 @@ Full text: [PRIVACY-AND-DATA-PE.md](./PRIVACY-AND-DATA-PE.md). Essentials:
 
 ## 10. Genre registry
 
-`genre-profiles.js` is the single source of genre thresholds. 12 profiles: general-fiction, romance, mystery-crime, thriller-suspense, fantasy, scifi, literary-drama, historical, nonfiction-memoir, academic, business, technical-journalism; plus jargon sets (none, legal, medical, science, military). Selected via `#manuscriptType`; legacy saved values map to a profile. Thriller and general fiction reproduce pre-PE-81 numbers. The numbers are editorial judgment, not published standards (see provenance note in the file); treat them as tunable defaults. Details: [GENRE-PROFILES.md](./GENRE-PROFILES.md). Non-fiction long-sentence/passive checks are described but not yet applied.
+`genre-profiles.js` is the single source of genre thresholds. 12 profiles: general-fiction, romance, mystery-crime, thriller-suspense, fantasy, scifi, literary-drama, historical, nonfiction-memoir, academic, business, technical-journalism; plus jargon sets (none, legal, medical, science, military). Selected via `#manuscriptType`; legacy saved values map to a profile. Thriller and general fiction reproduce pre-PE-81 numbers. The numbers are editorial judgment, not published standards (see provenance note in the file); treat them as tunable defaults. Details: [GENRE-PROFILES.md](./GENRE-PROFILES.md). Non-fiction long-sentence (`nf:long`) and passive-voice (`nf:passive_cluster`) cards are wired (PE-99): preference severity, thresholds from the profile, Simple view shows only clear outliers (1.5x the limit); corpus gate in `tests/pe-99-nonfiction-clarity.test.mjs`.
 
 ## 11. Known gaps and open items (ranked)
 
@@ -121,8 +121,7 @@ Full text: [PRIVACY-AND-DATA-PE.md](./PRIVACY-AND-DATA-PE.md). Essentials:
 2. Real AI providers never run live (keys, model ids, CORS). Medium, owner-only.
 3. Rule precision only on author-written passages; tune from a real manuscript's false positives.
 4. No Content-Security-Policy (needs a trial in desktop Word, web, Mac first).
-5. Non-fiction long-sentence/passive checks: wire them or remove from descriptions.
-6. One combined test for AI provider x cache x cancel at pane level.
+5. Done in PE-99: non-fiction long-sentence/passive checks wired; pane-level AI provider x cache x cancel test (`tests/pe-99-ai-cancel-cache.test.mjs`).
 7. Diagnostics worker: not deployed; needs allow-list and rate limit first. GitHub Actions not SHA-pinned (read-only permissions).
 8. `taskpane.css` reviewed by scan only; 320 px and dark look unconfirmed.
 9. Screen-reader behaviour checked only by DOM tests.

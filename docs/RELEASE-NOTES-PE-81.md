@@ -73,3 +73,9 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - Plain-word names: "Full MS context" / "manuscript index" is now **Book outline**, "Extended checks" is **Deeper checks**, "Selected chapters" is **Chosen chapters** (UI, help, docs). Simple view hides the Target-tab outline block.
 - Rules: custom-style whole-word match is Unicode-aware and works for phrases with symbols; `plot:restroom` (a canned sentence with an invented replacement) removed; a/an no longer flags acronyms ("an FBI agent") or honourable/historic; name nudge accepts McDonald, O'Neil, Zoe, Anne-Marie.
 - Fixes found by line-reading earlier-skipped files: prior-session banner shows a local date and plain scope name; tooltips clear stale aria-describedby and close with Escape; overview no longer prints "~(use section loop) words"; "What happens to my text?" line above AI settings.
+
+## 2.0.0.27 (PE-99)
+
+- Non-fiction genres (Memoir, Academic, Business, Technical/Journalism) now get long-sentence and passive-voice cards (`nf:long`, `nf:passive_cluster`). They are preference severity with the genre's own limits; only clear outliers (1.5x the limit) are visible in Simple view, borderline ones appear in Advanced. Adjectival forms ("was tired") are not counted. Corpus gate: Simple precision 1.00, recall 1.00 on 28 fixtures (gate is >= 0.85 / 0.9; CI gates unchanged).
+- New pane-level test for AI provider x cache x cancel with a mocked fetch: cancel mid-request never caches, a cached repeat costs 0 tokens, cancel then retry works, the key is never stored or shown.
+- 448 tests. Testers re-upload `manifest.hosted.xml` once (version bump).
