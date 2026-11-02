@@ -181,6 +181,7 @@ ProzaEdit.Audit = {
     if ((fiction && ctx.mPacing) || ctx.chkRep) this._rhythmMonotony(text, push);
     if (ctx.fkLock) this._fkLockFlag(text, push, ctx);
     if (fiction && ctx.mPacing) this._sensoryWeakSpot(text, push);
+    if (!fiction && gp && ctx.chkSpell) this._nonfictionClarity(text, push, ctx, gp);
 
     const metrics = ProzaEdit.Metrics.analyze(text);
     const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);
@@ -563,6 +564,46 @@ ProzaEdit.Audit = {
         });
       }
     });
+  },
+
+  /** Non-fiction long-sentence and passive-voice cards: preference severity; Simple view only for clear outliers. */
+  _nonfictionClarity(text, push, ctx, gp) {
+    const p = gp.profile;
+    const ls = p.longSentence;
+    const threshold = String(ctx.criticPersona || "").includes("Harsh") ? ls.harsh : ls.normal;
+    let longCount = 0;
+    ProzaEdit.Metrics.splitSentences(text).forEach((s) => {
+      const wc = s.trim().split(/\s+/).filter(Boolean).length;
+      if (wc >= threshold && longCount < 3) {
+        longCount++;
+        push({
+          ruleId: `nf:long:${longCount}`,
+          module: "Pacing & Readability",
+          type: "preference",
+          confidence: wc >= threshold * 1.5 ? "medium" : "low",
+          explanation: `Long sentence (~${wc} words) for ${p.label.toLowerCase()}; consider splitting.`,
+          targetText: s.trim().substring(0, 120),
+          replacementText: "(split)",
+        });
+      }
+    });
+    const ADJ = /^(?:tired|excited|pleased|surprised|interested|concerned|worried|related|limited|advanced|detailed|experienced|complicated|determined|supposed|used|skilled|qualified|dedicated|committed|motivated|informed|alarmed|embarrassed|bored|scared)$/i;
+    const re = /\b(?:was|were|been|being|is|are)\s+(?:(?:\w+ly|not|also|then|later|often)\s+)?([a-z]+ed)\b/gi;
+    const hits = [];
+    let m;
+    while ((m = re.exec(text)) !== null && hits.length < 40) if (!ADJ.test(m[1])) hits.push(m[0]);
+    const limit = p.passiveCluster + 2;
+    if (hits.length >= limit && text.length > 300) {
+      push({
+        ruleId: "nf:passive_cluster",
+        module: "Pacing & Readability",
+        type: "preference",
+        confidence: hits.length >= limit * 1.5 ? "medium" : "low",
+        explanation: `Many passive-voice constructions (~${hits.length}); active voice is usually clearer in ${p.label.toLowerCase()}.`,
+        targetText: hits[0],
+        replacementText: "(active verb)",
+      });
+    }
   },
 
   _genreCraft(text, lower, push, ctx, gp) {

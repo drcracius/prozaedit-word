@@ -10,7 +10,7 @@
 | No Content-Security-Policy | Medium | Open (cannot verify in Word's webview) |
 | Real AI providers (4 keys, model ids, CORS) never exercised live | Medium | Open, owner-only |
 | Rule precision measured only on written passages, not a real manuscript | Medium | Open; 489 labelled passages across 3 corpora at precision >= 0.95 |
-| Non-fiction long-sentence/passive checks described but not applied | Low | Open |
+| Non-fiction long-sentence/passive checks described but not applied | Low | Closed in 2.0.0.27 (PE-99) |
 | Diagnostics worker has open CORS and no rate limit | Low | Not deployed; body sanitised |
 | GitHub Actions not SHA-pinned | Low | Permissions reduced to read-only |
 | CSS read only by scan; 320 px and dark look unconfirmed | Low | Open, owner-only |
