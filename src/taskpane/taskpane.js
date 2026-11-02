@@ -5637,9 +5637,16 @@ async function checkForUpdates(manual) {
   };
   setStatus("Checking GitHub…");
   try {
-    const res = await fetch(`${PROZAEDIT_MANIFEST_URL}?t=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error("Could not reach GitHub.");
-    const xml = await res.text();
+    const updCtrl = new AbortController();
+    const updTimer = setTimeout(() => updCtrl.abort(), 10000);
+    let xml;
+    try {
+      const res = await fetch(`${PROZAEDIT_MANIFEST_URL}?t=${Date.now()}`, { cache: "no-store", signal: updCtrl.signal });
+      if (!res.ok) throw new Error("Could not reach GitHub.");
+      xml = await res.text();
+    } finally {
+      clearTimeout(updTimer);
+    }
     const remote = parseManifestVersion(xml);
     if (!remote) throw new Error("Manifest version not found online.");
     const cmp = compareVersion(remote, PROZAEDIT_BUILD_VERSION);

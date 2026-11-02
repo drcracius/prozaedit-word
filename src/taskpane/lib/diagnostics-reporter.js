@@ -154,13 +154,21 @@
     if (!url) return { ok: false, reason: "no-url" };
     const body = JSON.stringify(payload);
     if (body.length > MAX_BODY_BYTES) return { ok: false, reason: "too-large" };
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body,
-      mode: "cors",
-      credentials: "omit",
-    });
+    const ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), 10_000) : null;
+    let res;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        mode: "cors",
+        credentials: "omit",
+        signal: ctrl ? ctrl.signal : undefined,
+      });
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     if (!res.ok) return { ok: false, reason: `http-${res.status}` };
     return { ok: true };
   }
