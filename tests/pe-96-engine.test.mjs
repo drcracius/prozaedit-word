@@ -138,3 +138,9 @@ test("PE-96: 'analyses' (plural noun) is not a UK/US dialect mismatch, but 'anal
   assert.ok(!ids("The sensitivity analyses gave similar results.", "en-US").includes("spell:dialect:analyse"));
   assert.ok(ids("She analysed the results carefully.", "en-US").includes("spell:dialect:analyse"));
 });
+
+test("PE-96: equally frequent similar names are never called a typo", () => {
+  const two = "Jaden opened the door. Jayden closed it. Jaden sat down. Jayden stood up.";
+  const ids = (t) => P.Audit.run(t, ctxFor("General Fiction")).suggestions.map((s) => s.ruleId);
+  assert.ok(!ids(two).some((i) => i.startsWith("prop:variant")), ids(two).join());
+});
