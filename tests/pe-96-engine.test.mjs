@@ -114,3 +114,21 @@ test("PE-96: near-identical names used equally often are a hint, a rare typo sta
   const t = P.Audit.run(typo, cx).suggestions.find((x) => x.ruleId.startsWith("prop:variant"));
   assert.ok(t && t.type === "confirmed" && t.targetText === "Marcis" && t.replacementText === "Marcus");
 });
+
+import { loadLibs } from "./load-lib.mjs";
+
+test("PE-96: local rewrite keeps sentence capitals and never produces ungrammatical swaps", () => {
+  const pe = loadLibs(["src/taskpane/lib/lexical-banks.js", "src/taskpane/lib/local-rewrite.js"]);
+  const R = pe.LocalRewrite;
+  assert.equal(R.run("creative", "Suddenly, the door opened. Instantly she ran. He left. Without warning the lights died."), "The door opened. She ran. He left. The lights died.");
+  assert.equal(R.run("creative", "He ran suddenly, then stopped."), "He ran suddenly, then stopped.");
+  assert.equal(R.run("academic", "Very good results. I think it's really quite fine. It was very very bad."), "Good results. The analysis indicates it is fine. It was bad.");
+  assert.equal(R.run("fluency", "In fact, he left. As a matter of fact, she stayed. It is, in fact, true."), "He left. She stayed. It is, true.");
+  const f = R.run("formal", "It's a lot of money and a lot of cars. The plan was kind of odd. Kind of odd. I get it, I got up.");
+  assert.ok(f.includes("a great deal of money"), f);
+  assert.ok(f.includes("many cars"), f);
+  assert.ok(f.includes("was somewhat odd"), f);
+  assert.ok(f.includes("Kind of odd"), "ambiguous sentence-start phrase left alone: " + f);
+  assert.ok(f.includes("I get it, I got up"), "polysemous get/got left alone: " + f);
+  assert.ok(!/\bobtain/.test(f));
+});

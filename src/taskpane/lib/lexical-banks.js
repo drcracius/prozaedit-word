@@ -92,13 +92,8 @@
     ["for the purpose of", "to"],
   ];
 
-  const INFORMAL_TO_FORMAL = [
-    ["get", "obtain"],
-    ["got", "obtained"],
-    ["a lot of", "many"],
-    ["kind of", "somewhat"],
-    ["sort of", "somewhat"],
-  ];
+  /** Kept for compatibility; the formal rewrite handles "a lot of" and "kind/sort of" by context, not blind substitution. */
+  const INFORMAL_TO_FORMAL = [];
 
   const CONTRACTIONS = {
     "don't": "do not",
