@@ -71,7 +71,9 @@
     return normalizeSettings({ complexity, intensity, density });
   }
 
+  /** The shaper only applies in Advanced view: in Simple view its hidden panel/sliders must never change results. */
   function isShaperPanelActive() {
+    if (document.body && document.body.classList.contains("pe-simple-mode")) return false;
     const panel = document.getElementById("pe-shaper-panel");
     return !!(panel && panel.open);
   }

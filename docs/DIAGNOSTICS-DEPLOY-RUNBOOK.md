@@ -1,4 +1,4 @@
-# Diagnostics ingest deploy runbook (2.0.0.16)
+# Diagnostics ingest deploy runbook (next build after PE-79: 2.0.0.17)
 
 **When to use:** Owner has a **Worker HTTPS URL** from deploy (GitHub Actions or `tools/diagnostics-ingest/deploy.sh`).  
 **Optional for web 1.0** — default build keeps ingest URL empty ([DIAGNOSTICS.md](./DIAGNOSTICS.md), [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) Phase 3).
@@ -11,7 +11,7 @@ Do **not** commit a placeholder URL. Set the real URL only when the Worker is li
 
 - [ ] Worker deployed; HTTPS URL copied from workflow summary or deploy output
 - [ ] Repo secrets set (if using Actions): `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DIAGNOSTICS_GITHUB_TOKEN`
-- [ ] `main` at **2.0.0.15**; `npm test` green locally or on PR
+- [ ] `main` at **2.0.0.16**; `npm test` green locally or on PR
 
 ---
 
@@ -22,7 +22,7 @@ Do **not** commit a placeholder URL. Set the real URL only when the Worker is li
 | 1 | Record Worker origin (scheme + host only, e.g. `https://….workers.dev`) | ☐ |
 | 2 | Edit `src/taskpane/lib/diagnostics-config.js` — set `DIAGNOSTICS_INGEST_URL` to that URL | ☐ |
 | 3 | Edit `manifest.hosted.xml` — add Worker origin under `<AppDomains>` | ☐ |
-| 4 | Bump `<Version>` in `manifest.hosted.xml` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` to **2.0.0.16** together | ☐ |
+| 4 | Bump `<Version>` in `manifest.hosted.xml` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` to **2.0.0.17** (2.0.0.16 shipped the PE-79 Word fixes) together | ☐ |
 | 5 | Run `bash scripts/verify-version-sync.sh` | ☐ |
 | 6 | Run `npm test` | ☐ |
 | 7 | Push / merge PR; wait for version-sync CI | ☐ |
@@ -36,8 +36,8 @@ Do **not** commit a placeholder URL. Set the real URL only when the Worker is li
 | Situation | Action |
 |-----------|--------|
 | Ingest broken after publish | Set `DIAGNOSTICS_INGEST_URL` back to `""`; remove AppDomain if needed |
-| Testers already on **2.0.0.16** | Bump to **2.0.0.17** with rollback config; testers re-upload once |
-| Never shipped **2.0.0.16** to testers | Stay on **2.0.0.15**; revert PR only |
+| Testers already on **2.0.0.17** | Bump to **2.0.0.18** with rollback config; testers re-upload once |
+| Never shipped **2.0.0.17** to testers | Stay on **2.0.0.16**; revert PR only |
 
 ---
 

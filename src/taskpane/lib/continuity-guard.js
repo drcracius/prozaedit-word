@@ -83,7 +83,11 @@ ProzaEdit.ContinuityGuard = {
       }
     }
 
-    const isName = idx.topNames?.some((x) => x.name.toLowerCase() === t.toLowerCase() || x.name.toLowerCase().includes(t.toLowerCase()));
+    const tLow = t.toLowerCase();
+    const isName = idx.topNames?.some((x) => {
+      const n = String(x.name || "").toLowerCase();
+      return n === tLow || (tLow.length >= 3 && n.split(/\s+/).includes(tLow));
+    });
     if (isName && sensitivity >= 2) {
       const key = `name:${t.toLowerCase()}`;
       if (!dismissed.has(key)) {

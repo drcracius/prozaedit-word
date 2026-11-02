@@ -59,7 +59,7 @@ GitHub Actions **version-sync** workflow: pure JS tests + version string alignme
 ## Deferred (vNext / PE-69+)
 
 - Five-tab IA merge  
-- Manifest / ribbon bump (unless diagnostics **2.0.0.16** deploy)  
+- Manifest / ribbon bump (unless diagnostics **2.0.0.17** deploy)  
 - **Office.js read-only smoke in CI** (F-58-9) → **PE-69**  
 - Rename all “Critical” in power UI (PE-65 note)  
 - Realtime engine / new report types  

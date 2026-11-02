@@ -43,7 +43,49 @@ ProzaEdit.ProperNoun = {
     return counts;
   },
 
-  findInconsistencies(text, dictionary) {
+  /**
+   * Single-token names from the whole-manuscript roster (full-manuscript context index) that the audited text
+   * spells almost the same but not identically. Conservative: type "preference", never "confirmed".
+   */
+  rosterVariants(text, roster, dictLower, limit) {
+    const out = [];
+    const known = new Map();
+    (roster || []).forEach((n) => {
+      const name = String(n || "").trim();
+      if (/^[A-Z][a-z]{4,}$/.test(name) && !this.STOPWORDS.has(name.toLowerCase())) known.set(name.toLowerCase(), name);
+    });
+    if (!known.size) return out;
+    const escape = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const forms = new Set();
+    const wordRe = /\b[A-Z][a-z]{4,}\b/g;
+    let wm;
+    while ((wm = wordRe.exec(text)) !== null && forms.size < 400) forms.add(wm[0]);
+    for (const form of forms) {
+      if (out.length >= limit) break;
+      const fl = form.toLowerCase();
+      if (known.has(fl) || this.STOPWORDS.has(fl) || dictLower.has(fl)) continue;
+      const plainWord = new RegExp(`\\b${escape(fl)}\\b`);
+      if (plainWord.test(text)) continue;
+      for (const [rl, r] of known) {
+        if (form[0] !== r[0] || Math.abs(form.length - r.length) > 2) continue;
+        const dist = this.levenshtein(fl, rl);
+        if (dist === 1 || (dist === 2 && form.length >= 8)) {
+          out.push({
+            ruleId: `prop:roster:${fl}`,
+            module: "Proper noun consistency",
+            type: "preference",
+            explanation: `Possible spelling variant: "${form}" is very close to "${r}", a recurring name elsewhere in your manuscript (from your full-manuscript context index). Check which spelling you intend.`,
+            targetText: form,
+            replacementText: r,
+          });
+          break;
+        }
+      }
+    }
+    return out;
+  },
+
+  findInconsistencies(text, dictionary, opts) {
     const sample = String(text || "").substring(0, 100000);
     const dictLower = new Set((dictionary || []).map((d) => d.toLowerCase()));
     const counts = this.extract(sample, dictLower);
@@ -78,6 +120,12 @@ ProzaEdit.ProperNoun = {
           });
         }
       }
+    }
+    const roster = opts && Array.isArray(opts.knownNames) ? opts.knownNames : [];
+    if (roster.length) {
+      this.rosterVariants(String(text || ""), roster, dictLower, 6).forEach((x) => {
+        if (!suggestions.some((y) => y.targetText === x.targetText)) suggestions.push(x);
+      });
     }
     return suggestions;
   },

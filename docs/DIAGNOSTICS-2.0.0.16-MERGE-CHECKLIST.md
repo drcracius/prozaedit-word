@@ -1,4 +1,6 @@
-# Diagnostics 2.0.0.16 — merge checklist (agent prep)
+# Diagnostics merge checklist (agent prep) — build number is now 2.0.0.17
+
+> PE-79 took **2.0.0.16**; the diagnostics bump moves to **2.0.0.17**. File name kept so existing links keep working.
 
 **Purpose:** Ordered steps for owner + one PR when a live Worker URL exists.  
 **Do not** commit a placeholder ingest URL or bump manifest on prep-only passes.
@@ -30,7 +32,7 @@ Verify in **Settings → Secrets and variables → Actions** before dispatch.
 Workflow reference (must align with this doc):
 
 1. Check secrets → deploy Worker via `tools/diagnostics-ingest/deploy.sh`
-2. Summary tells owner: set `DIAGNOSTICS_INGEST_URL`, add AppDomain, bump to **2.0.0.16**
+2. Summary tells owner: set `DIAGNOSTICS_INGEST_URL`, add AppDomain, bump to **2.0.0.17** (2.0.0.16 shipped the PE-79 Word fixes)
 
 ---
 
@@ -40,7 +42,7 @@ Workflow reference (must align with this doc):
 |------|------|--------|:----:|
 | 3.1 | `src/taskpane/lib/diagnostics-config.js` | Set `DIAGNOSTICS_INGEST_URL` to **live** Worker HTTPS origin (no trailing path junk) | ☐ |
 | 3.2 | `manifest.hosted.xml` | Add Worker origin under `<AppDomains>` | ☐ |
-| 3.3 | `manifest.hosted.xml` + `src/taskpane/taskpane.js` | Bump `<Version>` and `PROZAEDIT_BUILD_VERSION` to **2.0.0.16** **together** | ☐ |
+| 3.3 | `manifest.hosted.xml` + `src/taskpane/taskpane.js` | Bump `<Version>` and `PROZAEDIT_BUILD_VERSION` to **2.0.0.17** (2.0.0.16 shipped the PE-79 Word fixes) **together** | ☐ |
 | 3.4 | — | `bash scripts/verify-version-sync.sh` | ☐ |
 | 3.5 | — | `npm test` | ☐ |
 | 3.6 | — | Open PR; merge when CI green | ☐ |
@@ -62,8 +64,8 @@ Workflow reference (must align with this doc):
 | Situation | Action |
 |-----------|--------|
 | Ingest broken after publish | Clear `DIAGNOSTICS_INGEST_URL`; remove AppDomain if needed |
-| Testers already on **2.0.0.16** | Rollback config + bump **2.0.0.17**; testers re-upload once |
-| Never shipped **2.0.0.16** | Stay on **2.0.0.15**; revert PR only |
+| Testers already on **2.0.0.17** | Rollback config + bump **2.0.0.18**; testers re-upload once |
+| Never shipped **2.0.0.17** | Stay on **2.0.0.16**; revert PR only |
 
 ---
 

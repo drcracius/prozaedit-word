@@ -84,5 +84,5 @@ ProzaEdit.WorkflowNav = {
     return ruleId.startsWith("prop:") || ruleId.startsWith("spell:");
   },
 
-  ADVANCED_TABS_WHEN_SIMPLE_OFF: "Coach, Rewrite, Thesaurus, optional Gemini blocks, and extended checks.",
+  ADVANCED_TABS_WHEN_SIMPLE_OFF: "Thesaurus, the lexical shaper, and extra tuning (Coach, Rewrite and optional AI help stay available in Simple).",
 };

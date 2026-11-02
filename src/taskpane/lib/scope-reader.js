@@ -144,21 +144,40 @@ ProzaEdit.ScopeReader = {
     return `${normalized.length} chapters`;
   },
 
-  async listChapters(context) {
+  /**
+   * Heading 1–3 paragraphs become chapters. Reads style in bounded batches (one huge sync freezes Word on long
+   * documents) and loads text only for the heading paragraphs.
+   */
+  async listChapters(context, opts) {
+    opts = opts || {};
     const paras = context.document.body.paragraphs;
     paras.load("items");
     await context.sync();
     const total = paras.items.length;
     if (!total) return [];
-    for (let i = 0; i < total; i++) paras.items[i].load(["text", "styleBuiltIn"]);
-    await context.sync();
-    const headings = [];
-    for (let i = 0; i < total; i++) {
-      const s = paras.items[i].styleBuiltIn;
-      if (s === Word.Style.heading1 || s === Word.Style.heading2 || s === Word.Style.heading3) {
-        headings.push({ paraIndex: i, title: (paras.items[i].text || "").trim().substring(0, 80) || `Chapter ${headings.length + 1}` });
+    const STYLE_BATCH = 500;
+    const headingIdx = [];
+    for (let start = 0; start < total; start += STYLE_BATCH) {
+      this._cancelCheck(opts);
+      const end = Math.min(start + STYLE_BATCH, total);
+      for (let i = start; i < end; i++) paras.items[i].load("styleBuiltIn");
+      await context.sync();
+      for (let i = start; i < end; i++) {
+        const s = paras.items[i].styleBuiltIn;
+        if (s === Word.Style.heading1 || s === Word.Style.heading2 || s === Word.Style.heading3) headingIdx.push(i);
       }
+      if (end < total) await this.microYield();
     }
+    const TEXT_BATCH = 200;
+    const titles = new Map();
+    for (let b = 0; b < headingIdx.length; b += TEXT_BATCH) {
+      this._cancelCheck(opts);
+      const slice = headingIdx.slice(b, b + TEXT_BATCH);
+      slice.forEach((i) => paras.items[i].load("text"));
+      await context.sync();
+      slice.forEach((i) => titles.set(i, (paras.items[i].text || "").trim().substring(0, 80)));
+    }
+    const headings = headingIdx.map((paraIndex, n) => ({ paraIndex, title: titles.get(paraIndex) || `Chapter ${n + 1}` }));
     return headings.map((h, idx) => {
       const endPara = idx + 1 < headings.length ? headings[idx + 1].paraIndex - 1 : total - 1;
       return { index: idx + 1, title: h.title, startPara: h.paraIndex, endPara };

@@ -31,7 +31,7 @@ When ingest is not configured, Help also shows **Report on GitHub** → [new iss
 
 Shipped config keeps `DIAGNOSTICS_INGEST_URL` **empty** in `src/taskpane/lib/diagnostics-config.js` — no extra manifest `AppDomain` is required for that default.
 
-**Step checklist (2.0.0.16):** [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) — use only when a live Worker URL exists.
+**Step checklist (next build, 2.0.0.17):** [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) — use only when a live Worker URL exists.
 
 ### Option A — GitHub Actions (one workflow run)
 
@@ -53,7 +53,7 @@ export GITHUB_REPOSITORY=drcracius/prozaedit-word
 
 1. Set `DIAGNOSTICS_INGEST_URL` in `diagnostics-config.js` to the Worker HTTPS URL (no trailing slash required).
 2. Add the Worker origin to `manifest.hosted.xml` `<AppDomains>` (e.g. `https://your-worker.workers.dev`).
-3. Bump `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `taskpane.js` to **2.0.0.16** **together**; push; testers re-upload `manifest.hosted.xml` once.
+3. Bump `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `taskpane.js` to **2.0.0.17** (2.0.0.16 shipped the PE-79 Word fixes) **together**; push; testers re-upload `manifest.hosted.xml` once.
 4. Verify with opt-in on: **Report a problem** or a test crash → GitHub issue with label `auto-report`.
 
 **No token in the client.** The Worker uses `GITHUB_TOKEN` as a secret only.

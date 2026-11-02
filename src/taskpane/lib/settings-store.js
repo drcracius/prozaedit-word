@@ -15,6 +15,7 @@ ProzaEdit.Settings = {
     CHAPTER_HEATMAP: "PROZAEDIT_CHAPTER_HEATMAP",
     REFERENCE_STYLE: "PROZAEDIT_REFERENCE_STYLE",
     CUSTOM_STYLE: "PROZAEDIT_CUSTOM_STYLE",
+    MCI: "PROZAEDIT_MCI_V2",
   },
 
   _parse(raw, fallback) {
@@ -59,6 +60,29 @@ ProzaEdit.Settings = {
         finish(false);
       }
     });
+  },
+
+  /**
+   * Like setAsync, but when the save fails the staged value is rolled back so a bad/oversized value
+   * can never poison later saves of other keys (e.g. the main PROZAEDIT_CONFIG blob).
+   */
+  async setAsyncGuarded(key, value) {
+    let hadPrev = false;
+    let prev;
+    try {
+      prev = Office.context.document.settings.get(key);
+      hadPrev = prev !== undefined && prev !== null;
+    } catch (_) {}
+    const ok = await this.setAsync(key, value);
+    if (!ok) {
+      try {
+        const settings = Office.context.document.settings;
+        if (hadPrev) settings.set(key, prev);
+        else if (typeof settings.remove === "function") settings.remove(key);
+        else settings.set(key, null);
+      } catch (_) {}
+    }
+    return ok;
   },
 
   _readGlobalJson(key) {

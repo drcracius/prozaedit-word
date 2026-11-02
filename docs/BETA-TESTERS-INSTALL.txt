@@ -23,7 +23,7 @@ DAILY USE
 If Upload is missing on desktop Word, use https://office.com in a browser for step 2–4.
 
 OWNER / VALIDATION (not for testers)
-  Web 1.0 RC on main (2.0.0.15); PE-48 agent prep done; owner Phase 1 (PE-47) open.
+  Web 1.0 RC on main (2.0.0.16); PE-48 agent prep done; owner Phase 1 (PE-47) open.
   Final mile: docs/FINAL-MILE-PLAN-WEB.md
   Phase 1 quickstart: docs/PHASE-1-QUICKSTART.md
   Log template: docs/templates/VALIDATION-LOG.md

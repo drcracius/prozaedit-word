@@ -46,7 +46,7 @@ chmod +x deploy.sh
 
 1. Set `DIAGNOSTICS_INGEST_URL` in `src/taskpane/lib/diagnostics-config.js` to the Worker HTTPS URL.
 2. Add the Worker origin to `manifest.hosted.xml` `<AppDomains>`.
-3. Bump `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `taskpane.js` to **2.0.0.16** together; testers re-upload the manifest once.
+3. Bump `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `taskpane.js` to **2.0.0.17** (2.0.0.16 shipped the PE-79 Word fixes) together; testers re-upload the manifest once.
 
 See [docs/DIAGNOSTICS.md](../../docs/DIAGNOSTICS.md) for client opt-in and testing.
 

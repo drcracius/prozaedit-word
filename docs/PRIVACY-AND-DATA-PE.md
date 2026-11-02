@@ -20,8 +20,10 @@
 
 | Service | When | What is sent |
 |---------|------|----------------|
-| **Google Gemini** | Coach **Send via Gemini**, **Deep audit**, **Rewrite via Gemini** | Your prompt plus the context ProzaEdit attaches (selection-only by default for Coach). |
+| **Google Gemini** | Coach **Send via Gemini**, **Deep audit**, **Rewrite via Gemini** | Your prompt plus the context ProzaEdit attaches (selection-only by default for Coach). **If you built a manuscript context index, that local heuristic outline — chapter titles, word counts, first/last lines, recurring names, frequent words and time cues — is included in the request too** (flagged if it may be out of date). Over-long prompts are trimmed with a visible note; the instruction, your question and the end of the excerpt are kept. |
 | **Datamuse** | **Thesaurus** lookup | The single word you search. |
+
+The manuscript context index itself is **not AI-generated** and building it sends nothing anywhere; it is stored in this document's own settings key (`PROZAEDIT_MCI_V2`). Local audit, local Coach and local Rewrite never contact Gemini.
 
 No ProzaEdit-hosted model training pipeline exists in this build; third-party terms apply when you use Gemini or Datamuse.
 

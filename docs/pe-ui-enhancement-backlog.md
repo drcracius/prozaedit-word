@@ -22,7 +22,7 @@
 | 7 | Toast duration + manual dismiss | **Done (PE-43)** — 6s auto-clear + × |
 | 8 | Chapter checklist Select all / Clear all | **Already shipped (PE-34/35)** — verified PE-43 |
 | 9 | Readonly scope chip on Checks | **Done (PE-43)** |
-| 10 | Manifest 2.0.0.16 | **Deferred** — ingest not deployed |
+| 10 | Manifest 2.0.0.17 (diagnostics; 2.0.0.16 = PE-79) | **Deferred** — ingest not deployed |
 
 ## P3 — Later
 

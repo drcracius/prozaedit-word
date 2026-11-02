@@ -14,9 +14,9 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.15</span>)</p>
-    <p id="peWhatsNewBullet" class="pe-top-banner-body">Phases 2–7: hover tips, Rewrite lexical shaper, timeline &amp; citation scans, audit report export, optional Gemini session quota (off by default).</p>
-    <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-2.0.0.15.md" target="_blank" rel="noopener">Release notes</a></p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.16</span>)</p>
+    <p id="peWhatsNewBullet" class="pe-top-banner-body">Whole-book names and cues, edit-aware “index may be out of date” notice, safer index storage, AI help reachable from Simple mode, and a Gemini prompt that never loses your question.</p>
+    <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-79-WORD-FIXES.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
       <button type="button" class="btn-secondary" onclick="dismissWhatsNewBanner(false)">Got it</button>
       <button type="button" class="btn-linkish" onclick="dismissWhatsNewBanner(true)">Don&apos;t show again</button>
@@ -81,7 +81,7 @@
     <ul class="help-list pe-session-tips-list">
       <li><strong>Target</strong> — set scope and manuscript type, then <strong>Checks</strong> — turn modules on → <strong>Run audit</strong> → fix cards on <strong>Audit</strong>.</li>
       <li>Fiction-only modules and <strong>Timeline scan</strong> appear when manuscript type is Fiction.</li>
-      <li><strong>Simple mode</strong> (Settings → Essentials) hides Thesaurus and optional Gemini blocks; other persistent prefs are under toolbar <strong>Settings</strong>.</li>
+      <li><strong>Simple / Advanced view</strong> (Settings → Essentials) changes what is shown, not how checks work: Simple hides Thesaurus, the lexical shaper and extra tuning; Coach, Rewrite and <strong>AI help (optional)</strong> stay available in both. Other persistent prefs are under toolbar <strong>Settings</strong>.</li>
       <li>After GitHub updates, close and reopen the pane; re-upload <code>manifest.hosted.xml</code> only when the manifest version bumps.</li>
     </ul>
     <div class="pe-top-banner-actions">
@@ -259,7 +259,7 @@
       <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Built-in guides use local heuristics only. Sources: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/STYLE-GUIDE-SOURCES.md" target="_blank" rel="noopener">STYLE-GUIDE-SOURCES.md</a> · <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a>.</p>
     </div>
     <p id="targetCustomRulesSummary" class="pe-target-custom-rules-line help-muted hidden" style="font-size:10px;margin:4px 0 0;">Custom rules: <span id="targetCustomRulesCount">0</span> — <button type="button" class="btn-linkish" onclick="openSettingsModal('style')">manage in Settings</button></p>
-    <p class="pe-target-simple-mode-line help-muted" style="font-size:10px;margin:8px 0 0;">Simple mode: <strong id="targetSimpleModeLabel">Off</strong> — <button type="button" class="btn-linkish" onclick="openSettingsModal('essentials')">change in Settings</button></p>
+    <p class="pe-target-simple-mode-line help-muted" style="font-size:10px;margin:8px 0 0;">View: <strong id="targetSimpleModeLabel">Advanced</strong> (Simple / Advanced) — <button type="button" class="btn-linkish" onclick="openSettingsModal('essentials')">change in Settings</button></p>
     <button type="button" id="btnSaveTarget" class="btn-secondary" onclick="saveConfiguration()">Save now</button>
     <p style="font-size:10px;color:var(--text-muted);margin:4px 0 0;">Target fields auto-save when you change them. Advanced options in <strong>Settings</strong>.</p>
   </div>
@@ -276,6 +276,7 @@
   </div>
 
   <div id="tab3" class="tab-content" role="tabpanel">
+    <div class="pe-mci-stale-notice hidden" role="status" aria-live="polite">Manuscript index may be out of date<span data-pe-mci-stale-why></span>. <button type="button" class="btn-linkish" onclick="runBuildFullManuscriptContext(true)">Refresh index</button></div>
     <p id="peChecksPipelineHint" class="pe-pipeline-hint help-muted hidden" role="note"></p>
     <p id="checksScopeChip" class="pe-scope-chip help-muted" aria-live="polite">Scope: —</p>
     <p id="peChecksPostRunNav" class="pe-post-run-nav help-muted hidden" role="status" aria-live="polite"></p>
@@ -292,7 +293,7 @@
     <div class="form-group pe-mci-checks-block" id="peMciChecksBlock" data-simple-hide>
       <p id="peMciStatusChecks" class="pe-mci-status pe-mci-stale" aria-live="polite">Full MS context not built</p>
       <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContext" onclick="runBuildFullManuscriptContext(true)">Build full manuscript context</button>
-      <p class="help-inline" style="margin:4px 0 0;font-size:10px;">Coach, Rewrite, and chapter audits inject this index when it is fresh. Data stays in this document only.</p>
+      <p class="help-inline" style="margin:4px 0 0;font-size:10px;">A heuristic local outline (not AI): chapter list, word counts, first/last lines, recurring names, time cues. Stored in this document only; included in a Gemini request only if you use Gemini. If it goes stale it is still used but flagged, and you will see a refresh notice.</p>
     </div>
     <div class="audit-run-hub pe-checks-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run audit">Run audit</button>
@@ -453,6 +454,7 @@
   </div>
 
   <div id="tab5" class="tab-content">
+    <div class="pe-mci-stale-notice hidden" role="status" aria-live="polite">Manuscript index may be out of date<span data-pe-mci-stale-why></span>. <button type="button" class="btn-linkish" onclick="runBuildFullManuscriptContext(true)">Refresh index</button></div>
     <div class="help-box help-muted">Local Coach uses curated rules (0 tokens). Word Copilot or Gemini only when you need generative prose.</div>
     <div id="chatLog" class="chat-log">
       <div class="chat-msg chat-ai"><strong>Local Coach:</strong> Ask about POV, pacing, dialogue, show/tell—no API key needed.</div>
@@ -475,13 +477,18 @@
         </div>
       </details>
     </div>
-    <details class="help-box help-muted pe-gemini-block" style="margin-top:8px;">
-      <summary>Optional Gemini API (uses tokens)</summary>
+    <details class="help-box help-muted pe-gemini-block pe-ai-help" id="peAiHelpCoach" style="margin-top:8px;">
+      <summary><span data-pe-ai-help-title>Optional Gemini API (uses tokens)</span></summary>
       <div class="form-group" style="border:none;padding:0;margin-top:6px;">
-        <p class="help-inline pe-cloud-disclosure">Cloud action: the prompt and chosen context are sent to Google only when you click <strong>Send via Gemini</strong>. Context is selection-only by default; turning that off can send a document excerpt. Local Coach and Run audit do not use Gemini.</p>
-        <p class="help-inline" style="font-size:10px;margin:0 0 6px;">API key: <button type="button" class="btn-linkish" onclick="openSettingsModal('essentials')">Settings → Essentials</button></p>
-        <div class="toggle-row"><span>Context: selection only</span><input type="checkbox" id="chatSelectionOnly" checked></div>
-        <button class="btn-secondary btn-api-opt" onclick="sendChatMessage()">Send via Gemini</button>
+        <p class="help-inline pe-cloud-disclosure">Cloud action: the prompt and chosen context are sent to Google only when you click <strong>Send via Gemini</strong>. Context is selection-only by default; turning that off can send a document excerpt. If you built a manuscript index, that heuristic outline (chapter titles, first/last lines, recurring names) is included in the request too. Local Coach and Run audit never use Gemini.</p>
+        <div class="pe-ai-help-setup" data-pe-ai-help-setup>
+          <p class="help-inline" style="font-size:10px;margin:0 0 6px;">AI help is <strong>off</strong> until you add a Gemini API key.</p>
+          <button type="button" class="btn-secondary pe-btn" onclick="openAiHelpSetup()">Set up AI help (add API key)</button>
+        </div>
+        <div class="pe-ai-help-ready hidden" data-pe-ai-help-ready>
+          <div class="toggle-row"><span>Context: selection only</span><input type="checkbox" id="chatSelectionOnly" checked></div>
+          <button class="btn-secondary btn-api-opt" onclick="sendChatMessage()">Send via Gemini</button>
+        </div>
       </div>
     </details>
   </div>
@@ -491,8 +498,8 @@
     <div class="help-box" id="peAboutSection">
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.15</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.15</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.16</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.16</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>
@@ -533,7 +540,7 @@
       <p><strong>Daily use:</strong> Home → ProzaEdit. No bat files or local server.</p>
       <p><strong>Analysis scope (Target):</strong> Highlighted selection; <strong>Page range</strong> (From/To pages, ~2,800 chars each); Selected chapters (Heading 1–3 checklist); or Full manuscript.</p>
       <p><strong>Run audit:</strong> Target → set scope → Checks → turn modules on → Run audit → Fix cards. <strong>Chapter audit uses full-manuscript context</strong> when you have built the context index and the document has not changed much (paragraph count).</p>
-      <p><strong>Full manuscript context:</strong> Checks or Target → <em>Build full manuscript context</em> runs a cooperative background read (cancel anytime). Stored in this document’s settings — not sent to AI unless you use Gemini with that profile.</p>
+      <p><strong>Full manuscript context:</strong> Checks or Target → <em>Build full manuscript context</em> runs a cooperative background read (cancel anytime). It is a local, heuristic outline (not an AI summary), stored in this document’s own settings key, and it is sent to Google only as part of a Gemini request you click — flagged if it may be out of date.</p>
       <p><strong>Settings (toolbar gear):</strong> Simple mode, safety toggles (confirm before apply, hover tips, FK lock, continuity slider), audit defaults (report depth, default filter, extended checks), privacy &amp; diagnostics, per-document dictionary, capture reference style, citation scan shortcut, Gemini session ceiling (when Simple mode is off), and custom style rules (add/edit/bulk import). <strong>Target</strong> keeps manuscript profile, analysis scope, and preferred style guide.</p>
       <p><strong>Keyboard shortcuts:</strong> Open Settings — <strong>Ctrl+Shift+,</strong> or <strong>Alt+Shift+S</strong> (when focus is not in a text field). Undo / Redo — toolbar buttons (Word undo still applies to all edits). See checklist §8 for banner and control sync tests.</p>
       <p><strong>Look &amp; navigation:</strong> <strong>Light</strong> (indigo primary) or <strong>Dark</strong> / <strong>Match system</strong> (Settings → Appearance). In dark mode, light green marks primary actions, the active tab, and workflow step — not finding severity. The sticky line under the toolbar shows your active <strong>style guide</strong>, <strong>scope</strong>, and character estimate after <strong>Refresh count</strong>. ProzaEdit remembers your <strong>last tab</strong> per document. Deep links: Help → Privacy, Target → Custom rules, or bookmark <code>#pe-settings-privacy</code>. Settings and Rewrite (from an audit card) offer <strong>Back</strong> when you need to return without hunting tabs.</p>
@@ -624,6 +631,7 @@
   </div>
 
   <div id="tab6" class="tab-content">
+    <div class="pe-mci-stale-notice hidden" role="status" aria-live="polite">Manuscript index may be out of date<span data-pe-mci-stale-why></span>. <button type="button" class="btn-linkish" onclick="runBuildFullManuscriptContext(true)">Refresh index</button></div>
     <button type="button" id="btnRewriteBackAudit" class="btn-linkish pe-rewrite-back hidden" onclick="backToAuditFromRewrite()" aria-label="Back to Audit tab">← Back to Audit</button>
     <div class="help-box">Rule-based paraphrase runs in the browser (0 tokens). Highlight text in Word first.</div>
     <div class="form-group">
@@ -658,10 +666,16 @@
       </div>
       <button type="button" class="btn-linkish pe-btn" style="margin-top:6px;" onclick="resetShaperSlidersToDefaults()">Reset shaper sliders to defaults</button>
     </details>
-    <details class="help-box help-muted pe-gemini-block" style="margin-top:8px;">
-      <summary>Optional Gemini rewrite (uses tokens)</summary>
-      <p class="help-inline pe-cloud-disclosure">Cloud action: the selected text and rewrite instructions are sent to Google only when clicked.</p>
-      <button class="btn-secondary btn-api-opt" style="margin-top:6px;" onclick="runSmartRewrite()">Rewrite via Gemini</button>
+    <details class="help-box help-muted pe-gemini-block pe-ai-help" id="peAiHelpRewrite" style="margin-top:8px;">
+      <summary><span data-pe-ai-help-title>Optional Gemini rewrite (uses tokens)</span></summary>
+      <p class="help-inline pe-cloud-disclosure">Cloud action: the selected text and rewrite instructions are sent to Google only when clicked. A built manuscript index (heuristic outline, not an AI summary) is included in that request.</p>
+      <div class="pe-ai-help-setup" data-pe-ai-help-setup>
+        <p class="help-inline" style="font-size:10px;margin:0 0 6px;">AI help is <strong>off</strong> until you add a Gemini API key.</p>
+        <button type="button" class="btn-secondary pe-btn" onclick="openAiHelpSetup()">Set up AI help (add API key)</button>
+      </div>
+      <div class="pe-ai-help-ready hidden" data-pe-ai-help-ready>
+        <button class="btn-secondary btn-api-opt" style="margin-top:6px;" onclick="runSmartRewrite()">Rewrite via Gemini</button>
+      </div>
     </details>
   </div>
 
@@ -708,10 +722,10 @@
       <div class="pe-settings-body">
         <details class="pe-settings-group" id="pe-settings-group-essentials" open>
           <summary>Essentials</summary>
-          <div class="toggle-row"><span>Simple mode (hide Thesaurus &amp; optional API blocks)</span><input type="checkbox" id="simpleMode"></div>
-          <p id="peSimpleModeEssentialsIntro" class="help-muted pe-simple-mode-essentials-intro" style="font-size:10px;margin:6px 0 4px;">Simple mode hides extra tabs and optional checks. Turn off to see Coach, Rewrite, and more.</p>
+          <div class="toggle-row"><span>Simple view (on) / Advanced view (off) — Simple hides Thesaurus, shaper &amp; extra tuning; AI help stays available</span><input type="checkbox" id="simpleMode"></div>
+          <p id="peSimpleModeEssentialsIntro" class="help-muted pe-simple-mode-essentials-intro" style="font-size:10px;margin:6px 0 4px;">Simple view hides the Thesaurus tab, the lexical shaper, and extra tuning. Coach, Rewrite and optional AI help stay available. Turn Simple off for every control.</p>
           <p id="peSimpleModeAdvancedTabsList" class="help-muted pe-simple-advanced-tabs hidden" style="font-size:10px;margin:4px 0 6px;"></p>
-          <button type="button" class="btn-linkish pe-btn" id="btnTurnOffSimpleMode" onclick="turnOffSimpleModeFromEssentials()">Turn off Simple mode</button>
+          <button type="button" class="btn-linkish pe-btn" id="btnTurnOffSimpleMode" onclick="turnOffSimpleModeFromEssentials()">Switch to Advanced view</button>
           <div class="form-group" style="margin-top:8px;">
             <label for="apiKey">Gemini API key (optional)</label>
             <input type="password" id="apiKey" placeholder="Leave blank to stay local-only">
@@ -740,7 +754,7 @@
           </div>
           <div class="toggle-row"><span>Fiction checks: remind me when scope is not full manuscript</span><input type="checkbox" id="fictionScopeReminder" checked></div>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="safety" style="margin-top:10px;">Reset Safety to defaults</button>
-          <details class="help-box help-muted" data-simple-hide style="margin-top:8px;">
+          <details class="help-box help-muted" style="margin-top:8px;">
             <summary>Optional Gemini session token ceiling</summary>
             <p style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Off by default (same as v2). When on, blocks Gemini Coach, Deep Audit, and rewrite after an estimated session budget.</p>
             <div class="toggle-row"><span>Enforce session token ceiling</span><input type="checkbox" id="aiEnforceSessionCeiling"></div>

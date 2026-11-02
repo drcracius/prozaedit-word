@@ -31,7 +31,7 @@ if [[ -n "$WORKER_URL" ]]; then
   echo ""
   echo "Worker URL: $WORKER_URL"
   echo "Next: set DIAGNOSTICS_INGEST_URL in src/taskpane/lib/diagnostics-config.js,"
-  echo "add AppDomain in manifest.hosted.xml, bump to 2.0.0.16 — see docs/DIAGNOSTICS.md"
+  echo "add AppDomain in manifest.hosted.xml, bump to 2.0.0.17 — see docs/DIAGNOSTICS.md"
 else
   echo "Deploy finished; copy the Worker URL from wrangler output above."
 fi
