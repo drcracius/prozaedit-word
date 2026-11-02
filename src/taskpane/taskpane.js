@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.25";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.26";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -2409,7 +2409,7 @@ function buildManuscriptProfile(options) {
   options = options || {};
   const c = collectUiConfig();
   const genreNote = ProzaEdit.Genres && !options.noGenreNote ? `\n${ProzaEdit.Genres.promptNote(c)}` : "";
-  const base = `Type: ${c.manuscriptType}${genreNote}\nAudience: ${c.targetAudience}\nSetting: ${c.settingAnchor}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
+  const base = `Type: ${c.manuscriptType}${genreNote}\nAudience: ${c.targetAudience}${c.settingAnchor ? `\nSetting: ${c.settingAnchor}` : ""}\nCritic: ${c.criticPersona}\nLanguage: ${c.language}`;
   if (options.baseOnly) return base;
   const block = getManuscriptContextBlock({ destination: options.destination || "local" });
   return block ? `${base}\n\n${block}` : base;

@@ -132,3 +132,9 @@ test("PE-96: local rewrite keeps sentence capitals and never produces ungrammati
   assert.ok(f.includes("I get it, I got up"), "polysemous get/got left alone: " + f);
   assert.ok(!/\bobtain/.test(f));
 });
+
+test("PE-96: 'analyses' (plural noun) is not a UK/US dialect mismatch, but 'analysed' still is under en-US", () => {
+  const ids = (t, lang) => P.Audit.run(t, ctxFor("General Fiction", { language: lang })).suggestions.map((s) => s.ruleId);
+  assert.ok(!ids("The sensitivity analyses gave similar results.", "en-US").includes("spell:dialect:analyse"));
+  assert.ok(ids("She analysed the results carefully.", "en-US").includes("spell:dialect:analyse"));
+});

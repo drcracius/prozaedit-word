@@ -1,6 +1,6 @@
 # Privacy and data (ProzaEdit Word)
 
-**Build:** 2.0.0.25 hosted task pane · **Owner-editable** summary for Help and Settings.
+**Build:** 2.0.0.26 hosted task pane · **Owner-editable** summary for Help and Settings.
 
 ---
 
@@ -64,5 +64,5 @@ Clearing site data for the add-in host may reset browser-side mutes and dismissa
 
 Edit this file on `main` when policy changes. Help tab and Settings → Privacy link here.
 
-## Track Changes (2.0.0.25)
+## Track Changes (2.0.0.26)
 Apply reads one document setting (whether Track Changes is on) from Word. Nothing is sent anywhere; ProzaEdit never turns Track Changes on or off.

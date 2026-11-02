@@ -345,7 +345,9 @@ ProzaEdit.Audit = {
     foreign.forEach((word) => {
       // Lowercase anywhere, or Capitalised only at a sentence start. Mid-sentence "Centre"/"Defence" is a name
       // (Pompidou Centre, Ministry of Defence). Words inside quoted speech are a character's dialect, not an error.
-      const re = new RegExp(`(?:\\b${word}(?:s|d|ed|ing)?\\b|(?:^|[.!?]\\s+)${word[0].toUpperCase()}${word.slice(1)}(?:s|d|ed|ing)?\\b)`);
+      // "analyses" is the ordinary plural of "analysis" in every dialect, not a UK verb form.
+      const suffix = word === "analyse" ? "(?:d|ed|ing)?" : "(?:s|d|ed|ing)?";
+      const re = new RegExp(`(?:\\b${word}${suffix}\\b|(?:^|[.!?]\\s+)${word[0].toUpperCase()}${word.slice(1)}${suffix}\\b)`);
       if (re.test(stripped)) {
         push({
           ruleId: `spell:dialect:${word}`,

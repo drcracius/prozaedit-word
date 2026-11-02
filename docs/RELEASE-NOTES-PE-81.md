@@ -55,6 +55,14 @@ Score, Style/Critical counts, filter-chip counts, feedback letter, Copilot text 
 ## 2.0.0.22 (PE-91 resolve open findings)
 Genre switch to non-fiction now remembers your fiction modules and restores them when you switch back; the manuscript index is flagged out of date when fiction/non-fiction changes; an audit uses the options it started with; a double click opens one AI confirm; dictation stops when you leave Coach; muting reports a failed document save; scope counts can no longer show an older result. Thesaurus no longer invents fallback synonyms offline, keeps your capitalisation, supports accented words and chips work from the keyboard. Dark/light colour pairs meet WCAG AA (`node scripts/check-contrast.mjs`, gated in tests), focus rings are visible on every control, tabs/panels are linked for screen readers. New: "Fresh reply" checkbox (Settings → AI help) skips the saved AI reply once. Genre numbers are labelled as editorial rules of thumb.
 
+## 2.0.0.26 (PE-96)
+- **Security:** text from your manuscript, from a shared document's saved settings, or from AI output can no longer inject markup into the task pane; status messages are plain text unless built by ProzaEdit itself; saved summaries are cleaned before display.
+- **Fewer wrong suggestions:** the a/an check no longer flags everyday correct usage (a university, an hour, an MRI); two different similar names (Jaden/Jayden) are no longer called a typo; "analyses" is not a spelling-dialect mismatch; contested double-word phrases are no longer shown as Critical.
+- **Apply works more often:** cards quote your text exactly as written (capital letters included), and a replacement keeps the capital at the start of a sentence.
+- **Rewrite modes:** fixed lowercase sentence starts and awkward swaps ("many money").
+- **Reliability:** update check and diagnostics sending now time out instead of waiting forever.
+- Plainer wording: setting field is optional and no longer pre-filled with an example city that was sent to AI prompts.
+
 ## 2.0.0.25 (PE-95)
 - **Apply with Track Changes:** ProzaEdit now detects Word's Track Changes (WordApi 1.4). When it is on, Apply leaves a tracked replacement you accept or reject in the Review tab, and ProzaEdit Undo is off for that edit. When Word cannot tell, Apply behaves as before.
 - **Faster outline rebuilds:** unchanged chapters reuse their names and time cues from the last build in this session (the whole-document result is identical to a full rebuild).
