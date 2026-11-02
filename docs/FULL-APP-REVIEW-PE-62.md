@@ -3,7 +3,7 @@
 **Date:** 2026-11-01  
 **Baseline:** GitHub `main` through **PE-61** merge ([PR #16](https://github.com/drcracius/prozaedit-word/pull/16), merge `689ad54`)  
 **Prior reviews:** [FULL-APP-REVIEW-PE-59.md](./FULL-APP-REVIEW-PE-59.md) · [FULL-APP-REVIEW-PE-58.md](./FULL-APP-REVIEW-PE-58.md)  
-**Forum / usability research:** [prozaedit-addin-usability-forum-research.md](./prozaedit-addin-usability-forum-research.md) (PE-60) · shipped mitigations [RELEASE-NOTES-PE-61-ONBOARDING.md](./RELEASE-NOTES-PE-61-ONBOARDING.md)  
+**Forum / usability research:** [prozaedit-addin-usability-forum-research.md](#) (PE-60) · shipped mitigations [RELEASE-NOTES-PE-61-ONBOARDING.md](./RELEASE-NOTES-PE-61-ONBOARDING.md)  
 **Hosted build:** **2.0.0.15** (no manifest bump this pass)  
 **Automated gates:** `npm test` **40** pass · `scripts/verify-version-sync.sh` aligned  
 
@@ -152,7 +152,7 @@
 
 ## Cross-links
 
-- **PE-60 forum research:** [prozaedit-addin-usability-forum-research.md](./prozaedit-addin-usability-forum-research.md)  
+- **PE-60 forum research:** [prozaedit-addin-usability-forum-research.md](#)  
 - **PE-61 release:** [RELEASE-NOTES-PE-61-ONBOARDING.md](./RELEASE-NOTES-PE-61-ONBOARDING.md)  
 - **Rating:** [prozaedit-audit-rating-current.md](./prozaedit-audit-rating-current.md)  
 - **PE-59 review:** [FULL-APP-REVIEW-PE-59.md](./FULL-APP-REVIEW-PE-59.md)  
