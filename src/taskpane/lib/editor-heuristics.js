@@ -14,10 +14,13 @@ ProzaEdit.EditorHeuristics = {
     let m;
     // Heuristic by spelling, not a pronunciation dictionary (no cited source): the exception lists below cover
     // common cases only, so the card is low confidence, hidden in Simple view, and never auto-replaces.
-    const anBeforeConsonantSound = /^(b|c(d|f|g|h|j|k|l|m|n|p|q|r|s|t|v|w|x|y|z)|uni(?!t)|one|once|u[bcdefghjkpqwxyz])/i;
-    const aBeforeVowelSound = /^(a|e|i|o|u)/i;
-    const useAn = /^(hour\w*|honest\w*|hono(u)?r\w*|heir\w*|histor\w*|html|hmi|mba|mri|nlp|ngo|fbi|fda|eu|uk|un|us|ufo|mp|lp|rt|hr)\b/i;
-    const useA = /^(uni(t|form|verse|ty)|user|euro|one|once|ouija|ukulele)\b/i;
+    // "a" is expected before these vowel-spelled words that start with a consonant sound (/j/, /w/).
+    const useA = /^(uni(?:[cfglopqstvz]|$)|use|usu|usa|uti|ute|uro|ura|uri|ubiq|eu|ewe|one\b|one-|once|ouija|ukulele|uvula|utah|ufo)/i;
+    // "an" is expected before these consonant-spelled words that start with a vowel sound (silent h, spelled letters).
+    const useAn = /^(hour|honest|hono(?:u)?r|heir|herb|hotel|histor|[fhlmnrsx](?![a-z])|html|hmi|mba|mri|nlp|ngo|fbi|fda|hr\b)/i;
+    const aBeforeVowelSound = /^[aeiou]/i;
+    const aNeedsAn = /^(hour|honest|hono(?:u)?r|heir)/i;
+    const anBeforeConsonantLetter = /^[bcdfghjklmnpqrstvwxyz]/i;
 
     while ((m = re.exec(text)) !== null && n < limit) {
       const article = m[1].toLowerCase();
@@ -27,12 +30,12 @@ ProzaEdit.EditorHeuristics = {
       let bad = false;
       let hint = "";
       if (article === "a") {
-        if (aBeforeVowelSound.test(wLow) && !useA.test(wLow)) {
+        if ((aBeforeVowelSound.test(wLow) && !useA.test(wLow)) || aNeedsAn.test(wLow)) {
           bad = true;
           hint = `Consider “an ${word}”.`;
         }
       } else if (article === "an") {
-        if ((anBeforeConsonantSound.test(wLow) || /^[bcdfghjklmnpqrstvwxyz]/i.test(wLow)) && !useAn.test(wLow)) {
+        if ((anBeforeConsonantLetter.test(wLow) && !useAn.test(wLow)) || useA.test(wLow)) {
           bad = true;
           hint = `Consider “a ${word}”.`;
         }

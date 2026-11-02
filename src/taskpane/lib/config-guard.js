@@ -29,6 +29,7 @@ ProzaEdit.ConfigGuard = {
     const out = {};
     const limit = ProzaEdit.ConfigGuard.MAX_STRING_FIELD_CHARS;
     Object.keys(config).forEach((key) => {
+      if (key === "__proto__" || key === "constructor" || key === "prototype") return;
       const v = config[key];
       if (typeof v === "string" && v.length > limit) return;
       out[key] = v;

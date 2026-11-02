@@ -3607,7 +3607,7 @@ function showPeStatusHtml(html, kind, isHtml) {
   const el = getEl("peStatus");
   const dismissBtn = getEl("btnPeStatusDismiss");
   if (!el) return;
-  if (isHtml || (html && String(html).includes("<"))) el.innerHTML = html || "";
+  if (isHtml === true) el.innerHTML = html || "";
   else el.textContent = html || "";
   el.classList.remove("ok", "warn");
   if (kind) el.classList.add(kind);
@@ -4899,8 +4899,8 @@ function renderTraffic(traffic, score) {
   const bar = document.getElementById("trafficBar");
   if (!bar) return;
   bar.classList.remove("hidden", "traffic-green", "traffic-yellow", "traffic-red");
-  bar.classList.add(`traffic-${traffic.level}`);
-  bar.textContent = `${traffic.label} — Score ${score} / 10`;
+  bar.classList.add(`traffic-${ProzaEdit.HtmlSafe.token(traffic.level, ["green", "yellow", "red"], "yellow")}`);
+  bar.textContent = `${traffic.label} — Score ${ProzaEdit.HtmlSafe.num(score, 0)} / 10`;
 }
 
 function resetStaleAuditSummaryState() {
@@ -4915,7 +4915,8 @@ function renderMiniScores(scores) {
   const el = getEl("miniScores");
   if (!el || !scores) return;
   el.classList.remove("hidden");
-  el.innerHTML = `<span>Correctness ${scores.correctness}/10</span><span>Clarity ${scores.clarity}/10</span><span>Engagement ${scores.engagement}/10</span>`;
+  const n = (v) => ProzaEdit.HtmlSafe.num(v, 0);
+  el.innerHTML = `<span>Correctness ${n(scores.correctness)}/10</span><span>Clarity ${n(scores.clarity)}/10</span><span>Engagement ${n(scores.engagement)}/10</span>`;
 }
 
 let lastAuditResultForMode = null;
@@ -5071,7 +5072,7 @@ function restoreCachedAuditIfEmpty() {
   try {
     const d = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!d || !Array.isArray(d.suggestions)) return;
-    if (d.summaryHtml) getEl("summaryReport").innerHTML = d.summaryHtml;
+    if (d.summaryHtml) getEl("summaryReport").innerHTML = ProzaEdit.HtmlSafe.sanitize(d.summaryHtml);
     if (d.traffic && d.score != null) renderTraffic(d.traffic, d.score);
     if (d.miniScores) {
       lastMiniScores = d.miniScores;
@@ -5479,7 +5480,7 @@ function muteRule(item) {
     );
     if (showDictNudge) {
       muteDictionaryNudgeShownThisSession = true;
-      showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok");
+      showPeStatusHtml(ProzaEdit.PlainLanguage.muteDictionaryNudgeStatusHtml(), "ok", true);
     } else if (!muteSaved) {
       showPeStatus("Rule muted in this browser, but Word could not save it in this document. It may return after reopening the file.", "warn");
     } else {
@@ -5581,7 +5582,7 @@ function goToIssue(target) {
       });
       if (!result.cancelled) {
         showPeStatusHtml(
-          `${result.message} Use <strong>Try again</strong> above, or open ` +
+          `${escapeHtml(result.message)} Use <strong>Try again</strong> above, or open ` +
             `<button type="button" class="btn-linkish" onclick="showTab('tab7');var d=document.getElementById('peHelpGotoTroubleshoot');if(d)d.open=true;">Help → Go to troubleshooting</button>.`,
           "warn",
           true

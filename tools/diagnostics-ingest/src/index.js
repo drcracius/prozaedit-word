@@ -17,13 +17,23 @@ function json(data, status, extraHeaders) {
   });
 }
 
-function sanitizeField(s, max) {
+export function sanitizeField(s, max) {
   if (s == null) return "";
-  const t = String(s);
-  return t.length > max ? t.slice(0, max) + "…" : t;
+  let t = String(s);
+  t = t.length > max ? t.slice(0, max) + "…" : t;
+  return t
+    .replace(/\r\n?|[\u2028\u2029]/g, "\n")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+    .replace(/`{3,}/g, "'''")
+    .replace(/@/g, "@\u200b")
+    .replace(/<(?=[a-zA-Z!/?])/g, "&lt;");
 }
 
-function buildIssueBody(payload) {
+function cell(s, max) {
+  return sanitizeField(s, max).replace(/\n/g, " ").replace(/\|/g, "\\|");
+}
+
+export function buildIssueBody(payload) {
   const lines = [
     "Automated anonymous diagnostics report (ProzaEdit Word).",
     "",
@@ -31,11 +41,11 @@ function buildIssueBody(payload) {
     "",
     `| Field | Value |`,
     `|-------|-------|`,
-    `| Kind | ${sanitizeField(payload.kind, 40)} |`,
-    `| Version | ${sanitizeField(payload.version, 40)} |`,
-    `| Time (client) | ${sanitizeField(payload.ts, 60)} |`,
-    `| Office platform | ${sanitizeField(payload.officePlatform, 80)} |`,
-    `| Office host | ${sanitizeField(payload.officeHost, 40)} |`,
+    `| Kind | ${cell(payload.kind, 40)} |`,
+    `| Version | ${cell(payload.version, 40)} |`,
+    `| Time (client) | ${cell(payload.ts, 60)} |`,
+    `| Office platform | ${cell(payload.officePlatform, 80)} |`,
+    `| Office host | ${cell(payload.officeHost, 40)} |`,
     "",
     "### Message",
     "",
@@ -83,6 +93,10 @@ export default {
       return json({ ok: false, error: "content-type" }, 415, cors);
     }
 
+    const declared = Number(request.headers.get("Content-Length") || 0);
+    if (declared > MAX_BODY) {
+      return json({ ok: false, error: "too-large" }, 413, cors);
+    }
     const raw = await request.text();
     if (raw.length > MAX_BODY) {
       return json({ ok: false, error: "too-large" }, 413, cors);

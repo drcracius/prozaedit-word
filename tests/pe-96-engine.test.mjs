@@ -1,0 +1,80 @@
+// PE-96 engine regressions found in the final audit.
+import test from "node:test";
+import assert from "node:assert/strict";
+import { loadEngine, ctxFor } from "./helpers/corpus-harness.mjs";
+
+const P = loadEngine();
+const aan = (text) => {
+  const out = [];
+  P.EditorHeuristics.scanAAn(text, (i) => out.push(i.targetText), 99);
+  return out;
+};
+
+test("PE-96: a/an check no longer flags correct everyday usage", () => {
+  const correctA = "university union useful usual unique unicorn unit united universal utility utensil uranium urine usage European euphoria eulogy one once ubiquitous Utah ewe user";
+  assert.deepEqual(aan(correctA.split(" ").map((w) => `a ${w}`).join("; ")), []);
+  const correctAn = "hour honest heir honor honour umbrella uncle unusual unknown ugly upper upset update upgrade uphill onion orange egg hourly historic hotel herb x-ray f-stop s-curve unimportant uninterested";
+  assert.deepEqual(aan(correctAn.split(" ").map((w) => `an ${w}`).join("; ")), []);
+  assert.deepEqual(aan("She got an F, an MRI, an SOS and an L-shaped desk."), []);
+});
+
+test("PE-96: a/an check still flags real mistakes", () => {
+  assert.deepEqual(aan("a apple; a hour; a honest man; a egg; an dog; an book; an unicorn; an euphemism; an one"), ["a apple", "a hour", "a honest", "a egg", "an dog", "an book", "an unicorn", "an euphemism", "an one"]);
+});
+
+test("PE-96: gb:ise card quotes the document's own capitalisation so Apply can find it", () => {
+  const cx = ctxFor("Non-Fiction / Memoir", { language: "en-GB" });
+  const r = P.Audit.run("We Organize it later. Then ORGANIZE it again.", cx);
+  const gb = r.suggestions.find((s) => s.ruleId === "gb:organize");
+  assert.ok(gb);
+  assert.ok("We Organize it later. Then ORGANIZE it again.".includes(gb.targetText));
+  assert.ok(/^[A-Za-z]+$/.test(gb.replacementText));
+  const r2 = P.Audit.run("So we Organize everything.", cx).suggestions.find((s) => s.ruleId === "gb:organize");
+  assert.equal(r2.targetText, "Organize");
+  assert.equal(r2.replacementText, "Organise");
+  const r3 = P.Audit.run("So we ORGANIZE it.", cx).suggestions.find((s) => s.ruleId === "gb:organize");
+  assert.equal(r3.targetText, "ORGANIZE");
+  assert.equal(r3.replacementText, "ORGANISE");
+});
+
+test("PE-96: every applicable card quotes text that exists verbatim (case-sensitive) in the document", () => {
+  const docs = [
+    "Analyze the data. We Organize it and recognize the pattern; Finalize the colour plan. She said the the end. We can not stop, cannot stop.",
+    '"Don\u2019t go," she said. Utilize leverage. It is what it is. 5\'10" tall. A lot of ALOT.',
+    "He couldn\u2019t stop. They don't care. Isn\u2019t it? In order to win we utilize the realm.",
+  ];
+  for (const lang of ["en-US", "en-GB"]) {
+    for (const g of P.Genres.REGISTRY) {
+      for (const text of docs) {
+        const cx = ctxFor(g.value, { language: lang, extendedLocal: true, chkAI: true, styleGuideRef: "auto" });
+        const norm = text.replace(/[\u2018\u2019]/g, "'");
+        for (const s of P.Audit.run(text, cx).suggestions) {
+          if (!s.replacementText || s.replacementText.startsWith("(")) continue;
+          assert.ok(norm.includes(String(s.targetText).replace(/[\u2018\u2019]/g, "'")), `${g.id}/${lang}: ${s.ruleId} target "${s.targetText}"`);
+        }
+      }
+    }
+  }
+});
+
+test("PE-96: genre profile numbers are internally sane", () => {
+  for (const p of P.Genres.REGISTRY) {
+    const [lo, hi] = p.bands.dialogue;
+    assert.ok(lo >= 0 && hi <= 100 && lo < hi, `${p.id} dialogue band`);
+    assert.ok(p.bands.aslLow > 0 && p.bands.aslLow < p.bands.aslHigh && p.bands.aslHigh < 60, `${p.id} asl band`);
+    assert.ok(p.longSentence.harsh > 15 && p.longSentence.harsh <= p.longSentence.normal && p.longSentence.normal <= 80, `${p.id} long sentence`);
+    assert.ok(p.passiveCluster >= 2 && p.passiveCluster <= 12, `${p.id} passive`);
+    assert.ok(p.fkSlack >= -2 && p.fkSlack <= 4, `${p.id} fkSlack`);
+    assert.ok(p.longDialogueChars >= 40 && p.longDialogueChars <= 300, `${p.id} dialogue chars`);
+    if (p.family === "fiction") {
+      assert.ok(p.adverbPer1k > p.filterPer1k / 2 && p.adverbPer1k < 80, `${p.id} adverb`);
+      assert.ok(p.filterPer1k >= 5 && p.filterPer1k <= 40, `${p.id} filter`);
+      assert.ok(p.tagAdverbMax >= 1 && p.tagAdverbMax <= 10, `${p.id} tag adverbs`);
+      assert.ok(p.rationale && p.aiNote && p.blurb, `${p.id} docs`);
+    }
+    for (const c of p.cliches) assert.equal(c, c.toLowerCase(), `${p.id} cliche must be lowercase: ${c}`);
+    assert.equal(new Set(p.cliches).size, p.cliches.length, `${p.id} duplicate cliche`);
+  }
+  assert.equal(new Set(P.Genres.REGISTRY.map((p) => p.id)).size, P.Genres.REGISTRY.length);
+  assert.equal(new Set(P.Genres.REGISTRY.map((p) => p.value)).size, P.Genres.REGISTRY.length);
+});

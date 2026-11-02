@@ -31,6 +31,27 @@ ProzaEdit.Audit = {
     return null;
   },
 
+  /**
+   * Apply only edits text that matches the card exactly (case-sensitive). A rule that quotes its own lowercase form
+   * ("organize") while the document has "Organize" would give a card whose Apply always refuses; quote the document's
+   * own spelling instead and carry its capitalisation into the replacement.
+   */
+  _alignToDocumentCase(item, text, lower) {
+    const rep = String(item.replacementText || "");
+    const target = String(item.targetText || "");
+    if (!rep || rep.startsWith("(") || !target || text.length !== lower.length) return item;
+    const norm = text.replace(/[\u2018\u2019]/g, "'");
+    const t = target.replace(/[\u2018\u2019]/g, "'");
+    if (norm.includes(t)) return item;
+    const i = lower.indexOf(t.toLowerCase());
+    if (i === -1) return item;
+    const actual = text.substr(i, t.length);
+    let r = rep;
+    if (actual.length > 1 && actual === actual.toUpperCase() && actual !== actual.toLowerCase()) r = rep.toUpperCase();
+    else if (actual[0] !== actual[0].toLowerCase()) r = rep.charAt(0).toUpperCase() + rep.slice(1);
+    return { ...item, targetText: actual, replacementText: r };
+  },
+
   includesWord(text, lower, phrase) {
     return this._find(text, lower, phrase) != null;
   },
@@ -90,6 +111,7 @@ ProzaEdit.Audit = {
       if (!item.ruleId) {
         item.ruleId = `auto:${String(item.module || "rule").slice(0, 40)}:${String(item.targetText).slice(0, 40)}`.toLowerCase();
       }
+      item = this._alignToDocumentCase(item, text, lower);
       if (muted.has(item.ruleId)) return;
       if (gp && G.isMuted(gp.profile, item.ruleId)) return;
       if (ProzaEdit.Settings?.isTargetDismissedGlobally?.(item.targetText)) return;
