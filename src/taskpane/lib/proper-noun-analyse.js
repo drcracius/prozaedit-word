@@ -110,14 +110,29 @@ ProzaEdit.ProperNoun = {
           used.add(key);
           const canonical = counts.get(a) >= counts.get(b) ? a : b;
           const variant = canonical === a ? b : a;
-          suggestions.push({
-            ruleId: `prop:variant:${variant.toLowerCase()}`,
-            module: "Proper noun consistency",
-            type: "confirmed",
-            explanation: `Proper noun spelling variants "${a}" vs "${b}".`,
-            targetText: variant,
-            replacementText: canonical,
-          });
+          // A real typo is a rare minority of the main spelling. Two names used about equally often (Marian/Marion,
+          // Jaden/Jayden) are far more likely two characters, so those get a hint, not a fix.
+          const minority = (counts.get(variant) || 0) < (counts.get(canonical) || 0) && (counts.get(variant) || 0) <= Math.max(2, Math.ceil(0.34 * (counts.get(canonical) || 0)));
+          suggestions.push(
+            minority
+              ? {
+                  ruleId: `prop:variant:${variant.toLowerCase()}`,
+                  module: "Proper noun consistency",
+                  type: "confirmed",
+                  explanation: `Proper noun spelling variants "${a}" vs "${b}".`,
+                  targetText: variant,
+                  replacementText: canonical,
+                }
+              : {
+                  ruleId: `prop:similar:${variant.toLowerCase()}`,
+                  module: "Proper noun consistency",
+                  type: "preference",
+                  confidence: "low",
+                  explanation: `"${a}" and "${b}" are spelled almost alike and both appear often. Fine if they are two different people or places; check if one is a typo.`,
+                  targetText: variant,
+                  replacementText: "(check these two names)",
+                }
+          );
         }
       }
     }

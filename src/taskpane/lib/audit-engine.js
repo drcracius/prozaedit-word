@@ -34,7 +34,8 @@ ProzaEdit.Audit = {
   /**
    * Apply only edits text that matches the card exactly (case-sensitive). A rule that quotes its own lowercase form
    * ("organize") while the document has "Organize" would give a card whose Apply always refuses; quote the document's
-   * own spelling instead and carry its capitalisation into the replacement.
+   * own spelling instead. The target's capitalisation is carried into the replacement either way, so a fix at a
+   * sentence start ("In order to" -> "To") keeps its capital.
    */
   _alignToDocumentCase(item, text, lower) {
     const rep = String(item.replacementText || "");
@@ -42,13 +43,17 @@ ProzaEdit.Audit = {
     if (!rep || rep.startsWith("(") || !target || text.length !== lower.length) return item;
     const norm = text.replace(/[\u2018\u2019]/g, "'");
     const t = target.replace(/[\u2018\u2019]/g, "'");
-    if (norm.includes(t)) return item;
-    const i = lower.indexOf(t.toLowerCase());
-    if (i === -1) return item;
-    const actual = text.substr(i, t.length);
+    let actual = target;
+    if (!norm.includes(t)) {
+      const i = lower.indexOf(t.toLowerCase());
+      if (i === -1) return item;
+      actual = text.substr(i, t.length);
+    }
     let r = rep;
+    const first = actual.charAt(0);
     if (actual.length > 1 && actual === actual.toUpperCase() && actual !== actual.toLowerCase()) r = rep.toUpperCase();
-    else if (actual[0] !== actual[0].toLowerCase()) r = rep.charAt(0).toUpperCase() + rep.slice(1);
+    else if (first !== first.toLowerCase() && rep.charAt(0) === rep.charAt(0).toLowerCase() && rep.charAt(0) !== rep.charAt(0).toUpperCase()) r = rep.charAt(0).toUpperCase() + rep.slice(1);
+    if (actual === target && r === rep) return item;
     return { ...item, targetText: actual, replacementText: r };
   },
 

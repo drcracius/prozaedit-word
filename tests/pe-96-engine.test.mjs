@@ -78,3 +78,39 @@ test("PE-96: genre profile numbers are internally sane", () => {
   assert.equal(new Set(P.Genres.REGISTRY.map((p) => p.id)).size, P.Genres.REGISTRY.length);
   assert.equal(new Set(P.Genres.REGISTRY.map((p) => p.value)).size, P.Genres.REGISTRY.length);
 });
+
+test("PE-96: replacements keep the capital of a sentence-start target (In order to -> To)", () => {
+  const cx = ctxFor("Business / Corporate Report", { language: "en-US" });
+  const text = "In order to grow we cut costs. End result: profit. Prior to launch, we tested. We tested; the end result was good.";
+  const sug = P.Audit.run(text, cx).suggestions.filter((s) => s.replacementText && !s.replacementText.startsWith("("));
+  const by = (id) => sug.find((s) => s.ruleId.startsWith(id));
+  assert.equal(by("sg:plain:in_order_to").replacementText, "To");
+  assert.equal(by("sg:plain:prior_to").replacementText, "Before");
+  const pleo = by("rep:pleo:end result");
+  assert.ok(pleo && text.includes(pleo.targetText));
+  assert.equal(pleo.replacementText.charAt(0), pleo.targetText.charAt(0) === pleo.targetText.charAt(0).toUpperCase() ? "R" : "r");
+  const lower = P.Audit.run("We acted in order to win.", cx).suggestions.find((s) => s.ruleId.startsWith("sg:plain:in_order_to"));
+  assert.equal(lower.replacementText, "to");
+});
+
+test("PE-96: contested doublets ('past experience', 'foreign imports', 'advance warning') are low-confidence only", () => {
+  const cx = ctxFor("Non-Fiction / Memoir", { language: "en-US" });
+  const r = P.Audit.run("From past experience, with advance warning, foreign imports rose.", cx).suggestions;
+  assert.ok(!r.some((s) => s.ruleId.startsWith("rep:pleo:")));
+  assert.ok(r.filter((s) => s.ruleId.startsWith("rep:soft:")).every((s) => s.confidence === "low"));
+});
+
+test("PE-96: near-identical names used equally often are a hint, a rare typo stays a fix", () => {
+  const cx = ctxFor("Fiction (General)");
+  const two = "Marian waved to Marion. Marion smiled and Marian laughed. Marian told Marion, and Marion frowned at Marian.";
+  const s = P.Audit.run(two, cx).suggestions.filter((x) => x.ruleId.startsWith("prop:"));
+  assert.ok(s.length >= 1);
+  for (const x of s) {
+    assert.equal(x.type, "preference");
+    assert.equal(x.confidence, "low");
+    assert.ok(x.replacementText.startsWith("("), "no auto-fix for two possible characters");
+  }
+  const typo = "Marcus ran. Marcus stopped. Marcus smiled. Marcus left. Marcus sat. Marcus ate. Marcus slept. Marcis spoke. Marcis nodded.";
+  const t = P.Audit.run(typo, cx).suggestions.find((x) => x.ruleId.startsWith("prop:variant"));
+  assert.ok(t && t.type === "confirmed" && t.targetText === "Marcis" && t.replacementText === "Marcus");
+});
