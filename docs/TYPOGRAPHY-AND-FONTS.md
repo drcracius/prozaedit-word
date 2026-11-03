@@ -42,11 +42,11 @@ CSS custom properties in `src/taskpane/taskpane.css` (all themes):
 
 | Token | Typical use |
 | --- | --- |
-| `--pe-font-sans` | Global UI stack (Segoe UI Variable first on modern Windows) |
-| `--pe-font-size-base` | Body copy (**13px**) |
-| `--pe-font-size-sm` / `--pe-font-size-xs` / `--pe-font-size-2xs` | Settings group headers, forms, captions |
-| `--pe-font-size-tab` | Tab labels (**11px**; narrow uses `--pe-font-size-2xs` minimum, not 8px) |
-| `--pe-font-size-section` | Section headings (**14px**) |
+| `--pe-font-sans` | Global UI stack (**Segoe UI** first; Variable Display looked too thin) |
+| `--pe-font-size-base` | Body copy (**14px**, aligned with Grammarly/Quillbot sidebar type) |
+| `--pe-font-size-sm` / `--pe-font-size-xs` / `--pe-font-size-2xs` | Settings group headers, forms, captions (**13px** / **12px**) |
+| `--pe-font-size-tab` | Tab labels (**13px**; narrow uses `--pe-font-size-2xs` = **12px**) |
+| `--pe-font-size-section` | Section headings (**16px**) |
 | `--pe-line-height` / `--pe-line-height-tight` | Body vs compact UI |
 | `--pe-font-weight-*` | Label / heading / strong scale |
 

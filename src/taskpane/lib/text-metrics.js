@@ -19,9 +19,27 @@ ProzaEdit.Metrics = {
     return Math.max(1, count);
   },
 
+  _letterDigitRe() {
+    try {
+      return /[\p{L}\p{N}]/u;
+    } catch (_) {
+      return /[0-9A-Za-z\u00C0-\u024F\u0400-\u04FF]/;
+    }
+  },
+
+  /** Word-style: whitespace tokens that contain a letter or digit. Matches Word's status bar, not paragraphs × 42. */
+  countWords(text) {
+    const hasLetter = this._letterDigitRe();
+    let n = 0;
+    for (const t of String(text == null ? "" : text).split(/\s+/)) if (t && hasLetter.test(t)) n++;
+    return n;
+  },
+
   analyze(text) {
-    const sentences = ProzaEdit.Metrics.splitSentences(text).filter((s) => s.trim());
-    const words = text.match(/\b[\w'-]+\b/g) || [];
+    const raw = String(text == null ? "" : text);
+    const sentences = ProzaEdit.Metrics.splitSentences(raw).filter((s) => s.trim());
+    const hasLetter = this._letterDigitRe();
+    const words = raw.split(/\s+/).filter((t) => t && hasLetter.test(t));
     const wordCount = words.length;
     const sentenceCount = Math.max(1, sentences.length);
     let syllables = 0;

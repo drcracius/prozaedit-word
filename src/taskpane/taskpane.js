@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.27";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.28";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -4021,11 +4021,11 @@ function renderDictionaryList() {
   }
   const filtered = filter ? words.filter((w) => w.toLowerCase().includes(filter)) : words;
   if (!words.length) {
-    el.innerHTML = "<span style='color:var(--text-muted);font-size:12px;'>No custom terms yet.</span>";
+    el.innerHTML = "<span style='color:var(--text-muted);font-size:var(--pe-font-size-sm);'>No custom terms yet.</span>";
     return;
   }
   if (!filtered.length) {
-    el.innerHTML = "<span style='color:var(--text-muted);font-size:12px;'>No matches for this filter.</span>";
+    el.innerHTML = "<span style='color:var(--text-muted);font-size:var(--pe-font-size-sm);'>No matches for this filter.</span>";
     return;
   }
   el.innerHTML = filtered
@@ -4131,7 +4131,7 @@ function renderCustomStyleRulesList() {
   if (!el) return;
   const data = ProzaEdit.Settings.getCustomStyleGuide();
   if (!data.rules.length) {
-    el.innerHTML = "<span style='color:var(--text-muted);font-size:12px;'>No custom rules yet. Add phrases your house style avoids.</span>";
+    el.innerHTML = "<span style='color:var(--text-muted);font-size:var(--pe-font-size-sm);'>No custom rules yet. Add phrases your house style avoids.</span>";
     return;
   }
   el.innerHTML = data.rules
@@ -4980,20 +4980,20 @@ function finalizeAudit(result, label, fopts) {
     }
   } catch (_) {}
   let html = `<h3>${escapeHtml(label)}</h3>`;
-  if (result.summaryNote) html += `<p class="help-muted" style="font-size:12px;">${escapeHtml(result.summaryNote)}</p>`;
+  if (result.summaryNote) html += `<p class="help-muted" style="font-size:var(--pe-font-size-sm);">${escapeHtml(result.summaryNote)}</p>`;
   html += `<p>Words: ${metrics.wordCount} · FK grade ~${metrics.fleschKincaidGrade} · FRE ~${metrics.fleschReadingEase}</p>`;
   const sevLabel = auditFilterDisplayLabel("confirmed");
   html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
-  html += `<p class="help-muted audit-mode-note" style="font-size:12px;">${escapeHtml(modeNote)}</p>`;
+  html += `<p class="help-muted audit-mode-note" style="font-size:var(--pe-font-size-sm);">${escapeHtml(modeNote)}</p>`;
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;
   if (ProzaEdit.Genres) html += `<p><strong>Genre profile applied:</strong> ${escapeHtml(ProzaEdit.Genres.describe(buildAuditContext()))}</p>`;
   html += `<p>${escapeHtml(buildManuscriptProfile({ baseOnly: true, noGenreNote: true }))}</p>`;
   const mc = result.manuscriptContext;
   if (mc?.used) {
-    html += `<p class="help-muted" style="font-size:12px;">Book outline used: ${mc.namesUsed} recurring names checked for spelling variants.</p>`;
+    html += `<p class="help-muted" style="font-size:var(--pe-font-size-sm);">Book outline used: ${mc.namesUsed} recurring names checked for spelling variants.</p>`;
   } else if (mc?.indexPresent) {
-    html += `<p class="help-muted" style="font-size:12px;">Book outline is out of date, so name checks used this text only. Refresh it on Checks or in Settings.</p>`;
+    html += `<p class="help-muted" style="font-size:var(--pe-font-size-sm);">Book outline is out of date, so name checks used this text only. Refresh it on Checks or in Settings.</p>`;
   }
   const typeHint = getManuscriptTypeAwareHint();
   if (typeHint) html += `<p class="audit-type-hint">${escapeHtml(typeHint)}</p>`;
@@ -5253,8 +5253,15 @@ function runAuditInternalCore(opts) {
       await ctx.sync();
       longOp.throwIfCancelled();
       const pn = paras.items.length;
-      if (pn <= MAX_PARAS) lastDocStats = { paragraphs: pn, estWords: Math.round(pn * 42) };
-      else lastDocStats = { paragraphs: pn, estWords: "(not counted for a very long document)" };
+      if (pn <= MAX_PARAS) {
+        const body = ctx.document.body;
+        body.load("text");
+        await ctx.sync();
+        longOp.throwIfCancelled();
+        lastDocStats = { paragraphs: pn, words: ProzaEdit.Metrics.countWords(body.text) };
+      } else {
+        lastDocStats = { paragraphs: pn, words: "(not counted for a very long document)" };
+      }
     }
     let text = await readScopeText(ctx, longOp);
     longOp.throwIfCancelled();

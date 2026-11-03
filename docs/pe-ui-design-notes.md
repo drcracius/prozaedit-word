@@ -24,11 +24,12 @@ One vocabulary for all **seven tabs**, audit hubs, and Settings — **no per-tab
 
 ## Typography (PE-52)
 
-- **Stack:** `--pe-font-sans` — Segoe UI Variable, Segoe UI, `system-ui`, platform fallbacks (no web fonts; no manifest change).
-- **Scale:** `--pe-font-size-base` **13px** body; `--pe-font-size-section` **14px** headings; `--pe-font-size-tab` **11px** tabs; `--pe-font-size-xs` / `--pe-font-size-2xs` for help and captions.
-- **Rhythm:** `--pe-line-height` **1.5** (body), `--pe-line-height-tight` **1.35** (compact UI).
-- **Weights:** `--pe-font-weight-label` (600) labels/tabs; `--pe-font-weight-heading` (600) section titles; `--pe-font-weight-strong` (700) emphasis.
-- Narrow pane keeps **13px** body; tabs do not drop below **10px**.
+- **Stack:** `--pe-font-sans` — **Segoe UI** first (thicker than Segoe UI Variable Display), then Segoe UI Variable Text, `system-ui` (no web fonts; no manifest change). Grammarly uses Inter at ~14–16px; we stay on system fonts.
+- **Scale:** `--pe-font-size-base` **14px** body; `--pe-font-size-section` **16px** headings; `--pe-font-size-tab` **13px** tabs; `--pe-font-size-sm` **13px**; `--pe-font-size-2xs` **12px**.
+- **Rhythm:** `--pe-line-height` **1.55** (body), `--pe-line-height-tight` **1.4**.
+- **Weights:** body 400 on Segoe UI (reads heavier at 14px); labels/tabs 600; headings 600; strong 700.
+- Narrow pane keeps **14px** body; tabs do not drop below **12px**.
+- Windows: `-webkit-font-smoothing: auto` (not antialiased — antialiased thins the type).
 - Optional Inter / Source Sans 3: see [TYPOGRAPHY-AND-FONTS.md](./TYPOGRAPHY-AND-FONTS.md).
 
 ## Navigation

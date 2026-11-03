@@ -87,3 +87,8 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - **Dismiss no longer fails silently:** when the browser cannot store a dismissed phrase (storage full or blocked), the pane now says so.
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
+
+## 2.0.0.28 — word count and readable type (Word Desktop and Word on the web, same build)
+
+- **Word count** no longer uses “paragraphs × 42”. Full-document and audit totals now count the same way Word does (whitespace tokens that contain a letter or digit). Blank paragraphs and curly apostrophes no longer inflate the number. Outline section counts use the same rule.
+- **Type:** body **14px** Segoe UI (not thin Segoe UI Variable Display); tabs **13px**; headings **16px**. Removed antialiased smoothing that thinned text on Windows. Darker body and muted colors. No new web font (Grammarly uses Inter; we stay offline-safe). Close and reopen the pane (Ctrl+F5) to see it.

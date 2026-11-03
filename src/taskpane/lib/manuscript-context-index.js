@@ -381,8 +381,18 @@ ProzaEdit.ManuscriptContextIndex = {
 
   /* ---------- text helpers ---------- */
 
+  /** Same rule as ProzaEdit.Metrics.countWords (Word-style); kept local so this module loads alone. */
   wordCount(text) {
-    return (String(text || "").match(/\b[\w'-]+\b/g) || []).length;
+    if (ProzaEdit.Metrics?.countWords) return ProzaEdit.Metrics.countWords(text);
+    let n = 0;
+    let re;
+    try {
+      re = /[\p{L}\p{N}]/u;
+    } catch (_) {
+      re = /[0-9A-Za-z\u00C0-\u024F]/;
+    }
+    for (const t of String(text || "").split(/\s+/)) if (t && re.test(t)) n++;
+    return n;
   },
 
   trimSnippet(text, max) {
