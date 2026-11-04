@@ -2139,6 +2139,10 @@ details.card {
   padding: 0;
 }
 
+details.card:not([open]) > .card-body {
+  display: none;
+}
+
 .card-summary {
   display: flex;
   align-items: center;
@@ -2582,8 +2586,8 @@ details.card[open] > .card-summary .card-caret {
   flex: 0 0 auto;
   appearance: none;
   -webkit-appearance: none;
-  width: 36px;
-  height: 20px;
+  width: 40px;
+  height: 24px;
   margin: 0;
   border: 1px solid var(--border);
   border-radius: var(--pe-radius-pill);
@@ -2595,10 +2599,10 @@ details.card[open] > .card-summary .card-caret {
 .toggle-row > input[type="checkbox"]::after {
   content: "";
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--surface);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
@@ -2608,7 +2612,7 @@ details.card[open] > .card-summary .card-caret {
   border-color: var(--primary);
 }
 .toggle-row > input[type="checkbox"]:checked::after {
-  left: 18px;
+  left: 21px;
 }
 .toggle-row > input[type="checkbox"]:disabled {
   opacity: 0.45;
@@ -2694,6 +2698,12 @@ details.card[open] > .card-summary .card-caret {
 
 body.pe-wide-pane {
   padding-right: calc(var(--pe-rail-width) + 8px);
+}
+
+body.pe-wide-pane.pe-settings-open,
+body.pe-wide-pane.pe-confirm-open,
+body.pe-wide-pane.pe-onboarding-tour-open {
+  padding-right: 10px;
 }
 
 body.pe-wide-pane .pe-brand {

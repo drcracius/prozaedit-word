@@ -5494,7 +5494,6 @@ function renderAuditCards(list, options) {
     div.tabIndex = -1;
     const restoreOpen = Array.isArray(options.openIds);
     if ((!restoreOpen && i === 0) || keepOpen.has(id)) div.open = true;
-    div.setAttribute("role", "group");
     div.innerHTML = `
       <summary class="card-summary">
         <span class="card-summary-main">
@@ -5558,12 +5557,14 @@ function renderAuditCards(list, options) {
   const batches =
     ProzaEdit.AuditReview?.planCardRenderBatches?.(capped.shown.length, ProzaEdit.AuditReview.CARD_RENDER_BATCH) ||
     [{ start: 0, end: capped.shown.length - 1 }];
-  for (let b = 0; b < batches.length; b++) {
-    activeLongOp?.throwIfCancelled?.();
-    const batch = batches[b];
-    for (let i = batch.start; i <= batch.end; i++) renderOne(capped.shown[i], i);
+  try {
+    for (let b = 0; b < batches.length; b++) {
+      const batch = batches[b];
+      for (let i = batch.start; i <= batch.end; i++) renderOne(capped.shown[i], i);
+    }
+  } finally {
+    box.appendChild(frag);
   }
-  box.appendChild(frag);
   if (capped.hiddenCount > 0) {
     const note = document.createElement("p");
     note.className = "pe-card-cap-note";
