@@ -798,6 +798,20 @@ test("layout: settings modal inerts the shortcut rail; export waits when busy", 
   }
 });
 
+test("layout: missing overlay shells do not lock the stepper", async () => {
+  const t = await boot();
+  try {
+    t.peval(`document.getElementById("pe-settings-modal")?.remove()`);
+    t.peval(`document.getElementById("peOnboardingTour")?.remove()`);
+    assert.equal(t.peval("isPeOverlayDialogOpen()"), false);
+    t.peval(`document.querySelector('[data-workflow-step="2"]').click()`);
+    assert.ok(t.document.getElementById("tab3").classList.contains("active"));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: stepper does not change tabs while Settings is open", async () => {
   const t = await boot();
   try {

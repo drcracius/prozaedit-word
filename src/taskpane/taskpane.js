@@ -115,10 +115,12 @@ function peConfirm(message, options) {
 }
 
 function isPeOverlayDialogOpen() {
-  return (
+  const settings = getEl("pe-settings-modal");
+  const tour = getEl("peOnboardingTour");
+  return !!(
     ProzaEdit.ConfirmDialog?.isOpen?.() ||
-    !getEl("pe-settings-modal")?.classList.contains("hidden") ||
-    !getEl("peOnboardingTour")?.classList.contains("hidden")
+    (settings && !settings.classList.contains("hidden")) ||
+    (tour && !tour.classList.contains("hidden"))
   );
 }
 
