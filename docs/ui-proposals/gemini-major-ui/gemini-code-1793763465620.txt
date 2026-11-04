@@ -1,0 +1,4 @@
+3-PASS AUDIT PLANS FOR VISUAL & COLLAPSIBLE OVERHAUL:
+- Pass 1 (Aesthetic Pass): Upgrade the core typography, introduce a compact, elegant branding header with embedded actions, apply custom shadow layers, and replace plain text links with high-fidelity toggle switches.
+- Pass 2 (Expandable Section Pass): Re-engineer the rigid stepper into a stylish interactive pill flow and create card clusters with caret toggles, color-coded status badges, and an automated Microsoft Print/PDF exporter.
+- Pass 3 (Layout & Ergonomic Pass): Replace all block text with high-density, rounded micro-copy badges and add right-side contextual utility icon rails (Timer, Export, History, Settings).

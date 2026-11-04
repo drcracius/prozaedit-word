@@ -27,8 +27,7 @@ After GitHub pushes to `src/` or `assets/`, close and reopen the task pane (Page
 | 1 | **ProzaEdit** | Heuristic audit cards, scope, fiction modules, optional timeline/citation scans, local coach/rewrite |
 | 2 | **Word Editor (F7)** | Built-in spelling, grammar, clarity suggestions |
 | 3 | **Copilot in Word** | Generative prose; paste context from **Copy for Copilot** |
-| 4 | **PerfectIt** (if licensed) | Client house style after editorial passes |
-| 5 | **Word Macro Tools** (Paul Beverley; if you use them) | FRedit-scale batch find/replace — **not bundled** with ProzaEdit |
+| 4 | **Word Macro Tools** (Paul Beverley; if you use them) | FRedit-scale batch find/replace — **not bundled** with ProzaEdit |
 
 ProzaEdit does **not** ship VBA macros or FRedit. Run macro tools on a **copy** or after Version History when doing large batch replaces.
 

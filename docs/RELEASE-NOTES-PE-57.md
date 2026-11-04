@@ -4,7 +4,7 @@
 
 ## Summary
 
-Implements five actionable items from competitive add-in UI research (PerfectIt / Writefull-style trust and visibility), without vNext tab merge.
+Implements five actionable items from competitive add-in UI research (trust and visibility patterns), without vNext tab merge.
 
 ## Changes
 

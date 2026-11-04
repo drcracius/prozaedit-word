@@ -36,7 +36,7 @@ ProzaEdit Word’s **audit, coach, rewrite, chronology, and citation logic** are
 ## What ProzaEdit is not
 
 - Not a plagiarism or AI-detection product (heuristic flags only).
-- Not PerfectIt, Grammarly, or Word Macro Tools — those are separate products if you choose to use them in your stack (see `docs/WORKFLOWS.md`).
+- Not a replacement for Word’s built-in proofing, optional batch macro workflows, or any separate add-in you choose to use (see `docs/WORKFLOWS.md`).
 
 ---
 

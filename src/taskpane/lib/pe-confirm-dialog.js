@@ -53,6 +53,11 @@ ProzaEdit.ConfirmDialog = {
       modal.classList.add("hidden");
       modal.setAttribute("aria-hidden", "true");
     }
+    if (typeof document !== "undefined" && document.body) {
+      document.body.classList.remove("pe-confirm-open");
+    }
+    const railSync = typeof window !== "undefined" ? window.syncUtilityRailChrome : null;
+    if (typeof railSync === "function") railSync();
     if (this._keydownHandler) {
       document.removeEventListener("keydown", this._keydownHandler);
       this._keydownHandler = null;
@@ -96,6 +101,11 @@ ProzaEdit.ConfirmDialog = {
     this._open = true;
     modal.classList.remove("hidden");
     modal.setAttribute("aria-hidden", "false");
+    if (typeof document !== "undefined" && document.body) {
+      document.body.classList.add("pe-confirm-open");
+    }
+    const railSync = typeof window !== "undefined" ? window.syncUtilityRailChrome : null;
+    if (typeof railSync === "function") railSync();
 
     this._keydownHandler = (e) => {
       if (!this._open) return;

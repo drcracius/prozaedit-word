@@ -26,7 +26,7 @@
 | **66** | **Important** vs **Critical** labels in Simple mode; dictionary nudge after name mute; tab subtitles |
 | **67** | Tab order **Start → Run → Fix → Help**; workflow cross-nav strip; scope-first Target; Important-first filter chips |
 
-### PWA / forum checklist (PE-60) — after bundle
+### Forum / long-doc checklist (PE-60) — after bundle
 
 | Theme | Status |
 |-------|--------|

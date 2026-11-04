@@ -48,7 +48,7 @@ Use this if you are new to editing add-ins and want the smallest path to a usefu
 | **5. Names that are correct** | If a character name is flagged wrongly → **Mute** → follow the hint to **Dictionary** in Settings | That name stops nagging on this document |
 | **6. More power (optional)** | **Settings → Essentials** → turn off **Simple mode** | **Coach**, **Rewrite**, and **Thesaurus** tabs return; filters say **Critical** again |
 
-**Remember:** ProzaEdit runs when you click **Run audit** — it does not underline while you type (unlike Grammarly).
+**Remember:** ProzaEdit runs when you click **Run report** — it does not underline while you type.
 
 ---
 

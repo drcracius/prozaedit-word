@@ -24,7 +24,7 @@ One vocabulary for all **seven tabs**, audit hubs, and Settings — **no per-tab
 
 ## Typography (PE-52)
 
-- **Stack:** `--pe-font-sans` — **Segoe UI** first (thicker than Segoe UI Variable Display), then Segoe UI Variable Text, `system-ui` (no web fonts; no manifest change). Grammarly uses Inter at ~14–16px; we stay on system fonts.
+- **Stack:** `--pe-font-sans` — **Segoe UI** first (thicker than Segoe UI Variable Display), then Segoe UI Variable Text, `system-ui` (no web fonts; no manifest change). We stay on system fonts (~14px base) with no web-font manifest change.
 - **Scale:** `--pe-font-size-base` **14px** body; `--pe-font-size-section` **16px** headings; `--pe-font-size-tab` **13px** tabs; `--pe-font-size-sm` **13px**; `--pe-font-size-2xs` **12px**.
 - **Rhythm:** `--pe-line-height` **1.55** (body), `--pe-line-height-tight` **1.4**.
 - **Weights:** body 400 on Segoe UI (reads heavier at 14px); labels/tabs 600; headings 600; strong 700.

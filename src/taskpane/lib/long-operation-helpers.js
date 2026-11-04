@@ -6,7 +6,13 @@ ProzaEdit.LongOp = {
   SESSION_DISMISS_PREFIX: "pe-longop-dismiss-",
 
   /**
-   * Known slow actions (audit mandatory; scans and batch optional).
+   * Below this scoped character count, local report runs are fast enough to skip a pre-start banner.
+   * ~80k chars ≈ 13–16k words; typical Word.run read + local engines finish well under a minute.
+   */
+  WARN_MIN_CHARS: 80000,
+
+  /**
+   * Known slow actions (scans, batch, deep AI). Local Run report uses progress UI only (no pre-ack).
    * In-flight Gemini HTTP (Coach, Rewrite, Deep audit) shares the long-op AbortSignal, so Cancel aborts the fetch;
    * the client timeout (90s) is unchanged.
    */
@@ -46,13 +52,25 @@ ProzaEdit.LongOp = {
     return m === "full" || m === "pages" || m === "selected-chapters" || m === "chapter-range" || m === "chapter";
   },
 
-  actionIdForAudit(scopeMode, extendedLocal) {
-    const mode = String(scopeMode || "selection");
-    if (mode === "full") return ProzaEdit.LongOp.ACTION_IDS.AUDIT_FULL;
-    if (ProzaEdit.LongOp.isSlowScopeMode(mode)) {
-      return ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE;
+  /**
+   * @param {number} charCount scoped characters (0 if unknown)
+   * @param {string} [scopeMode]
+   */
+  scopeLooksLong(charCount, scopeMode) {
+    const chars = Number(charCount);
+    if (Number.isFinite(chars) && chars > 0) {
+      return chars >= ProzaEdit.LongOp.WARN_MIN_CHARS;
     }
-    if (extendedLocal) return ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE;
+    const mode = String(scopeMode || "");
+    if (mode === "full") return true;
+    return ProzaEdit.LongOp.isSlowScopeMode(mode);
+  },
+
+  /**
+   * Local Run report never uses the pre-ack banner — progress + Cancel on the op bar instead.
+   * @returns {null}
+   */
+  actionIdForAudit(_scopeMode, _extendedLocal, _charCount) {
     return null;
   },
 
@@ -60,6 +78,8 @@ ProzaEdit.LongOp = {
    * @param {object} options
    * @param {boolean} [options.showLongOperationWarnings]
    * @param {string|null} [options.actionId]
+   * @param {number} [options.charCount]
+   * @param {string} [options.scopeMode]
    * @param {function(string):*} [options.sessionGet]
    */
   shouldShowLongOperationWarning(options) {
@@ -67,6 +87,10 @@ ProzaEdit.LongOp = {
     if (options.showLongOperationWarnings === false) return false;
     const actionId = String(options.actionId || "").trim();
     if (!actionId) return false;
+    if (actionId === ProzaEdit.LongOp.ACTION_IDS.AUDIT_FULL || actionId === ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE) {
+      return false;
+    }
+    if (!ProzaEdit.LongOp.scopeLooksLong(options.charCount, options.scopeMode)) return false;
     const key = ProzaEdit.LongOp.sessionDismissKey(actionId);
     if (!key) return false;
     try {
@@ -81,12 +105,12 @@ ProzaEdit.LongOp = {
     const id = String(actionId || "");
     if (id === ProzaEdit.LongOp.ACTION_IDS.AUDIT_FULL) {
       return (
-        "A full-manuscript audit reads the entire document and may take several minutes on long drafts. " +
+        "A full-manuscript report reads the entire document and may take several minutes on long drafts. " +
         "For very long documents, try Chosen chapters or Page range."
       );
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE) {
-      return "This audit covers a large scope and may take a minute or more.";
+      return "This report covers a large scope and may take a minute or more.";
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.CITATION_SCAN) {
       return "Citation verify walks scoped paragraphs and may take a while on long sections.";
@@ -95,11 +119,17 @@ ProzaEdit.LongOp = {
       return "Timeline scan walks scoped paragraphs and may take a while on long sections.";
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.BATCH_AUDIT) {
-      return "Batch section audit runs multiple audits in a row and may take several minutes.";
+      return "Batch section report runs multiple passes in a row and may take several minutes.";
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.DEEP_AUDIT) {
-      return "Deep audit reads scope text then calls your AI provider — may take a minute.";
+      return "Deep report reads scope text then calls your AI provider — may take a minute.";
     }
     return "This action may take a while on long documents.";
+  },
+
+  /** Status prefix while the op bar is visible during long reads. */
+  longRunHint(charCount, scopeMode) {
+    if (!ProzaEdit.LongOp.scopeLooksLong(charCount, scopeMode)) return "";
+    return "Large scope — may take 1–2 minutes. You can keep writing in Word; Cancel stops after the current step. ";
   },
 };

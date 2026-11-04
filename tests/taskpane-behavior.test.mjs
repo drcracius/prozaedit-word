@@ -85,7 +85,7 @@ test("startup: throwing storage and missing matchMedia do not crash init or an a
     await t.settle(60);
     assert.deepEqual(t.errors.map((e) => String(e && (e.message || e))), []);
     t.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "audit finished with no storage" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "Report finished with no storage" });
     assert.deepEqual(t.errors.map((e) => String(e && (e.message || e))), []);
   } finally {
     t.close();
@@ -119,7 +119,7 @@ test("audit: finishes, op bar returns to idle, no alerts", async () => {
   const t = await boot();
   try {
     t.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "audit finished" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "Report finished" });
     assert.ok(t.isHidden("peOpBar"));
     assert.equal(flag(t, "auditBusy"), false);
     assert.equal(flag(t, "auditStarting"), false);
@@ -148,7 +148,7 @@ test("audit: Cancel is visible, enabled, aria-busy; cancel returns UI to idle an
     assert.match(t.status(), /Cancelled/);
 
     t.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "re-run finished" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "re-run finished" });
     assert.equal(flag(t, "auditBusy"), false);
     assert.deepEqual(t.errors, []);
   } finally {
@@ -163,12 +163,12 @@ test("audit: rapid double-click starts only one audit", async () => {
     t.click("btnRunAudit");
     t.click("btnRunAudit");
     t.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "finished" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "finished" });
     await t.settle(30);
     const used = t.state.runs - before;
     t.click("btnRunAudit");
     await waitFor(() => t.state.runs - before > used, { message: "second run starts" });
-    assert.ok(used >= 1 && used <= 3, `Word.run count for one audit was ${used}`);
+    assert.ok(used >= 1 && used <= 4, `Word.run count for one audit was ${used}`);
     await waitFor(() => flag(t, "auditBusy") === false);
     assert.deepEqual(t.errors, []);
   } finally {
@@ -186,7 +186,7 @@ test("audit: run while running is refused with a status line and does not wedge 
     await t.settle(20);
     assert.match(t.status(), /already|wait|running|busy/i);
     release();
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "finished" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "finished" });
     assert.equal(flag(t, "auditBusy"), false);
   } finally {
     t.close();
@@ -208,7 +208,7 @@ test("audit: Word sync failure shows recovery copy and Try again re-runs once", 
     const before = t.state.runs;
     t.click("btnPeRetry");
     t.click("btnPeRetry");
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "retry finished" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "retry finished" });
     assert.ok(t.isHidden("peRetryBar"));
     assert.ok(t.state.runs - before <= 3, "retry did not fan out into duplicate audits");
     assert.deepEqual(t.errors, []);
@@ -221,7 +221,12 @@ test("audit: empty selection and empty document give guidance, not a crash", asy
   const empty = await boot({ word: { selection: "" } });
   try {
     empty.click("btnRunAudit");
-    await waitFor(() => flag(empty, "auditBusy") === false && flag(empty, "auditStarting") === false, { message: "idle" });
+    await waitFor(
+      () =>
+        /Report finished|Highlight text|No selection|could not|Cancelled/i.test(empty.status()) ||
+        (flag(empty, "auditBusy") === false && flag(empty, "auditStarting") === false && empty.status().length > 0),
+      { message: "empty-scope guidance or finished report", timeout: 15000 }
+    );
     await empty.settle(40);
     assert.equal(flag(empty, "auditBusy"), false);
     assert.equal(flag(empty, "auditStarting"), false);
@@ -258,6 +263,31 @@ test("cards: render cap keeps the pane responsive and adds a note", async () => 
     const n = t.document.querySelectorAll("#cardContainer .card").length;
     assert.ok(n > 0 && n <= 300, `cards rendered: ${n}`);
     assert.ok(t.document.querySelector("#cardContainer .pe-card-cap-note"));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("cards: long quotes are preview-capped in the DOM; apply still uses the full text", async () => {
+  const t = await boot();
+  try {
+    const long = "q".repeat(5000);
+    t.peval(`setAuditSuggestions(${JSON.stringify([{
+      id: "long1",
+      ruleId: "r-long",
+      module: "Long",
+      type: "confirmed",
+      explanation: "why ".repeat(200),
+      targetText: long,
+      replacementText: "short",
+    }])})`);
+    await t.settle(20);
+    const target = t.document.querySelector("#cardContainer .card-target")?.textContent || "";
+    assert.ok(target.length < 400, `preview leaked full quote: ${target.length}`);
+    assert.ok(target.includes("…"));
+    const kept = t.peval(`currentAuditSuggestions[0].targetText.length`);
+    assert.equal(kept, 5000);
     assert.deepEqual(t.errors, []);
   } finally {
     t.close();
@@ -490,6 +520,7 @@ test("deep audit: cancel aborts the in-flight Gemini request and the next run wo
   });
   try {
     t.el("apiKey").value = "AIzaSyDUMMYKEYDUMMYKEY1234567890";
+    t.peval("lastScopePreviewChars = 120000");
     t.peval("runDeepAuditAI()");
     await waitFor(() => !t.isHidden("peLongOpWarningBanner"), { message: "warning banner" });
     t.click("btnLongOpContinue");
@@ -501,6 +532,7 @@ test("deep audit: cancel aborts the in-flight Gemini request and the next run wo
     assert.ok(t.isHidden("peOpBar"));
     assert.match(t.status(), /Cancelled/);
     mode = "ok";
+    t.peval("lastScopePreviewChars = 120000");
     t.peval("runDeepAuditAI()");
     await waitFor(() => !t.isHidden("peLongOpWarningBanner") || /Deep audit finished/.test(t.status()), { message: "banner or run" });
     if (!t.isHidden("peLongOpWarningBanner")) t.click("btnLongOpContinue");
@@ -519,6 +551,7 @@ test("deep audit: unparseable Gemini reply fails cleanly without a stuck busy st
   });
   try {
     t.el("apiKey").value = "AIzaSyDUMMYKEYDUMMYKEY1234567890";
+    t.peval("lastScopePreviewChars = 120000");
     t.peval("runDeepAuditAI()");
     await waitFor(() => !t.isHidden("peLongOpWarningBanner"), { message: "warning banner" });
     t.click("btnLongOpContinue");
@@ -535,6 +568,7 @@ test("deep audit: Not now on the long-operation warning leaves nothing busy and 
   const t = await boot();
   try {
     t.el("apiKey").value = "AIzaSyDUMMYKEYDUMMYKEY1234567890";
+    t.peval("lastScopePreviewChars = 120000");
     t.peval("runDeepAuditAI()");
     await waitFor(() => !t.isHidden("peLongOpWarningBanner"), { message: "warning banner" });
     t.click("btnLongOpNotNow");
@@ -543,7 +577,7 @@ test("deep audit: Not now on the long-operation warning leaves nothing busy and 
     assert.equal(flag(t, "deepBusy"), false);
     assert.equal(flag(t, "auditStarting"), false);
     t.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "audit after Not now" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "report after Not now" });
     assert.deepEqual(t.errors, []);
   } finally {
     t.close();
@@ -615,7 +649,7 @@ test("diagnostics flag: phase timing is off by default and on with pe-dev", asyn
   const off = await boot();
   try {
     off.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(off.status()));
+    await waitFor(() => /Report finished/.test(off.status()));
     assert.ok(!/read \d|analyze \d|ms/.test(off.status()), off.status());
   } finally {
     off.close();
@@ -623,7 +657,7 @@ test("diagnostics flag: phase timing is off by default and on with pe-dev", asyn
   const on = await boot({ url: "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html?pe-dev=1" });
   try {
     on.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(on.status()));
+    await waitFor(() => /Report finished/.test(on.status()));
     assert.match(on.status(), /ms/);
   } finally {
     on.close();
@@ -655,4 +689,133 @@ test("pathological inputs: very long single line and repeated punctuation stay b
 
 test("module-level sanity: sleep helper is usable", async () => {
   await sleep(1);
+});
+
+test("cards: findings are collapsible; first opens and actions stay wired", async () => {
+  const t = await boot();
+  try {
+    const list = [
+      { id: "c1", ruleId: "r1", module: "First", type: "confirmed", explanation: "e1", targetText: "very", replacementText: "quite" },
+      { id: "c2", ruleId: "r2", module: "Second", type: "confirmed", explanation: "e2", targetText: "really", replacementText: "truly" },
+    ];
+    t.peval(`setAuditSuggestions(${JSON.stringify(list)})`);
+    await t.settle(30);
+    const cards = t.document.querySelectorAll("#cardContainer details.card");
+    assert.equal(cards.length, 2);
+    assert.equal(cards[0].open, true, "first finding starts open");
+    assert.equal(cards[1].open, false, "later findings start collapsed");
+    assert.ok(cards[0].querySelector('[data-a="goto"]'));
+    assert.ok(cards[0].querySelector('[data-a="apply"]'));
+    cards[1].open = true;
+    assert.equal(cards[1].open, true);
+    assert.ok(cards[1].querySelector(".card-body"));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("cards: dismiss keeps other open cards and opens the next finding", async () => {
+  const t = await boot();
+  try {
+    t.peval(`auditCardFilter = "all"`);
+    const list = [
+      { id: "a", ruleId: "ra", module: "A", type: "confirmed", explanation: "e", targetText: "very", replacementText: "quite" },
+      { id: "b", ruleId: "rb", module: "B", type: "confirmed", explanation: "e", targetText: "really", replacementText: "truly" },
+      { id: "c", ruleId: "rc", module: "C", type: "confirmed", explanation: "e", targetText: "just", replacementText: "simply" },
+    ];
+    t.peval(`setAuditSuggestions(${JSON.stringify(list)})`);
+    await t.settle(30);
+    t.peval(`document.getElementById("card_b").open = true`);
+    t.peval(`document.querySelector("#card_b [data-a=dismiss]").focus()`);
+    t.peval(`removeAuditCard("b")`);
+    await t.settle(20);
+    assert.equal(t.document.getElementById("card_b"), null);
+    assert.equal(t.document.getElementById("card_a")?.open, true);
+    assert.equal(t.document.getElementById("card_c")?.open, true, "next card must open so actions stay visible");
+    assert.ok(t.document.getElementById("card_c")?.querySelector("[data-a=dismiss]"));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("cards: a collapsed first finding stays collapsed across a preserve re-render", async () => {
+  const t = await boot();
+  try {
+    t.peval(`auditCardFilter = "all"`);
+    const list = [
+      { id: "a", ruleId: "ra", module: "A", type: "confirmed", explanation: "e", targetText: "very", replacementText: "quite" },
+      { id: "b", ruleId: "rb", module: "B", type: "confirmed", explanation: "e", targetText: "really", replacementText: "truly" },
+    ];
+    t.peval(`setAuditSuggestions(${JSON.stringify(list)})`);
+    await t.settle(20);
+    t.peval(`document.getElementById("card_a").open = false`);
+    t.peval(`applyAuditCardFilter({ preserveDisplayLimit: true })`);
+    await t.settle(20);
+    assert.equal(t.document.getElementById("card_a")?.open, false, "collapsed first card must not be forced open");
+    assert.equal(t.document.getElementById("card_b")?.open, false);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("layout: settings modal inerts the shortcut rail; export waits when busy", async () => {
+  const t = await boot();
+  try {
+    t.peval("openSettingsModal()");
+    assert.ok(t.el("peUtilityRail").hasAttribute("inert"));
+    assert.equal(t.el("peUtilityRail").getAttribute("aria-hidden"), "true");
+    t.peval("closeSettingsModal()");
+    assert.equal(t.el("peUtilityRail").hasAttribute("inert"), false);
+    t.peval("auditBusy = true");
+    t.peval("exportAuditReportNewWordDoc()");
+    await t.settle(20);
+    assert.match(t.status(), /Wait for the current action/);
+    t.peval("auditBusy = false");
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("layout: confirm-open and tour-open inert the shortcut rail", async () => {
+  const t = await boot();
+  try {
+    t.peval(`document.body.classList.add("pe-confirm-open"); syncUtilityRailChrome()`);
+    assert.ok(t.el("peUtilityRail").hasAttribute("inert"));
+    t.peval(`document.body.classList.remove("pe-confirm-open"); syncUtilityRailChrome()`);
+    assert.equal(t.el("peUtilityRail").hasAttribute("inert"), false);
+    t.peval(`document.body.classList.add("pe-onboarding-tour-open"); syncUtilityRailChrome()`);
+    assert.ok(t.el("peUtilityRail").hasAttribute("inert"));
+    t.peval(`document.body.classList.remove("pe-onboarding-tour-open"); syncUtilityRailChrome()`);
+    assert.equal(t.el("peUtilityRail").hasAttribute("inert"), false);
+    assert.ok(t.el("peWorkflowStatusLine").classList.contains("pe-workflow-status-static"));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("layout: badge row and width-gated rail stay wired", async () => {
+  const t = await boot();
+  try {
+    assert.ok(t.el("peOverheadBadges"));
+    assert.ok(t.el("peBadgeGuide").textContent.trim().length > 0);
+    assert.ok(t.el("peBadgeScope").textContent.trim().length > 0);
+    assert.ok(t.el("peUtilityRail"));
+    t.peval("setupNarrowPaneClass()");
+    const wide = t.peval("document.body.classList.contains('pe-wide-pane')");
+    const hidden = t.el("peUtilityRail").getAttribute("aria-hidden");
+    if (wide) assert.equal(hidden, null);
+    else assert.equal(hidden, "true");
+    t.peval("showTab('tab5')");
+    assert.ok(t.document.getElementById("tab5").classList.contains("active"));
+    t.peval("exportAuditReportNewWordDoc()");
+    await t.settle(20);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
 });

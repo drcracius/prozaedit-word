@@ -43,7 +43,7 @@ CSS custom properties in `src/taskpane/taskpane.css` (all themes):
 | Token | Typical use |
 | --- | --- |
 | `--pe-font-sans` | Global UI stack (**Segoe UI** first; Variable Display looked too thin) |
-| `--pe-font-size-base` | Body copy (**14px**, aligned with Grammarly/Quillbot sidebar type) |
+| `--pe-font-size-base` | Body copy (**14px**, readable sidebar scale) |
 | `--pe-font-size-sm` / `--pe-font-size-xs` / `--pe-font-size-2xs` | Settings group headers, forms, captions (**13px** / **12px**) |
 | `--pe-font-size-tab` | Tab labels (**13px**; narrow uses `--pe-font-size-2xs` = **12px**) |
 | `--pe-font-size-section` | Section headings (**16px**) |

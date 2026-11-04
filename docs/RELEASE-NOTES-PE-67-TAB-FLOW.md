@@ -4,7 +4,7 @@
 
 ## Summary
 
-PE-67 makes the **Target → Checks → Audit → Help** path obvious in Simple mode and adds **related-step links** so users can move back and forth without dead ends. Anti–ProWritingAid-style copy reinforces **one audit pipeline** and **manual Run** (not realtime).
+PE-67 makes the **Target → Checks → Audit → Help** path obvious in Simple mode and adds **related-step links** so users can move back and forth without dead ends. Copy reinforces **one report pipeline** and **manual Run report** (not realtime).
 
 ## Shipped
 
@@ -43,7 +43,7 @@ PE-67 makes the **Target → Checks → Audit → Help** path obvious in Simple 
 
 ## Docs
 
-- Store review: `prozaedit-pe-67-tab-flow-and-pwa-mitigations.md` (Project Context).
+- Store review: `prozaedit-pe-67-tab-flow-and-mitigations.md` (Project Context).
 - [BETA-ONBOARDING-COMMS.md](./BETA-ONBOARDING-COMMS.md) — one bullet on tab flow.
 
 ## Deferred (vNext)

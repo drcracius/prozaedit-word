@@ -1,4 +1,6 @@
 node_modules/
+# Maintainer-only competitive research copies (see Desktop prozaedit-word-competitive-research-archive)
+_archive/competitive-research/
 .prozaedit-setup-ok
 *.log
 .env

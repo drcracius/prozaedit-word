@@ -28,8 +28,8 @@ test("PE-92: all 12 genres x Simple/Advanced run a real audit end to end with no
         t.el("manuscriptType").value = g;
         t.el("manuscriptType").dispatchEvent(new t.window.Event("change"));
         t.click("btnRunAudit");
-        await waitFor(() => /Audit finished|could not/i.test(t.status()), { timeout: 6000, message: `audit ${g}` });
-        assert.match(t.status(), /Audit finished/, g);
+        await waitFor(() => /Report finished|could not/i.test(t.status()), { timeout: 6000, message: `audit ${g}` });
+        assert.match(t.status(), /Report finished/, g);
         counts[simple ? "s" : "a"] = t.peval(`currentAuditSuggestions.length`) - t.peval(`auditLowConfidenceHidden`);
         assert.deepEqual(t.errors.map((e) => String(e && e.message)), [], g);
         assert.match(t.el("summaryReport").textContent, simple ? /Simple view/ : /Advanced view/);
@@ -53,7 +53,7 @@ test("PE-92: with localStorage and sessionStorage both throwing, boot + local au
   try {
     await sleep(200);
     t.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "local audit" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "local audit" });
     t.el("apiKey").value = "AIzaSyFAKEFAKEFAKEFAKEFAKEFAKE12345";
     t.el("apiKey").dispatchEvent(new t.window.Event("input"));
     t.window.fetch = async () => ({

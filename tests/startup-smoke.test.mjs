@@ -34,7 +34,7 @@ test("smoke: local audit and Local Coach run read-only (no insertText, no select
   try {
     await t.settle(60);
     t.click("btnRunAudit");
-    await waitFor(() => /Audit finished/.test(t.status()), { message: "audit finished" });
+    await waitFor(() => /Report finished/.test(t.status()), { message: "Report finished" });
     t.el("chatInput").value = "How do I fix POV slips?";
     t.peval("sendLocalCoachMessage()");
     await t.settle(60);

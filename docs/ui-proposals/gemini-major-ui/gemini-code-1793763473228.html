@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProzaEdit</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
+  <!-- Load Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- CSS Styles Injection -->
+  <link rel="stylesheet" href="taskpane.css" />
+</head>
+<body>
+  
+  <!-- OUTER APP WRAPPER -->
+  <div class="app-container">
+    
+    <!-- SUBTLE RIGHT-SIDE CONTEXTUAL ICON RAIL -->
+    <div class="right-utility-rail">
+      <button class="rail-icon-btn" onclick="showTab('tab5')" title="Open AI Assist">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+        <span class="rail-label">AI Coach</span>
+      </button>
+      <button class="rail-icon-btn" onclick="exportToPDF()" title="Print / Export">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+        <span class="rail-label">Export</span>
+      </button>
+      <button class="rail-icon-btn" onclick="showTab('tab1')" title="Target Parameters">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="rail-label">Settings</span>
+      </button>
+    </div>
+
+    <!-- MAIN INTERACTIVE SPACE -->
+    <div class="main-workspace">
+      
+      <!-- TOP COMPACT BRANDING HEADER -->
+      <header class="branding-header">
+        <div class="brand-logotype">
+          <div class="brand-badge">P</div>
+          <span class="brand-typography">Proza<span>Edit</span></span>
+        </div>
+        <div class="quick-nav-actions">
+          <button class="nav-icon-link" onclick="undoAction()" title="Undo Insert">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+          </button>
+          <button class="nav-icon-link" onclick="redoAction()" title="Redo Action">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+          </button>
+          <button class="header-action-button" onclick="runGlobalAudit()" title="Start Audit Analysis">
+            <span class="action-icon">✦</span> Run Audit
+          </button>
+        </div>
+      </header>
+
+      <!-- STEPPER TRACKER (PILL FLOW STYLE) -->
+      <nav class="stepper-track">
+        <button class="step-pill active" onclick="showTab('tab1')">
+          <span class="step-number">1</span> Target
+        </button>
+        <button class="step-pill" onclick="showTab('tab3')">
+          <span class="step-number">2</span> Checks
+        </button>
+        <button class="step-pill" onclick="runProzaEditAudit()">
+          <span class="step-number">3</span> Run Audit
+        </button>
+        <button class="step-pill" onclick="showTab('tab4')">
+          <span class="step-number">4</span> Fix Cards
+        </button>
+      </nav>
+
+      <!-- TEXT OVERHEAD INFORMATION BADGES -->
+      <section class="overhead-info-badges">
+        <div class="badge-row">
+          <span class="info-label">Guide:</span>
+          <span class="info-badge-text">Plain Language + Strunk (PD)</span>
+        </div>
+        <div class="badge-row">
+          <span class="info-label">Active Dictionary:</span>
+          <span class="info-badge-text">Current Word Document</span>
+        </div>
+      </section>
+
+      <!-- LONG OPERATION WARNING COMPONENT -->
+      <div id="longOpNotice" class="overlay-notice">
+        <div class="notice-main-content">
+          <h4 class="notice-heading-title">Long operation</h4>
+          <p class="notice-copy-desc">A full-manuscript audit reads the entire document and may take several minutes on long drafts. For very long documents, try Chosen chapters or Page range.</p>
+        </div>
+        <div class="notice-button-actions">
+          <button class="btn-primary-notice" onclick="dismissNotice('longOpNotice', true)">Continue</button>
+          <div class="secondary-inline-actions">
+            <button class="btn-text-action" onclick="dismissNotice('longOpNotice', false)">Not now</button>
+            <button class="btn-text-action" onclick="dismissNotice('longOpNotice', false)">Don't show again</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 1: TARGET CONFIGURATIONS -->
+      <div id="tab1" class="tab-content active">
+        <div class="form-group">
+          <label for="manuscriptType">Manuscript Type</label>
+          <select id="manuscriptType" onchange="adaptModules()">
+            <option value="Fiction (Thriller/Mystery/Crime)" selected>Fiction (Thriller / Mystery / Crime)</option>
+            <option value="Academic Paper / Journal">Academic Paper / Journal</option>
+            <option value="Business / Corporate Report">Business / Corporate Report</option>
+            <option value="Non-Fiction / Memoir">Non-Fiction / Memoir</option>
+            <option value="Technical / Journalism">Technical / Journalism</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="targetAudience">Target Reader / Education Level</label>
+          <select id="targetAudience">
+            <option value="Middle School">Middle School</option>
+            <option value="High School">High School</option>
+            <option value="Teenager">Teenager</option>
+            <option value="Young Adult">Young Adult</option>
+            <option value="College Student">College Student</option>
+            <option value="College Graduate">College Graduate</option>
+            <option value="Adult" selected>Adult</option>
+            <option value="Post Graduate">Post Graduate</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="settingAnchor">Setting Anchor (Dialect &amp; Idioms)</label>
+          <input type="text" id="settingAnchor" value="Austin, Texas (Contemporary)">
+        </div>
+        <div class="form-group">
+          <label for="criticPersona">Critic Persona</label>
+          <select id="criticPersona">
+            <option value="Average Reader">Average Reader</option>
+            <option value="More Critical Reader">More Critical Reader</option>
+            <option value="NYT Best Seller Critic">NYT Best Seller Critic</option>
+            <option value="Very Harsh Senior Editor (9.0+ Target)" selected>Very Harsh Senior Editor (9.0+ Target)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="scope">Analysis Scope</label>
+          <select id="scope">
+            <option value="full">Full Manuscript</option>
+            <option value="selection">Selected / Highlighted Text Only</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="language">Language Standard</label>
+          <select id="language">
+            <option value="en-US">US English (Default)</option>
+            <option value="en-GB">British English (UK)</option>
+          </select>
+        </div>
+        <button class="btn-main" onclick="saveConfiguration()">Save Settings</button>
+      </div>
+
+      <!-- TAB 2: POWER THESAURUS LOOKUP -->
+      <div id="tab2" class="tab-content">
+        <div class="help-box">Search synonyms, antonyms, and nuance. Click any tag to replace directly in Word.</div>
+        <div class="form-group">
+          <label for="thesaurusInput">Word / Phrase Lookup</label>
+          <input type="text" id="thesaurusInput" placeholder="Enter word or select in Word...">
+          <button class="btn-main" style="margin-top:4.0px;" onclick="runThesaurusLookup()">Search Synonyms</button>
+        </div>
+        <div id="thesaurusResults" class="nested-results-block">Search results will appear here...</div>
+      </div>
+
+      <!-- TAB 3: FEATURE MODULE TOGGLES -->
+      <div id="tab3" class="tab-content">
+        <div class="form-group">
+          <div class="toggle-row"><span>Repetition &amp; Redundancy</span><input type="checkbox" id="chkRep" checked></div>
+          <div class="toggle-row"><span>ProperNounAlyse (Consistency)</span><input type="checkbox" id="chkProp" checked></div>
+          <div class="toggle-row"><span>Spelling &amp; Proofreading</span><input type="checkbox" id="chkSpell" checked></div>
+          <div class="toggle-row"><span>AI Detection &amp; Plagiarism Check</span><input type="checkbox" id="chkAI" checked></div>
+        </div>
+        <div class="form-group">
+          <label>Fiction Core Modules</label>
+          <div class="toggle-row"><span>1. Plot &amp; Chapter Structure</span><input type="checkbox" id="mPlot" checked></div>
+          <div class="toggle-row"><span>2. Characterization &amp; Motivation</span><input type="checkbox" id="mMotivation" checked></div>
+          <div class="toggle-row"><span>3. Dialogue &amp; Viewpoint (POV)</span><input type="checkbox" id="mDialogue" checked></div>
+          <div class="toggle-row"><span>4. Continuity &amp; Chronology</span><input type="checkbox" id="mContinuity" checked></div>
+          <div class="toggle-row"><span>5. Plausibility, Logic &amp; Evidence</span><input type="checkbox" id="mPlausibility" checked></div>
+          <div class="toggle-row"><span>6. Pacing &amp; Readability</span><input type="checkbox" id="mPacing" checked></div>
+          <div class="toggle-row"><span>7. Spoiler Control &amp; Reveal Timing</span><input type="checkbox" id="mSpoiler" checked></div>
+        </div>
+        <button class="btn-main" onclick="runProzaEditAudit()">Run Manuscript Audit</button>
+      </div>
+
+      <!-- TAB 4: EXPANDABLE AUDIT RESULTS -->
+      <div id="tab4" class="tab-content">
+        <div id="auditOverviewCard" style="display:none;">
+          <div class="overall-progress-headline">
+            <span class="report-main-heading">Story Critique</span>
+            <span class="pwa-visual-ranking">Strong — Score 10 / 10</span>
+          </div>
+          <div class="horizontal-ranking-pills">
+            <span class="ranking-badge">Correctness 10/10</span>
+            <span class="ranking-badge">Clarity 6.6/10</span>
+            <span class="ranking-badge">Engagement 7/10</span>
+          </div>
+        </div>
+        
+        <div id="summaryReport" class="micro-pwa-data">Click "Run Manuscript Audit" to evaluate document.</div>
+        
+        <!-- EXPANDABLE ACCORDION CONTAINER -->
+        <div id="reportAccordion" class="report-accordion-group"></div>
+      </div>
+
+      <!-- TAB 5: AI COACH ASSISTANT -->
+      <div id="tab5" class="tab-content">
+        <div class="form-group" style="border-bottom:none; margin-bottom:4px;">
+          <label for="apiKey">Gemini API Key</label>
+          <input type="password" id="apiKey" placeholder="Enter Gemini API Key...">
+        </div>
+        <div id="chatLog">
+          <div class="chat-msg chat-ai"><strong>ProzaEdit Assistant:</strong> Ready. Inquire about scene pacing, continuity, or character motives.</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="text" id="chatInput" placeholder="Type prompt or use mic..." style="flex:1;margin-bottom:0;">
+          <button id="micBtn" type="button" onclick="toggleVoiceDictation()" title="Dictate prompt"
+                  style="background:#f1f3f4;border:1px solid var(--border);border-radius:4px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#202124" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
+        </div>
+        <div id="micStatus" style="font-size:10px;color:var(--primary);margin-top:4px;min-height:14px;font-weight:600;"></div>
+        <button class="btn-main" style="margin-top:6px;" onclick="sendChatMessage()">Send Inquiry</button>
+      </div>
+
+      <!-- FOOTER TAB NAVIGATION -->
+      <footer class="app-tab-navigation">
+        <button class="footer-tab-item active" onclick="showTab('tab1')">
+          <span class="tab-item-icon">⚡</span> Start
+        </button>
+        <button class="footer-tab-item" onclick="showTab('tab3')">
+          <span class="tab-item-icon">🔍</span> Run
+        </button>
+        <button class="footer-tab-item" onclick="showTab('tab4')">
+          <span class="tab-item-icon">✏️</span> Fix
+        </button>
+        <button class="footer-tab-item" onclick="showTab('tab5')">
+          <span class="tab-item-icon">💡</span> Coach
+        </button>
+      </footer>
+      
+    </div>
+  </div>
+
+  <script src="taskpane.js"></script>
+</body>
+</html>

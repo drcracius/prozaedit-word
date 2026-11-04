@@ -32,7 +32,7 @@ ProzaEdit.PlainLanguage = {
     "Work one chapter or a highlighted passage at a time — you do not need the whole book on day one.",
     "Fix red or Important issues first; style suggestions can wait until the big problems are gone.",
     "Add character names to the dictionary when a check keeps flagging them.",
-    "Click Run audit when you are ready — ProzaEdit is not a live underline tool like Grammarly.",
+    "Click Run report when you are ready — ProzaEdit is not a live underline tool.",
   ],
 
   /** @param {"all"|"confirmed"|"preference"|"styleguide"} filter */

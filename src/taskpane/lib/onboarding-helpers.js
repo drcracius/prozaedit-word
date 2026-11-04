@@ -63,7 +63,7 @@ ProzaEdit.Onboarding = {
     "For very long documents, use Audit next chapter on Checks (one chapter at a time), or choose Chosen chapters or Page range on Target.",
 
   MANUAL_AUDIT_HELP_COPY:
-    "ProzaEdit runs manual audits when you click Run audit — not Grammarly-style realtime underlines.",
+    "ProzaEdit runs when you click Run report — not live underlines while you type.",
 
   FIRST_AUDIT_CHECKLIST_STEPS: [
     "On Target, choose what to check (highlight, a chapter, or a page range).",
@@ -229,9 +229,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.28",
+    version: "2.0.0.30",
     bullet:
-      "Pick what you are writing (romance, mystery, thriller, fantasy, sci-fi, literary, historical or non-fiction) and checks adjust to it. Optional AI help now works with Gemini, OpenAI, Claude or OpenRouter keys, with hard token limits. Fixes now check their exact spot before editing, and repeated AI requests are reused at no cost. New: tense and viewpoint shifts are flagged only when clearly accidental, and an optional Content notes switch (Settings, off by default) reports strong language and violence neutrally. Accuracy is now measured on a labeled test set. New: Audit next chapter on Checks takes very long books one chapter at a time, keeps your place and combines the results. Some labels were renamed in plain words (Book outline, Deeper checks, Chosen chapters). New: if Track Changes is on in Word, Apply leaves a tracked change you can accept or reject. New: for non-fiction genres, very long sentences and heavy passive voice are now flagged (only clear cases show in Simple view). Word count now matches Word's count. The pane type is larger and easier to read. Everything still works offline.",
+      "The pane layout is tighter: compact header, pill workflow steps, badge row for guide and scope, and collapsible findings (first card open). On a wider Word pane a shortcut rail offers Coach, Export, and Settings. Checkboxes on Checks and Settings look like switches. Still offline-first (no extra web fonts). Everything else from recent builds is unchanged: genre-aware checks, optional AI keys, anchored Apply, chapter-by-chapter audit, Track Changes Apply, and Word-matching word count.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

@@ -88,7 +88,23 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.30 — Major pane layout (Gemini-inspired, incremental)
+
+- **Layout:** Compact header, pill workflow steps, guide/scope badge row, switch-style toggles on Checks and Settings.
+- **Findings:** Audit cards are collapsible (`<details>`); the first card opens, the rest stay closed until expanded. Apply / undo / dismiss unchanged.
+- **Rail:** Coach, Export, and Settings shortcuts appear only when the pane is **≥ 420px**; hidden on narrow Word hosts so nothing clips.
+- **Safety:** No Google Fonts or mock JS swap. Existing handlers and IDs kept. Export uses the real “new Word doc” report path (warns if you have not run a report).
+- **Skipped:** Footer tab bar, `window.print()` PDF, `100vh` scroll lock (would freeze the Word iframe).
+
+## 2.0.0.29 — Run report flow, doc scrub, pre–major UI baseline
+
+- **Run report:** Primary actions say **Run report** / **Report finished**. Local reports start immediately with the progress bar (no pre-ack banner); long scans still warn only at **80k+** scoped characters when the onboarding pref is on.
+- **Long-operation fix:** Continue / stuck-state handling repaired; repeating Run while a notice is open continues instead of blocking.
+- **Public docs:** Removed references to other writing products; vendor-cited research kept offline (see maintainer archive on Desktop). **Paul Beverley / Word Macro Tools** attribution unchanged in THIRD-PARTY and WORKFLOWS.
+- **Reference UI:** Gemini mock saved under `docs/ui-proposals/gemini-major-ui/` (not shipped).
+- **462** tests (`npm test`), wiring and contrast gates unchanged.
+
 ## 2.0.0.28 — word count and readable type (Word Desktop and Word on the web, same build)
 
 - **Word count** no longer uses “paragraphs × 42”. Full-document and audit totals now count the same way Word does (whitespace tokens that contain a letter or digit). Blank paragraphs and curly apostrophes no longer inflate the number. Outline section counts use the same rule.
-- **Type:** body **14px** Segoe UI (not thin Segoe UI Variable Display); tabs **13px**; headings **16px**. Removed antialiased smoothing that thinned text on Windows. Darker body and muted colors. No new web font (Grammarly uses Inter; we stay offline-safe). Close and reopen the pane (Ctrl+F5) to see it.
+- **Type:** body **14px** Segoe UI (not thin Segoe UI Variable Display); tabs **13px**; headings **16px**. Removed antialiased smoothing that thinned text on Windows. Darker body and muted colors. No new web font (we stay offline-safe on system fonts). Close and reopen the pane (Ctrl+F5) to see it.

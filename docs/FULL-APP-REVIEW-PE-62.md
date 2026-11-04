@@ -47,7 +47,7 @@
 2. **Orchestrator size** — `taskpane.js` ~4,303 lines; onboarding logic adds surface area; mitigated by `onboarding-helpers.js` + **40** unit tests.
 3. **Truncation / long docs** — `ScopeReader.LIMITS` + `sys_trunc` card + status hint (PE-62 clearer wording).
 4. **Fiction vs academic gating** — timeline/citation/plot toggles still need profile literacy.
-5. **vNext / competitor expectation drift** — users may still expect Grammarly realtime or PWA report count; Help + PE-61 copy reduce but do not eliminate.
+5. **vNext / expectation drift** — users may still expect live realtime checking or dense report counts from other tools; Help + PE-61 copy reduce but do not eliminate.
 
 ### Top 5 strengths (re-confirmed + PE-61)
 
@@ -103,7 +103,7 @@
 |----|-----|------|---------|--------|
 | — | — | — | **No P0** | — |
 | — | — | — | **No new P1** | PE-58/59 wiring verified |
-| F-62-3 | P2 | UX | Audit filter “lanes” not explained for PWA refugees | **Fixed PE-62** — `#peAuditFilterLanesHint` |
+| F-62-3 | P2 | UX | Audit filter “lanes” not explained for new users | **Fixed PE-62** — `#peAuditFilterLanesHint` |
 | F-62-4 | P2 | UX | Truncation status terse | **Fixed PE-62** — status bar copy |
 | F-58-4 | P2 | Scope UI | Legacy chapter selects | Recommend |
 | F-62-1 | P2 | UX | Skippable 3-stop tour (Target → Run → Fix) | Recommend (agent) |
@@ -163,5 +163,5 @@
 
 The **PE-63–67** UX bundle on [PR #18](https://github.com/drcracius/prozaedit-word/pull/18) extends PE-61/62 with tour, Essentials, plain language, Important labels, and tab flow. After merge, use:
 
-- **[FULL-APP-REVIEW-PE-68-POST-UX-BUNDLE.md](./FULL-APP-REVIEW-PE-68-POST-UX-BUNDLE.md)** — score **~8.85**, **57** tests, PWA checklist  
+- **[FULL-APP-REVIEW-PE-68-POST-UX-BUNDLE.md](./FULL-APP-REVIEW-PE-68-POST-UX-BUNDLE.md)** — score **~8.85**, **57** tests, forum checklist  
 - **[RELEASE-NOTES-UX-BUNDLE-2.0.0.15.md](./RELEASE-NOTES-UX-BUNDLE-2.0.0.15.md)** — single owner-facing release note  

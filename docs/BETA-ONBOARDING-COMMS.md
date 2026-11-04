@@ -18,7 +18,7 @@ Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit 
 4. **Checks** — turn on **1–2 core checks**, hit **Run audit**. Extended, fiction-only, partner tools, and scans live under **More checks (optional)**.
 5. **Book outline (optional, PE-77)** — when you audit one chapter but want arc/continuity awareness, use **Build book outline** on Checks or Target. ProzaEdit reads the doc in the background (cancel anytime); it is a local, heuristic outline (not AI) stored in the document, and it **is sent with Gemini requests** if you use Gemini. Chapter audits use it when fresh; if you edit afterwards, the pane says *index may be out of date — Refresh index*.
 
-**Not a Grammarly clone:** under **Run audit**, the pane reminds you that checks run when you click — not while you type. **Help → New to editing tools?** is a short list for authors new to add-ins (one chapter at a time, fix important issues first, dictionary for names). To see **Coach**, **Rewrite**, and **Thesaurus**, open **Settings → Essentials** and turn off **Simple mode** (or use **Turn off Simple mode**).
+**Manual reports, not live checking:** under **Run report**, the pane reminds you that checks run when you click — not while you type. **Help → New to editing tools?** is a short list for authors new to add-ins (one chapter at a time, fix important issues first, dictionary for names). To see **Coach**, **Rewrite**, and **Thesaurus**, open **Settings → Essentials** and turn off **Simple mode** (or use **Turn off Simple mode**).
 
 **Tab flow (PE-67):** In Simple mode the tab strip reads **Start → Run → Fix → Help** (scope, run check, fix cards, help). Use the **Related workflow steps** line under the toolbar to jump back to scope or run again; full tab names return when Simple mode is off. Details: [RELEASE-NOTES-PE-67-TAB-FLOW.md](./RELEASE-NOTES-PE-67-TAB-FLOW.md).
 
@@ -37,7 +37,7 @@ Use this one-pager in release notes, beta email, or forum posts for **ProzaEdit 
 
 ## Positioning vs forum pain points
 
-- **Not Grammarly-style realtime** — explicit Run audit when you are ready.
+- **Not live realtime checking** — explicit Run report when you are ready.
 - **Not 20-report ribbon** — filter lanes (Critical / Style / Style guide) one category at a time.
 - **Long docs** — chapter or page scope; post-audit footnote nudges smaller scope after large runs.
 

@@ -11,13 +11,15 @@ test("LongOp.readShowWarningsFromConfig defaults true", () => {
 
 test("LongOp.shouldShowLongOperationWarning respects pref and session dismiss", () => {
   const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
-  const actionId = LongOp.ACTION_IDS.AUDIT_FULL;
+  const actionId = LongOp.ACTION_IDS.CITATION_SCAN;
   const key = LongOp.sessionDismissKey(actionId);
   const store = {};
   assert.equal(
     LongOp.shouldShowLongOperationWarning({
       showLongOperationWarnings: true,
       actionId,
+      charCount: 100000,
+      scopeMode: "full",
       sessionGet: (k) => store[k],
     }),
     true
@@ -27,6 +29,8 @@ test("LongOp.shouldShowLongOperationWarning respects pref and session dismiss", 
     LongOp.shouldShowLongOperationWarning({
       showLongOperationWarnings: true,
       actionId,
+      charCount: 100000,
+      scopeMode: "full",
       sessionGet: (k) => store[k],
     }),
     false
@@ -35,17 +39,39 @@ test("LongOp.shouldShowLongOperationWarning respects pref and session dismiss", 
     LongOp.shouldShowLongOperationWarning({
       showLongOperationWarnings: false,
       actionId,
+      charCount: 100000,
+      scopeMode: "full",
       sessionGet: (k) => store[k],
     }),
     false
   );
 });
 
-test("LongOp.actionIdForAudit scope heuristics", () => {
+test("LongOp.shouldShowLongOperationWarning skips short scope for scans", () => {
   const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
-  assert.equal(LongOp.actionIdForAudit("full", false), LongOp.ACTION_IDS.AUDIT_FULL);
-  assert.equal(LongOp.actionIdForAudit("selection", false), null);
-  assert.equal(LongOp.actionIdForAudit("pages", false), LongOp.ACTION_IDS.AUDIT_LARGE);
+  assert.equal(
+    LongOp.shouldShowLongOperationWarning({
+      showLongOperationWarnings: true,
+      actionId: LongOp.ACTION_IDS.TIMELINE_SCAN,
+      charCount: 5000,
+      scopeMode: "selection",
+    }),
+    false
+  );
+});
+
+test("LongOp.actionIdForAudit never returns a pre-ack id (Run report uses progress UI)", () => {
+  const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
+  assert.equal(LongOp.actionIdForAudit("full", false, 500000), null);
+  assert.equal(LongOp.actionIdForAudit("pages", false, 100000), null);
+  assert.equal(LongOp.actionIdForAudit("selection", false, 500), null);
+});
+
+test("LongOp.scopeLooksLong uses WARN_MIN_CHARS", () => {
+  const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
+  assert.equal(LongOp.scopeLooksLong(79999, "selection"), false);
+  assert.equal(LongOp.scopeLooksLong(80000, "selection"), true);
+  assert.equal(LongOp.scopeLooksLong(0, "full"), true);
 });
 
 test("LongOperationController cancel signal", () => {

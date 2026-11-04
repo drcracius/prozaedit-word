@@ -25,7 +25,7 @@ This document describes what the add-in **actually does today** in the repositor
 
 **Daily hosted workflow:** Internet required while the pane is open (Office.js, GitHub Pages, optional Datamuse/Gemini). No author bat files or local Node server for normal use.
 
-**Recommended editing stack (as surfaced in the UI):** ProzaEdit local audit → Word **F7 / Editor** for spelling and grammar → **Copy for Copilot** for generative prose in Word → external tools (Word Macro Tools, PerfectIt) if you own them.
+**Recommended editing stack (as surfaced in the UI):** ProzaEdit local report → Word **F7 / Editor** for spelling and grammar → **Copy for Copilot** for generative prose in Word → optional **Word Macro Tools** (Paul Beverley) for batch find/replace if you use them.
 
 ---
 

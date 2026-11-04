@@ -27,6 +27,15 @@ function bootConfirmDom() {
   return { document, window, ConfirmDialog };
 }
 
+test("ConfirmDialog: body gets pe-confirm-open while the dialog is visible", async () => {
+  const { document, ConfirmDialog } = bootConfirmDom();
+  const pending = ConfirmDialog.show({ message: "Apply edit?" });
+  assert.equal(document.body.classList.contains("pe-confirm-open"), true);
+  document.getElementById("peConfirmSecondary").click();
+  assert.equal(await pending, false);
+  assert.equal(document.body.classList.contains("pe-confirm-open"), false);
+});
+
 test("ConfirmDialog: primary button resolves true", async () => {
   const { document, ConfirmDialog } = bootConfirmDom();
   document.getElementById("focusBefore").focus();

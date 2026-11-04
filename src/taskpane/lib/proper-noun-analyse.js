@@ -2,7 +2,7 @@
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.ProperNoun = {
-  /** Short/common words — similar to PerfectIt “Never Find” for false positives (states vs States, as vs As). */
+  /** Short/common words excluded from name-variant checks (states vs States, as vs As). */
   STOPWORDS: new Set(
     "as at an in on or to he she it we they but then when what who how why if so no yes up out all any can could would should may might must will did does do has have had was were been being are is am be by for of the the and nor not yet still also just even only very much more most such than that this these those with from into onto upon over under after before about between through during without within".split(
       " "

@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.28";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.30";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -19,6 +19,8 @@ const MAX_AUDIT_CACHE_CHARS = 120000;
 const MAX_PARAS = 15000;
 const MAX_LOCAL_AUDIT_CHARS = 150000;
 const MAX_LOCAL_AUDIT_FULL = 450000;
+const PE_RUN_REPORT_LABEL = "Run report";
+const PE_REPORT_FINISHED = "Report finished";
 
 const MODULE_IDS = ["chkRep", "chkProp", "chkSpell", "chkAI", "mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"];
 const FICTION_MODULE_IDS = ["mPlot", "mMotivation", "mDialogue", "mContinuity", "mPlausibility", "mPacing", "mSpoiler"];
@@ -99,7 +101,7 @@ const AUDIT_EMPTY_HTML = `<div class="audit-empty">
   <div class="audit-empty-icon" aria-hidden="true">📝</div>
   <p><strong>No audit yet</strong></p>
   <p>Turn on checks on <strong>Checks</strong>, then run audit here or from the toolbar.</p>
-  <button type="button" class="btn-secondary pe-btn" onclick="showTab('tab3'); runPrimaryAudit();">Run audit from Checks</button>
+  <button type="button" class="btn-secondary pe-btn" onclick="showTab('tab3'); runPrimaryAudit();">Run report from Checks</button>
   <button type="button" class="btn-secondary pe-btn" onclick="showTab('tab3')">Configure checks</button>
 </div>`;
 
@@ -279,12 +281,55 @@ function renderChapterChecklist(list, selectedIndices) {
   });
 }
 
+function syncUtilityRailChrome() {
+  const rail = getEl("peUtilityRail");
+  if (!rail) return;
+  const overlayOpen =
+    document.body.classList.contains("pe-settings-open") ||
+    document.body.classList.contains("pe-confirm-open") ||
+    document.body.classList.contains("pe-onboarding-tour-open") ||
+    !getEl("pe-confirm-modal")?.classList.contains("hidden") ||
+    !getEl("peOnboardingTour")?.classList.contains("hidden");
+  const wide = document.body.classList.contains("pe-wide-pane");
+  if (overlayOpen) {
+    rail.setAttribute("inert", "");
+    rail.setAttribute("aria-hidden", "true");
+  } else {
+    rail.removeAttribute("inert");
+    if (wide) rail.removeAttribute("aria-hidden");
+    else rail.setAttribute("aria-hidden", "true");
+  }
+}
+
 function setupNarrowPaneClass() {
   const sync = () => {
-    document.body.classList.toggle("pe-narrow-pane", window.innerWidth < 360);
+    const w = Number(window.innerWidth) || 0;
+    document.body.classList.toggle("pe-narrow-pane", w > 0 && w < 360);
+    /* Rail needs ~52px; only show when the host is wide enough to keep CTAs unclipped. */
+    document.body.classList.toggle("pe-wide-pane", w >= 420);
+    const rail = getEl("peUtilityRail");
+    if (rail) {
+      if (w >= 420) rail.removeAttribute("aria-hidden");
+      else rail.setAttribute("aria-hidden", "true");
+    }
+    syncUtilityRailChrome();
   };
   sync();
-  window.addEventListener("resize", sync);
+  if (setupNarrowPaneClass._bound) return;
+  setupNarrowPaneClass._bound = true;
+  let resizeQueued = false;
+  const onResize = () => {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    const run = () => {
+      resizeQueued = false;
+      sync();
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
+    else run();
+  };
+  window.addEventListener("resize", onResize);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", onResize);
 }
 
 function syncScopePanels() {
@@ -314,7 +359,7 @@ function updateWorkflowNextStepHint() {
   });
   if (show) {
     el.textContent =
-      "Next step: set scope on Target (or keep your highlight), open Checks if needed, then Run audit from the toolbar.";
+      "Next step: set scope on Target (or keep your highlight), open Checks if needed, then Run report from the toolbar.";
   }
   el.classList.toggle("hidden", !show);
 }
@@ -391,6 +436,7 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
         ? `~${fmt} chars (over ${lim} limit)`
         : `~${fmt} chars (limit ${lim})`
       : "";
+  lastScopePreviewChars = charCount > 0 ? charCount : 0;
   updateWorkflowStatusLine();
 }
 
@@ -434,12 +480,19 @@ function getActiveStyleGuideLabel() {
 
 function updateWorkflowStatusLine() {
   const line = getEl("peWorkflowStatusLine");
-  if (!line) return;
   const mode = getScopeMode();
   const scopePart = getScopeModeLabel(mode);
   const charPart = lastScopePreviewSummary || "use Refresh count on Target for character estimate";
   const guidePart = getActiveStyleGuideLabel();
-  line.textContent = `Guide: ${guidePart} · Scope: ${scopePart} — ${charPart}`;
+  if (line) {
+    line.textContent = `Guide: ${guidePart} · Scope: ${scopePart} — ${charPart}`;
+    line.classList.add("pe-workflow-status-static");
+    line.setAttribute("aria-hidden", "true");
+  }
+  const guideBadge = getEl("peBadgeGuide");
+  const scopeBadge = getEl("peBadgeScope");
+  if (guideBadge) guideBadge.textContent = guidePart || "—";
+  if (scopeBadge) scopeBadge.textContent = lastScopePreviewSummary ? `${scopePart} · ${lastScopePreviewSummary}` : scopePart;
   updateChecksScopeChip();
   updateWorkflowNextStepHint();
 }
@@ -546,6 +599,8 @@ function buildManuscriptIndexNow() {
     const onProgress = (partial) => {
       if (token !== msIndexBuildToken || activeLongOp) return;
       if (statusEl) {
+        statusEl.classList.remove("pe-workflow-status-static");
+        statusEl.removeAttribute("aria-hidden");
         statusEl.textContent = ProzaEdit.ScopeReader.formatReadStatus({
           phase: indexScoped ? "Building chapter outline" : "Building book outline",
           ...partial,
@@ -922,6 +977,7 @@ function isChecked(id, defaultVal) {
 let settingsModalReturnFocus = null;
 let rewriteFromAuditSession = false;
 let lastScopePreviewSummary = "";
+let lastScopePreviewChars = 0;
 
 const AUDIT_FILTER_LABELS = {
   all: "All",
@@ -1133,13 +1189,34 @@ function hideOnboardingBanner(bannerId) {
   if (el) el.classList.add("hidden");
 }
 
-function dismissLongOpWarningBanner() {
+function hideLongOpWarningBanner() {
   hideOnboardingBanner("peLongOpWarningBanner");
+}
+
+function rejectPendingLongOperationWarning() {
   const settle = pendingLongOpResolve;
   pendingLongOpResolve = null;
   pendingLongOpActionId = null;
   pendingLongOpRunner = null;
+  hideLongOpWarningBanner();
   if (settle) settle(false);
+}
+
+function confirmPendingLongOperationWarning() {
+  const run = pendingLongOpRunner;
+  const settle = pendingLongOpResolve;
+  pendingLongOpResolve = null;
+  pendingLongOpActionId = null;
+  pendingLongOpRunner = null;
+  hideLongOpWarningBanner();
+  if (!run || !settle) return false;
+  settle(Promise.resolve().then(() => run()));
+  return true;
+}
+
+/** @deprecated use rejectPendingLongOperationWarning */
+function dismissLongOpWarningBanner() {
+  rejectPendingLongOperationWarning();
 }
 
 function sessionDismissLongOpAction(actionId) {
@@ -1159,6 +1236,8 @@ function shouldWarnLongOperation(actionId) {
   return ProzaEdit.LongOp?.shouldShowLongOperationWarning?.({
     showLongOperationWarnings: readShowLongOperationWarningsPref(),
     actionId,
+    charCount: lastScopePreviewChars,
+    scopeMode: getScopeMode(),
     sessionGet: (k) => {
       try {
         return sessionStorage.getItem(k);
@@ -1174,14 +1253,10 @@ function runAfterLongOperationWarning(actionId, runner) {
     return Promise.resolve().then(runner);
   }
   return new Promise((resolve) => {
-    dismissLongOpWarningBanner();
+    rejectPendingLongOperationWarning();
     pendingLongOpActionId = actionId;
     pendingLongOpResolve = resolve;
-    pendingLongOpRunner = () => {
-      pendingLongOpResolve = null;
-      dismissLongOpWarningBanner();
-      resolve(Promise.resolve().then(runner));
-    };
+    pendingLongOpRunner = runner;
     const banner = getEl("peLongOpWarningBanner");
     const body = getEl("peLongOpWarningBody");
     if (body) body.textContent = ProzaEdit.LongOp?.warningCopyForAction?.(actionId) || "";
@@ -1192,20 +1267,18 @@ function runAfterLongOperationWarning(actionId, runner) {
 
 function setupLongOpWarningBanner() {
   getEl("btnLongOpContinue")?.addEventListener("click", () => {
-    const run = pendingLongOpRunner;
-    if (run) run();
-    else dismissLongOpWarningBanner();
+    if (!confirmPendingLongOperationWarning()) hideLongOpWarningBanner();
   });
   getEl("btnLongOpNotNow")?.addEventListener("click", () => {
     if (pendingLongOpActionId) sessionDismissLongOpAction(pendingLongOpActionId);
-    dismissLongOpWarningBanner();
+    rejectPendingLongOperationWarning();
     showPeStatus("Not started. Nothing was read or sent.", "ok");
   });
   getEl("btnLongOpDontShowAgain")?.addEventListener("click", () => {
     const cb = getEl("showLongOperationWarnings");
     if (cb) cb.checked = false;
     persistSettings(false);
-    dismissLongOpWarningBanner();
+    rejectPendingLongOperationWarning();
   });
 }
 
@@ -1231,7 +1304,7 @@ function isOperationBusy(ignoreBatch, ignoreStarting) {
 
 function warnOperationBusy() {
   if (pendingLongOpRunner) {
-    showPeStatus("Choose Continue or Not now on the long-operation notice first.", "warn");
+    confirmPendingLongOperationWarning();
     return;
   }
   showPeStatus("Another ProzaEdit operation is still running. Cancel it or wait for it to finish.", "warn");
@@ -1482,6 +1555,7 @@ function openSettingsModal(focusGroup) {
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
   document.body.classList.add("pe-settings-open");
+  syncUtilityRailChrome();
   const norm = focusGroup ? ProzaEdit.UiPrefs?.normalizeSettingsSection?.(focusGroup) : null;
   const customGroup = getEl("pe-settings-group-custom-style");
   if (customGroup && !norm) {
@@ -1510,6 +1584,7 @@ function closeSettingsModal() {
   modal.classList.add("hidden");
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("pe-settings-open");
+  syncUtilityRailChrome();
   try {
     if (location.hash.startsWith("#pe-settings-")) history.replaceState(null, "", location.pathname + location.search);
   } catch (_) {}
@@ -1690,6 +1765,8 @@ function updateWorkflowStepper(tabId) {
     const on = el.dataset.workflowStep === step;
     el.classList.toggle("workflow-step-active", on);
     el.classList.toggle("active", on);
+    if (on) el.setAttribute("aria-current", "step");
+    else el.removeAttribute("aria-current");
   });
 }
 
@@ -1751,7 +1828,13 @@ function bindWorkflowStepper() {
   document.querySelectorAll(".workflow-step[data-workflow-step]").forEach((el) => {
     if (el.dataset.bound) return;
     el.dataset.bound = "1";
-    el.addEventListener("click", () => showTab(go[el.dataset.workflowStep] || "tab1"));
+    const activate = () => showTab(go[el.dataset.workflowStep] || "tab1");
+    el.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault();
+        activate();
+      }
+    });
   });
 }
 
@@ -2696,7 +2779,7 @@ function updateChecksPostRunNav() {
   }
   el.classList.remove("hidden");
   el.innerHTML =
-    'Audit finished — <button type="button" class="btn-linkish" onclick="showTab(\'tab4\')">View issues on Fix</button>';
+    `${PE_REPORT_FINISHED} — <button type="button" class="btn-linkish" onclick="showTab('tab4')">View issues on Fix</button>`;
 }
 
 function updateSettingsPlainLanguageLabels() {
@@ -2776,7 +2859,7 @@ function decorateRunAuditHubButton(btn) {
   btn.dataset.peRunAuditDecorated = "1";
   const ic = window.ProzaEdit?.PeIcons?.svg ? ProzaEdit.PeIcons.svg("flash") : "";
   btn.classList.add("btn-with-icon");
-  btn.innerHTML = `${ic}<span data-pe-run-audit-label>Run audit</span>`;
+  btn.innerHTML = `${ic}<span data-pe-run-audit-label>${PE_RUN_REPORT_LABEL}</span>`;
 }
 
 function setRunAuditHubButtonLabel(btn, text) {
@@ -3242,6 +3325,7 @@ function closeOnboardingTourShell() {
   shell.classList.add("hidden");
   shell.setAttribute("aria-hidden", "true");
   document.body.classList.remove("pe-onboarding-tour-open");
+  syncUtilityRailChrome();
   clearOnboardingTourAnchorHighlight();
   if (document.body.dataset.peTourKeydown) {
     document.removeEventListener("keydown", onboardingTourKeydownHandler);
@@ -3302,6 +3386,7 @@ function openOnboardingTour(stepIndex) {
   shell.classList.remove("hidden");
   shell.setAttribute("aria-hidden", "false");
   document.body.classList.add("pe-onboarding-tour-open");
+  syncUtilityRailChrome();
   syncFirstAuditChecklistVisibility();
   if (!document.body.dataset.peTourKeydown) {
     document.body.dataset.peTourKeydown = "1";
@@ -4550,10 +4635,19 @@ function setAuditSuggestions(list) {
   if (activeTab) updateWorkflowStepper(activeTab);
 }
 
+function collectOpenAuditCardIds() {
+  const box = getEl("cardContainer");
+  if (!box) return [];
+  return [...box.querySelectorAll("details.card[open]")].map((el) => String(el.id || "").replace(/^card_/, "")).filter(Boolean);
+}
+
 function applyAuditCardFilter(options) {
   options = options || {};
   if (!options.preserveDisplayLimit) resetAuditCardDisplayLimit();
-  renderAuditCards(filteredAuditSuggestions());
+  if (!options.openIds && options.preserveDisplayLimit) {
+    options = Object.assign({}, options, { openIds: collectOpenAuditCardIds() });
+  }
+  renderAuditCards(filteredAuditSuggestions(), options);
 }
 
 function showAuditEmptyIfNeeded() {
@@ -4567,7 +4661,7 @@ function showAuditEmptyIfNeeded() {
     return;
   }
   if (currentAuditSuggestions.length) return;
-  if (sumText && !/Run audit|Running|Deep audit/i.test(sumText)) return;
+  if (sumText && !/Run (audit|report)|Running|Deep audit/i.test(sumText)) return;
   const hint = getManuscriptTypeAwareHint();
   box.innerHTML = hint
     ? AUDIT_EMPTY_HTML.replace(
@@ -4667,6 +4761,10 @@ function downloadAuditReportFile(ext) {
 }
 
 async function exportAuditReportNewWordDoc() {
+  if (isOperationBusy()) {
+    showPeStatus("Wait for the current action to finish.", "warn");
+    return;
+  }
   await ProzaEdit.ReportDocxExport.exportComprehensiveWordReport(buildAuditReportPlainText(), auditReportUiHooks());
 }
 
@@ -5107,7 +5205,7 @@ function runExtendedLocalAudit() {
     label: "Deeper local audit",
     status: "Running deeper local audit (0 tokens)…",
     btnId: "btnRunAudit",
-    btnDone: "Run audit",
+    btnDone: PE_RUN_REPORT_LABEL,
   });
 }
 
@@ -5141,17 +5239,19 @@ function runAuditInternal(opts) {
     warnOperationBusy();
     return Promise.resolve(false);
   }
-  auditStarting = true;
-  const start = () =>
-    prepareScopeForAudit(opts).then((ready) => {
-      if (!ready) return false;
-      const run = runAuditInternalCore(opts);
-      auditStarting = false;
-      return run;
+  const start = () => {
+    auditStarting = true;
+    return prepareScopeForAudit(opts).then((ready) => {
+      if (!ready) {
+        auditStarting = false;
+        return false;
+      }
+      return runAuditInternalCore(opts);
     });
+  };
   const actionId = opts.skipLongOpWarning
     ? null
-    : ProzaEdit.LongOp?.actionIdForAudit?.(getScopeMode(), !!opts.extendedLocal);
+    : ProzaEdit.LongOp?.actionIdForAudit?.(getScopeMode(), !!opts.extendedLocal, lastScopePreviewChars);
   return runAfterLongOperationWarning(actionId, start)
     .catch((e) => {
       reportActionError(e, "start this audit");
@@ -5176,7 +5276,7 @@ function runAuditInternalCore(opts) {
   const timing = createPhaseTiming();
   const scopeModeAtStart = getScopeMode();
   const auditBtn = getEl(opts.btnId || "btnRunAudit");
-  const auditBtnDefault = opts.btnDone || "Run audit";
+  const auditBtnDefault = opts.btnDone || PE_RUN_REPORT_LABEL;
   const extBtn = getEl("btnAuditPrimary");
   const sumEl = getEl("summaryReport");
   let longOp = null;
@@ -5185,12 +5285,13 @@ function runAuditInternalCore(opts) {
 
   const finish = () => {
     auditBusy = false;
+    auditStarting = false;
     auditCtxSnapshot = null;
     setModuleButtonsDisabled(false);
     endLongOperation(longOp);
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, auditBtnDefault);
     const primary = getEl("btnAuditPrimary");
-    if (primary) setRunAuditHubButtonLabel(primary, "Run audit");
+    if (primary) setRunAuditHubButtonLabel(primary, PE_RUN_REPORT_LABEL);
   };
 
   const handleFailure = (e) => {
@@ -5200,7 +5301,7 @@ function runAuditInternalCore(opts) {
       resetAuditCardDisplayLimit();
       lastAuditExcerpt = "";
       currentAuditSuggestions = [];
-      if (sumEl) sumEl.textContent = "Cancelled. Run audit again when ready.";
+      if (sumEl) sumEl.textContent = `Cancelled. ${PE_RUN_REPORT_LABEL} again when ready.`;
       showAuditEmptyIfNeeded();
       return false;
     }
@@ -5224,8 +5325,9 @@ function runAuditInternalCore(opts) {
 
   try {
     setModuleButtonsDisabled(true);
+    const longHint = ProzaEdit.LongOp?.longRunHint?.(lastScopePreviewChars, getScopeMode()) || "";
     longOp = beginLongOperation({
-      initialStatus: "Reading document…",
+      initialStatus: `${longHint}Reading document…`,
       setStatus: (msg) => showPeStatus(msg),
     });
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Reading…");
@@ -5314,7 +5416,12 @@ function runAuditInternalCore(opts) {
             : "Audit could not finish. Review the recovery steps above.",
           "warn"
         );
-      } else showPeStatus(timingSummary ? `Audit finished (0 tokens). ${timingSummary}` : "Audit finished (0 tokens).", "ok");
+      } else {
+        showPeStatus(
+          timingSummary ? `${PE_REPORT_FINISHED} (0 tokens). ${timingSummary}` : `${PE_REPORT_FINISHED} (0 tokens).`,
+          "ok"
+        );
+      }
     })
     .then((v) => v !== false);
 }
@@ -5333,9 +5440,11 @@ function appendLowConfidenceNote(box) {
   }
 }
 
-function renderAuditCards(list) {
+function renderAuditCards(list, options) {
   const box = document.getElementById("cardContainer");
   if (!box) return;
+  options = options || {};
+  const keepOpen = new Set((options.openIds || []).map(String));
   box.innerHTML = "";
   list = Array.isArray(list) ? list : [];
   const ic = (name) => (window.ProzaEdit?.PeIcons?.svg ? ProzaEdit.PeIcons.svg(name) : "");
@@ -5355,6 +5464,19 @@ function renderAuditCards(list) {
   }
   appendLowConfidenceNote(box);
   const capped = ProzaEdit.AuditReview?.capCards?.(list, auditCardDisplayLimit) || { shown: list, hiddenCount: 0 };
+  const preview = (text, max) => {
+    const s = String(text || "");
+    const n = max || 360;
+    return s.length > n ? `${s.slice(0, n)}…` : s;
+  };
+  const icUndo = ic("undo");
+  const icCheck = ic("check");
+  const icLocate = ic("locate");
+  const icEdit = ic("edit");
+  const icBell = ic("bell-off");
+  const icEye = ic("eye-off");
+  const icChevron = ic("chevron-down");
+  const frag = document.createDocumentFragment();
   const renderOne = (item, i) => {
     if (!item || typeof item !== "object") return;
     const id = String(item.id || `c${i}`).replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -5366,64 +5488,72 @@ function renderAuditCards(list) {
     const canApply = item.replacementText && !String(item.replacementText).startsWith("(");
     const canRewrite = item.targetText && !String(item.targetText).startsWith("(");
     const showHouse = isStyleGuideFinding(item) && item.targetText && !String(item.targetText).startsWith("(");
-    const div = document.createElement("div");
+    const div = document.createElement("details");
     div.className = `card ${String(item.type || "preference").replace(/[^a-z-]/gi, "")}`;
     div.id = `card_${id}`;
     div.tabIndex = -1;
+    const restoreOpen = Array.isArray(options.openIds);
+    if ((!restoreOpen && i === 0) || keepOpen.has(id)) div.open = true;
     div.setAttribute("role", "group");
-    div.setAttribute("aria-label", `${ProzaEdit.AuditReview?.progressLabel?.(i, list.length) || `Finding ${i + 1} of ${list.length}`}: ${item.module}`);
     div.innerHTML = `
-      <span class="card-review-progress">${escapeHtml(ProzaEdit.AuditReview?.progressLabel?.(i, list.length) || `Finding ${i + 1} of ${list.length}`)}</span>
-      <span class="badge ${item.type === "confirmed" ? "badge-confirmed" : "badge-pref"}">${escapeHtml(item.type)}</span>
-      <strong>${escapeHtml(item.module)}</strong>
-      <p class="card-explanation">${escapeHtml(item.explanation)}</p>
+      <summary class="card-summary">
+        <span class="card-summary-main">
+          <span class="card-caret" aria-hidden="true">${icChevron}</span>
+          <span class="badge ${item.type === "confirmed" ? "badge-confirmed" : "badge-pref"}">${escapeHtml(item.type)}</span>
+          <strong class="card-title">${escapeHtml(item.module)}</strong>
+        </span>
+        <span class="card-review-progress">${escapeHtml(ProzaEdit.AuditReview?.progressLabel?.(i, list.length) || `Finding ${i + 1} of ${list.length}`)}</span>
+      </summary>
+      <div class="card-body">
+      <p class="card-explanation">${escapeHtml(preview(item.explanation, 360))}</p>
       ${item.source === "ai" ? '<p class="help-muted card-ai-note">AI suggestion — it quotes your text, but check it before applying.</p>' : ""}
-      <p class="card-target">"${escapeHtml(item.targetText)}"</p>
-      <p class="card-replacement">"${escapeHtml(item.replacementText)}"</p>
+      <p class="card-target">"${escapeHtml(preview(item.targetText, 240))}"</p>
+      <p class="card-replacement">"${escapeHtml(preview(item.replacementText, 240))}"</p>
       <div class="card-actions">
         <div class="card-actions-trust" role="group" aria-label="Apply and undo">
-          <button type="button" class="btn-secondary btn-trust btn-card-undo btn-with-icon" data-a="undo" aria-label="Undo last ProzaEdit replace">${ic("undo")} Undo</button>
-          ${canApply ? `<button type="button" class="btn-apply btn-trust btn-with-icon" data-a="apply" data-pe-tip="btn-card-apply" aria-label="Apply fix">${ic("check")} Apply</button>` : ""}
+          <button type="button" class="btn-secondary btn-trust btn-card-undo btn-with-icon" data-a="undo" aria-label="Undo last ProzaEdit replace">${icUndo} Undo</button>
+          ${canApply ? `<button type="button" class="btn-apply btn-trust btn-with-icon" data-a="apply" data-pe-tip="btn-card-apply" aria-label="Apply fix">${icCheck} Apply</button>` : ""}
         </div>
         <div class="card-actions-primary">
-          <button type="button" class="btn-go btn-with-icon" data-a="goto" data-pe-tip="btn-card-goto" aria-label="Go to finding in Word">${ic("locate")} Go to</button>
-          ${canRewrite ? `<button type="button" class="btn-go btn-with-icon" data-a="rewrite" data-pe-tip="btn-card-rewrite" aria-label="Rewrite finding">${ic("edit")} Rewrite</button>` : ""}
+          <button type="button" class="btn-go btn-with-icon" data-a="goto" data-pe-tip="btn-card-goto" aria-label="Go to finding in Word">${icLocate} Go to</button>
+          ${canRewrite ? `<button type="button" class="btn-go btn-with-icon" data-a="rewrite" data-pe-tip="btn-card-rewrite" aria-label="Rewrite finding">${icEdit} Rewrite</button>` : ""}
           ${item.ruleId === "spell:double_space" ? '<button type="button" class="btn-go" data-a="fixspaces">Replace all double spaces</button>' : ""}
           <button type="button" class="btn-go" data-a="localtip">Local tip</button>
         </div>
         <div class="card-actions-secondary">
           <button type="button" class="btn-go" data-a="dict">Dict</button>
           ${showHouse ? '<button type="button" class="btn-go" data-a="house">House rule</button>' : ""}
-          <button type="button" class="btn-go btn-with-icon" data-a="mute" data-pe-tip="btn-card-mute" aria-label="Mute rule">${ic("bell-off")} Mute</button>
+          <button type="button" class="btn-go btn-with-icon" data-a="mute" data-pe-tip="btn-card-mute" aria-label="Mute rule">${icBell} Mute</button>
           <button type="button" class="btn-go" data-a="chat" title="Optional AI help (uses your API key)">AI</button>
-          <button type="button" class="btn-dismiss btn-with-icon" data-a="dismiss" data-pe-tip="btn-card-dismiss" aria-label="Dismiss finding">${ic("eye-off")} Dismiss</button>
+          <button type="button" class="btn-dismiss btn-with-icon" data-a="dismiss" data-pe-tip="btn-card-dismiss" aria-label="Dismiss finding">${icEye} Dismiss</button>
         </div>
         ${
           ProzaEdit.WorkflowNav?.shouldShowCardDictionaryFooter?.(item)
             ? '<p class="card-footer-trust help-muted"><button type="button" class="btn-linkish" data-a="dict-footer">Manage dictionary</button> for names and terms that should not be flagged.</p>'
             : ""
         }
+      </div>
       </div>`;
     div.querySelectorAll("[data-a]").forEach((btn) => {
       btn.setAttribute("aria-label", ProzaEdit.AuditReview?.cardActionLabel?.(btn.dataset.a, item) || btn.textContent.trim());
     });
-    div.querySelector('[data-a="goto"]').onclick = () => goToIssue(item.targetText);
-    const undoBtn = div.querySelector('[data-a="undo"]');
-    if (undoBtn) undoBtn.onclick = () => prozaEditUndo();
-    const rewriteBtn = div.querySelector('[data-a="rewrite"]');
-    if (rewriteBtn) rewriteBtn.onclick = () => sendIssueToRewrite(item);
-    const fixSpacesBtn = div.querySelector('[data-a="fixspaces"]');
-    if (fixSpacesBtn) fixSpacesBtn.onclick = () => collapseDoubleSpacesInScope();
-    div.querySelector('[data-a="localtip"]').onclick = () => showLocalTipForIssue(item);
-    div.querySelector('[data-a="chat"]').onclick = () => sendIssueToChat(item);
-    if (canApply) div.querySelector('[data-a="apply"]').onclick = () => applyFix(id, item.targetText, item.replacementText);
-    div.querySelector('[data-a="dict"]').onclick = () => addDictionaryWordFromCard(item.targetText);
-    const dictFooter = div.querySelector('[data-a="dict-footer"]');
-    if (dictFooter) dictFooter.onclick = () => openSettingsModal("dictionary");
-    if (showHouse) div.querySelector('[data-a="house"]').onclick = () => addCustomStyleFromCard(item);
-    div.querySelector('[data-a="mute"]').onclick = () => muteRule(item);
-    div.querySelector('[data-a="dismiss"]').onclick = () => dismissCard(item);
-    box.appendChild(div);
+    const bindCardAction = (name, fn) => {
+      const btn = div.querySelector(`[data-a="${name}"]`);
+      if (btn) btn.onclick = fn;
+    };
+    bindCardAction("goto", () => goToIssue(item.targetText));
+    bindCardAction("undo", () => prozaEditUndo());
+    bindCardAction("rewrite", () => sendIssueToRewrite(item));
+    bindCardAction("fixspaces", () => collapseDoubleSpacesInScope());
+    bindCardAction("localtip", () => showLocalTipForIssue(item));
+    bindCardAction("chat", () => sendIssueToChat(item));
+    if (canApply) bindCardAction("apply", () => applyFix(id, item.targetText, item.replacementText));
+    bindCardAction("dict", () => addDictionaryWordFromCard(item.targetText));
+    bindCardAction("dict-footer", () => openSettingsModal("dictionary"));
+    if (showHouse) bindCardAction("house", () => addCustomStyleFromCard(item));
+    bindCardAction("mute", () => muteRule(item));
+    bindCardAction("dismiss", () => dismissCard(item));
+    frag.appendChild(div);
   };
   const batches =
     ProzaEdit.AuditReview?.planCardRenderBatches?.(capped.shown.length, ProzaEdit.AuditReview.CARD_RENDER_BATCH) ||
@@ -5433,6 +5563,7 @@ function renderAuditCards(list) {
     const batch = batches[b];
     for (let i = batch.start; i <= batch.end; i++) renderOne(capped.shown[i], i);
   }
+  box.appendChild(frag);
   if (capped.hiddenCount > 0) {
     const note = document.createElement("p");
     note.className = "pe-card-cap-note";
@@ -5531,19 +5662,24 @@ function removeAuditCard(id) {
   const action = shouldRestoreFocus ? active.closest?.("[data-a]")?.dataset?.a || "" : "";
   const oldTop = removedCard?.getBoundingClientRect?.().top;
   const nextId = ProzaEdit.AuditReview?.nextTargetId?.(visibleIds, id) || "";
+  const openIds = collectOpenAuditCardIds().filter((x) => x !== String(id));
+  if (nextId) openIds.push(nextId);
   currentAuditSuggestions = currentAuditSuggestions.filter((x) => x.id !== id);
   updateAuditFilterChips();
   updateAuditTabBadge();
-  applyAuditCardFilter({ preserveDisplayLimit: true });
+  applyAuditCardFilter({ preserveDisplayLimit: true, openIds });
   refreshAuditSummaryForMode({ summaryOnly: true });
   const nextCard = nextId ? getEl(`card_${nextId}`) : null;
+  if (nextCard) nextCard.open = true;
   if (nextCard && Number.isFinite(oldTop)) {
     const newTop = nextCard.getBoundingClientRect?.().top;
     if (Number.isFinite(newTop)) window.scrollBy(0, newTop - oldTop);
   }
   if (shouldRestoreFocus) {
+    const actionBtn = action ? nextCard?.querySelector(`[data-a="${action}"]`) : null;
     const focusTarget =
-      nextCard?.querySelector(action ? `[data-a="${action}"]` : "button") ||
+      actionBtn ||
+      nextCard?.querySelector("summary") ||
       nextCard ||
       document.querySelector('.chip[data-audit-filter].chip-active');
     focusTarget?.focus?.({ preventScroll: true });
@@ -5563,7 +5699,7 @@ function clearAuditReport() {
   const box = getEl("cardContainer");
   const sum = getEl("summaryReport");
   if (box) box.innerHTML = "";
-  if (sum) sum.innerHTML = "Audit cleared. Run audit again for a fresh pass.";
+  if (sum) sum.innerHTML = "Audit cleared. Run report again for a fresh pass.";
   getEl("trafficBar")?.classList.add("hidden");
   getEl("miniScores")?.classList.add("hidden");
   updateAuditScopeFootnote();
@@ -6943,4 +7079,12 @@ function setupEnterKeyHandler() {
       sendChatMessage();
     }
   });
+}
+
+/* Bind chrome that must work even if Office.onReady is late or missing. */
+if (document.body) {
+  try {
+    setupNarrowPaneClass();
+    bindWorkflowStepper();
+  } catch (_) {}
 }

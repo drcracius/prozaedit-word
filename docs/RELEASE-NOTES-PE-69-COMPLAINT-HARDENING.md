@@ -36,6 +36,6 @@ PE-69 hardens the card-by-card review flow against recurring writing-add-in comp
 
 ## Research and ownership
 
-See [WRITING-ADDIN-COMPLAINT-AUDIT-PE-69.md](./WRITING-ADDIN-COMPLAINT-AUDIT-PE-69.md) for cited ProWritingAid, Grammarly, PerfectIt, LanguageTool, Writefull, and Hemingway evidence; the complete gap matrix; and owner vs Microsoft vs vNext risks.
+See [WRITING-ADDIN-COMPLAINT-AUDIT-PE-69.md](./WRITING-ADDIN-COMPLAINT-AUDIT-PE-69.md) for the public gap matrix and owner vs Microsoft vs vNext risks (vendor-cited tables are maintainer-offline only).
 
 The current audit rating is unchanged pending manual Word Web/desktop, long-document, keyboard/screen-reader, and API-key-storage validation.
