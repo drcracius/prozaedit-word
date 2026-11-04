@@ -308,10 +308,7 @@ function setupNarrowPaneClass() {
     /* Rail needs ~52px; only show when the host is wide enough to keep CTAs unclipped. */
     document.body.classList.toggle("pe-wide-pane", w >= 420);
     const rail = getEl("peUtilityRail");
-    if (rail) {
-      if (w >= 420) rail.removeAttribute("aria-hidden");
-      else rail.setAttribute("aria-hidden", "true");
-    }
+    if (rail && w < 420) rail.setAttribute("aria-hidden", "true");
     syncUtilityRailChrome();
   };
   sync();

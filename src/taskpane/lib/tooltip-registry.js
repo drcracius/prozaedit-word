@@ -198,7 +198,9 @@
 
   function refreshTooltips(on) {
     if (typeof on === "boolean") enabled = !!on;
-    syncNativeTitles();
+    hoverEl = null;
+    hideTooltip();
+    if (!enabled) syncNativeTitles();
   }
 
   root.TooltipRegistry = {
