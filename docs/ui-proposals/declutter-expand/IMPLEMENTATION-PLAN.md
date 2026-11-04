@@ -1,304 +1,337 @@
 # Declutter + expandable reports — implementation plan
 
-**Status:** Plan only. Incremental changes on real `src/taskpane/*`. No production JS swap.
+**Status:** All default phases are specified. **No pane code until the owner says “start Pass 1”.** Incremental edits on real `src/taskpane/*` only. No mock swap.
 
-**Approved to start:** Pass 1, then Pass 2a. Pass 2b is optional (scan UX, not word count). Pass 3–4 after that. Pass 5 last and light.
+**Restore:** tag `pe-pre-declutter-2.0.0.30` (`b4ea7d3` on `main`) — live **2.0.0.30** pane. Work branch: `cursor/pe-declutter-first-screen`. **No build bump** until testers need About to prove a refresh (**2.0.0.31**). Do not merge to `main` until the owner accepts that pass.
 
-**Baseline:** hosted **2.0.0.30** (Desktop and web, same pane).
+**Copy rule:** Fold or drop **duplicates** from the open canvas. Do not delete unique facts. Prefer Tips / Help `<details>` over slashing Help to a stub.
 
-**Copy rule:** Remove or fold **duplicates** only. Do not delete a unique fact to hit a percentage. Prefer one closed **Tips** (or Help details) over rewriting Help down to a stub.
-
-**First screen (this revision):** Cut as much **visible chrome text** as possible. Use the existing 16px stroke SVGs in `pe-icons.js` (add a few matching paths if needed). No emoji, no icon fonts, no Google Fonts. Unique facts stay in Tips / Help / `aria-label` / tooltips — they leave the open canvas, they are not deleted.
+**Icons:** 16px stroke SVGs in `pe-icons.js` only. No emoji, icon fonts, or Google Fonts.
 
 ---
 
-## Five audits (2026-11-04, this round)
+## Frozen decisions (no “or” left)
 
-Earlier audits already fixed: do not hide the status line when it is building an outline; do not put live regions in closed Tips; keep `#summaryReport` on the inner node; Pass 2b breaks `cardContainer.children` tests; folding ≠ deleting stored words.
+| Topic | Decision |
+| --- | --- |
+| First-screen success | Simple first-run, Tips closed, no banner. Count **visible chrome words**, not stored HTML. Aim **~20 chrome words** plus live select/badge values. |
+| Pills | Number + icon. Visible word in `.visually-hidden`. `aria-label` matches (Target, Checks, Run report, Fix cards). One strategy — not “hide or aria-only.” |
+| Toolbar | Hide `.btn-tool-icon-label` at **all** widths. Keep **Run** on the accent button. Existing `aria-label` + `data-pe-tip` stay. |
+| Tabs in Pass 1 | **Keep one-word tab labels.** Hide `.pe-tab-hint` with CSS (Simple currently *adds* hint words). Do not icon the tablist in Pass 1. |
+| Badges | Drop Dictionary badge. Guide/Scope: `book` / `file` icon + live `#peBadgeGuide` / `#peBadgeScope` values. Captions “Guide”/“Scope” become `.visually-hidden`. |
+| Tips | One closed `<details id="peChromeHelp">` after badges, before the sticky toolbar. Summary = `help` icon + **Tips**. |
+| Trust / Quick start / Start here / scope hints | Move **static** nodes into Tips. Keep ids/classes. Flatten the old Quick start `<details>` — **do not nest** `<details>` inside Tips. |
+| Live regions | Never inside Tips: `#peWorkflowNextStep`, `#peWorkflowStatusLine`, `#peFullManuscriptScopeTip`, `#peGenreBlurb`, `#scopeCharPreview`. |
+| Next-step line | Keep `#peWorkflowNextStep`. **Do not unhide** in Pass 1 (`updateWorkflowNextStepHint` must leave it `hidden`). Copy is in Tips. Today it would otherwise appear on every session before the first audit. |
+| Recommended | Keep `#peTargetRecommendedHint`. `applySimpleMode` **always** leaves it hidden. |
+| Full-manuscript tip | Keep the id. Show only after Refresh when mode is `full` **and** `lastScopePreviewChars >= LongOp.WARN_MIN_CHARS` (80 000). Do **not** use 0.85 × 450 000 (that almost never fires). Hidden on first paint. Sentence also in Tips. |
+| Type on first screen | **Pass 1** lifts `#manuscriptType` + `#peGenreBlurb` **above** the profile `<details>` (today they sit inside it). Pass 2a only folds the extras. |
+| Status line | Unchanged clip-when-static / show-when-building. |
+| Scope `<select>` | **Values unchanged.** HTML labels: Selection, Pages, Chapters, Full. Longer explanations live in **Tips only** — **do not** add `title` on `#scope` (it would fight `data-pe-tip`). |
+| Simple option labels | `updatePlainLanguageScopeSelect` overwrites options in Simple (default first-run). Pass 1 must set `PlainLanguage.scopeSelectOptionLabel` to the **same short words** and update `tests/plain-language-helpers.test.mjs`. Otherwise Simple puts long labels back. `cloneSelectOptions` copying to `#pinScope` is intended. Badge JS may still say “Full manuscript” / “Whole document”. |
+| Labels | `Scope` (`for="scope"`), `Type` (`for="manuscriptType"`). |
+| Type control | Always visible (Simple and Advanced). Not inside a closed profile. |
+| Genre | Keep live `#peGenreBlurb`. Move the static fiction/academic paragraph into Tips (Pass 1). |
+| Refresh | Icon-only (`refresh`). `aria-label="Refresh count"`. Add `data-pe-tip` + one tooltip-registry key. `#scopeCharPreview` default `—`. |
+| Toolbar Run word | Visible label **Run** (not “Run report”). `aria-label` stays “Run report”. |
+| Genre blurb | Live one-liner allowed **outside** the ~20 chrome budget. |
+| Save now | Keep the button (function). Hide the auto-save helper sentence (duplicate of behaviour). |
+| New icon paths | `refresh`, `book`, `help`, `file` — same stroke as existing paths. |
+| Pass 2b | **Out of the default sequence.** Spike only if the owner asks. |
+| Pass 3 | Spacing/tokens only. Quieter Simple tab type **only if** the owner still finds dual nav loud after Pass 1. |
+| Banners | Pass 1 does **not** change What’s new / Simple / session / long-op banners. They sit above the quiet canvas until dismissed. |
+| Target order after Pass 1 | Scope primary (label, select, full tip, preview, Refresh) → `#scopePagesPanel` / `#scopeChapterPanel` (when mode on) → `#peMciTargetBlock` (`data-simple-hide`) → Type + `#peGenreBlurb` → profile `<details>` (jargon, audience, setting, critic only). Language + Style stay **below** profile (scroll; not first-screen chrome). **Reorder** panels in HTML if they still sit below MCI today. |
+| Simple profile `<details>` | **Pass 1:** when Simple is on, `applySimpleMode` removes `open` from `.pe-target-section` every time (summary line off first paint). Advanced: do not force open/closed. |
+| Full tip after Refresh | Call `updateFullManuscriptScopeTip()` at end of `updateScopeCharPreviewDisplay` (today only scope **mode** changes re-run it — Refresh would miss the 80k gate). |
+| Status line first paint | Add `pe-workflow-status-static` on `#peWorkflowStatusLine` in HTML so the long default sentence does not flash before `updateWorkflowStatusLine()` (badges carry Guide/Scope). |
+| Pills icons (locked) | Step 1 `pin`, 2 `check`, 3 `flash`, 4 `edit` (paths already in `pe-icons.js`). |
+| Workflow pills list | `aria-label="Workflow steps"` (was “Quick start”). |
+| Scope option labels | **Advanced** `dataset.peOriginalLabel` from HTML short labels below. **Simple** `scopeSelectOptionLabel` must match exactly. |
+| Fiction/academic static line | Move `<p class="help-inline">` after `#peGenreBlurb` into Tips; optional id `peGenreStaticHint` for tests. |
+| Auto-save line | Hide the paragraph after **Save now** (`class="hidden"`). Keep `#btnSaveTarget`. |
+| Simple mode line on Target | Hide `.pe-target-simple-mode-line` in Simple only (CSS); Essentials toggle remains in Settings. |
+| Checks cross-link | Tab 3 partner-tools sentence: “Quick start & editing stack above” → **Tips**. |
+| What’s new | Pass 1–3 **do not** edit `WHATS_NEW` / banner copy. Owner dismisses or refresh in Pass 4 if needed. |
+| Tour anchor | Onboarding tour still targets `#btnRunAudit` on Checks — unchanged in Pass 1 (toolbar Run is not the tour anchor). |
+| Inline icons | Pills, badges, Tips, Refresh SVGs are **inline in HTML** so they paint before JS. Still add the same paths to `pe-icons.js` for reuse. |
+| Version | Stay **2.0.0.30** per pass. |
+| PDF | Word still makes the PDF. No `window.print()`. |
 
-### 1. Duplicate vs unique
+### Phase readiness (coding still gated)
 
-The pane is verbose because the **same workflow is told many times**, not because each sentence is useless.
-
-**Safe to fold or drop from the open canvas:** Quick start stack, Start-here callout, scope-mode hint (repeats `<select>`), extra “scope first” line, static Dictionary badge, three Audit hint paragraphs that repeat chips/Settings, Checks partner-tools sentence that points at Quick start.
-
-**Not duplicates — keep (fold if long, do not erase):** dictionary / mute / dismiss persistence; Track Changes caveat; Confirm-before-Apply; cloud/AI “what happens to my text”; Datamuse and voice-dictation disclosures; experimental AI-phrasing disclaimer; style-guide attribution; ~2,800 characters-per-page near the page fields; genre blurb (`#peGenreBlurb`, live); long-op warning; About version ids.
-
-**50% is a screen target, not a quota.** First paint can drop ~half by hiding repeats. Do not halve Help, Settings labels, or error strings to match that number.
-
-### 2. Must-keep (legal, safety, a11y, offline)
-
-Keep in the **pane**, not only on GitHub: Privacy facts, dictionary vs mute vs dismiss, Track Changes, AI/key storage, diagnostics off-by-default.
-
-Keep as **accessible names** (visible label or `aria-label`): toolbar buttons, Settings/Checks `aria-labelledby` spans. Do **not** move meaning into `title` / tooltip only.
-
-Keep `aria-live` nodes as siblings, not inside closed Tips: `#peWorkflowNextStep`, `#peWorkflowStatusLine`, `#peFullManuscriptScopeTip`, `#peGenreBlurb`, `#scopeCharPreview`.
-
-Closed `<details>` is fine for extra reading. It is not a substitute for a fact the writer must see before they click (Apply, AI send, mic).
-
-### 3. Hide chrome, not functions
-
-Closing **Manuscript profile** in Simple would hide **What are you writing?** (`#manuscriptType` + `adaptModules()`). That is a function, not a hint.
-
-**Pass 2a:** keep `#manuscriptType` (and the short `#peGenreBlurb`) visible. Fold jargon, audience, setting, critic inside the profile `<details>`, closed in Simple.
-
-Do not remove scope `<option>` wording, Run report hubs, Audit pins, or Checks toggles in Pass 1. Do not replace toggle rows with a new list widget.
-
-**Recommended** (`#peTargetRecommendedHint`): keep the id. Do not leave a paragraph on first paint. Chapter-first advice stays in Help (and optionally one short line). Do not delete the idea.
-
-### 4. Blast radius
-
-| Work | Does it cut visible words? | Ship? |
+| Phase | Specified enough to code? | Wait for |
 | --- | --- | --- |
-| Pass 1 fold duplicates into Tips | Yes — first paint | **Yes** |
-| Pass 2a Summary `<details>` + share row | Some Audit chrome | **Yes** |
-| Pass 2b lane groups | No (structure only) | **Spike only if owner wants scan UX** |
-| Pass 3 quieter secondary nav | Little | After 1–2a |
-| Pass 4 Help: delete **repeated** paragraphs; fold the rest | Stored count falls only for true dupes | After chrome is quiet |
-| Pass 5 JS strings | Only leftover dupes | Optional, light |
-
-Do not add Export/Copilot controls. Do not build a banner queue in Pass 1. Do not add a declutter What’s new banner.
-
-### 5. Plan and metrics
-
-Prior plan still talked like Help should be halved to reach ~2,150 stored words. That fights audits 1–2.
-
-**Count visible first paint**, not stored HTML, as the success metric for Pass 1. Stored count is a **side log**, not a gate, until Pass 4 deletes real duplicates.
-
-**First paint:** see **First screen** below. Aim for **~20 visible chrome words** (data values in badges/selects extra). Do not hide `#manuscriptType`. If pills + tabs still shout, Simple hides the tab **words** (not the tablist from assistive tech) in Pass 1 — do not wait for Pass 3.
+| **Pass 1** | **Yes** | Owner: “start Pass 1” |
+| **Pass 2a** | **Yes** | Owner after Pass 1 |
+| **Pass 3** | **Yes** (small) | Owner after 2a |
+| **Pass 4** | **Yes** (keep/delete table) | Owner after 3 |
+| **Pass 5** | **Yes** (optional, light) | Owner after 4 |
+| **Pass 2b** | Spike only | Owner must ask |
 
 ---
 
-## What to steal (patterns only)
-
-Icon + title + one subtitle; fold extra reading; reports stay in the pane; PDF via Word (no `window.print()`); rail width-gated at ≥420px.
-
-**Skip:** login, streaks, premium banners, Google Fonts, `100vh` lock, competitor class names.
-
-**Hard constraints:** `--pe-*` + dark theme; Segoe / system / optional Georgia headings; offline-first; wiring + contrast + tests; never claim real-Word Apply/Track Changes.
-
----
-
-## Onboarding (one open lesson)
-
-Pass 1 does not queue banners. Do not add another teaching surface.
-
-If several already want to show: long-op (blocking) → What’s new → Simple first-run → prior session → session tips. **Tips** stays closed until the writer opens it.
-
-Session tips: keep, but do not repeat the Tips body. Two bullets is enough later (Pass 4); Pass 1 can leave them if still hidden by default.
-
-Tour still anchors `#scope`, `#btnRunAudit`, `#cardContainer`.
-
-Privacy after the trust line is folded: Help → Privacy and Settings → Privacy (`#pe-settings-group-privacy`, hash `#pe-settings-privacy`) stay obvious. **Keep the trust facts** in Tips and in Help privacy — do not keep them on every screen.
-
----
-
-## First screen — as few words as possible
-
-**What “first screen” is:** Simple first-run, Tips closed, no banner. Wordmark + chrome + Target through **scope**, **Refresh**, and **What are you writing?** (`#manuscriptType`). Exclude Help/Settings, profile extras, clipped status line.
-
-**Today (why it feels loud):** pills name every step; toolbar repeats those names; tabs repeat them again; badges say Guide / Scope / Dictionary; Quick start summary is visible even when closed; Start here + scope hint + scope-mode essay + Recommended (Simple) + the default Full-manuscript tip (shown because Full is the default). Roughly **110+** chrome words before the writer picks anything.
-
-**Note:** `pe-narrow-pane` (<360px) only shrinks toolbar label size. It does **not** hide those words. Icon-only is new work.
-
-### After (open canvas)
+## Phase map
 
 ```
-[wordmark]
-[ 1 ◎ ] [ 2 ✓ ] [ 3 ⚡ ] [ 4 ✎ ]          ← numbers + icons; no “Target/Checks/…”
-[ guide-icon Auto ] [ scope-icon Full ]   ← live values only; no “Guide/Scope” words
-[ ↩ ] [ ↪ ] [ ⌖ ] [ ⚙ ] [ ⚡ Run ]       ← icon-only tools; keep one verb on Run
-[ Tips ▾ ]                                ← icon + one short word (or icon + sr-only)
-[ tabs: visually quiet / icon or one letter in Simple; full words in Advanced ]
-
-Scope          [ Full            ▾ ]
-[ ↻ ]  —                                        ← Refresh icon; preview empty until counted
-Type           [ Fiction — General ▾ ]
+Pass 1  Quiet first screen (fold + icons)     ← default next
+Pass 2a Audit chrome + Type stays visible
+Pass 3  Spacing / contrast (small)
+Pass 4  Help + Settings: delete repeats only
+Pass 5  Duplicate JS strings only (optional)
+Pass 2b Lane groups (optional spike, not declutter)
 ```
 
-No Start here, no Recommended paragraph, no scope-mode essay, no trust line, no Dictionary badge, no “Quick start & editing stack” summary text, no Full-manuscript tip on every load.
-
-### Word budget (visible chrome)
-
-| Bit | Today | After | How |
-| --- | ---: | ---: | --- |
-| Pills | ~8 | **0** | Number + `pe-icons` (pin / check / flash / edit). `aria-label` keeps “Target”, “Checks”, “Run report”, “Fix cards”. |
-| Toolbar | ~6 | **1** | Hide `.btn-tool-icon-label` at **all** widths. Keep existing `aria-label` + `data-pe-tip`. Leave the word **Run** on the accent button. |
-| Badge captions | ~5 | **0** | Drop Dictionary badge. Guide/Scope: icon + live value (`#peBadgeGuide` / `#peBadgeScope` stay). |
-| Tips / Quick start summary | ~5 | **1** | `#peChromeHelp` summary = help icon + “Tips”. |
-| Tabs (Simple) | ~6 | **0–6** | Visually deemphasize or icon-only; do not `display:none` the tablist. Advanced keeps words. |
-| Start here + hints + Recommended + default Full tip | ~80 | **0** | Move static copy into Tips. Do not show `#peFullManuscriptScopeTip` just because scope is Full — only after Refresh if the count is large. Keep `#peTargetRecommendedHint` id; do not show the paragraph. |
-| “Analysis scope” / “What are you writing?” | ~6 | **2** | Labels **Scope** and **Type**. |
-| Scope options | ~15 | **~4** | Visible selected option stays; shorten option **labels** (not values): Selection, Pages, Chapters, Full. Title/tooltip can hold “Heading 1–3” / “~2,800 characters”. |
-| Refresh count + empty preview | ~10 | **0** | New `refresh` icon; `#scopeCharPreview` default `—` or empty. Live count text is data, not chrome. |
-
-**Aim: ~20 chrome words.** Live badge/select values (e.g. “Fiction — General…”, “Auto”) sit on top of that. Do not rename manuscript types.
-
-### Icons (`pe-icons.js` only)
-
-Reuse: `undo`, `redo`, `flash`, `pin`, `check`, `edit`, `settings`, `chevron-down`.
-
-Add matching 16px stroke paths (no new style): `refresh`, `book` (guide badge), `help` (Tips). Scope badge can reuse `pin` or a small `file` path if `pin` is already Last edit.
-
-Do not use emoji (the Coach mic is a leftover; do not copy that pattern). Rail icons stay as they are.
-
-### A11y for icon chrome
-
-Every icon control keeps a **visible-or-sr name**: `aria-label` or a `.visually-hidden` word. Existing tooltip keys stay. Contrast: icons use `currentColor` on `--pe-*` tokens; dark theme must still pass `check:contrast`. Hit target stays ≥32px (toolbar already does).
-
-Pills stay `role="button"`. Tabs stay a tablist. Do not replace `#scope` or `#manuscriptType` with icon wells.
-
-### What still appears as words (on purpose)
-
-- **Run** on the accent tool
-- **Tips** (one word) so Help is findable without guessing the icon
-- **Scope** / **Type** labels
-- The **selected** scope and type (data)
-- Live badge values
-- Character count **after** Refresh
-- Any open banner (What’s new, long-op) — not part of this budget
-
-### What never becomes icon-only
-
-Apply / Mute / Dict on cards; Settings toggle names; Privacy; Track Changes; cloud/mic disclosures; error and confirm text.
+Stop after each pass: tests + owner look at the pane. Do not start the next pass until they say so.
 
 ---
 
-## Navigation
+## Pass 1 — Quiet first screen
 
-| Mode | Hero | Secondary |
-| --- | --- | --- |
-| Simple | Icon+number pills | Tab **words** visually quiet (icon or sr-only). Tablist stays in the accessibility tree. |
-| Advanced | Tab words | Pills compact (icon+number) |
+**Goal:** Open canvas is wordmark, icon pills, icon toolbar + **Run**, two value badges, **Tips**, tabs, **Scope**, **Type**, **Run**.
 
-Do this in **Pass 1** for Simple first paint. Pass 3 only polishes size/spacing. No footer tab bar.
+### Files
+
+| File | What |
+| --- | --- |
+| `src/taskpane/taskpane.html` | Tips wrap (flat, not nested details); move static blocks; lift Type + blurb above profile; icon pills; badge captions; labels; option labels; Refresh icon button; drop Dictionary badge; toolbar visible word **Run**. |
+| `src/taskpane/taskpane.css` | Hide `.btn-tool-icon-label` except `.btn-tool-icon-label-keep` on Run; pill words via `.visually-hidden`; badge captions `.visually-hidden`; hide `.pe-simple-mode .pe-tab-hint`; Tips density. |
+| `src/taskpane/lib/pe-icons.js` | Add `refresh`, `book`, `help`, `file`. |
+| `src/taskpane/lib/tooltip-registry.js` | One key for Refresh count. |
+| `src/taskpane/lib/plain-language-helpers.js` | Short `scopeSelectOptionLabel` strings (or Simple undoes Pass 1). |
+| `src/taskpane/taskpane.js` | Recommended always hidden (`applySimpleMode`: stop toggling Recommended on in Simple). Next-step always hidden (`updateWorkflowNextStepHint`: always `hidden`). Full tip = Full + count ≥ 80 000; hook after Refresh. Simple: close `.pe-target-section`. Hide/show with **`class="hidden"`** (not the HTML `hidden` attribute). |
+| `tests/plain-language-helpers.test.mjs` | Expect the short option labels. |
+| `tests/taskpane-behavior.test.mjs` | Tips closed; moved ids inside; pills `aria-label`; Recommended hidden in Simple; Type not inside `.pe-target-section`; next-step has `hidden`. |
+
+### HTML moves (keep ids)
+
+Into `#peChromeHelp` (closed):
+
+- Current “Quick start & editing stack” `<details>` body (attribution included)
+- `#peDocScopeTrustLine`
+- `.pe-target-callout`
+- `.pe-target-scope-hint`
+- `.scope-mode-hint`
+- Static fiction/academic paragraph (`#peGenreStaticHint` or un-id’d `p.help-inline` after blurb — not `#peGenreBlurb`)
+
+Stay as siblings (not in Tips): next-step, status line, Full tip, genre blurb, char preview, Recommended (hidden).
+
+**Scope block:** rename label **Analysis scope** → **Scope**; set four `<option>` visible text to **Selection**, **Pages**, **Chapters**, **Full** (values unchanged). Refresh button: `id="btnRefreshScopeCount"`, `data-pe-tip="btn-refresh-scope-count"`, icon-only.
+
+**PlainLanguage** short map (must match HTML + tests):
+
+| `value` | HTML / Simple label |
+| --- | --- |
+| `selection` | Selection |
+| `pages` | Pages |
+| `selected-chapters` | Chapters |
+| `full` | Full |
+
+Checks partner-tools sentence: change “Quick start & editing stack above” → **Tips**.
+
+### Pills markup (pattern)
+
+Keep `data-workflow-step`, `role="button"`, tabindex, existing click. Inline SVG in HTML is OK.
+
+Each pill: `aria-label="…"`, number, icon, and the old word in `.visually-hidden` (so name and label agree).
+
+### JS (minimal)
+
+- `applySimpleMode`: `#peTargetRecommendedHint` **always** `classList.add("hidden")` (today Simple *shows* it — invert that). When Simple: `document.querySelector(".pe-target-section")?.removeAttribute("open")`.
+- `updateWorkflowNextStepHint`: leave `#peWorkflowNextStep` `hidden` (keep helper calls; no-op unhide).
+- `updateFullManuscriptScopeTip`: show only if `getScopeMode() === "full"` and `lastScopePreviewChars >= ProzaEdit.LongOp.WARN_MIN_CHARS`. Else hidden. Call from `updateScopeCharPreviewDisplay` after `lastScopePreviewChars` updates.
+- No other behaviour changes.
+
+### Tests / gates
+
+`npm test`, `verify:wiring`, `check:contrast`. Existing pill click tests (`data-workflow-step`) and badge text tests stay green. Wiring still finds `#peDocScopeTrustLine`, `#peWorkflowNextStep`, `#peTargetRecommendedHint`, `#scope`.
+
+### Exit / owner
+
+Narrow (~350px) and wide pane: no Start here, trust line, Recommended paragraph, or Quick start summary on the canvas. **Scope**, **Type**, **Run**, **Tips** obvious. Icon tools still have hover tips. About still **2.0.0.30**.
 
 ---
 
-## Pass 1 — Quiet first screen (fold + icons)
+## Pass 2a — Audit chrome (after Pass 1 accepted)
 
-**Goal:** First paint is icon chrome + Scope + Type + **Run**. Same ids and handlers.
+**Goal:** Shorter empty Audit. Cards stay a flat list.
 
-**1a — Fold duplicate prose**
+### Files
 
-1. Closed `<details id="peChromeHelp">`: trust line, Quick start & editing stack (attribution stays inside), Start-here callout, extra scope hint, scope-mode hint.
-2. Do **not** move live ids into Tips (`#peWorkflowNextStep`, `#peWorkflowStatusLine`, `#peFullManuscriptScopeTip`, `#peGenreBlurb`, `#scopeCharPreview`).
-3. Drop the static Dictionary badge. Keep Guide/Scope **values**.
-4. Leave `#peWorkflowStatusLine` clip-when-static / show-when-building.
-5. Stop showing `#peFullManuscriptScopeTip` on every Full default. Show only after Refresh when the count is large (or leave hidden; the sentence lives in Tips).
-6. Keep `#peTargetRecommendedHint` hidden on the canvas (id + JS stay).
-7. Update Checks “Quick start & editing stack above” to **Tips**.
+`taskpane.html`, `taskpane.css`, `taskpane.js` (profile fold only — Simple profile close is **Pass 1**).
 
-**1b — Icons (same pass; this is the word cut)**
+### DOM
 
-1. Pills: number + icon; hide the four step **words**. Keep `aria-label`.
-2. Toolbar: hide `.btn-tool-icon-label` at all widths; keep **Run** on the accent control.
-3. Badges: icon + value; no “Guide” / “Scope” captions.
-4. Tips summary: help icon + “Tips”.
-5. Simple: visually quiet the tab words (CSS). Do not remove tab buttons.
-6. Labels: **Scope**, **Type**. Shorten `#scope` option labels (values unchanged).
-7. Refresh: icon-only (`refresh` path). `#scopeCharPreview` default empty/`—`.
-8. Add only the SVG paths listed above. Reuse `PeIcons.svg`.
+1. Wrap existing `#summaryReport` **div** in `<details class="pe-report-block" open><summary>Summary</summary> … </details>`. **Do not move the id** to the `<details>`.
+2. Keep all three hint **ids** (JS writes `innerHTML`). **Only `#auditReportDepthHint` stays visible.** `#auditDefaultFilterHint` and `#peAuditFilterLanesHint` get **`class="hidden"`** (JS may still update text). Chips stay visible.
+3. Share: keep class `audit-share`; rename summary **Share report** → **More**; same six buttons + handlers inside. **Copy for Copilot** and **Clear report** stay on the Audit toolbar (already there). Do not add toolbar export buttons. Shortcut rail unchanged.
+4. Type is already above profile after Pass 1. Profile `<details>` contains only jargon, audience, setting, critic. Simple closed state is Pass 1; Pass 2a does not change that rule.
+5. Do not nest `#cardContainer` children.
 
-**Exit:** ~20 visible chrome words on Simple first paint. `#scope`, `#manuscriptType`, Run report, and Tips still obvious. No unique safety/privacy fact gone. Contrast + wiring + existing toolbar/pill click tests.
+### Tests
+
+Export/copy still callable. `#summaryReport` textContent still matches chapter-walk / filter tests. `#manuscriptType` not inside closed Simple details.
+
+### Exit
+
+Audit empty state shorter. Apply/Dismiss unchanged.
 
 ---
 
-## Pass 2a — Report chrome
+## Pass 2b — Lane groups (optional, not scheduled)
 
-1. Wrap `#summaryReport` in `<details class="pe-report-block" open>`. **Id stays on the inner node.**
-2. Share/Export: reuse existing handlers. Extra actions in closed **More**. No new Copilot/export button.
-3. Profile extras closed in Simple; **`#manuscriptType` stays visible.**
-4. Fold the three Audit hint paragraphs into one short line (keep ids if JS writes to them). Keep chip labels.
+**Do not implement unless the owner asks.** It does not cut words.
 
-**Exit:** Cards still a flat list in `#cardContainer`. Apply/undo/dismiss unchanged.
+Spike must prove: Apply/Dismiss/Go to/Mute/Dict; cancel mid-render; 300-card hitch not worse; unique ids; `.pe-card-cap-note`; tour `#cardContainer`; `pe-94-walk` / `pe-84` count `.card` not `children.length`. Group wrappers must not use class `card`. Honor current chip (`confirmed` / `preference` / `styleguide` / `all`).
 
 ---
 
-## Pass 2b — Lane groups (optional spike)
+## Pass 3 — Polish (after 2a)
 
-Does not remove words. Only if long reports are hard to scan.
+| Do | Do not |
+| --- | --- |
+| Slightly richer `--pe-card-shadow` / pill tint if contrast passes | New colour system, CDN fonts, `100vh` lock |
+| If first screen still feels dual-nav: smaller tab type in Simple only | Hide tablist from AT; footer tabs; new icon set |
+| Leave rail width-gated | Rebuild Checks `toggle-row` |
 
-Chips still filter (`confirmed` / `preference` / `styleguide` / `all`). Group wrappers must **not** use class `card`. Update walk tests to count `.card`. Empty state, cap note, and tour on `#cardContainer` must survive `innerHTML` redraws.
-
----
-
-## Pass 3 — Visual polish
-
-Spacing and token tweaks after the icon chrome is in. Contrast must pass. Do not rebuild Checks checkboxes. Rail unchanged. Do not add a second icon language.
+Exit: same flows, tighter spacing. Contrast 0 failures.
 
 ---
 
 ## Pass 4 — Help and Settings (judicious)
 
-**Goal:** One Start-here list on Help; everything else that is still unique sits in closed details. Delete only paragraphs that repeat Tips, Checks, or Settings.
+**Goal:** One Start-here list; unique facts in closed details; **delete only repeats**. Not a 50% stored-word gate.
 
-Keep ids: `#peHelpNewToEditing`, `#peHelpNewToEditingList`, `#peFirstAuditChecklistHelp`, `#peHelpPrivacySummary`, `#peHelpGotoTroubleshoot`, `#peHelpSupportSummary`, About version/manifest/add-in id, Check for updates.
+### Help keep (open or one click)
 
-Merge the three install/update Help blocks into one **Install & update** details.
+| Block | Action |
+| --- | --- |
+| About + version ids + Check for updates | **Keep open** |
+| Start here (3–5 bullets) | **Keep open**. **Drop** the separate “Quick start (2 min)” heading; keep the GitHub link under Start here. |
+| `#peHelpNewToEditing` + list | Keep (JS fills) |
+| `#peHelpPrivacySummary` | Keep; add the trust-line facts here if not already |
+| Dictionary `<details>` + Mute/Dismiss paragraph | Keep (unique) |
+| Track Changes paragraph | Keep |
+| `#peHelpGotoTroubleshoot` | Keep |
+| `#peHelpSupportSummary` | Keep |
+| Install: merge “Another computer”, “Update after code changes”, “Updates & install” into one **Install & update** details | Fold, do not lose upload-on-blank-doc |
+| Diagnostics + Platforms | One closed **Diagnostics & platforms** details |
+| Paraphrase Help box | **Closed details on Help** (Rewrite already has its own one-line intro). Keep the “no third-party API” fact. |
 
-Settings: shorten **group lead-ins** that repeat Essentials. Do not shorten toggle labels by moving clauses into `title`. Keep every control and `pe-settings-group-*`.
+### Help delete (repeats Tips / Start here / Settings)
 
-Cloud disclosures on Coach/Rewrite: keep; they can stay inside existing AI `<details>`.
+- “Analysis scope (Target):” essay (repeats Tips + select)
+- “Run audit: Target → Checks → …” (repeats Start here)
+- “Settings (toolbar gear):” inventory (repeats Settings)
+- “Full manuscript:” one-liner (**delete** — Tips already has it)
+- Duplicate Rewrite paragraphs (keep **one**)
+- “Look & navigation”: **drop** the stale sticky-line sentence. Keep at most one clause that Light/Dark is in Settings → Appearance.
 
-Refresh What’s new only if testers will see this pass.
+### Settings
 
-**Exit:** Writer still finds Privacy, About, install, Track Changes, and dictionary rules offline. Stored HTML count may drop; it is not a 50% gate.
+Remove `.pe-settings-intro` (repeats Essentials). Hide `#peSimpleModeEssentialsIntro` (the toggle label already says it). **Do not** shorten `aria-labelledby` toggle labels. Keep every control and `pe-settings-group-*`. Keep `#peAiTextSummary` and cloud disclosure.
+
+### IDs that must remain
+
+`#peHelpNewToEditing`, `#peHelpNewToEditingList`, `#peFirstAuditChecklistHelp`, `#peHelpPrivacySummary`, `#peHelpGotoTroubleshoot`, `#peHelpSupportSummary`, `#peAboutBuildVersion`, `#peAboutManifestVersion`, `#peAboutAddInId`, `#pe-settings-privacy` hash.
+
+### Exit
+
+Privacy, About, install, Track Changes, dictionary rules still in the pane offline.
 
 ---
 
-## Optional Pass 5 — JS strings
+## Pass 5 — JS strings (optional)
 
-Only strings that still duplicate Tips/Help after Pass 4 (next-step, tour bodies). Do not shorten failures, confirm-Apply, or legal/privacy messages.
-
----
-
-## Order, tests, version
-
-Each shipped pass: `npm test`, `verify:wiring`, `check:contrast`. Stay on **2.0.0.30** until testers need About/manifest to prove a refresh (**2.0.0.31**).
-
-Log first-paint visible words after Pass 1. Log stored `taskpane.html` words after Pass 4. Folded details still count as stored.
-
-One `src/taskpane/*` on GitHub Pages for Desktop and web.
+Trim only strings that still duplicate Tips after Pass 4: tour bodies in `onboarding-helpers.js` if they still say “Run audit” vs “Run report”; workflow next-step if it repeats pills. **Do not** shorten confirm-Apply, failures, or legal/privacy.
 
 ---
 
-## Must still work
+## Tests (every shipped pass)
 
-Wiring ids: `#scope`, `#summaryReport`, `#cardContainer`, `#peWorkflowNextStep`, `#peWorkflowStatusLine`, `#peOverheadBadges`, `#manuscriptType`, `#peHelpNewToEditing`, About and Settings group ids.
+```
+npm ci && npm test
+npm run verify:wiring
+npm run check:contrast
+```
 
-Target scope + Refresh count; outline progress on the status line; overlay inert on Settings/confirm/tour; Audit apply/dismiss/mute/dict/export; Simple hides Thesaurus, not manuscript type; light and dark contrast.
+Stay on **2.0.0.30**. One pane for Desktop and web.
+
+Pass 1 extra: Recommended hidden (Simple **and** Advanced); `#peChromeHelp` closed; `#peDocScopeTrustLine` still in DOM; pills `aria-label`; `#manuscriptType` not a descendant of `.pe-target-section`; `#peWorkflowNextStep` has `hidden`; `#scope option[value=full][selected]` still in HTML (`tests/pe-85-audit.test.mjs`). Optional: assert Full tip hidden until mock Refresh sets `lastScopePreviewChars` ≥ 80 000.
+
+**Note:** `tests/first-run-onboarding.test.mjs` only asserts `shouldShowWorkflowNextStep` — not DOM visibility. Pane behaviour is covered in `taskpane-behavior.test.mjs`.
 
 Apply / Track Changes remain **mock-tested only**.
 
 ---
 
-## Owner checklist
+## Must not regress
 
-- [ ] Narrow and typical Desktop (~350px): Tips closed; icon pills + icon toolbar; **Scope**, **Type**, and **Run** obvious; no Start here / Recommended / trust line on the canvas.
-- [ ] Icon-only tools still announce (hover tip + screen reader).
-- [ ] Wide pane: rail unchanged; no extra export/Copilot.
-- [ ] Trust / mute / dismiss facts still in Tips or Help Privacy (not gone).
-- [ ] Book outline progress still appears.
-- [ ] One audit run: cards still Apply/Dismiss (Word Apply not claimed verified).
-- [ ] About **2.0.0.30** (or **2.0.0.31** if bumped). Ctrl+F5 after Pages. Re-upload manifest only if About lags.
+- Wiring ids listed above; `#cardContainer`; `#summaryReport` inner node; `#peWorkflowStatusLine` progress during outline build.
+- Overlay inert on Settings / confirm / tour (pills still blocked).
+- `updateTabStripVisibleLabels` / Simple tab hints: labels stay; `.pe-tab-hint` not shown.
+- Simple hides Thesaurus, not Type.
+- `cloneSelectOptions` / audit pins still match `#scope` values.
+- Light and dark contrast.
 
 ---
 
-## Docs and rollback
+## Owner checklist (after each shipped pass)
 
-Update [QUICK-START.md](../../QUICK-START.md) and [pe-ui-design-notes.md](../../pe-ui-design-notes.md) after chrome settles. Version docs only if the build number changes. Do not rewrite [HANDOFF-DESKTOP.md](../../HANDOFF-DESKTOP.md) for copy-only UI.
+- [ ] Ctrl+F5 on the hosted pane (branch merge / Pages only after they accept).
+- [ ] First screen matches that pass’s exit.
+- [ ] Tips or Help Privacy still has dictionary / mute / dismiss.
+- [ ] Type still visible in Simple.
+- [ ] One Run report still produces cards (Word Apply not claimed verified).
+- [ ] About **2.0.0.30** unless a bump was agreed.
 
-Rollback: revert on `main`, Pages, Ctrl+F5. No force-push.
+---
+
+## Docs after UI settles
+
+[QUICK-START.md](../../QUICK-START.md), [pe-ui-design-notes.md](../../pe-ui-design-notes.md). Version docs only if the number changes. Do not rewrite [HANDOFF-DESKTOP.md](../../HANDOFF-DESKTOP.md) for copy-only UI.
+
+**Rollback:** tag `pe-pre-declutter-2.0.0.30`, Pages, Ctrl+F5. No force-push.
 
 ---
 
 ## Risks
 
-- Do not remove wiring ids (hide is fine).
-- Do not put live regions in closed Tips.
-- Do not `100vh` / `overflow: hidden` on `body`.
-- Do not claim in-pane PDF.
-- Do not close `#manuscriptType` inside Simple-only details.
-- Do not delete attribution, cloud, or Track Changes copy.
-- Do not start Pass 2b without a spike, and do not treat it as declutter.
+- Do not remove wiring ids.
+- Do not put live regions in Tips.
+- Do not `display:none` the tablist.
+- Do not close `#manuscriptType` in Simple.
+- Do not start Pass 2b as part of declutter.
+- Do not bump the manifest for Pass 1–4 unless testers cannot see Pages.
+
+---
+
+## Final gap seal (code audit 2026-11-04)
+
+These were the last open questions; all are now decided above.
+
+| Issue | Resolution |
+| --- | --- |
+| Simple showed **Recommended** (bug vs plan) | Always hidden in `applySimpleMode`. |
+| **Manuscript profile** summary visible in Simple on Pass 1 | Close profile in Pass 1, not Pass 2a. |
+| Full-manuscript tip never after Refresh only | Re-run tip logic when char preview updates. |
+| Scope subpanels below book outline | Reorder DOM: panels immediately after scope primary. |
+| `scopeSelectOptionLabel` vs short HTML | Four-word table; update `plain-language-helpers.test.mjs`. |
+| Toolbar Run vs Checks **Run report** | Pass 1 shortens **toolbar** label to **Run** only; hub buttons keep “Run report” + `decorateRunAuditHubButton`. |
+| Drop Dictionary badge | Overhead badge only; Settings `#dictCountBadge` and card **Dict** unchanged. |
+| `updateWorkflowNextStepHint` still runs from status line | OK — function must not unhide `#peWorkflowNextStep`. |
+| Pass 2a hid “three hints into one line” (old plan) | **Two** hints hidden (`#auditDefaultFilterHint`, `#peAuditFilterLanesHint`); `#auditReportDepthHint` stays visible. `#peReviewModeAuditHint` unchanged (shows when review mode). |
+| Nested `<details>` in Tips | Forbidden — flatten Quick start body into `#peChromeHelp`. |
+| Plan doc on branch | Local edits to this file + README may be uncommitted until owner asks for a commit. |
+
+### Known residual (cannot “plan away”)
+
+- **Banners** (What’s new, Simple first-run, session tips, long-op, prior session) still stack above the canvas until dismissed — not queued in Pass 1.
+- **~20 chrome words** excludes genre blurb, Style section below the fold, tab labels, and any visible banner.
+- **`#peGenreBlurb`** and select option **values** (long manuscript type strings) stay verbose by design.
+- **Real Word** Apply / Track Changes — mock tests only.
+- **Session tips** (`#peSessionTips`) can still appear once per session when onboarding enables them.
+- **First paint before JS:** badges may show `—` until `updateWorkflowStatusLine()`; acceptable.
+
+### Confidence
+
+**Ready to implement Pass 1** when the owner says so. No blocking spec gaps remain for Passes 1 → 2a → 3 → 4; Pass 5 and 2b remain optional.
