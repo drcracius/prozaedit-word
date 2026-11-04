@@ -1825,7 +1825,10 @@ function bindWorkflowStepper() {
   document.querySelectorAll(".workflow-step[data-workflow-step]").forEach((el) => {
     if (el.dataset.bound) return;
     el.dataset.bound = "1";
-    const activate = () => showTab(go[el.dataset.workflowStep] || "tab1");
+    const activate = () => {
+      if (isPeOverlayDialogOpen()) return;
+      showTab(go[el.dataset.workflowStep] || "tab1");
+    };
     el.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter" || ev.key === " ") {
         ev.preventDefault();
@@ -5474,9 +5477,12 @@ function renderAuditCards(list, options) {
   const icEye = ic("eye-off");
   const icChevron = ic("chevron-down");
   const frag = document.createDocumentFragment();
+  const usedIds = new Set();
   const renderOne = (item, i) => {
     if (!item || typeof item !== "object") return;
-    const id = String(item.id || `c${i}`).replace(/[^a-zA-Z0-9_-]/g, "_");
+    let id = String(item.id || `c${i}`).replace(/[^a-zA-Z0-9_-]/g, "_");
+    if (!id || usedIds.has(id)) id = `${id || "c"}_${i}`;
+    usedIds.add(id);
     item.id = id;
     item.module = String(item.module || "Finding");
     item.explanation = String(item.explanation || "");

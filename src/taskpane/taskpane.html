@@ -59,10 +59,10 @@
     </div>
   </div>
   <ol class="workflow-steps" aria-label="Quick start">
-    <li class="workflow-step pe-workflow-step workflow-step-active active" data-workflow-step="1" role="button" tabindex="0" onclick="showTab('tab1')"><span class="workflow-num">1</span> Target</li>
-    <li class="workflow-step pe-workflow-step" data-workflow-step="2" role="button" tabindex="0" onclick="showTab('tab3')"><span class="workflow-num">2</span> Checks</li>
-    <li class="workflow-step pe-workflow-step" data-workflow-step="3" role="button" tabindex="0" onclick="showTab('tab4')"><span class="workflow-num">3</span> Run report</li>
-    <li class="workflow-step pe-workflow-step" data-workflow-step="4" role="button" tabindex="0" onclick="showTab('tab4')"><span class="workflow-num">4</span> Fix cards</li>
+    <li class="workflow-step pe-workflow-step workflow-step-active active" data-workflow-step="1" role="button" tabindex="0" onclick="if(!isPeOverlayDialogOpen())showTab('tab1')"><span class="workflow-num">1</span> Target</li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="2" role="button" tabindex="0" onclick="if(!isPeOverlayDialogOpen())showTab('tab3')"><span class="workflow-num">2</span> Checks</li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="3" role="button" tabindex="0" onclick="if(!isPeOverlayDialogOpen())showTab('tab4')"><span class="workflow-num">3</span> Run report</li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="4" role="button" tabindex="0" onclick="if(!isPeOverlayDialogOpen())showTab('tab4')"><span class="workflow-num">4</span> Fix cards</li>
   </ol>
   <p id="peWorkflowNextStep" class="pe-workflow-next-step help-muted hidden" role="status" aria-live="polite">Next step: set scope on Target, then Run report.</p>
   <div id="peOverheadBadges" class="pe-overhead-badges" aria-label="Guide and scope">

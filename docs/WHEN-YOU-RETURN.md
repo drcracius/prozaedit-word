@@ -2,7 +2,7 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Build 2.0.0.30** (PE-99) is merged to `main` (builds up to 2.0.0.26 via PRs #27 and #28, tag `v2.0.0.26`) and live on GitHub Pages; nothing left to merge. 470 tests. Owner Phase 1 (**PE-47**) open. Word Desktop install fixed in source, awaiting owner test: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
+**Build 2.0.0.30** (PE-99) is merged to `main` (builds up to 2.0.0.26 via PRs #27 and #28, tag `v2.0.0.26`) and live on GitHub Pages; nothing left to merge. 472 tests. Owner Phase 1 (**PE-47**) open. Word Desktop install fixed in source, awaiting owner test: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
 
 **Next:** re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
 

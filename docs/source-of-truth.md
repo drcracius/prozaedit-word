@@ -21,7 +21,7 @@ Principles and authoritative references on GitHub `main`. Project Context may mi
 
 **Current hosted release:** **2.0.0.30** (merged to `main`; handoff: [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md)) (testers re-upload `manifest.hosted.xml` once per manifest bump).
 
-Verify: `bash scripts/verify-version-sync.sh` · **470** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
+Verify: `bash scripts/verify-version-sync.sh` · **472** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
 
 ---
 
@@ -29,7 +29,7 @@ Verify: `bash scripts/verify-version-sync.sh` · **470** tests: `npm test` (need
 
 | Item | Status |
 |------|--------|
-| Web 1.0 RC on `main` | Historical (PE-62): build 2.0.0.15, 40 tests; current is 2.0.0.30 / 470 tests |
+| Web 1.0 RC on `main` | Historical (PE-62): build 2.0.0.15, 40 tests; current is 2.0.0.30 / 472 tests |
 | Agent prep | **PE-48** merged ([#5](https://github.com/drcracius/prozaedit-word/pull/5)) |
 | Final audit / doc sync | **PE-49** — [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md) |
 | Forum onboarding | **PE-61** — [RELEASE-NOTES-PE-61-ONBOARDING.md](./RELEASE-NOTES-PE-61-ONBOARDING.md) |

@@ -269,6 +269,24 @@ test("cards: render cap keeps the pane responsive and adds a note", async () => 
   }
 });
 
+test("cards: colliding ids stay unique so dismiss cannot hit the wrong finding", async () => {
+  const t = await boot();
+  try {
+    t.peval(`auditCardFilter = "all"`);
+    t.peval(`setAuditSuggestions(${JSON.stringify([
+      { id: "same!", ruleId: "r1", module: "A", type: "confirmed", explanation: "e", targetText: "very", replacementText: "quite" },
+      { id: "same?", ruleId: "r2", module: "B", type: "confirmed", explanation: "e", targetText: "really", replacementText: "truly" },
+    ])})`);
+    await t.settle(20);
+    const ids = t.peval(`[...document.querySelectorAll("#cardContainer details.card")].map((el) => el.id)`);
+    assert.equal(ids.length, 2);
+    assert.notEqual(ids[0], ids[1]);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("cards: long quotes are preview-capped in the DOM; apply still uses the full text", async () => {
   const t = await boot();
   try {
@@ -774,6 +792,23 @@ test("layout: settings modal inerts the shortcut rail; export waits when busy", 
     await t.settle(20);
     assert.match(t.status(), /Wait for the current action/);
     t.peval("auditBusy = false");
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("layout: stepper does not change tabs while Settings is open", async () => {
+  const t = await boot();
+  try {
+    t.peval("showTab('tab1')");
+    t.peval("openSettingsModal()");
+    t.peval(`document.querySelector('[data-workflow-step="2"]').click()`);
+    assert.equal(t.document.getElementById("tab1").classList.contains("active"), true);
+    assert.equal(t.document.getElementById("tab3").classList.contains("active"), false);
+    t.peval("closeSettingsModal()");
+    t.peval(`document.querySelector('[data-workflow-step="2"]').click()`);
+    assert.ok(t.document.getElementById("tab3").classList.contains("active"));
     assert.deepEqual(t.errors, []);
   } finally {
     t.close();
