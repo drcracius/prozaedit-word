@@ -17,13 +17,13 @@ ProzaEdit.WorkflowNav = {
 
   SIMPLE_TAB_ARIA_SUFFIX: {
     tab1: "Start — what to check",
-    tab3: "Run — run check",
-    tab4: "Fix — review issues",
+    tab3: "Run",
+    tab4: "Fix",
     tab7: "Help — how it works",
   },
 
   PIPELINE_HINT_SIMPLE:
-    "One audit pipeline — filter issue groups on Audit (Important, Style, …), not a menu of separate reports.",
+    "One audit pipeline — filter issue groups on Fix (Important, Style, …), not a menu of separate reports.",
 
   tabFlexOrder(tabId, simpleMode) {
     const order = simpleMode
@@ -34,13 +34,15 @@ ProzaEdit.WorkflowNav = {
   },
 
   tabVisibleLabel(tabId, defaultLabel, simpleMode) {
-    if (!simpleMode) return defaultLabel;
-    return ProzaEdit.WorkflowNav.SIMPLE_TAB_VISIBLE_LABELS[tabId] || defaultLabel;
+    const shared = ProzaEdit.WorkflowNav.SIMPLE_TAB_VISIBLE_LABELS[tabId];
+    if (shared) return shared;
+    return defaultLabel;
   },
 
   tabAriaLabel(tabId, defaultLabel, simpleMode) {
-    if (!simpleMode) return defaultLabel;
-    return ProzaEdit.WorkflowNav.SIMPLE_TAB_ARIA_SUFFIX[tabId] || defaultLabel;
+    const shared = ProzaEdit.WorkflowNav.SIMPLE_TAB_ARIA_SUFFIX[tabId];
+    if (shared) return shared;
+    return defaultLabel;
   },
 
   /**
@@ -54,34 +56,41 @@ ProzaEdit.WorkflowNav = {
     const links = [];
 
     if (tabId === "tab1") {
-      links.push({ id: "to-checks", label: "Run check", targetTab: "tab3", primary: true });
-      if (has) links.push({ id: "to-audit", label: "View issues", targetTab: "tab4" });
+      links.push({ id: "run-audit", label: "Run", targetTab: "tab3", primary: true });
+      if (has) links.push({ id: "to-audit", label: "Review", targetTab: "tab4" });
       links.push({ id: "to-help-scope", label: "Chapter-first tips", targetTab: "tab7" });
     } else if (tabId === "tab3") {
       links.push({ id: "to-target", label: "Change what to check", targetTab: "tab1" });
-      if (has) links.push({ id: "to-audit", label: "View issues", targetTab: "tab4", primary: true });
-      else links.push({ id: "run-audit", label: "Run report", targetTab: "tab3", primary: true });
+      if (has) links.push({ id: "to-audit", label: "Review", targetTab: "tab4", primary: true });
+      else links.push({ id: "run-audit", label: "Run", targetTab: "tab3", primary: true });
     } else if (tabId === "tab4") {
       links.push({ id: "to-target", label: "Change scope", targetTab: "tab1" });
-      links.push({ id: "to-checks", label: "Run again", targetTab: "tab3", primary: !has });
+      links.push({ id: "run-audit", label: "Run again", targetTab: "tab3", primary: !has });
       if (has) {
         links.push({ id: "dict", label: "Manage dictionary", targetTab: "__settings_dictionary__" });
       }
     } else if (tabId === "tab7") {
       links.push({ id: "to-target", label: "Set scope on Start", targetTab: "tab1", primary: true });
-      links.push({ id: "to-checks", label: "Run check", targetTab: "tab3" });
+      links.push({ id: "run-audit", label: "Run", targetTab: "tab3" });
     }
 
     return links.filter(Boolean);
   },
 
+  /**
+   * One line when fiction or plot checks run on less than the whole document.
+   * Empty string means no warning (do not stack a second banner).
+   */
+  partialScopeWarning(opts) {
+    opts = opts || {};
+    if (opts.enabled === false) return "";
+    if (!opts.fictionChecks) return "";
+    if (opts.fullManuscript) return "";
+    return "Fiction and plot checks are running on part of the document. Review names and continuity on a wider scope before you apply those fixes.";
+  },
+
   shouldShowCardDictionaryFooter(item) {
-    if (!item) return false;
-    if (ProzaEdit.PlainLanguage?.isNameLikeMuteTarget?.(item)) return true;
-    const mod = String(item.module || "").toLowerCase();
-    if (mod.includes("proper noun")) return true;
-    const ruleId = String(item.ruleId || "");
-    return ruleId.startsWith("prop:") || ruleId.startsWith("spell:");
+    return !!ProzaEdit.PlainLanguage?.isNameLikeMuteTarget?.(item);
   },
 
   ADVANCED_TABS_WHEN_SIMPLE_OFF: "Thesaurus, the lexical shaper, and extra tuning (Coach, Rewrite and optional AI help stay available in Simple).",

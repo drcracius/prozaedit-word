@@ -338,9 +338,9 @@ ProzaEdit.StyleGuideRules = {
           ruleId: "sg:custom:empty",
           module: mod,
           type: "preference",
-          explanation: "No custom rules yet — add them on Target → Custom house style.",
+          explanation: "No custom rules yet — add them on Start → Custom house style.",
           targetText: "(custom style)",
-          replacementText: "(add rules on Target tab)",
+          replacementText: "(add rules on Start)",
         });
         budget.remaining--;
       }

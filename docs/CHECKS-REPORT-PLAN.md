@@ -1,44 +1,59 @@
-# Checks and reports — improvement plan
+# Checks and reports — how they should work together
 
-**Live:** 2.0.0.51.  
-**Goal:** Make local checks and the report as useful as the best editors, without live underlining, subscriptions, or copied rule text.
+**Live build:** 2.0.0.52.  
+**This plan is for the public add-in only.** No private branch and no copyrighted style manuals.
 
-## What the report does today
+## Aim
 
-A run shows a score, word count, reading level, critical and style counts, then a flat list of cards. Each card is named by its check (Style guide, Proofreading, Editorial consistency, and so on). From 2.0.0.47 the summary also lists those names with counts (**By check**).
+One pass over the text should feel like one editor, not a pile of style packs. Prefer a correct, quiet report over a longer one. A new check is allowed only when it catches something the current checks miss, and only from a source whose licence already allows this public add-in.
 
-## How top editors differ
+## Three lanes
 
-Grammarly, ProWritingAid, Hemingway, and LanguageTool group a report into clarity, correctness, and consistency, and they underline as you type. ProzaEdit runs when you ask, stays on the device, and already has those three ideas in local checks. It should not copy their phrase lists or turn on live scanning.
+Every card belongs to one lane. The report summary already counts cards **By check**. That stays the grouping. Do not add a second summary.
 
-| Area | Already in ProzaEdit | Still weaker than the leaders |
+| Lane | What it is for | What the reader sees |
 | --- | --- | --- |
-| Clarity | Plain language, Strunk 1920, hidden verbs, a passive-voice tally on long nonfiction, reading level, sentence rhythm | No full grammar parse. Fiction keeps wording advice quieter on purpose. |
-| Consistency | Repeated words, a/an, quote pairing, cannot/all right, among/amongst, mid-word capitals, dash mix, names, UK/US spelling pairs, number words vs digits, and hyphen pairs when both forms appear | Still not a full house-style dictionary. Times and decimals are ignored on purpose. |
-| Report | Score, Simple/Advanced filter, chips, and a **By check** count line | Cards are still one list. The summary does not open a check on its own. |
+| Correctness | A likely mistake | Simple view. Example: “should of” → “should have”, a doubled word, a broken quotation. |
+| Clarity | Wording that is longer or vaguer than it needs to be | Simple view only when the fix is specific (“in order to” → “to”). A pile of hedges or passive verbs is one card, not one card per word. Fiction stays quieter. |
+| Consistency | The same passage uses two forms | One card that says pick one. No card when only one form appears. Times (`2:30`) and decimals (`10.5`) stay untouched. |
 
-## Public sources — what is safe
+Advanced view keeps the quieter cards for people who want them. Simple view does not.
 
-Full inventory: [STYLE-GUIDE-SOURCES.md](./STYLE-GUIDE-SOURCES.md).
+## What runs, by manuscript
 
-In use: plainlanguage.gov word list (CC0; multi-word lines only), 18F Content Guide (CC0, same idea), GPO Style Manual 2016 (U.S. public domain; “email” as one word), Strunk 1920, GOV.UK (OGL), Microsoft / Google / Red Hat (Creative Commons).
+The manuscript type already chooses the pack. Keep it that way.
 
-Not bundled: LanguageTool (LGPL, Java, ~8 MB of rules), SCOWL/Hunspell, the Australian Style Manual (not an open licence), and copyrighted manuals (Chicago, APA, MLA, AP, Guardian, BBC). Competitor phrase lists stay out.
+- **Fiction.** Story checks (plot, dialogue, pacing, and the rest) plus correctness. Plain-language lines stay low confidence so they do not drown the story.
+- **Business.** Correctness, plain language, and one business-word list. The Mailchimp lines (noncommercial licence) and the older corporate-jargon lines must become one list so “leverage” and “incentivize” are not two systems.
+- **Technical or journalism.** The Microsoft, Google, or Red Hat lines for that type, plus plain language. Not all three vendor packs at once.
+- **British English.** GOV.UK spelling. American English does not also run those spelling cards.
+- **House rules the user typed.** Those win when they name the same phrase as a built-in card.
 
-## Updates
+Style cards stay capped (about ten). Correctness cards are not dropped to make room for style.
 
-Help → About → **Check for updates** already compares this pane with the live manifest. Style checks and spelling lists ship inside that build. A second “update the rules” download is not needed and would break offline-by-default. The button stays manual; opening the pane may also compare versions once per session, as it does now.
+## Overlap to remove before adding anything
 
-## Work, one at a time
+These already speak twice. The next work merges them. It does not add phrases.
 
-| Order | Improvement | Status |
+1. **Passive voice** can be raised by the plain-language pack, the nonfiction clarity pass, and a fiction motivation pass. One passive card per run.
+2. **Business wording** is split between the older jargon list and the Mailchimp list. One list, with the Mailchimp credit kept on the lines that come from that guide.
+3. **“email”** is a GPO preference in American English and a GOV.UK preference in British English. Keep both, but never both on the same run.
+
+After that, the only planned report change is the Simple-view filter: hide low-confidence cards there, and say how many were hidden (this already happens in part; make the rule one sentence the code follows everywhere).
+
+## Sources
+
+Use only what is already listed in [STYLE-GUIDE-SOURCES.md](./STYLE-GUIDE-SOURCES.md). Stop adding packs until the overlap pass above is done.
+
+Help → About → **Check for updates** remains the way to see if a newer build is on the site. Rules travel with the build. There is no separate download.
+
+## Order of work
+
+| Order | Work | Status |
 | --- | --- | --- |
-| 1 | Hidden verbs (“make a decision” → “decide”) | Done in 2.0.0.46 |
-| 2 | Report summary grouped by check name | Done in 2.0.0.47 |
-| 3 | Consistency only when both forms appear (numbers, hyphen pairs) | Done in 2.0.0.48 |
-| 4 | Broader public plain-language list (multi-word only) and GPO “email” | Done in 2.0.0.49 |
-| 5 | MIT weasel-word tally for nonfiction (hedges only) | Done in 2.0.0.50 |
-| 6 | “should of” → “should have”, plus a noncommercial Mailchimp jargon pack for business text | **This build** |
-| 7 | Stronger Simple-view filter so noisy Advanced hits stay hidden | Not started |
+| 1–6 | Hidden verbs, By check summary, mixed forms, plain-language lines, hedge tally, “should of”, Mailchimp business lines | Done through 2.0.0.51 |
+| 7 | One passive-voice card per run | Next |
+| 8 | One business-word list | After 7 |
+| 9 | Simple view follows one rule: show correctness and specific clarity fixes; hide the rest and say how many | After 8 |
 
-Not planned: a full grammar parser, a Hunspell bundle, LanguageTool, or realtime underlines.
+Not in this plan: a grammar engine, a spelling dictionary, live underlines, or any source that is not already licensed for this public add-in.

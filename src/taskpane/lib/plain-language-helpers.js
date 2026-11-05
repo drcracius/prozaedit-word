@@ -14,7 +14,7 @@ ProzaEdit.PlainLanguage = {
   /** Subtle tab hints (Simple mode subtitles + title tooltips). DOM tab ids unchanged. */
   TAB_HINTS: {
     tab1: "What to check",
-    tab3: "Run check",
+    tab3: "Run",
     tab4: "Fix issues",
     tab7: "How it works",
   },
@@ -32,7 +32,7 @@ ProzaEdit.PlainLanguage = {
     "Work one chapter or a highlighted passage at a time — you do not need the whole book on day one.",
     "Fix red or Important issues first; style suggestions can wait until the big problems are gone.",
     "Add character names to the dictionary when a check keeps flagging them.",
-    "Click Run report when you are ready — ProzaEdit is not a live underline tool.",
+    "Click Run when you are ready — ProzaEdit is not a live underline tool.",
   ],
 
   /** @param {"all"|"confirmed"|"preference"|"styleguide"} filter */
@@ -40,7 +40,7 @@ ProzaEdit.PlainLanguage = {
     if (filter === "confirmed") {
       return "Showing important issues only — turn off Simple mode in Settings for all issue types.";
     }
-    return "Simple mode is on — fewer tabs and a simpler layout. Turn off in Settings → Essentials to see every feature.";
+    return "Simple mode is on. Likely fixes are listed; quieter notes stay hidden until you choose Show them on this report.";
   },
 
   /** User-visible filter name; internal id stays `confirmed`. */

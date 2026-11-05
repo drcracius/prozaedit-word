@@ -31,23 +31,40 @@ ProzaEdit.Audit = {
     return null;
   },
 
+  /** True when phrase occurs as its own word, same capitals and apostrophes as written. A hit inside a longer word does not count. */
+  _containsExact(text, phrase) {
+    const p = String(phrase || "");
+    if (!p) return false;
+    const W = this._WORDCH;
+    let i = 0;
+    while ((i = text.indexOf(p, i)) !== -1) {
+      const b = text[i - 1];
+      const a = text[i + p.length];
+      const leftOk = !W.test(p[0]) || !b || !W.test(b);
+      const rightOk = !W.test(p[p.length - 1]) || !a || !W.test(a);
+      if (leftOk && rightOk) return true;
+      i++;
+    }
+    return false;
+  },
+
   /**
    * Apply only edits text that matches the card exactly (case-sensitive). A rule that quotes its own lowercase form
    * ("organize") while the document has "Organize" would give a card whose Apply always refuses; quote the document's
-   * own spelling instead. The target's capitalisation is carried into the replacement either way, so a fix at a
-   * sentence start ("In order to" -> "To") keeps its capital.
+   * own spelling instead. An exact whole-word match is kept, so a later "in order to" is not rewritten to an earlier
+   * "In order to", and a match buried inside a longer word ("orbs" in "absorbs") is not treated as the target.
+   * The target's capitalisation is carried into the replacement either way, so a fix at a sentence start
+   * ("In order to" -> "To") keeps its capital.
    */
   _alignToDocumentCase(item, text, lower) {
     const rep = String(item.replacementText || "");
     const target = String(item.targetText || "");
     if (!rep || rep.startsWith("(") || !target || text.length !== lower.length) return item;
-    const norm = text.replace(/[\u2018\u2019]/g, "'");
-    const t = target.replace(/[\u2018\u2019]/g, "'");
     let actual = target;
-    if (!norm.includes(t)) {
-      const i = lower.indexOf(t.toLowerCase());
-      if (i === -1) return item;
-      actual = text.substr(i, t.length);
+    if (!this._containsExact(text, target)) {
+      const hit = this._find(text, lower, target);
+      if (!hit) return item;
+      actual = hit;
     }
     let r = rep;
     const first = actual.charAt(0);
@@ -379,18 +396,46 @@ ProzaEdit.Audit = {
     return item.type === "confirmed" ? "high" : "medium";
   },
 
-  /** Same target + type collapses to one card; the highest-confidence rule wins (a low "AI phrase" card must not hide a medium house-style card). */
+  /** Same target + type collapses to one card; the highest-confidence rule wins. A house rule on that phrase wins over a built-in, even across types. */
+  _isHouseRule(item) {
+    const id = String(item?.ruleId || "");
+    return id.startsWith("sg:custom:") && id !== "sg:custom:empty";
+  },
+
   _dedupe(list) {
     const rank = { high: 3, medium: 2, low: 1 };
+    const phrase = (s) =>
+      String(s.targetText || "")
+        .toLowerCase()
+        .replace(/[\u2018\u2019]/g, "'")
+        .trim()
+        .replace(/\s+/g, " ");
+    const housePhrases = new Set();
+    list.forEach((s) => {
+      const t = phrase(s);
+      if (t && t.length >= 3 && !this.PAIR_STOPWORDS.has(t) && this._isHouseRule(s)) housePhrases.add(t);
+    });
     const bestIdx = new Map();
     const keys = list.map((s) => {
-      const t = String(s.targetText || "").toLowerCase().trim().slice(0, 80);
-      return t ? `${t}|${s.type}` : null;
+      const t = phrase(s);
+      if (!t) return null;
+      const spelling = String(s.ruleId || "").startsWith("spell:");
+      return housePhrases.has(t) && !spelling ? `house:${t}` : `${t}|${s.type}`;
     });
     list.forEach((s, i) => {
       if (!keys[i]) return;
       const cur = bestIdx.get(keys[i]);
-      if (cur == null || (rank[this.confidenceFor(s)] || 0) > (rank[this.confidenceFor(list[cur])] || 0)) bestIdx.set(keys[i], i);
+      if (cur == null) {
+        bestIdx.set(keys[i], i);
+        return;
+      }
+      const curHouse = this._isHouseRule(list[cur]);
+      const nextHouse = this._isHouseRule(s);
+      if (nextHouse !== curHouse) {
+        if (nextHouse) bestIdx.set(keys[i], i);
+        return;
+      }
+      if ((rank[this.confidenceFor(s)] || 0) > (rank[this.confidenceFor(list[cur])] || 0)) bestIdx.set(keys[i], i);
     });
     return list.filter((s, i) => !keys[i] || bestIdx.get(keys[i]) === i);
   },

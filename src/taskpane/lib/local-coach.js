@@ -71,7 +71,7 @@ ProzaEdit.LocalCoach = {
       re: /\b(pacing|slow|drag|boring|flat)\b/i,
       tips: [
         "Shorten the middle: add a complication every 500–800 words in thriller pacing.",
-        "Audit one chapter at a time with Run report (no AI cost).",
+        "Audit one chapter at a time with Run (no AI cost).",
       ],
     },
     {
@@ -91,8 +91,8 @@ ProzaEdit.LocalCoach = {
     {
       re: /\b(copilot|gemini|ai|rewrite)\b/i,
       tips: [
-        "Suggested order: ProzaEdit Run report, then Word Copilot for prose, then your own AI key only if you want it.",
-        "Use ‘Copy for Copilot’ on the Audit tab to paste findings without using AI tokens.",
+        "Suggested order: ProzaEdit Run, then Word Copilot for prose, then your own AI key only if you want it.",
+        "Use ‘Copy for Copilot’ on the Fix tab to paste findings without using AI tokens.",
       ],
     },
     {
@@ -119,14 +119,14 @@ ProzaEdit.LocalCoach = {
     {
       re: /\b(setting|world|dialect|idiom|geography)\b/i,
       tips: [
-        "Set Setting Anchor on Target tab; long excerpts without anchor terms flag drift.",
+        "Set Setting Anchor on Start; long excerpts without anchor terms flag drift.",
         "Sensory counts in overview are heuristic—boost weak senses in action scenes.",
       ],
     },
     {
       re: /\b(export|pdf|letter|beta|agent|report)\b/i,
       tips: [
-        "Copy feedback letter or Insert report in Word on Audit tab—no PDF engine needed; use Word Save As PDF.",
+        "Copy feedback letter or Insert report in Word on Fix—no PDF engine needed; use Word Save As PDF.",
         "Per-document settings (dictionary, mutes) travel with the .docx automatically.",
       ],
     },

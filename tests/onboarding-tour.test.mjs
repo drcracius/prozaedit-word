@@ -137,7 +137,7 @@ test("Onboarding audit scope footnote thresholds", () => {
     false
   );
   const copy = Onboarding.buildAuditScopeFootnoteCopy({ hadTruncation: true });
-  assert.match(copy, /Critical/i);
+  assert.match(copy, /Important/i);
   assert.match(copy, /chapters/i);
 });
 

@@ -253,14 +253,14 @@ ProzaEdit.ScopeReader = {
       await context.sync();
     }
     if (startPara < 0 || endPara >= paras.items.length || endPara < startPara) {
-      throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+      throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Start.");
     }
     if (expectTitle != null) {
       paras.items[startPara].load("text");
       await context.sync();
       const got = (paras.items[startPara].text || "").trim().substring(0, 80);
       if (got !== String(expectTitle)) {
-        throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+        throw new Error("Chapter list is out of date (the document changed). Reload the chapter list on Start.");
       }
     }
     const CHUNK = 50;
@@ -353,7 +353,7 @@ ProzaEdit.ScopeReader = {
     const list = chapters || (await this.listChapters(context));
     const normalized = this.normalizeSelectedChapterIndices(indices, list);
     if (!normalized.length) {
-      throw new Error("Select at least one chapter on Target (Reload chapter list), then check the chapters to include.");
+      throw new Error("Select at least one chapter on Start (Reload chapter list), then check the chapters to include.");
     }
     let text = "";
     const sharedParas = context.document.body.paragraphs;
@@ -415,7 +415,7 @@ ProzaEdit.ScopeReader = {
     if (mode === "selected-chapters") {
       return this.readBySelectedChapters(context, opts.selectedChapterIndices, opts.chapters, opts);
     }
-    throw new Error("That scope is not recognised. Pick a scope on Target.");
+    throw new Error("That scope is not recognised. Pick a scope on Start.");
   },
 
   async _loadParaTexts(context, paras, from, to, opts) {
@@ -441,7 +441,7 @@ ProzaEdit.ScopeReader = {
     let start = 0;
     let end = total - 1;
     const stale = () =>
-      new Error("Chapter list is out of date (the document changed). Reload the chapter list on Target.");
+      new Error("Chapter list is out of date (the document changed). Reload the chapter list on Start.");
     const rangeOk = (a, b) => a >= 0 && b < total && b >= a;
 
     if (mode === "full") {
@@ -468,7 +468,7 @@ ProzaEdit.ScopeReader = {
     } else if (mode === "selected-chapters") {
       const list = opts.chapters || (await this.listChapters(context));
       const normalized = this.normalizeSelectedChapterIndices(opts.selectedChapterIndices, list);
-      if (!normalized.length) throw new Error("No chapters selected. Check chapters on Target after Reload chapter list.");
+      if (!normalized.length) throw new Error("No chapters selected. Check chapters on Start after Reload chapter list.");
       const ranges = normalized
         .map((n) => list.find((c) => c.index === n))
         .filter(Boolean)

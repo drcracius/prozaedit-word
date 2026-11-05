@@ -42,15 +42,15 @@ ProzaEdit.Onboarding = {
     },
     {
       id: "run",
-      title: "2. Run report",
-      body: "On Checks, leave one or two switches on (you do not need them all). Then click Run report — ProzaEdit waits for you; it does not underline as you type.",
+      title: "2. Run",
+      body: "On Run, leave one or two switches on (you do not need them all). Then click Run — ProzaEdit waits for you; it does not underline as you type.",
       tabId: "tab3",
       anchorSelector: "#btnRunAudit",
     },
     {
       id: "fix",
       title: "3. Fix what matters",
-      body: "Open Audit for your list. Start with Important items, jump to each spot in Word, then Apply fix when you agree.",
+      body: "Open Fix for your list. Start with Important items, jump to each spot in Word, then Apply fix when you agree.",
       tabId: "tab4",
       anchorSelector: "#cardContainer",
     },
@@ -60,26 +60,26 @@ ProzaEdit.Onboarding = {
     "Simple mode is on — fewer tabs, important issues first. Turn off in Settings → Essentials.",
 
   FULL_MANUSCRIPT_SCOPE_TIP:
-    "For very long documents, use Audit next chapter on Checks (one chapter at a time), or choose Chosen chapters or Page range on Target.",
+    "For very long documents, use Audit next chapter on Run (one chapter at a time), or choose Chosen chapters or Page range on Start.",
 
   MANUAL_AUDIT_HELP_COPY:
-    "ProzaEdit runs when you click Run report — not live underlines while you type.",
+    "ProzaEdit runs when you click Run — not live underlines while you type.",
 
   FIRST_AUDIT_CHECKLIST_STEPS: [
     "On Target, choose what to check (highlight, a chapter, or a page range).",
-    "On Checks, turn on one or two checks — not every switch.",
-    "Click Run report (toolbar or the big button on Checks).",
-    "On Audit, fix Important items first; Mute or Dictionary for names that are correct.",
+    "On Run, turn on one or two checks — not every switch.",
+    "Click Run (toolbar or the big button on Run).",
+    "On Fix, start with Important items; Mute or Dictionary for names that are correct.",
   ],
 
   PHASE_1_QUICKSTART_URL:
     "https://github.com/drcracius/prozaedit-word/blob/main/docs/PHASE-1-QUICKSTART.md",
 
-  /** Shipped first-run defaults (PE-61): Simple + Critical filter; user can turn off once. */
+  /** Shipped first-run defaults: Simple view, all lanes, low-confidence notes hidden until Show them. */
   buildFirstRunBootstrapPatch() {
     return {
       simpleMode: true,
-      auditCardFilter: "confirmed",
+      auditCardFilter: "all",
       firstRunComplete: false,
       onboardingTourComplete: false,
       auditExtended: false,
@@ -172,7 +172,7 @@ ProzaEdit.Onboarding = {
       lines.push("This was a large scope — runs can take longer on full manuscripts.");
     }
     lines.push(
-      "Next run: try Audit next chapter on Checks, Chosen chapters or Page range, and keep the Critical filter for a faster first pass."
+      "Next run: try Audit next chapter on Run, Chosen chapters or Page range, and keep the Important filter for a faster first pass."
     );
     return lines.join(" ");
   },
@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.51",
+    version: "2.0.0.52",
     bullet:
-      "Proofreading now catches “should of” (and could, would, might of) and suggests “have”. Business reports also flag a few Mailchimp jargon words. That pack is not for commercial use.",
+      "Run opens the report. Cards keep Go to and Apply up front; other actions are under More. A house rule wins when it names the same phrase as a built-in check.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

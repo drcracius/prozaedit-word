@@ -7,7 +7,7 @@ test("Onboarding.resolveFirstRunOnLoad bootstrap vs legacy", () => {
   const boot = Onboarding.resolveFirstRunOnLoad({ rawConfig: null, parsedConfig: null });
   assert.equal(boot.kind, "bootstrap");
   assert.equal(boot.patch.simpleMode, true);
-  assert.equal(boot.patch.auditCardFilter, "confirmed");
+  assert.equal(boot.patch.auditCardFilter, "all");
   assert.equal(boot.patch.firstRunComplete, false);
   assert.equal(boot.patch.onboardingTourComplete, false);
 

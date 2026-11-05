@@ -88,6 +88,14 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.52 — Quieter report path
+
+- **Run** finishes on **Fix**, with the summary and the first card. Start, Run, and Fix use the same names in Simple and Advanced.
+- A card shows **Go to** and **Apply**. Rewrite, tip, dictionary, house rule, mute, and AI are under **More**.
+- Simple view lists likely fixes and keeps quieter notes behind **Show them** on the report.
+- Fiction or plot checks on a partial scope show one warning at the top of the report. A house rule wins on the same phrase, and a spelling card on that word stays.
+- **Run** and **Run again** start the check. The summary stays at the top of Fix.
+
 ## 2.0.0.51 — Should of, and a noncommercial jargon pack
 
 - “should of”, “could of”, “would of”, and “might of” suggest “have”. “should of course” is left alone.

@@ -981,7 +981,7 @@ test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => 
     assert.ok(profile && typeSel);
     assert.equal(profile.contains(typeSel), false);
     const pill = t.document.querySelector('[data-workflow-step="1"]');
-    assert.equal(pill.getAttribute("aria-label"), "Target");
+    assert.equal(pill.getAttribute("aria-label"), "Start");
     assert.deepEqual(t.errors, []);
   } finally {
     t.close();

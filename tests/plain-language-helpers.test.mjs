@@ -55,7 +55,7 @@ test("PlainLanguage report depth option helpers", () => {
   assert.match(PlainLanguage.reportDepthOptionHelper("light"), /Light/i);
   assert.match(PlainLanguage.reportDepthOptionHelper("balanced"), /Balanced/i);
   assert.match(PlainLanguage.reportDepthOptionHelper("dense"), /Dense/i);
-  assert.equal(PlainLanguage.TAB_HINTS.tab3, "Run check");
+  assert.equal(PlainLanguage.TAB_HINTS.tab3, "Run");
 });
 
 test("PlainLanguage new-to-editing bullets", () => {

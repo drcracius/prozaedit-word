@@ -38,7 +38,7 @@
     "btn-scan-citations":
       "Scans scoped body text for citation pattern issues (APA, CMOS, Bluebook-lite). Findings merge into Audit cards when present.",
     "btn-verify-citations":
-      "Same as Checks → Verify citations. Requires opt-in on Checks. Pattern assist only — not stylebook certification.",
+      "Same as Run → Verify citations. Requires opt-in on Run. Pattern assist only — not stylebook certification.",
     "sel-citation-style":
       "Which heuristic pack leads the scan. Auto picks APA for academic, Bluebook-lite for business, CMOS-ish for technical/journalism.",
     "btn-session-tips-got-it":
@@ -49,7 +49,7 @@
 
   /** Short native `title` when hover tips are off (no duplicate long strings in HTML). */
   const NATIVE_TITLE_REGISTRY = {
-    "btn-run-audit": "Run report with current checks and scope",
+    "btn-run-audit": "Run with the current checks and scope",
     "btn-undo": "Undo last ProzaEdit replace (Ctrl+Shift+Z)",
     "btn-redo": "Redo (Ctrl+Shift+Y)",
     "btn-go-last-edit": "Jump to last applied edit",

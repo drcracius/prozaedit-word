@@ -4,7 +4,7 @@
 
 **Cause of the earlier failures (now fixed):** the old script registered a local `file:///` path (Word needs a network `\\PC\Share` path), and the manifest had a 33-character resource id (Word Desktop most likely skips it; the limit is 32).
 
-**Baseline:** build **2.0.0.51** on `main`. UI loads from GitHub Pages; the catalog only holds `manifest.hosted.xml`.
+**Baseline:** build **2.0.0.52** on `main`. UI loads from GitHub Pages; the catalog only holds `manifest.hosted.xml`.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@
 2. [ ] Console says **Manifest passes the desktop checks**, **Network share OK: `\\<PC>\ProzaEditCatalog`**, **Registered Trusted Add-in Catalog**.
 3. [ ] **`Verify-ProzaEdit-Install.bat`**: every line PASS.
 4. [ ] Open Word (blank doc): **Home -> Add-ins -> Advanced -> SHARED FOLDER** tab -> **ProzaEdit** -> **Add**.
-5. [ ] **Home -> ProzaEdit** opens the pane (not blank, not localhost). Run an audit on one test paragraph. Help -> About shows **2.0.0.51**.
+5. [ ] **Home -> ProzaEdit** opens the pane (not blank, not localhost). Run an audit on one test paragraph. Help -> About shows **2.0.0.52**.
 
 ## Route B: no admin
 

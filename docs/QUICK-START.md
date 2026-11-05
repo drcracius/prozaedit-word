@@ -1,6 +1,6 @@
 # ProzaEdit Word — Quick start (~2 min)
 
-**Hosted build:** 2.0.0.51 · **Live pane:** [taskpane.html](https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html)  
+**Hosted build:** 2.0.0.52 · **Live pane:** [taskpane.html](https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html)  
 **Web 1.0 RC:** owner validation — [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) · [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · desktop **PE-2** deferred.
 
 ## Install once
@@ -14,10 +14,10 @@ Desktop Word often lacks Upload — use the browser with the same Microsoft acco
 
 ## Daily workflow
 
-1. **Target** — **Scope** and **Type** on the first screen; profile and style below or in Settings. Open **Tips** (home chrome) for scope modes. **Refresh count** before a big run on long docs.
-2. **Checks** — Turn on core toggles and (for fiction) module checkboxes. Optional: timeline or citation scans (explicit buttons; fiction vs academic gating).
-3. **Run report** — Toolbar **Run** or Checks/Audit hub. Read summary and cards on **Audit**.
-4. **Fix cards** — **Go to**, **Apply fix** (first document match), **Mute**/**Dismiss**, or **Local tip** → Coach.
+1. **Start** — **Scope** and **Type** on the first screen; profile and style below or in Settings. Open **Tips** (home chrome) for scope modes. **Refresh count** before a big run on long docs.
+2. **Run** — Turn on core toggles and (for fiction) module checkboxes. Optional: timeline or citation scans (explicit buttons; fiction vs academic gating).
+3. **Run** — Toolbar **Run** or the button on Run. The report opens on **Fix**, summary first.
+4. **Review** — **Go to** and **Apply** stay on the card. Rewrite, tip, dictionary, mute, and AI are under **More**.
 
 Partner stack after cards: Word **F7/Editor**, **Copy for Copilot**, external tools you own — see [WORKFLOWS.md](WORKFLOWS.md).
 

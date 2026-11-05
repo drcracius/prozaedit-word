@@ -2383,12 +2383,34 @@ details.card[open] > .card-summary .card-caret {
   margin-bottom: 2px;
 }
 
+.card-more {
+  flex: 1 1 100%;
+  margin-top: 2px;
+}
+
+.card-more > summary {
+  cursor: pointer;
+  list-style: none;
+  width: fit-content;
+}
+
+.card-more > summary::-webkit-details-marker {
+  display: none;
+}
+
 .card-actions-secondary {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   flex: 1 1 100%;
-  margin-top: 2px;
+  margin-top: 4px;
+}
+
+.pe-scope-warning {
+  margin: 0 0 8px;
+  font-size: var(--pe-font-size-sm);
+  font-weight: 600;
+  color: var(--red);
 }
 
 .btn-main-hub.btn-with-icon {
