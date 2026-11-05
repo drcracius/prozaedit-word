@@ -14,26 +14,30 @@ Reviewed 2026-11-05. ProzaEdit keeps short original checks in `src/taskpane/lib/
 | [Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Short UI-doc phrases for technical manuscripts. |
 | [Google developer documentation style](https://developers.google.com/style) | CC BY 4.0 | Short developer-doc phrases. |
 | [Red Hat supplementary style guide](https://github.com/redhat-documentation/supplementary-style-guide) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | Short docs phrases. Share-alike applies to adaptations of their guide text; our lines are original. |
-| [weasel-words](https://github.com/btford/weasel-words) (Brian Ford) | MIT | A nonfiction tally when several hedge words pile up (very, quite, extremely, and similar). Ordinary quantifiers in that list, such as “many” and “few”, are not flagged. Copyright (c) 2014-2019 Brian Ford. |
+| [weasel-words](https://github.com/btford/weasel-words) (Brian Ford) | MIT | A nonfiction tally when several hedge words pile up. Copyright (c) 2014-2019 Brian Ford. |
+| [Mailchimp Content Style Guide](https://styleguide.mailchimp.com/) word list | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) | Business manuscripts only: incentivize, learnings, thought leader, best-in-breed, crushing it, killing it. Adapted notes, not the guide’s sentences. **Not for commercial use.** Remove this pack before any sale. Credit: Mailchimp. |
 
 House rules the user types are their own content.
 
-## Reviewed and not bundled
+## Skipped sources: ban, or only caution
 
-| Source | Why it stays out |
-| --- | --- |
-| Mailchimp Content Style Guide | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Noncommercial use only. This add-in is public, so that guide is not copied in. |
-| proselint | The program is BSD-3, but the checks restate copyrighted usage books. The licence on the code does not clear those books. |
-| Canada.ca Content Style Guide | The page we reviewed did not state the Open Government Licence. Not copied. |
-| EU Interinstitutional Style Guide | European Union copyright. Reuse terms were not clear enough to copy rules. |
-| LanguageTool `grammar.xml` (LGPL-2.1) | The English file is about 8 MB and needs a Java engine. A subset would still be their rule text. The add-in stays a no-build Office pane and does not send the manuscript to their server. |
-| SCOWL / Hunspell | Permissive, but large, and some underlying data is not freely redistributable. Word already spells. |
-| Australian Government Style Manual | Government copyright, not an open licence. |
-| Chicago, APA, MLA, AP, Guardian, BBC, Economist | Copyrighted manuals. Citation checks name the styles only; they do not certify compliance. |
-| Grammarly, ProWritingAid, Hemingway | Private products. Their underlines and phrase lists are not reused. |
+Private testing does not cancel copyright. This add-in is also public, so a noncommercial licence still has to be named.
+
+| Source | What the terms say | How we treated it |
+| --- | --- | --- |
+| Chicago, APA, MLA, AP, Guardian, BBC, Economist | No open licence. Copying the manuals is copyright infringement. There is no extra “do not use” sticker beyond copyright. | Not copied. |
+| Grammarly, ProWritingAid, Hemingway | No licence to copy their rule lists. The ideas (clarity, consistency) are not owned. | Not copied. |
+| Australian Government Style Manual | The site says government copyright, not an open licence. That is a missing permission, which means the default ban. | Not copied. |
+| Mailchimp Content Style Guide | **Not a ban.** CC BY-NC 4.0 allows noncommercial sharing if Mailchimp is credited. Commercial use is the explicit limit. | A short business-only pack is in. Remove it before any sale. |
+| Harper | **Not a ban.** Apache 2.0 allows use, including commercial use, with the licence and notices kept. | The engine is a Rust program and does not fit this pane. Reddit (r/emacs, r/neovim, 2025) recommends it as a local Grammarly alternative. |
+| LanguageTool | **Not a ban.** LGPL-2.1 allows use if the licence duties are met. | Skipped because the English rules are about 8 MB and need Java, not because the licence forbids it. |
+| proselint | **Not a ban on the program** (BSD-3). The caution is that many checks restate copyrighted usage books. | Not copied. |
+| Canada.ca style guide, EU style guide | No clear open licence on the pages reviewed. Uncertainty, not a sentence that says “you may not.” | Not copied. |
+| SCOWL / Hunspell | The dictionary notice is permissive. Some underlying word data is not free to redistribute. | Not bundled. Word already spells. |
+| Vale | The linter is open. Writers on r/technicalwriting use it for house style. | The app already stores house rules. Vale itself is a separate program. |
 
 ## Updates
 
 Rules ship with the add-in build. Help → About → **Check for updates** compares this pane with the live manifest. There is no separate download for style packs.
 
-*Aligned with hosted build **2.0.0.50**.*
+*Aligned with hosted build **2.0.0.51**.*

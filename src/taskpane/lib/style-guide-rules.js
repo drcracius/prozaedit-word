@@ -41,6 +41,7 @@ ProzaEdit.StyleGuideRules = {
       plain: "Plain Language word list (plainlanguage.gov, CC0)",
       gpo: "GPO Style Manual 2016 (U.S. public domain)",
       writegood: "weasel-words (Brian Ford, MIT)",
+      mailchimp: "Mailchimp Content Style Guide (CC BY-NC 4.0; not for commercial use)",
       strunk: "Strunk 1920 (public domain)",
       govuk: "GOV.UK style (OGL v2.0)",
       microsoft: "Microsoft Writing Style Guide (CC BY 4.0)",
@@ -176,6 +177,38 @@ ProzaEdit.StyleGuideRules = {
       targetText: hits[0],
       replacementText: "(review hedges)",
     });
+  },
+
+  /**
+   * Adapted from the Mailchimp Content Style Guide word list.
+   * CC BY-NC 4.0: noncommercial use only. Remove this pack before any sale.
+   * Changed from the guide: short original notes, not the guide's sentences.
+   */
+  mailchimpNoncommercial(text, lower, push, budget, ctx) {
+    if (!String(ctx?.manuscriptType || "").includes("Business")) return;
+    const rows = [
+      ["incentivize", "encourage"],
+      ["learnings", "lessons"],
+      ["thought leader", "(name the person)"],
+      ["best-in-breed", "(omit)"],
+      ["crushing it", "(plain words)"],
+      ["killing it", "(plain words)"],
+    ];
+    for (let i = 0; i < rows.length && budget.remaining > 0; i++) {
+      const hit = ProzaEdit.Audit?._find ? ProzaEdit.Audit._find(text, lower, rows[i][0]) : null;
+      if (!hit) continue;
+      budget.remaining--;
+      const id = rows[i][0].replace(/[^a-z0-9]+/gi, "_").slice(0, 24);
+      push({
+        ruleId: `sg:mc:${id}`,
+        module: this.MODULE,
+        type: "preference",
+        confidence: "low",
+        explanation: `Mailchimp’s word list treats “${hit}” as fluff (${this.sourceNote("mailchimp")}).`,
+        targetText: hit,
+        replacementText: rows[i][1],
+      });
+    }
   },
 
   strunk1920(text, lower, push, budget, ctx) {
@@ -349,6 +382,7 @@ ProzaEdit.StyleGuideRules = {
         this.plainLanguage(text, lower, push, budget, ctx);
         this.gpo2016(text, push, budget);
         this.weaselCluster(text, push, budget, ctx);
+        this.mailchimpNoncommercial(text, lower, push, budget, ctx);
       }
       else if (g === "strunk") this.strunk1920(text, lower, push, budget, ctx);
       else if (g === "govuk") this.govuk(text, lower, push, ctx, budget);

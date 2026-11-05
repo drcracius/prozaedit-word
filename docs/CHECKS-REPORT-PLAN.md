@@ -1,6 +1,6 @@
 # Checks and reports — improvement plan
 
-**Live:** 2.0.0.50.  
+**Live:** 2.0.0.51.  
 **Goal:** Make local checks and the report as useful as the best editors, without live underlining, subscriptions, or copied rule text.
 
 ## What the report does today
@@ -37,7 +37,8 @@ Help → About → **Check for updates** already compares this pane with the liv
 | 2 | Report summary grouped by check name | Done in 2.0.0.47 |
 | 3 | Consistency only when both forms appear (numbers, hyphen pairs) | Done in 2.0.0.48 |
 | 4 | Broader public plain-language list (multi-word only) and GPO “email” | Done in 2.0.0.49 |
-| 5 | MIT weasel-word tally for nonfiction (hedges only) | **This build** |
-| 6 | Stronger Simple-view filter so noisy Advanced hits stay hidden | Not started |
+| 5 | MIT weasel-word tally for nonfiction (hedges only) | Done in 2.0.0.50 |
+| 6 | “should of” → “should have”, plus a noncommercial Mailchimp jargon pack for business text | **This build** |
+| 7 | Stronger Simple-view filter so noisy Advanced hits stay hidden | Not started |
 
 Not planned: a full grammar parser, a Hunspell bundle, LanguageTool, or realtime underlines.

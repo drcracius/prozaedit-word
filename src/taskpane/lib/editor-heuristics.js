@@ -237,6 +237,25 @@ ProzaEdit.EditorHeuristics = {
     }
   },
 
+  /** “should of” is the common error for “should have”. “should of course” is left alone. */
+  scanModalOf(text, push) {
+    const re = /\b(should|could|would|might)\s+of\b(?!\s+course)/gi;
+    let n = 0;
+    let m;
+    while ((m = re.exec(text)) !== null && n < 4) {
+      n++;
+      const modal = m[1];
+      push({
+        ruleId: `spell:of:${modal.toLowerCase()}`,
+        module: "Proofreading & Language",
+        type: "confirmed",
+        explanation: `“${modal} of” is almost always “${modal.toLowerCase()} have”.`,
+        targetText: m[0],
+        replacementText: `${modal} have`,
+      });
+    }
+  },
+
   /** Both forms present in excerpt — consistency flag only. */
   scanSplitCompoundVariants(text, lower, push) {
     const pairs = [
@@ -370,6 +389,7 @@ ProzaEdit.EditorHeuristics = {
       this.scanConsecutiveDuplicates(text, push, 6);
       this.scanQuoteBalance(text, push);
       this.scanMixedForms(text, push);
+      this.scanModalOf(text, push);
     }
     if (ctx.chkRep !== false) {
       this.scanSplitCompoundVariants(text, text.toLowerCase(), push);

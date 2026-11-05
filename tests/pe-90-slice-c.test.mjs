@@ -130,6 +130,18 @@ test("public plain-language phrases and GPO email form", () => {
   assert.equal(fic.confidence, "low");
 });
 
+test("should of is have, except in of course", () => {
+  const bad = P.Audit.run("She should of gone home before dark yesterday.", ctxFor("Fiction (General)")).suggestions.find((s) => s.ruleId === "spell:of:should");
+  assert.ok(bad);
+  assert.equal(bad.replacementText, "should have");
+  assert.equal(bad.confidence, "high");
+  assert.equal(P.Audit.run("She should of course go home before dark.", ctxFor("Fiction (General)")).suggestions.some((s) => s.ruleId.startsWith("spell:of:")), false);
+  const mc = P.Audit.run("We will incentivize the team and share the learnings this week.", ctxFor("Business / Corporate Report")).suggestions.filter((s) => s.ruleId.startsWith("sg:mc:"));
+  assert.ok(mc.some((s) => s.ruleId === "sg:mc:incentivize"));
+  assert.ok(mc.every((s) => s.confidence === "low"));
+  assert.equal(P.Audit.run("We will incentivize the team and share the learnings this week.", ctxFor("Fiction (General)")).suggestions.some((s) => s.ruleId.startsWith("sg:mc:")), false);
+});
+
 test("MIT weasel list flags a pile of hedges in nonfiction only", () => {
   const pile = "The results are very clear and quite strong and extremely useful and obviously relevant to the office team.";
   const biz = P.Audit.run(pile, ctxFor("Business / Corporate Report")).suggestions.filter((s) => s.ruleId === "sg:writegood:weasel");

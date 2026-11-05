@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.50",
+    version: "2.0.0.51",
     bullet:
-      "Nonfiction reports now flag a pile of hedge words (very, quite, extremely, and similar) from an MIT word list. One or two are left alone, and fiction is skipped.",
+      "Proofreading now catches “should of” (and could, would, might of) and suggests “have”. Business reports also flag a few Mailchimp jargon words. That pack is not for commercial use.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },
