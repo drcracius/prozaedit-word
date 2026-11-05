@@ -36,7 +36,9 @@ One vocabulary for all **seven tabs**, audit hubs, and Settings — **no per-tab
 
 - **Settings:** Back (same as Close) + Escape; **Save & close** persists then dismisses; **Ctrl+Shift+,** / **Alt+Shift+S**; deep links + `#pe-settings-{section}` hash.
 - **Last tab:** persisted in `PROZAEDIT_CONFIG.lastActiveTab` per document.
-- **Scope status line:** one row under sticky toolbar (scope label + char preview summary).
+- **Home chrome (declutter):** icon workflow pills, Guide/Scope badges, closed **Tips** (`#peChromeHelp`), icon toolbar with visible **Run**.
+- **Scope status line:** clipped for AT when static; live values shown on Guide/Scope badges.
+- **Simple mode:** smaller tab labels; no `.pe-tab-hint` subtitles on tabs.
 - **Rewrite from audit card:** session “Back to Audit” until dismissed.
 
 ## Settings modal inventory (PE-38)
@@ -45,7 +47,7 @@ Collapsible `<details class="pe-settings-group">`:
 
 | Group | Contents | Default open |
 | --- | --- | --- |
-| **Safety** | Simple mode, selection-only edits, confirm Apply, hover tips, FK lock, Version History reminder, continuity slider, fiction scope reminder, hide session tips permanently, Gemini session ceiling; **Reset Safety to defaults** | yes |
+| **Essentials** | Simple mode, AI provider block, theme radios; **Reset** lives in Advanced groups | yes |
 | **Onboarding** | Session tips, What's new, prior-session recap, long-operation warnings; **Reset Onboarding** | no |
 | **Appearance** | Light / Dark / Match system; **Reset Appearance** | no |
 | **Audit & reports** | Report depth, default audit filter, deeper checks default; **Reset Audit & reports**; Audit tab hints read Settings selects | no |

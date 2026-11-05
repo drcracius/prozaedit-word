@@ -75,7 +75,7 @@
   --pe-backdrop: rgba(32, 33, 36, 0.45);
   --pe-modal-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
   --pe-toolbar-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --pe-card-shadow: 0 4px 10px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --pe-card-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.1), 0 2px 6px -2px rgba(15, 23, 42, 0.06);
   --pe-tooltip-fg: #f8fafc;
   --pe-tooltip-bg: #1e293b;
   --pe-tooltip-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
@@ -134,7 +134,7 @@
   --pe-backdrop: rgba(0, 0, 0, 0.78);
   --pe-modal-shadow: 0 12px 40px rgba(0, 0, 0, 0.72);
   --pe-toolbar-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 12px rgba(0, 0, 0, 0.45);
-  --pe-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --pe-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.05), 0 3px 10px rgba(0, 0, 0, 0.4);
   --pe-tooltip-fg: #f5f5f5;
   --pe-tooltip-bg: #141414;
   --pe-tooltip-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
@@ -1909,6 +1909,14 @@ body.pe-simple-mode .tab-btn .pe-tab-hint {
 
 body.pe-simple-mode .pe-target-simple-mode-line {
   display: none;
+}
+
+body.pe-simple-mode .nav-tabs .tab-btn [data-pe-tab-label] {
+  font-size: var(--pe-font-size-sm);
+}
+
+body.pe-simple-mode .workflow-step {
+  padding: 5px 6px;
 }
 
 .pe-chrome-help > summary {

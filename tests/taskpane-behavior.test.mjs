@@ -868,6 +868,24 @@ test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => 
   }
 });
 
+test("layout: Pass 4 Help keeps required ids and drops duplicate scope essay", async () => {
+  const t = await boot();
+  try {
+    assert.ok(t.el("peHelpPrivacySummary"));
+    assert.ok(t.el("peHelpGotoTroubleshoot"));
+    assert.ok(t.el("peHelpSupportSummary"));
+    assert.ok(t.el("peAboutBuildVersion"));
+    const helpText = t.document.getElementById("tab7").textContent;
+    assert.doesNotMatch(helpText, /Analysis scope \(Target\)/);
+    assert.doesNotMatch(helpText, /Settings \(toolbar gear\):/);
+    assert.match(helpText, /Install & update/i);
+    assert.equal(t.el("peSimpleModeEssentialsIntro").classList.contains("hidden"), true);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: Pass 2a audit chrome (summary block, hidden hints, More)", async () => {
   const t = await boot();
   try {

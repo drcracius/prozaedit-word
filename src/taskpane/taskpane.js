@@ -2562,7 +2562,7 @@ function applyPlainLanguageLayer() {
   const on = isChecked("simpleMode", false);
   const intro = getEl("peSimpleModeEssentialsIntro");
   const turnOff = getEl("btnTurnOffSimpleMode");
-  if (intro) intro.classList.toggle("hidden", !on);
+  if (intro) intro.classList.add("hidden");
   if (turnOff) turnOff.classList.toggle("hidden", !on);
   updatePlainLanguageScopeSelect();
   updatePlainLanguageControlHints();

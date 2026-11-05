@@ -42,8 +42,8 @@ ProzaEdit.Onboarding = {
     },
     {
       id: "run",
-      title: "2. Run audit",
-      body: "On Checks, leave one or two switches on (you do not need them all). Then click Run audit — ProzaEdit waits for you; it does not underline as you type.",
+      title: "2. Run report",
+      body: "On Checks, leave one or two switches on (you do not need them all). Then click Run report — ProzaEdit waits for you; it does not underline as you type.",
       tabId: "tab3",
       anchorSelector: "#btnRunAudit",
     },
@@ -68,7 +68,7 @@ ProzaEdit.Onboarding = {
   FIRST_AUDIT_CHECKLIST_STEPS: [
     "On Target, choose what to check (highlight, a chapter, or a page range).",
     "On Checks, turn on one or two checks — not every switch.",
-    "Click Run audit (toolbar or the big button on Checks).",
+    "Click Run report (toolbar or the big button on Checks).",
     "On Audit, fix Important items first; Mute or Dictionary for names that are correct.",
   ],
 
