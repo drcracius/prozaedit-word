@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.44";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.45";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -6923,6 +6923,7 @@ async function runDeepAuditAICore() {
   let cancelled = false;
   let deepStoppedEarly = false;
   let failed = false;
+  let local = null;
   const sumD = getEl("summaryReport");
   try {
     setModuleButtonsDisabled(true);
@@ -6954,6 +6955,25 @@ async function runDeepAuditAICore() {
     }
     timing.mark("read");
     longOp.throwIfCancelled();
+    lastAuditExcerpt = excerpt;
+    longOp.setStatus("Running local checks…");
+    const localResult = await ProzaEdit.Audit.runWithProgress(excerpt, buildAuditContext(), {
+      cancelled: () => longOp.isCancelled(),
+      yieldFn: () => new Promise((r) => setTimeout(r, 0)),
+      onPhase: (phase) => {
+        const rowId = checkPhaseRowId(phase.id);
+        if (phase.state === "start") {
+          clearCheckPhaseMarks("now");
+          setCheckPhaseMark(rowId, "now");
+          longOp.setStatus(`Running ${phase.label}…`);
+        } else if (phase.state === "done") {
+          setCheckPhaseMark(rowId, "done");
+        }
+      },
+    });
+    local = localResult;
+    clearCheckPhaseMarks();
+    longOp.throwIfCancelled();
     longOp.setStatus(`Waiting for ${aiLabel()}…`);
 
     const prep = await prepareGeminiPrompt(({ profile, index }) => [
@@ -6982,23 +7002,6 @@ async function runDeepAuditAICore() {
     }
     const droppedN = aiDropped ? aiDropped.notInSource + aiDropped.unsafe + aiDropped.malformed : 0;
     if (droppedN) showPeStatus(`${droppedN} AI suggestion(s) were ignored because they did not quote your text exactly or looked unsafe.`, "warn");
-    lastAuditExcerpt = excerpt;
-    longOp.setStatus("Running local checks…");
-    const local = await ProzaEdit.Audit.runWithProgress(excerpt, buildAuditContext(), {
-      cancelled: () => longOp.isCancelled(),
-      yieldFn: () => new Promise((r) => setTimeout(r, 0)),
-      onPhase: (phase) => {
-        const rowId = checkPhaseRowId(phase.id);
-        if (phase.state === "start") {
-          clearCheckPhaseMarks("now");
-          setCheckPhaseMark(rowId, "now");
-          longOp.setStatus(`Running ${phase.label}…`);
-        } else if (phase.state === "done") {
-          setCheckPhaseMark(rowId, "done");
-        }
-      },
-    });
-    clearCheckPhaseMarks();
     const merged = ProzaEdit.Audit._dedupe([...local.suggestions, ...ai]).slice(0, 60);
     const score = Math.max(5, Math.round((10 - merged.filter((s) => s.type === "confirmed").length * 0.45) * 10) / 10);
     finalizeAudit({ ...local, suggestions: merged, score, traffic: ProzaEdit.Metrics.trafficLight(score) }, "Deep audit");
@@ -7011,6 +7014,12 @@ async function runDeepAuditAICore() {
         deepStoppedEarly = true;
         finalizeAudit(e.partial, "Deep audit");
         if (sumD) sumD.textContent = "Stopped early — local checks did not all finish. AI was not called.";
+        showPeStatus("Stopped early — local checks did not all finish. AI was not called.", "warn");
+      } else if (local?.suggestions) {
+        deepStoppedEarly = true;
+        finalizeAudit(local, "Deep audit");
+        if (sumD) sumD.textContent = "Cancelled. Local checks are kept. The AI reply was not used.";
+        showPeStatus("Cancelled. Local checks are kept. The AI reply was not used.", "warn");
       } else {
         if (sumD) sumD.textContent = "Cancelled.";
         showAuditEmptyIfNeeded();
@@ -7027,8 +7036,9 @@ async function runDeepAuditAICore() {
     clearCheckPhaseMarks();
     endLongOperation(longOp);
     const timingSummary = reportPhaseTiming("deep audit", timing);
-    if (deepStoppedEarly) showPeStatus("Stopped early — local checks did not all finish. AI was not called.", "warn");
-    else if (cancelled) showPeStatus("Cancelled.", "warn");
+    if (deepStoppedEarly) {
+      /* status already set */
+    } else if (cancelled) showPeStatus("Cancelled.", "warn");
     else if (failed) {
       showPeStatus(
         getRetryController()?.has?.() ? "Deep report could not finish. Use Try again, or run the free local report." : "Deep audit could not finish.",
