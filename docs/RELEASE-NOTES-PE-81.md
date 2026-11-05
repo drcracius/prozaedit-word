@@ -88,6 +88,11 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.44 — Same words, and named checks on a deep report
+
+- Text you can see says **Run report** where it used to say “run audit” for the same button.
+- The optional deep report names each local check. If you cancel during those checks, finished cards stay and AI is not called.
+
 ## 2.0.0.43 — Named checks while a report runs
 
 - The progress line names the check that is running (Repetition, Proofreading, Plot, and so on). The matching row on Checks is marked.

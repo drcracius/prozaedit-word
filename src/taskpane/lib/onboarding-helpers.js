@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.43",
+    version: "2.0.0.44",
     bullet:
-      "While a report runs, the progress line names each check (Repetition, Proofreading, and so on) and the Checks row highlights. Cancel after a check has finished keeps those cards and says what did not run.",
+      "Visible lines say Run report. The optional deep report names each local check the same way, and Cancel during those checks keeps whatever finished without calling AI.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

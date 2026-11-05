@@ -71,7 +71,7 @@ ProzaEdit.LocalCoach = {
       re: /\b(pacing|slow|drag|boring|flat)\b/i,
       tips: [
         "Shorten the middle: add a complication every 500–800 words in thriller pacing.",
-        "Audit one chapter at a time with the local audit (no AI cost).",
+        "Audit one chapter at a time with Run report (no AI cost).",
       ],
     },
     {
@@ -91,14 +91,14 @@ ProzaEdit.LocalCoach = {
     {
       re: /\b(copilot|gemini|ai|rewrite)\b/i,
       tips: [
-        "Suggested order: ProzaEdit local audit, then Word Copilot for prose, then your own AI key only if you want it.",
+        "Suggested order: ProzaEdit Run report, then Word Copilot for prose, then your own AI key only if you want it.",
         "Use ‘Copy for Copilot’ on the Audit tab to paste findings without using AI tokens.",
       ],
     },
     {
       re: /\b(plot|chapter|structure|arc|midpoint|climax)\b/i,
       tips: [
-        "End chapters on unresolved tension; logistics-only endings often flag in local audit.",
+        "End chapters on unresolved tension; logistics-only endings often flag in the report.",
         "Audit one chapter at a time (Target → Chosen chapters) to keep long manuscripts manageable (0 tokens).",
       ],
     },
@@ -134,7 +134,7 @@ ProzaEdit.LocalCoach = {
 
   GENERAL: [
     "Highlight the passage in Word, run **Run Full Audit (local)**—zero tokens.",
-    "Use **Deeper local audit** for an extra rule pass before any paid/API step.",
+    "Use the deeper local report for an extra rule pass before any paid/API step.",
     "Apply fixes with undo available (toolbar ↶ Undo).",
   ],
 

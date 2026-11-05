@@ -73,14 +73,14 @@
       const text = String(reply || "").replace(/```(?:json)?/gi, "");
       const start = text.indexOf("[");
       const end = text.lastIndexOf("]");
-      if (start < 0 || end <= start) throw new Error("The AI reply was not valid JSON. Nothing was changed — use the local audit.");
+      if (start < 0 || end <= start) throw new Error("The AI reply was not valid JSON. Nothing was changed — use Run report.");
       let parsed;
       try {
         parsed = JSON.parse(text.substring(start, end + 1));
       } catch (_) {
-        throw new Error("The AI reply was not valid JSON. Nothing was changed — use the local audit.");
+        throw new Error("The AI reply was not valid JSON. Nothing was changed — use Run report.");
       }
-      if (!Array.isArray(parsed)) throw new Error("The AI reply was not a list. Nothing was changed — use the local audit.");
+      if (!Array.isArray(parsed)) throw new Error("The AI reply was not a list. Nothing was changed — use Run report.");
       const src = String(source || "");
       const findings = [];
       parsed.slice(0, 40).forEach((x) => {

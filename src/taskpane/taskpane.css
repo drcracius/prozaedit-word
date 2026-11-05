@@ -2759,6 +2759,12 @@ details.card[open] > .card-summary .card-caret {
   .pe-onboarding-tour-panel { max-width: 100%; }
 }
 
+@media (max-width: 320px) {
+  .pe-toolbar { gap: 4px; padding-left: 4px; padding-right: 4px; }
+  .pe-op-bar { padding: 6px 4px; }
+  .btn-tool-icon-label-keep { font-size: 12px; }
+}
+
 .pe-overhead-badges {
   display: flex;
   flex-wrap: wrap;

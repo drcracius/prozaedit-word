@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.43";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.44";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -100,7 +100,7 @@ const AUDIT_PIN_FIELDS = [
 const AUDIT_EMPTY_HTML = `<div class="audit-empty">
   <div class="audit-empty-icon" aria-hidden="true">📝</div>
   <p><strong>No audit yet</strong></p>
-  <p>Turn on checks on <strong>Checks</strong>, then run audit here or from the toolbar.</p>
+  <p>Turn on checks on <strong>Checks</strong>, then run the report here or from the toolbar.</p>
   <button type="button" class="btn-secondary pe-btn" onclick="showTab('tab3'); runPrimaryAudit();">Run report from Checks</button>
   <button type="button" class="btn-secondary pe-btn" onclick="showTab('tab3')">Configure checks</button>
 </div>`;
@@ -2586,7 +2586,7 @@ async function prepareScopeForAudit(retryOpts) {
     await peConfirm({
       title: "No selection",
       message:
-        "Nothing (or too little) is highlighted in Word.\n\nSelect the next section automatically and run audit?\n\n(Cancel = stop; you can highlight text yourself.)",
+        "Nothing (or too little) is highlighted in Word.\n\nSelect the next section automatically and run the report?\n\n(Cancel = stop; you can highlight text yourself.)",
       confirmLabel: "Select next section",
       cancelLabel: "Cancel",
     })
@@ -4395,7 +4395,7 @@ async function importDictionaryFromTextarea() {
 
 async function resetMutedRules() {
   await ProzaEdit.Settings.resetMutedRules();
-  showPeStatus("Muted rules cleared. Re-run audit.", "ok");
+  showPeStatus("Muted rules cleared. Run report again.", "ok");
 }
 
 /* Custom style guide */
@@ -5426,14 +5426,14 @@ function restoreCachedAuditIfEmpty() {
 }
 
 function runProzaEditAudit() {
-  runAuditInternal({ extendedLocal: false, label: "Full audit (local)", status: "Running local audit…" });
+  runAuditInternal({ extendedLocal: false, label: "Full report (local)", status: "Running local report…" });
 }
 
 function runExtendedLocalAudit() {
   runAuditInternal({
     extendedLocal: true,
-    label: "Deeper local audit",
-    status: "Running deeper local audit (0 tokens)…",
+    label: "Deeper local report",
+    status: "Running deeper local report (0 tokens)…",
     btnId: "btnRunAudit",
     btnDone: PE_RUN_REPORT_LABEL,
   });
@@ -6675,7 +6675,7 @@ async function scanChapterHeatmap() {
     const payload = JSON.stringify(entries.slice(0, 40));
     if (payload.length > 48000) throw new Error("The chapter chart is too large to save. Use fewer chapters.");
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CHAPTER_HEATMAP, payload);
-    showPeStatus(`Heatmap saved (${entries.length} chapters). Re-run audit to view.`, "ok");
+    showPeStatus(`Heatmap saved (${entries.length} chapters). Run report again to view.`, "ok");
   } catch (e) {
     reportActionError(e, "build the chapter heatmap", {
       retry: { label: "Chapter heatmap", run: () => scanChapterHeatmap() },
@@ -6889,7 +6889,7 @@ async function runDeepAuditAI() {
   }
   const key = getApiKey();
   if (!key) {
-    showPeStatus("Add an AI provider API key under Settings → AI help (optional), or use the free local audit.", "warn");
+    showPeStatus("Add an AI provider API key under Settings → AI help (optional), or use the free local report.", "warn");
     openAiHelpSetup();
     return;
   }
@@ -6897,7 +6897,7 @@ async function runDeepAuditAI() {
     !(await aiConfirmOnce({
       title: `Deep audit via ${aiLabel()}`,
       message:
-        `Deep Audit uses 1 ${aiLabel()} API call and sends up to ${MAX_DEEP.toLocaleString()} characters of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry Deeper local audit (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
+        `Deep Audit uses 1 ${aiLabel()} API call and sends up to ${MAX_DEEP.toLocaleString()} characters of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry the deeper local report (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -6921,6 +6921,7 @@ async function runDeepAuditAICore() {
   const timing = createPhaseTiming();
   let longOp = null;
   let cancelled = false;
+  let deepStoppedEarly = false;
   let failed = false;
   const sumD = getEl("summaryReport");
   try {
@@ -6977,12 +6978,27 @@ async function runDeepAuditAICore() {
       ai = checked.findings;
       aiDropped = checked.dropped;
     } catch (_) {
-      throw new Error("The AI reply could not be read. Nothing was changed — use the local audit.");
+      throw new Error("The AI reply could not be read. Nothing was changed — use Run report.");
     }
     const droppedN = aiDropped ? aiDropped.notInSource + aiDropped.unsafe + aiDropped.malformed : 0;
     if (droppedN) showPeStatus(`${droppedN} AI suggestion(s) were ignored because they did not quote your text exactly or looked unsafe.`, "warn");
     lastAuditExcerpt = excerpt;
-    const local = ProzaEdit.Audit.run(excerpt, buildAuditContext());
+    longOp.setStatus("Running local checks…");
+    const local = await ProzaEdit.Audit.runWithProgress(excerpt, buildAuditContext(), {
+      cancelled: () => longOp.isCancelled(),
+      yieldFn: () => new Promise((r) => setTimeout(r, 0)),
+      onPhase: (phase) => {
+        const rowId = checkPhaseRowId(phase.id);
+        if (phase.state === "start") {
+          clearCheckPhaseMarks("now");
+          setCheckPhaseMark(rowId, "now");
+          longOp.setStatus(`Running ${phase.label}…`);
+        } else if (phase.state === "done") {
+          setCheckPhaseMark(rowId, "done");
+        }
+      },
+    });
+    clearCheckPhaseMarks();
     const merged = ProzaEdit.Audit._dedupe([...local.suggestions, ...ai]).slice(0, 60);
     const score = Math.max(5, Math.round((10 - merged.filter((s) => s.type === "confirmed").length * 0.45) * 10) / 10);
     finalizeAudit({ ...local, suggestions: merged, score, traffic: ProzaEdit.Metrics.trafficLight(score) }, "Deep audit");
@@ -6990,8 +7006,15 @@ async function runDeepAuditAICore() {
   } catch (e) {
     if (isLongOpCancelledError(e)) {
       cancelled = true;
-      if (sumD) sumD.textContent = "Cancelled.";
-      showAuditEmptyIfNeeded();
+      clearCheckPhaseMarks();
+      if (e.partial?.completedPhaseIds?.length) {
+        deepStoppedEarly = true;
+        finalizeAudit(e.partial, "Deep audit");
+        if (sumD) sumD.textContent = "Stopped early — local checks did not all finish. AI was not called.";
+      } else {
+        if (sumD) sumD.textContent = "Cancelled.";
+        showAuditEmptyIfNeeded();
+      }
     } else {
       failed = true;
       const message = wordRecoveryMessage(e, "finish the deep audit");
@@ -7001,12 +7024,14 @@ async function runDeepAuditAICore() {
   } finally {
     deepBusy = false;
     setModuleButtonsDisabled(false);
+    clearCheckPhaseMarks();
     endLongOperation(longOp);
     const timingSummary = reportPhaseTiming("deep audit", timing);
-    if (cancelled) showPeStatus("Cancelled.", "warn");
+    if (deepStoppedEarly) showPeStatus("Stopped early — local checks did not all finish. AI was not called.", "warn");
+    else if (cancelled) showPeStatus("Cancelled.", "warn");
     else if (failed) {
       showPeStatus(
-        getRetryController()?.has?.() ? "Deep audit could not finish. Use Try again, or run the free local audit." : "Deep audit could not finish.",
+        getRetryController()?.has?.() ? "Deep report could not finish. Use Try again, or run the free local report." : "Deep audit could not finish.",
         "warn"
       );
     } else showPeStatus(timingSummary ? `Deep audit finished. ${timingSummary}` : "Deep audit finished.", "ok");
