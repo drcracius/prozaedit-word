@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.46";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.47";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -5312,6 +5312,14 @@ function finalizeAudit(result, label, fopts) {
   html += `<p>Words: ${metrics.wordCount} · FK grade ~${metrics.fleschKincaidGrade} · FRE ~${metrics.fleschReadingEase}</p>`;
   const sevLabel = auditFilterDisplayLabel("confirmed");
   html += `<p>🔴 ${escapeHtml(sevLabel)}: ${criticalCount} · 🟡 Style: ${prefCount} · 🟢 Traffic: ${traffic.label}</p>`;
+  if (ProzaEdit.DocAnalytics?.groupByModule && visible.length) {
+    const grouped = ProzaEdit.DocAnalytics.groupByModule(visible, 8);
+    if (grouped.rows.length) {
+      const bits = grouped.rows.map((g) => `${escapeHtml(g.name)} ${g.count}`);
+      if (grouped.extra) bits.push(`+${grouped.extra} more`);
+      html += `<p class="audit-by-check"><strong>By check:</strong> ${bits.join(" · ")}</p>`;
+    }
+  }
   html += `<p class="help-muted audit-mode-note" style="font-size:var(--pe-font-size-sm);">${escapeHtml(modeNote)}</p>`;
   if (compareLine) html += `<p>${escapeHtml(compareLine)}</p>`;
   if (refLine) html += `<p>${escapeHtml(refLine)}</p>`;

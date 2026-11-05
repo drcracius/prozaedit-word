@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.46",
+    version: "2.0.0.47",
     bullet:
-      "Reports can flag hidden verbs from plain-language practice (make a decision → decide, and similar). Fiction keeps these quieter. More report grouping comes next.",
+      "The report summary now lists findings by check name. About explains that style and spelling checks update with the add-in, not as a separate download.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

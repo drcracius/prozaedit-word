@@ -67,4 +67,19 @@ ProzaEdit.DocAnalytics = {
     const dDlg = (dialoguePct - (ref.dialoguePct || 0)).toFixed(1);
     return `Reference style Δ: FK ${dFk >= 0 ? "+" : ""}${dFk} · Dialogue ${dDlg >= 0 ? "+" : ""}${dDlg}%`;
   },
+
+  /** Counts visible findings by check name, busiest first. */
+  groupByModule(suggestions, limit) {
+    const cap = limit || 8;
+    const counts = new Map();
+    (suggestions || []).forEach((s) => {
+      const name = String((s && s.module) || "Other").replace(/\s+/g, " ").trim() || "Other";
+      counts.set(name, (counts.get(name) || 0) + 1);
+    });
+    const rows = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    return {
+      rows: rows.slice(0, cap).map(([name, count]) => ({ name, count })),
+      extra: Math.max(0, rows.length - cap),
+    };
+  },
 };

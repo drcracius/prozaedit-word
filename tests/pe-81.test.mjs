@@ -334,3 +334,19 @@ test("audit: key store degrades safely when storage is unavailable", () => {
   assert.equal(pe.AIQuotaManager.getDayTokens(), 0);
   pe.AIQuotaManager.recordUsage(10);
 });
+
+test("report groups findings by check name, busiest first", () => {
+  const { DocAnalytics } = load();
+  const grouped = DocAnalytics.groupByModule([
+    { module: "Style guide" },
+    { module: "Proofreading & Language" },
+    { module: "Proofreading & Language" },
+    { module: "  " },
+    { module: "Style guide" },
+  ], 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(grouped.rows)), [
+    { name: "Proofreading & Language", count: 2 },
+    { name: "Style guide", count: 2 },
+  ]);
+  assert.equal(grouped.extra, 1);
+});
