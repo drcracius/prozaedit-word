@@ -176,6 +176,67 @@ ProzaEdit.EditorHeuristics = {
     }
   },
 
+  /**
+   * Phrase as its own token. No lookbehind (older Office webviews).
+   * Returns the document's own spelling, or null.
+   */
+  _boundedPhrase(text, phrase) {
+    const esc = String(phrase).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(?:^|[\\s(\\[“"])(${esc})(?=$|[\\s)\\],;!?"”])`, "i");
+    const m = re.exec(String(text || ""));
+    return m ? m[1] : null;
+  },
+
+  /**
+   * Number words and hyphen pairs — only when both forms are in this passage.
+   * Low confidence: house style may want either form. Not a copied style-manual rule.
+   */
+  scanMixedForms(text, push) {
+    let n = 0;
+    const limit = 4;
+    const numberWords = [
+      ["2", "two"], ["3", "three"], ["4", "four"], ["5", "five"],
+      ["6", "six"], ["7", "seven"], ["8", "eight"], ["9", "nine"], ["10", "ten"],
+    ];
+    for (let i = 0; i < numberWords.length && n < limit; i++) {
+      const digit = this._boundedPhrase(text, numberWords[i][0]);
+      const word = this._boundedPhrase(text, numberWords[i][1]);
+      if (!digit || !word) continue;
+      n++;
+      push({
+        ruleId: `edit:num:${numberWords[i][1]}`,
+        module: "Editorial consistency",
+        type: "preference",
+        confidence: "low",
+        explanation: `Both “${word}” and “${digit}” appear in this passage. Pick one number style.`,
+        targetText: word,
+        replacementText: "(pick one style)",
+      });
+    }
+    const hyphenPairs = [
+      ["long-term", "long term"],
+      ["well-known", "well known"],
+      ["decision-making", "decision making"],
+      ["website", "web site"],
+      ["healthcare", "health care"],
+    ];
+    for (let i = 0; i < hyphenPairs.length && n < limit; i++) {
+      const closed = this._boundedPhrase(text, hyphenPairs[i][0]);
+      const open = this._boundedPhrase(text, hyphenPairs[i][1]);
+      if (!closed || !open) continue;
+      n++;
+      push({
+        ruleId: `edit:hyphen:${hyphenPairs[i][0].replace(/[^a-z0-9]+/gi, "_").slice(0, 24)}`,
+        module: "Editorial consistency",
+        type: "preference",
+        confidence: "low",
+        explanation: `Both “${closed}” and “${open}” appear in this passage. Pick one form.`,
+        targetText: open,
+        replacementText: "(pick one style)",
+      });
+    }
+  },
+
   /** Both forms present in excerpt — consistency flag only. */
   scanSplitCompoundVariants(text, lower, push) {
     const pairs = [
@@ -308,6 +369,7 @@ ProzaEdit.EditorHeuristics = {
       this.scanAAn(text, push, 5);
       this.scanConsecutiveDuplicates(text, push, 6);
       this.scanQuoteBalance(text, push);
+      this.scanMixedForms(text, push);
     }
     if (ctx.chkRep !== false) {
       this.scanSplitCompoundVariants(text, text.toLowerCase(), push);

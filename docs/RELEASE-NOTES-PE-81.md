@@ -88,6 +88,10 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.48 — Mixed forms
+
+- When a passage uses both a number word and its digit (two and 2), or both a hyphen form and an open form (long-term and long term), the report says to pick one. Times (2:30) and decimals (10.5) are left alone. These cards stay lower confidence, so Simple view hides them.
+
 ## 2.0.0.47 — Report grouped by check
 
 - The summary adds a **By check** line (busiest check first, up to eight names).

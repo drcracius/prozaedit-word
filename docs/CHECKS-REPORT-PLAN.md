@@ -1,6 +1,6 @@
 # Checks and reports — improvement plan
 
-**Live:** 2.0.0.47.  
+**Live:** 2.0.0.48.  
 **Goal:** Make local checks and the report as useful as the best editors, without live underlining, subscriptions, or copied rule text.
 
 ## What the report does today
@@ -14,7 +14,7 @@ Grammarly, ProWritingAid, Hemingway, and LanguageTool group a report into clarit
 | Area | Already in ProzaEdit | Still weaker than the leaders |
 | --- | --- | --- |
 | Clarity | Plain language, Strunk 1920, hidden verbs, a passive-voice tally on long nonfiction, reading level, sentence rhythm | No full grammar parse. Fiction keeps wording advice quieter on purpose. |
-| Consistency | Repeated words, a/an, quote pairing, cannot/all right, among/amongst, mid-word capitals, dash mix, names, UK/US spelling pairs | Numbers (10 vs ten) and hyphen pairs are not flagged only when both forms appear. |
+| Consistency | Repeated words, a/an, quote pairing, cannot/all right, among/amongst, mid-word capitals, dash mix, names, UK/US spelling pairs, number words vs digits, and hyphen pairs when both forms appear | Still not a full house-style dictionary. Times and decimals are ignored on purpose. |
 | Report | Score, Simple/Advanced filter, chips, and a **By check** count line | Cards are still one list. The summary does not open a check on its own. |
 
 ## Public sources — what is safe
@@ -37,8 +37,8 @@ Help → About → **Check for updates** already compares this pane with the liv
 | Order | Improvement | Status |
 | --- | --- | --- |
 | 1 | Hidden verbs (“make a decision” → “decide”) | Done in 2.0.0.46 |
-| 2 | Report summary grouped by check name | **This build** |
-| 3 | Consistency only when both forms appear (numbers, hyphen pairs) | Not started |
+| 2 | Report summary grouped by check name | Done in 2.0.0.47 |
+| 3 | Consistency only when both forms appear (numbers, hyphen pairs) | **This build** |
 | 4 | Stronger Simple-view filter so noisy Advanced hits stay hidden | Not started |
 
 Not planned: a full grammar parser, a Hunspell bundle, LanguageTool, or realtime underlines.

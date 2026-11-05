@@ -116,6 +116,22 @@ test("edit:quote: multi-paragraph speech and inch marks are balanced; a real str
   assert.equal(f(`"I never meant to leave, she said, and turned away from the door.`).length, 1);
 });
 
+test("mixed number and hyphen forms are flagged only when both appear", () => {
+  const ids = (t, prefix) => P.Audit.run(t, ctxFor("Business / Corporate Report")).suggestions.filter((s) => s.ruleId.startsWith(prefix));
+  const nums = ids("We bought 2 lamps and two chairs for the office last week.", "edit:num");
+  assert.equal(nums.length, 1);
+  assert.equal(nums[0].ruleId, "edit:num:two");
+  assert.equal(nums[0].confidence, "low");
+  assert.equal(nums[0].targetText, "two");
+  assert.equal(ids("We bought two lamps and two chairs for the office last week.", "edit:num").length, 0);
+  assert.equal(ids("The meeting is at 2:30 and two people came along.", "edit:num").length, 0);
+  assert.equal(ids("Budget line 10.5 covers ten spare chairs in the room.", "edit:num").length, 0);
+  const hy = ids("It is a long-term plan and a long term lease for the office.", "edit:hyphen");
+  assert.equal(hy.length, 1);
+  assert.equal(hy[0].targetText, "long term");
+  assert.equal(ids("It is a long-term plan for the whole office team.", "edit:hyphen").length, 0);
+});
+
 test("edit:split no longer treats every day / everyday, any one / anyone as inconsistent", () => {
   const f = (t) => P.Audit.run(t, ctxFor("Fiction (General)")).suggestions.filter((s) => s.ruleId.startsWith("edit:split"));
   assert.equal(f("Every day she wore an everyday coat. Anyone could see any one of them.").length, 0);

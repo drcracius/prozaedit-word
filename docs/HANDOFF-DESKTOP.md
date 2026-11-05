@@ -15,11 +15,11 @@ Read this first. It is written for a fresh agent with no chat history. Handoff t
 
 Task-pane add-in for Microsoft Word (Office.js) that gives writers a local-first editorial audit, Coach, and Rewrite, genre-aware (12 profiles), with optional AI help using the user's own API key (Gemini, OpenAI, Claude, OpenRouter). Hosted on GitHub Pages (`https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html`); registered in Word by uploading `manifest.hosted.xml`. No build step, no backend.
 
-## 3. Current state (2.0.0.47)
+## 3. Current state (2.0.0.48)
 
 - Verdict (PE-96): ready for a wider beta, not a public launch. Automated tests are green (`npm test`, wiring, contrast).
 - Welcome tips live under **Help**. **Run report** uses a progress ring and names each check. The old “Continue” banner is off unless Settings → Onboarding asks before long scans.
-- Plain-language checks include a short hidden-verb list (make a decision → decide). The report summary lists findings **By check**. See [CHECKS-REPORT-PLAN.md](./CHECKS-REPORT-PLAN.md).
+- Plain-language checks include a short hidden-verb list (make a decision → decide). The report summary lists findings **By check**. Mixed number and hyphen forms are flagged only when both appear. See [CHECKS-REPORT-PLAN.md](./CHECKS-REPORT-PLAN.md).
 - Biggest unknown: **Apply with Track Changes in real Word** (desktop, web, Mac) has only run against a mock.
 - Also never exercised live: the 4 AI providers (keys, model ids, CORS). Model catalogue last reviewed 2026-11-01.
 - Rule precision measured on 489 labelled passages across 3 corpora (author-written, not a real manuscript), precision >= 0.95.
