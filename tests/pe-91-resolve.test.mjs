@@ -133,9 +133,10 @@ test("PE-91: overlapping scope-count refreshes: only the latest result is shown"
     const slow = t.peval(`refreshScopeCharPreview()`);
     await waitFor(() => gate, { message: "first sync held" });
     t.mock.state.selection = "bb";
-    await t.peval(`refreshScopeCharPreview()`);
+    const next = t.peval(`refreshScopeCharPreview()`);
     gate();
     await slow;
+    await next;
     assert.equal(JSON.stringify(t.window.__shown), "[2]");
   } finally {
     await settleClose(t);

@@ -927,6 +927,27 @@ test("layout: chapter reload does not read Word while a report is running", asyn
   }
 });
 
+test("wordRun never has two Word reads open at once", async () => {
+  const t = await boot();
+  try {
+    let open = 0;
+    let max = 0;
+    t.state.syncHook = async () => {
+      open += 1;
+      if (open > max) max = open;
+      await sleep(30);
+      open -= 1;
+    };
+    const a = t.peval(`wordRun("a", async (ctx) => { await ctx.sync(); return 1; })`);
+    const b = t.peval(`wordRun("b", async (ctx) => { await ctx.sync(); return 2; })`);
+    assert.deepEqual(await Promise.all([a, b]), [1, 2]);
+    assert.equal(max, 1);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => {
   const t = await boot();
   try {

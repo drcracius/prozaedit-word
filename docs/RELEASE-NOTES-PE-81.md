@@ -88,6 +88,11 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.37 — One Word read at a time
+
+- Every document read now waits in a single line. A report, chapter reload, character count, Apply, or scan cannot open a second Word read while one is still open.
+- A newer character count still replaces an older one. The older result is not shown.
+
 ## 2.0.0.36 — No second Word read during a report
 
 - Reloading the chapter list or refreshing the character count waits while a report, scan, or rewrite is already reading the document.
