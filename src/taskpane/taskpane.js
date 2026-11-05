@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.37";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.38";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -4465,14 +4465,20 @@ function runThesaurusLookup() {
       const sel = ctx.document.getSelection();
       sel.load("text");
       await ctx.sync();
-      const t = sel.text.trim();
-      if (!t || t.length > 120) {
-        box.innerText = "Select one word/short phrase.";
-        return;
-      }
-      document.getElementById("thesaurusInput").value = t;
-      await renderThesaurus(t, box);
-    }).catch((e) => (box.innerText = wordRecoveryMessage(e, "read your selection")));
+      return (sel.text || "").trim();
+    })
+      .then((t) => {
+        if (!t || t.length > 120) {
+          box.innerText = "Select one word/short phrase.";
+          return;
+        }
+        const inputBox = document.getElementById("thesaurusInput");
+        if (inputBox) inputBox.value = t;
+        return renderThesaurus(t, box);
+      })
+      .catch((e) => {
+        box.innerText = wordRecoveryMessage(e, "read your selection");
+      });
     return;
   }
   renderThesaurus(input, box).catch(() => (box.innerText = "Lookup failed."));

@@ -88,6 +88,10 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.38 — Thesaurus no longer holds Word
+
+- Looking up the selected word reads Word first, then asks the word service. Other actions are not stuck behind that lookup.
+
 ## 2.0.0.37 — One Word read at a time
 
 - Every document read now waits in a single line. A report, chapter reload, character count, Apply, or scan cannot open a second Word read while one is still open.

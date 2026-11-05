@@ -948,6 +948,29 @@ test("wordRun never has two Word reads open at once", async () => {
   }
 });
 
+test("thesaurus lookup releases Word before the word service answers", async () => {
+  const t = await boot({ word: { selection: "happy" } });
+  try {
+    let releaseFetch;
+    const gate = new Promise((resolve) => {
+      releaseFetch = resolve;
+    });
+    t.window.fetch = () => gate.then(() => ({ ok: true, json: async () => [] }));
+    t.peval(`document.getElementById("thesaurusInput").value = ""; runThesaurusLookup()`);
+    await sleep(40);
+    const probe = await Promise.race([
+      t.peval(`wordRun("probe", async () => "free")`),
+      sleep(400).then(() => "blocked"),
+    ]);
+    assert.equal(probe, "free");
+    releaseFetch();
+    await t.settle(40);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => {
   const t = await boot();
   try {

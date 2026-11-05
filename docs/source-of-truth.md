@@ -19,9 +19,9 @@ Principles and authoritative references on GitHub `main`. Project Context may mi
 | Local sideload dev | `manifest.xml` (separate track) |
 | Live UI | GitHub Pages from `main` |
 
-**Current hosted release:** **2.0.0.37** on `main` (handoff: [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md)). Testers re-upload `manifest.hosted.xml` once per manifest bump.
+**Current hosted release:** **2.0.0.38** on `main` (handoff: [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md)). Testers re-upload `manifest.hosted.xml` once per manifest bump.
 
-Verify: `bash scripts/verify-version-sync.sh` · **482** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
+Verify: `bash scripts/verify-version-sync.sh` · **483** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
 
 ---
 
@@ -29,7 +29,7 @@ Verify: `bash scripts/verify-version-sync.sh` · **482** tests: `npm test` (need
 
 | Item | Status |
 |------|--------|
-| Web 1.0 RC on `main` | **2.0.0.37** declutter UI, **482** tests (PE-62 baseline was 2.0.0.15) |
+| Web 1.0 RC on `main` | **2.0.0.38** declutter UI, **483** tests (PE-62 baseline was 2.0.0.15) |
 | Agent prep | **PE-48** merged ([#5](https://github.com/drcracius/prozaedit-word/pull/5)) |
 | Final audit / doc sync | **PE-49** — [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md) |
 | Forum onboarding | **PE-61** — [RELEASE-NOTES-PE-61-ONBOARDING.md](./RELEASE-NOTES-PE-61-ONBOARDING.md) |
