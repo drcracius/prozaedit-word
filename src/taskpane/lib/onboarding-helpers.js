@@ -231,7 +231,7 @@ ProzaEdit.Onboarding = {
   WHATS_NEW_RELEASE: {
     version: "2.0.0.30",
     bullet:
-      "The pane layout is tighter: compact header, pill workflow steps, badge row for guide and scope, and collapsible findings (first card open). On a wider Word pane a shortcut rail offers Coach, Export, and Settings. Checkboxes on Checks and Settings look like switches. Still offline-first (no extra web fonts). Everything else from recent builds is unchanged: genre-aware checks, optional AI keys, anchored Apply, chapter-by-chapter audit, Track Changes Apply, and Word-matching word count.",
+      "Quieter first screen: icon workflow steps, Guide/Scope badges, closed Tips, and toolbar Run. Target shows Scope and Type up front; Audit summary and export live in collapsible blocks. Help and Settings drop repeat copy. Still offline-first (no web fonts). Genre checks, optional AI keys, anchored Apply, and chapter walks are unchanged.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

@@ -2264,7 +2264,7 @@ function updateActiveChecksHint() {
   if (citeEligible && isChecked("chkCitationScan", false)) parts.push("citation scan");
   const ext = isAuditExtended() ? ", extended" : "";
   const checks = parts.length ? parts.join(", ") : "none — enable toggles below";
-  const msg = `${typeLabel}: ${checks}${ext}. Then Run audit.`;
+  const msg = `${typeLabel}: ${checks}${ext}. Then Run report.`;
   nodes.forEach((el) => {
     el.textContent = msg;
   });

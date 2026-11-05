@@ -60,7 +60,7 @@ ProzaEdit.WorkflowNav = {
     } else if (tabId === "tab3") {
       links.push({ id: "to-target", label: "Change what to check", targetTab: "tab1" });
       if (has) links.push({ id: "to-audit", label: "View issues", targetTab: "tab4", primary: true });
-      else links.push({ id: "run-audit", label: "Run audit", targetTab: "tab3", primary: true });
+      else links.push({ id: "run-audit", label: "Run report", targetTab: "tab3", primary: true });
     } else if (tabId === "tab4") {
       links.push({ id: "to-target", label: "Change scope", targetTab: "tab1" });
       links.push({ id: "to-checks", label: "Run again", targetTab: "tab3", primary: !has });

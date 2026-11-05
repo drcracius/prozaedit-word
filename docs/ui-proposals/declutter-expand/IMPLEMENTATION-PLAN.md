@@ -1,8 +1,8 @@
 # Declutter + expandable reports — implementation plan
 
-**Status:** All default phases are specified. **No pane code until the owner says “start Pass 1”.** Incremental edits on real `src/taskpane/*` only. No mock swap.
+**Status:** Passes **1, 2a, 3, 4, 5** are **implemented** on branch `cursor/pe-declutter-first-screen` (build **2.0.0.30**, pushed). **Pass 2b** not scheduled. **Pending owner:** merge to `main` / Pages, real-Word smoke, optional **2.0.0.31** bump.
 
-**Restore:** tag `pe-pre-declutter-2.0.0.30` (`b4ea7d3` on `main`) — live **2.0.0.30** pane. Work branch: `cursor/pe-declutter-first-screen`. **No build bump** until testers need About to prove a refresh (**2.0.0.31**). Do not merge to `main` until the owner accepts that pass.
+**Restore:** tag `pe-pre-declutter-2.0.0.30` (`b4ea7d3` on `main`) — pre-declutter pane on `main` until merge.
 
 **Copy rule:** Fold or drop **duplicates** from the open canvas. Do not delete unique facts. Prefer Tips / Help `<details>` over slashing Help to a stub.
 
@@ -57,28 +57,28 @@
 | Version | Stay **2.0.0.30** per pass. |
 | PDF | Word still makes the PDF. No `window.print()`. |
 
-### Phase readiness (coding still gated)
+### Phase readiness
 
-| Phase | Specified enough to code? | Wait for |
+| Phase | Code on branch | Owner / release |
 | --- | --- | --- |
-| **Pass 1** | **Yes** | Owner: “start Pass 1” |
-| **Pass 2a** | **Yes** | Owner after Pass 1 |
-| **Pass 3** | **Yes** (small) | Owner after 2a |
-| **Pass 4** | **Yes** (keep/delete table) | Owner after 3 |
-| **Pass 5** | **Yes** (optional, light) | Owner after 4 |
-| **Pass 2b** | Spike only | Owner must ask |
+| **Pass 1** | **Shipped** | Pane check; merge when accepted |
+| **Pass 2a** | **Shipped** | Same |
+| **Pass 3** | **Shipped** | Same |
+| **Pass 4** | **Shipped** | Same |
+| **Pass 5** | **Shipped** (light) | Same |
+| **Pass 2b** | **Not started** | Ask for spike only |
 
 ---
 
 ## Phase map
 
 ```
-Pass 1  Quiet first screen (fold + icons)     ← default next
-Pass 2a Audit chrome + Type stays visible
-Pass 3  Spacing / contrast (small)
-Pass 4  Help + Settings: delete repeats only
-Pass 5  Duplicate JS strings only (optional)
-Pass 2b Lane groups (optional spike, not declutter)
+Pass 1  Quiet first screen (fold + icons)     ✓ on branch
+Pass 2a Audit chrome + Type stays visible     ✓
+Pass 3  Spacing / contrast (small)            ✓
+Pass 4  Help + Settings: delete repeats only  ✓
+Pass 5  Duplicate JS strings (light)         ✓
+Pass 2b Lane groups (optional spike)          — not scheduled
 ```
 
 Stop after each pass: tests + owner look at the pane. Do not start the next pass until they say so.
@@ -321,7 +321,7 @@ These were the last open questions; all are now decided above.
 | `updateWorkflowNextStepHint` still runs from status line | OK — function must not unhide `#peWorkflowNextStep`. |
 | Pass 2a hid “three hints into one line” (old plan) | **Two** hints hidden (`#auditDefaultFilterHint`, `#peAuditFilterLanesHint`); `#auditReportDepthHint` stays visible. `#peReviewModeAuditHint` unchanged (shows when review mode). |
 | Nested `<details>` in Tips | Forbidden — flatten Quick start body into `#peChromeHelp`. |
-| Plan doc on branch | Local edits to this file + README may be uncommitted until owner asks for a commit. |
+| Plan doc on branch | Kept in sync with README on `cursor/pe-declutter-first-screen`. |
 
 ### Known residual (cannot “plan away”)
 
@@ -334,4 +334,4 @@ These were the last open questions; all are now decided above.
 
 ### Confidence
 
-**Ready to implement Pass 1** when the owner says so. No blocking spec gaps remain for Passes 1 → 2a → 3 → 4; Pass 5 and 2b remain optional.
+Default declutter **implementation is complete** on the feature branch. Remaining work is **2b (optional)**, **merge/release**, and **real-Word** validation — not spec gaps.

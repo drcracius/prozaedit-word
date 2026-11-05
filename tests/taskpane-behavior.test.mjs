@@ -847,6 +847,23 @@ test("layout: confirm-open and tour-open inert the shortcut rail", async () => {
   }
 });
 
+test("layout: full-manuscript scope tip shows only after refresh at 80k+ chars", async () => {
+  const t = await boot();
+  try {
+    const tip = t.el("peFullManuscriptScopeTip");
+    assert.ok(tip.classList.contains("hidden"));
+    t.peval(`document.getElementById("scope").value = "full"; syncScopePanels(); lastScopePreviewChars = 50000; updateFullManuscriptScopeTip()`);
+    assert.ok(tip.classList.contains("hidden"));
+    t.peval(`updateScopeCharPreviewDisplay(90000, "Full manuscript", "full")`);
+    assert.equal(tip.classList.contains("hidden"), false);
+    t.peval(`updateScopeCharPreviewDisplay(1000, "Full manuscript", "full")`);
+    assert.ok(tip.classList.contains("hidden"));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => {
   const t = await boot();
   try {
