@@ -49,7 +49,7 @@
 
   /** Short native `title` when hover tips are off (no duplicate long strings in HTML). */
   const NATIVE_TITLE_REGISTRY = {
-    "btn-run-audit": "Run audit with current checks and scope",
+    "btn-run-audit": "Run report with current checks and scope",
     "btn-undo": "Undo last ProzaEdit replace (Ctrl+Shift+Z)",
     "btn-redo": "Redo (Ctrl+Shift+Y)",
     "btn-go-last-edit": "Jump to last applied edit",

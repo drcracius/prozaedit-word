@@ -88,6 +88,14 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.31 — Declutter first screen + Help trim (copy/UI only)
+
+- **First screen:** Closed **Tips** (`#peChromeHelp`), icon workflow pills, Guide/Scope badges (Dictionary badge removed), icon toolbar with visible **Run**, short **Scope** / **Type** on Target, Refresh icon.
+- **Audit:** Collapsible **Summary** block; duplicate filter hint lines hidden; export actions under **More**.
+- **Help / Settings:** Removed repeat essays; merged Install and Diagnostics sections; Essentials intro de-duplicated.
+- **Still offline-first;** no new fonts. Genre checks, optional AI, Apply/undo unchanged. **477** tests; wiring and contrast gates pass.
+- **Real Word:** Apply / Track Changes not re-verified in this release (mock tests only).
+
 ## 2.0.0.30 — Major pane layout (Gemini-inspired, incremental)
 
 - **Layout:** Compact header, pill workflow steps, guide/scope badge row, switch-style toggles on Checks and Settings.

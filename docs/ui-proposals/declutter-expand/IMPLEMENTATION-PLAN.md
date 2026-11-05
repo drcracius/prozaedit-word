@@ -1,6 +1,6 @@
 # Declutter + expandable reports — implementation plan
 
-**Status:** Passes **1, 2a, 3, 4, 5** are **implemented** on branch `cursor/pe-declutter-first-screen` (build **2.0.0.30**, pushed). **Pass 2b** not scheduled. **Pending owner:** merge to `main` / Pages, real-Word smoke, optional **2.0.0.31** bump.
+**Status:** Passes **1, 2a, 3, 4, 5** are **implemented** on branch `cursor/pe-declutter-first-screen` (build **2.0.0.31**, pushed). **Pass 2b** not scheduled. **Pending owner:** merge to `main` / Pages, real-Word smoke. Audit: [AUDIT-COMPLETE.md](./AUDIT-COMPLETE.md).
 
 **Restore:** tag `pe-pre-declutter-2.0.0.30` (`b4ea7d3` on `main`) — pre-declutter pane on `main` until merge.
 
@@ -254,7 +254,7 @@ npm run verify:wiring
 npm run check:contrast
 ```
 
-Stay on **2.0.0.30**. One pane for Desktop and web.
+Shipped as **2.0.0.31** on the declutter branch (`main` remains **2.0.0.30** until merge). One pane for Desktop and web.
 
 Pass 1 extra: Recommended hidden (Simple **and** Advanced); `#peChromeHelp` closed; `#peDocScopeTrustLine` still in DOM; pills `aria-label`; `#manuscriptType` not a descendant of `.pe-target-section`; `#peWorkflowNextStep` has `hidden`; `#scope option[value=full][selected]` still in HTML (`tests/pe-85-audit.test.mjs`). Optional: assert Full tip hidden until mock Refresh sets `lastScopePreviewChars` ≥ 80 000.
 
