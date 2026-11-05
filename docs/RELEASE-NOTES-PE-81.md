@@ -88,6 +88,10 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.46 — Hidden verbs
+
+- Plain-language checks now flag a short list of hidden verbs, such as “make a decision” → “decide”. Wording is original. Fiction treats them as lower confidence.
+
 ## 2.0.0.45 — Deep report checks locally before AI
 
 - Local checks run before the AI call. Cancel during those checks does not send anything.

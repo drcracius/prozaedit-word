@@ -82,6 +82,13 @@ ProzaEdit.StyleGuideRules = {
       ["subsequent to", "after", "Plain language: common word"],
       ["utilize", "use", "Plain language: simpler verb"],
       ["utilization", "use", "Plain language: simpler noun"],
+      ["make a decision", "decide", "Plain language: use the verb, not a hidden verb"],
+      ["make a determination", "determine", "Plain language: use the verb, not a hidden verb"],
+      ["conduct an investigation", "investigate", "Plain language: use the verb, not a hidden verb"],
+      ["give consideration to", "consider", "Plain language: use the verb, not a hidden verb"],
+      ["take into consideration", "consider", "Plain language: use the verb, not a hidden verb"],
+      ["have a discussion", "discuss", "Plain language: use the verb, not a hidden verb"],
+      ["make an attempt", "try", "Plain language: use the verb, not a hidden verb"],
     ], ctx);
     if (budget.remaining <= 0) return;
     const passiveRe = /\b(am|is|are|was|were|be|been|being)\s+[\w']+ed\b/gi;

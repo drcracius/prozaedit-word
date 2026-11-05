@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.45",
+    version: "2.0.0.46",
     bullet:
-      "A deep report runs local checks before any AI call. Cancel during those checks does not call AI. Cancel while waiting for AI keeps the local cards.",
+      "Reports can flag hidden verbs from plain-language practice (make a decision → decide, and similar). Fiction keeps these quieter. More report grouping comes next.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

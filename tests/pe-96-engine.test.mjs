@@ -144,3 +144,13 @@ test("PE-96: equally frequent similar names are never called a typo", () => {
   const ids = (t) => P.Audit.run(t, ctxFor("General Fiction")).suggestions.map((s) => s.ruleId);
   assert.ok(!ids(two).some((i) => i.startsWith("prop:variant")), ids(two).join());
 });
+
+test("hidden verbs: plain language suggests the short verb", () => {
+  const cx = ctxFor("Business / Corporate Report", { language: "en-US" });
+  const hit = P.Audit.run("The board will make a decision after we give consideration to the draft.", cx).suggestions.find(
+    (s) => s.ruleId === "sg:plain:make_a_decision"
+  );
+  assert.ok(hit);
+  assert.equal(hit.replacementText, "decide");
+  assert.equal(hit.confidence, "medium");
+});
