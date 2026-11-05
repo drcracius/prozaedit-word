@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.40",
+    version: "2.0.0.41",
     bullet:
-      "Run report starts right away with a progress ring and Cancel — no Continue banner. Optional ask-before-scan for citation/timeline/batch/deep is off by default in Settings → Onboarding.",
+      "Run report uses a progress ring and Cancel; optional long-scan Continue notices stay off unless you enable them. While that notice is open, Run waits for Continue or Not now instead of clearing it.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

@@ -25,6 +25,25 @@ test("PE-93: optional long-scan banner only when pref on and scope is large", as
   } finally { await close(t); }
 });
 
+test("PE-93: optional long-scan notice blocks another Run until Continue or Not now", async () => {
+  const t = await bootTaskpane({ word: { paragraphs: ["Some text here."] }, keepDefaultScope: true });
+  try {
+    t.peval(`applyUiConfig({ showLongOperationWarnings: true }); lastScopePreviewChars = 100000;`);
+    t.peval(
+      `runAfterLongOperationWarning(ProzaEdit.LongOp.ACTION_IDS.CITATION_SCAN, () => Promise.resolve(1))`
+    );
+    await sleep(20);
+    t.click("btnRunAudit");
+    await sleep(20);
+    assert.match(t.status(), /Continue or Not now/);
+    t.click("btnLongOpNotNow");
+    await sleep(20);
+    assert.ok(t.isHidden("peLongOpWarningBanner"));
+  } finally {
+    await close(t);
+  }
+});
+
 test("PE-93: 'Fresh reply' is cleared even when the request fails", async () => {
   const t = await bootTaskpane({ word: {} });
   try {

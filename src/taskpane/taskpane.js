@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.40";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.41";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1235,6 +1235,7 @@ function rejectPendingLongOperationWarning() {
   pendingLongOpActionId = null;
   pendingLongOpRunner = null;
   hideLongOpWarningBanner();
+  if (!activeLongOp && !auditBusy && !auditStarting) setToolbarRunDisabled(false);
   if (settle) settle(false);
 }
 
@@ -1300,6 +1301,7 @@ function runAfterLongOperationWarning(actionId, runner) {
     const body = getEl("peLongOpWarningBody");
     if (body) body.textContent = ProzaEdit.LongOp?.warningCopyForAction?.(actionId) || "";
     if (banner) banner.classList.remove("hidden");
+    setToolbarRunDisabled(true);
     showPeStatus("Waiting for you: choose Continue in the notice above to start (nothing has been sent yet).", "warn");
   });
 }
@@ -1326,7 +1328,7 @@ let batchRunning = false;
 let auditStarting = false;
 let settingsSaveWarned = false;
 
-function isOperationBusy(ignoreBatch, ignoreStarting) {
+function isOperationBusy(ignoreBatch, ignoreStarting, ignorePendingLongOp) {
   return !!(
     mciBuildBusy ||
     auditBusy ||
@@ -1337,14 +1339,14 @@ function isOperationBusy(ignoreBatch, ignoreStarting) {
     chatBusy ||
     rewriteBusy ||
     (batchRunning && !ignoreBatch) ||
-    (auditStarting && !ignoreStarting)
+    (auditStarting && !ignoreStarting) ||
+    (pendingLongOpRunner && !ignorePendingLongOp)
   );
 }
 
 function warnOperationBusy() {
   if (pendingLongOpRunner) {
-    rejectPendingLongOperationWarning();
-    showPeStatus("Stopped waiting on the optional long-scan notice. Run again when ready.", "ok");
+    showPeStatus("Choose Continue or Not now on the notice above (nothing has started yet).", "warn");
     return;
   }
   showPeStatus("Another ProzaEdit operation is still running. Cancel it or wait for it to finish.", "warn");
@@ -1357,6 +1359,12 @@ function setLongOpProgressVisible(visible, label) {
   if (bar) {
     bar.classList.toggle("hidden", !visible);
     bar.setAttribute("aria-busy", visible ? "true" : "false");
+    if (visible) {
+      try {
+        const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+        bar.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+      } catch (_) {}
+    }
   }
   const cancelling = !!(visible && activeLongOp?.isCancelled?.());
   if (lbl && label && !cancelling) lbl.textContent = label;
