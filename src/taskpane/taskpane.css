@@ -478,6 +478,39 @@ body.pe-narrow-pane .btn-tool-icon-label {
   border-bottom: 1px solid var(--border);
 }
 
+.pe-op-bar-leading {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.pe-op-bar-spinner {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: pe-op-spin 0.85s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pe-op-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pe-op-bar-spinner {
+    animation: none;
+    border-top-color: var(--primary);
+    opacity: 0.85;
+  }
+}
+
 .pe-op-bar.hidden,
 .pe-retry-bar.hidden,
 .pe-global-error.hidden {

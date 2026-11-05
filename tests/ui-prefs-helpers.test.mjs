@@ -36,9 +36,9 @@ test("UiPrefs.getDefaultsPatchForGroup", () => {
   assert.equal(onboarding.showSessionTips, false);
   assert.equal(onboarding.showWhatsNew, false);
   assert.equal(onboarding.showPriorSessionSummary, false);
-  assert.equal(onboarding.showLongOperationWarnings, true);
+  assert.equal(onboarding.showLongOperationWarnings, false);
   assert.equal(onboarding.showDarkAppearanceTip, false);
-  assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showLongOperationWarnings, true);
+  assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showLongOperationWarnings, false);
   assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showDarkAppearanceTip, false);
 });
 

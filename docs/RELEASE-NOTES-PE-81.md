@@ -88,6 +88,12 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.40 — Progress ring; long-scan ask is optional
+
+- **Run report** starts immediately with a **spinner + status line + Cancel** (no Continue banner).
+- Large-scope reassurance (“1–2 minutes, keep writing in Word”) shows on the progress strip, not as a blocking top banner.
+- Settings → Onboarding: “Ask before citation/timeline/batch/deep scans” is **off by default**; turn on only if you want the old Continue step.
+
 ## 2.0.0.39 — Welcome copy in Help (quiet home)
 
 - What's new, session tips, last-session recap, Simple-view first-run note, and dark-appearance tip no longer stack at the top of the home screen by default.

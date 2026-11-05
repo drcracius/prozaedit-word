@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.39";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.40";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1264,6 +1264,8 @@ function sessionDismissLongOpAction(actionId) {
 }
 
 function readShowLongOperationWarningsPref() {
+  const cb = getEl("showLongOperationWarnings");
+  if (cb) return isChecked("showLongOperationWarnings", false);
   return ProzaEdit.LongOp?.readShowWarningsFromConfig?.(ProzaEdit.Settings.get(ProzaEdit.Settings.KEYS.CONFIG));
 }
 
@@ -1286,6 +1288,7 @@ function shouldWarnLongOperation(actionId) {
 
 function runAfterLongOperationWarning(actionId, runner) {
   if (!shouldWarnLongOperation(actionId)) {
+    rejectPendingLongOperationWarning();
     return Promise.resolve().then(runner);
   }
   return new Promise((resolve) => {
@@ -1340,7 +1343,8 @@ function isOperationBusy(ignoreBatch, ignoreStarting) {
 
 function warnOperationBusy() {
   if (pendingLongOpRunner) {
-    confirmPendingLongOperationWarning();
+    rejectPendingLongOperationWarning();
+    showPeStatus("Stopped waiting on the optional long-scan notice. Run again when ready.", "ok");
     return;
   }
   showPeStatus("Another ProzaEdit operation is still running. Cancel it or wait for it to finish.", "warn");
@@ -1997,7 +2001,7 @@ function collectUiConfig() {
     showSessionTips: isChecked("showSessionTips", false),
     showWhatsNew: isChecked("showWhatsNew", false),
     showPriorSessionSummary: isChecked("showPriorSessionSummary", false),
-    showLongOperationWarnings: isChecked("showLongOperationWarnings", true),
+    showLongOperationWarnings: isChecked("showLongOperationWarnings", false),
     showDarkAppearanceTip: isChecked("showDarkAppearanceTip", false),
     autoRefreshManuscriptContext: isChecked("autoRefreshManuscriptContext", false),
     themePreference: getThemePreferenceFromUi(),
@@ -2099,7 +2103,7 @@ function applyUiConfig(p) {
   setC("showSessionTips", p.showSessionTips === true);
   setC("showWhatsNew", p.showWhatsNew === true);
   setC("showPriorSessionSummary", p.showPriorSessionSummary === true);
-  setC("showLongOperationWarnings", p.showLongOperationWarnings !== false);
+  setC("showLongOperationWarnings", p.showLongOperationWarnings === true);
   setC("showDarkAppearanceTip", p.showDarkAppearanceTip === true);
   setThemePreferenceInUi(p.themePreference != null ? p.themePreference : "light");
   applyPeTheme(getThemePreferenceFromUi());
@@ -5499,9 +5503,9 @@ function runAuditInternalCore(opts) {
 
   try {
     setModuleButtonsDisabled(true);
-    const longHint = ProzaEdit.LongOp?.longRunHint?.(lastScopePreviewChars, getScopeMode()) || "";
+    const initialRead = ProzaEdit.LongOp?.initialRunReportStatus?.(lastScopePreviewChars, getScopeMode()) || "Reading document…";
     longOp = beginLongOperation({
-      initialStatus: `${longHint}Reading document…`,
+      initialStatus: initialRead,
       setStatus: (msg) => showPeStatus(msg),
     });
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Reading…");
@@ -5542,10 +5546,11 @@ function runAuditInternalCore(opts) {
     let text = await readScopeText(ctx, longOp);
     longOp.throwIfCancelled();
     timing.mark("read");
-    longOp.setStatus("Analyzing…");
-    if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Analyzing…");
-    if (extBtn) setRunAuditHubButtonLabel(extBtn, "Analyzing…");
-    if (sumEl) sumEl.textContent = "Analyzing…";
+    const analyzeLabel = ProzaEdit.LongOp?.analyzePhaseStatus?.() || "Running checks…";
+    longOp.setStatus(analyzeLabel);
+    if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Running checks…");
+    if (extBtn) setRunAuditHubButtonLabel(extBtn, "Running checks…");
+    if (sumEl) sumEl.textContent = analyzeLabel;
     let truncated = false;
     const cap = getScopeCharLimit(getScopeMode());
     if (text.length > cap) {

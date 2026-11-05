@@ -6,13 +6,22 @@ import { loadLib } from "./load-lib.mjs";
 const close = async (t) => { await sleep(80); t.close(); };
 const KEY = "abcdefghijklmnopqrstuvwxyz";
 
-test("PE-93: long-operation warning banner explains that nothing has started (status text, not silence)", async () => {
+test("PE-93: optional long-scan banner only when pref on and scope is large", async () => {
   const t = await bootTaskpane({ word: { paragraphs: ["Some text here."] }, keepDefaultScope: true });
   try {
-    t.peval(`runAfterLongOperationWarning("audit", () => 1)`);
+    t.peval(`applyUiConfig({ showLongOperationWarnings: true }); lastScopePreviewChars = 100000;`);
+    t.peval(
+      `runAfterLongOperationWarning(ProzaEdit.LongOp.ACTION_IDS.CITATION_SCAN, () => Promise.resolve(1))`
+    );
     await sleep(20);
     assert.equal(t.isHidden("peLongOpWarningBanner"), false);
     assert.match(t.status(), /Waiting for you.*Continue/);
+    t.peval(`applyUiConfig({ showLongOperationWarnings: false });`);
+    t.peval(
+      `runAfterLongOperationWarning(ProzaEdit.LongOp.ACTION_IDS.CITATION_SCAN, () => Promise.resolve(2))`
+    );
+    await sleep(10);
+    assert.equal(t.isHidden("peLongOpWarningBanner"), true);
   } finally { await close(t); }
 });
 

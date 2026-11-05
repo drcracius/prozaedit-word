@@ -538,10 +538,9 @@ test("deep audit: cancel aborts the in-flight Gemini request and the next run wo
   });
   try {
     t.el("apiKey").value = "AIzaSyDUMMYKEYDUMMYKEY1234567890";
-    t.peval("lastScopePreviewChars = 120000");
-    t.peval("runDeepAuditAI()");
-    await waitFor(() => !t.isHidden("peLongOpWarningBanner"), { message: "warning banner" });
-    t.click("btnLongOpContinue");
+    t.peval("lastScopePreviewChars = 120000;");
+    t.peval("(async () => { await runDeepAuditAICore(); })()");
+    await waitFor(() => !t.isHidden("peOpBar"), { message: "progress bar" });
     await waitFor(() => calls.length === 1, { message: "deep fetch started" });
     assert.equal(flag(t, "deepBusy"), true);
     t.click("btnCancelLongOp");
@@ -550,10 +549,8 @@ test("deep audit: cancel aborts the in-flight Gemini request and the next run wo
     assert.ok(t.isHidden("peOpBar"));
     assert.match(t.status(), /Cancelled/);
     mode = "ok";
-    t.peval("lastScopePreviewChars = 120000");
-    t.peval("runDeepAuditAI()");
-    await waitFor(() => !t.isHidden("peLongOpWarningBanner") || /Deep audit finished/.test(t.status()), { message: "banner or run" });
-    if (!t.isHidden("peLongOpWarningBanner")) t.click("btnLongOpContinue");
+    t.peval("lastScopePreviewChars = 120000;");
+    await t.peval("(async () => { await runDeepAuditAICore(); })()");
     await waitFor(() => /Deep audit finished/.test(t.status()), { message: "deep finished" });
     assert.deepEqual(t.errors, []);
     assert.deepEqual(t.window.__alerts, []);
@@ -569,10 +566,8 @@ test("deep audit: unparseable Gemini reply fails cleanly without a stuck busy st
   });
   try {
     t.el("apiKey").value = "AIzaSyDUMMYKEYDUMMYKEY1234567890";
-    t.peval("lastScopePreviewChars = 120000");
-    t.peval("runDeepAuditAI()");
-    await waitFor(() => !t.isHidden("peLongOpWarningBanner"), { message: "warning banner" });
-    t.click("btnLongOpContinue");
+    t.peval("lastScopePreviewChars = 120000;");
+    await t.peval("(async () => { await runDeepAuditAICore(); })()");
     await waitFor(() => /could not finish/.test(t.status()), { message: "failure status" });
     assert.equal(flag(t, "deepBusy"), false);
     assert.ok(t.isHidden("peOpBar"));
@@ -585,10 +580,11 @@ test("deep audit: unparseable Gemini reply fails cleanly without a stuck busy st
 test("deep audit: Not now on the long-operation warning leaves nothing busy and a later run works", async () => {
   const t = await boot();
   try {
-    t.el("apiKey").value = "AIzaSyDUMMYKEYDUMMYKEY1234567890";
-    t.peval("lastScopePreviewChars = 120000");
-    t.peval("runDeepAuditAI()");
-    await waitFor(() => !t.isHidden("peLongOpWarningBanner"), { message: "warning banner" });
+    t.peval('applyUiConfig({ showLongOperationWarnings: true }); lastScopePreviewChars = 120000;');
+    t.peval(
+      `runAfterLongOperationWarning(ProzaEdit.LongOp.ACTION_IDS.DEEP_AUDIT, () => runDeepAuditAICore())`
+    );
+    await waitFor(() => !t.isHidden("peLongOpWarningBanner"), { message: "optional warning banner" });
     t.click("btnLongOpNotNow");
     await t.settle(30);
     assert.ok(t.isHidden("peLongOpWarningBanner"));

@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.39",
+    version: "2.0.0.40",
     bullet:
-      "Welcome banners (What's new, tips, last session, Simple view, dark tip) live under Help → What's new, tips & last session so home stays focused on editing. Turn optional top banners back on in Settings → Onboarding. Long-operation warnings are unchanged.",
+      "Run report starts right away with a progress ring and Cancel — no Continue banner. Optional ask-before-scan for citation/timeline/batch/deep is off by default in Settings → Onboarding.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

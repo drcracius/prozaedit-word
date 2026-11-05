@@ -26,8 +26,12 @@ ProzaEdit.LongOp = {
   },
 
   defaultShowWarnings() {
-    return true;
+    return false;
   },
+
+  /** Shown on the op bar during long reads (Run report and scans). */
+  LONG_RUN_REASSURANCE:
+    "This can take 1–2 minutes on a long scope. You can keep writing in Word — use Cancel to stop after the current step.",
 
   readShowWarningsFromConfig(raw) {
     if (raw == null || raw === "") return ProzaEdit.LongOp.defaultShowWarnings();
@@ -84,7 +88,7 @@ ProzaEdit.LongOp = {
    */
   shouldShowLongOperationWarning(options) {
     options = options || {};
-    if (options.showLongOperationWarnings === false) return false;
+    if (options.showLongOperationWarnings !== true) return false;
     const actionId = String(options.actionId || "").trim();
     if (!actionId) return false;
     if (actionId === ProzaEdit.LongOp.ACTION_IDS.AUDIT_FULL || actionId === ProzaEdit.LongOp.ACTION_IDS.AUDIT_LARGE) {
@@ -130,6 +134,15 @@ ProzaEdit.LongOp = {
   /** Status prefix while the op bar is visible during long reads. */
   longRunHint(charCount, scopeMode) {
     if (!ProzaEdit.LongOp.scopeLooksLong(charCount, scopeMode)) return "";
-    return "Large scope — may take 1–2 minutes. You can keep writing in Word; Cancel stops after the current step. ";
+    return `${ProzaEdit.LongOp.LONG_RUN_REASSURANCE} `;
+  },
+
+  initialRunReportStatus(charCount, scopeMode) {
+    const hint = ProzaEdit.LongOp.longRunHint(charCount, scopeMode);
+    return hint ? `${hint}Reading document…` : "Reading document…";
+  },
+
+  analyzePhaseStatus() {
+    return "Running checks…";
   },
 };

@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadLib } from "./load-lib.mjs";
 
-test("LongOp.readShowWarningsFromConfig defaults true", () => {
+test("LongOp.readShowWarningsFromConfig defaults off (progress ring instead)", () => {
   const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
-  assert.equal(LongOp.readShowWarningsFromConfig(null), true);
-  assert.equal(LongOp.readShowWarningsFromConfig("{}"), true);
+  assert.equal(LongOp.readShowWarningsFromConfig(null), false);
+  assert.equal(LongOp.readShowWarningsFromConfig("{}"), false);
+  assert.equal(LongOp.readShowWarningsFromConfig(JSON.stringify({ showLongOperationWarnings: true })), true);
   assert.equal(LongOp.readShowWarningsFromConfig(JSON.stringify({ showLongOperationWarnings: false })), false);
 });
 
@@ -72,6 +73,13 @@ test("LongOp.scopeLooksLong uses WARN_MIN_CHARS", () => {
   assert.equal(LongOp.scopeLooksLong(79999, "selection"), false);
   assert.equal(LongOp.scopeLooksLong(80000, "selection"), true);
   assert.equal(LongOp.scopeLooksLong(0, "full"), true);
+});
+
+test("LongOp run report status helpers", () => {
+  const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
+  assert.match(LongOp.initialRunReportStatus(5000, "selection"), /Reading document/);
+  assert.match(LongOp.initialRunReportStatus(90000, "full"), /keep writing/i);
+  assert.match(LongOp.analyzePhaseStatus(), /checks/i);
 });
 
 test("LongOperationController cancel signal", () => {

@@ -67,7 +67,7 @@ ProzaEdit.UiPrefs = {
     showSessionTips: false,
     showWhatsNew: false,
     showPriorSessionSummary: false,
-    showLongOperationWarnings: true,
+    showLongOperationWarnings: false,
     showDarkAppearanceTip: false,
     shaperComplexity: 3,
     shaperIntensity: 4,
