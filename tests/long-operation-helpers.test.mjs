@@ -75,6 +75,14 @@ test("LongOp.scopeLooksLong uses WARN_MIN_CHARS", () => {
   assert.equal(LongOp.scopeLooksLong(0, "full"), true);
 });
 
+test("LongOp.actionIdWhenScopeLong respects char count and mode", () => {
+  const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
+  const id = LongOp.ACTION_IDS.CITATION_SCAN;
+  assert.equal(LongOp.actionIdWhenScopeLong(id, 5000, "selection"), null);
+  assert.equal(LongOp.actionIdWhenScopeLong(id, 90000, "selection"), id);
+  assert.equal(LongOp.actionIdWhenScopeLong(id, 0, "full"), id);
+});
+
 test("LongOp run report status helpers", () => {
   const { LongOp } = loadLib("src/taskpane/lib/long-operation-helpers.js");
   assert.match(LongOp.initialRunReportStatus(5000, "selection"), /Reading document/);

@@ -78,6 +78,13 @@ ProzaEdit.LongOp = {
     return null;
   },
 
+  /** Optional pre-ack scans: pass action id only when scope is large (char count or mode). */
+  actionIdWhenScopeLong(actionId, charCount, scopeMode) {
+    const id = String(actionId || "").trim();
+    if (!id) return null;
+    return ProzaEdit.LongOp.scopeLooksLong(charCount, scopeMode) ? id : null;
+  },
+
   /**
    * @param {object} options
    * @param {boolean} [options.showLongOperationWarnings]

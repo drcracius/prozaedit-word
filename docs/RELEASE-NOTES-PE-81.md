@@ -88,6 +88,10 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.42 — Long-scan notice matches large highlights
+
+- Citation, timeline, batch, and deep scans use the optional Continue notice for any **large scope** (about **80k+ characters**), including a big **selection**, not only chapter or full-document modes.
+
 ## 2.0.0.41 — Long-scan notice no longer cleared by Run
 
 - If the optional Continue notice is open, **Run report** and other actions tell you to use Continue or Not now instead of dismissing it by accident.

@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.41";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.42";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -6252,7 +6252,11 @@ function runBatchSectionAudit() {
     warnOperationBusy();
     return;
   }
-  const actionId = ProzaEdit.LongOp?.ACTION_IDS?.BATCH_AUDIT;
+  const actionId = ProzaEdit.LongOp?.actionIdWhenScopeLong?.(
+    ProzaEdit.LongOp.ACTION_IDS.BATCH_AUDIT,
+    lastScopePreviewChars,
+    getScopeMode()
+  );
   return runAfterLongOperationWarning(actionId, () => runBatchSectionAuditCore());
 }
 
@@ -6393,8 +6397,11 @@ function runCitationScan() {
     showTab("tab3");
     return;
   }
-  const actionId =
-    ProzaEdit.LongOp?.isSlowScopeMode?.(getScopeMode()) ? ProzaEdit.LongOp.ACTION_IDS.CITATION_SCAN : null;
+  const actionId = ProzaEdit.LongOp?.actionIdWhenScopeLong?.(
+    ProzaEdit.LongOp.ACTION_IDS.CITATION_SCAN,
+    lastScopePreviewChars,
+    getScopeMode()
+  );
   return runAfterLongOperationWarning(actionId, () => runCitationScanCore());
 }
 
@@ -6486,8 +6493,11 @@ function runTimelineScan() {
     showPeStatus("Timeline scan is for fiction manuscripts. Set Manuscript type to Fiction on Target.", "warn");
     return;
   }
-  const actionId =
-    ProzaEdit.LongOp?.isSlowScopeMode?.(getScopeMode()) ? ProzaEdit.LongOp.ACTION_IDS.TIMELINE_SCAN : null;
+  const actionId = ProzaEdit.LongOp?.actionIdWhenScopeLong?.(
+    ProzaEdit.LongOp.ACTION_IDS.TIMELINE_SCAN,
+    lastScopePreviewChars,
+    getScopeMode()
+  );
   return runAfterLongOperationWarning(actionId, () => runTimelineScanCore());
 }
 
@@ -6804,7 +6814,11 @@ async function runDeepAuditAI() {
     }))
   )
     return;
-  const actionId = ProzaEdit.LongOp?.ACTION_IDS?.DEEP_AUDIT;
+  const actionId = ProzaEdit.LongOp?.actionIdWhenScopeLong?.(
+    ProzaEdit.LongOp.ACTION_IDS.DEEP_AUDIT,
+    lastScopePreviewChars,
+    getScopeMode()
+  );
   return runAfterLongOperationWarning(actionId, () => runDeepAuditAICore());
 }
 
