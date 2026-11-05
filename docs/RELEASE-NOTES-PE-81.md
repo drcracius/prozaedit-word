@@ -88,6 +88,11 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.50 — Hedge words
+
+- Nonfiction reports add one card when several hedge words from the MIT weasel-words list pile up. A single “very” is left alone. Fiction is skipped.
+- More public-domain padding phrases: “in spite of the fact that”, “a large number of”, “the majority of”.
+
 ## 2.0.0.49 — Public plain-language list
 
 - More multi-word lines from the public-domain plainlanguage.gov list (for example “in the near future” → soon, “a number of” → some). One-word swaps such as “however” stay out.

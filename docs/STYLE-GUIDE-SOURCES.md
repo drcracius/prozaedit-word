@@ -14,6 +14,7 @@ Reviewed 2026-11-05. ProzaEdit keeps short original checks in `src/taskpane/lib/
 | [Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Short UI-doc phrases for technical manuscripts. |
 | [Google developer documentation style](https://developers.google.com/style) | CC BY 4.0 | Short developer-doc phrases. |
 | [Red Hat supplementary style guide](https://github.com/redhat-documentation/supplementary-style-guide) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | Short docs phrases. Share-alike applies to adaptations of their guide text; our lines are original. |
+| [weasel-words](https://github.com/btford/weasel-words) (Brian Ford) | MIT | A nonfiction tally when several hedge words pile up (very, quite, extremely, and similar). Ordinary quantifiers in that list, such as “many” and “few”, are not flagged. Copyright (c) 2014-2019 Brian Ford. |
 
 House rules the user types are their own content.
 
@@ -21,6 +22,10 @@ House rules the user types are their own content.
 
 | Source | Why it stays out |
 | --- | --- |
+| Mailchimp Content Style Guide | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Noncommercial use only. This add-in is public, so that guide is not copied in. |
+| proselint | The program is BSD-3, but the checks restate copyrighted usage books. The licence on the code does not clear those books. |
+| Canada.ca Content Style Guide | The page we reviewed did not state the Open Government Licence. Not copied. |
+| EU Interinstitutional Style Guide | European Union copyright. Reuse terms were not clear enough to copy rules. |
 | LanguageTool `grammar.xml` (LGPL-2.1) | The English file is about 8 MB and needs a Java engine. A subset would still be their rule text. The add-in stays a no-build Office pane and does not send the manuscript to their server. |
 | SCOWL / Hunspell | Permissive, but large, and some underlying data is not freely redistributable. Word already spells. |
 | Australian Government Style Manual | Government copyright, not an open licence. |
@@ -31,4 +36,4 @@ House rules the user types are their own content.
 
 Rules ship with the add-in build. Help → About → **Check for updates** compares this pane with the live manifest. There is no separate download for style packs.
 
-*Aligned with hosted build **2.0.0.49**.*
+*Aligned with hosted build **2.0.0.50**.*

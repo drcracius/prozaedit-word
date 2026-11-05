@@ -2,6 +2,8 @@
  * Style-guide rule packs — original ProzaEdit heuristics keyed to licensed/public sources.
  * See docs/STYLE-GUIDE-SOURCES.md (Plain Language CC0, Strunk 1920 PD, GOV.UK OGL, MS/Google CC BY 4.0).
  * No guide text is copied into this file.
+ * Weasel tally below uses a subset of the MIT word list from Brian Ford's weasel-words
+ * (Copyright (c) 2014-2019 Brian Ford). See docs/THIRD-PARTY-ATTRIBUTION.md.
  */
 window.ProzaEdit = window.ProzaEdit || {};
 
@@ -38,6 +40,7 @@ ProzaEdit.StyleGuideRules = {
     const notes = {
       plain: "Plain Language word list (plainlanguage.gov, CC0)",
       gpo: "GPO Style Manual 2016 (U.S. public domain)",
+      writegood: "weasel-words (Brian Ford, MIT)",
       strunk: "Strunk 1920 (public domain)",
       govuk: "GOV.UK style (OGL v2.0)",
       microsoft: "Microsoft Writing Style Guide (CC BY 4.0)",
@@ -99,6 +102,11 @@ ProzaEdit.StyleGuideRules = {
       ["it is essential", "must", "Plain language: direct obligation"],
       ["with respect to", "about", "Plain language: simpler preposition"],
       ["in accordance with", "under", "Plain language: shorter phrase"],
+      ["in spite of the fact that", "although", "Plain language: shorter contrast"],
+      ["a large number of", "many", "Plain language: shorter quantity"],
+      ["the majority of", "most", "Plain language: shorter quantity"],
+      ["it is important to note that", "(omit)", "Plain language: often extra"],
+      ["during the course of", "during", "Plain language: shorter phrase"],
       ["make a decision", "decide", "Plain language: use the verb, not a hidden verb"],
       ["make a determination", "determine", "Plain language: use the verb, not a hidden verb"],
       ["conduct an investigation", "investigate", "Plain language: use the verb, not a hidden verb"],
@@ -140,6 +148,33 @@ ProzaEdit.StyleGuideRules = {
       explanation: `GPO style lists this as one word, "email" (${this.sourceNote("gpo")}).`,
       targetText: raw,
       replacementText: raw[0] === raw[0].toUpperCase() ? "Email" : "email",
+    });
+  },
+
+  /**
+   * One card when several hedge words from the MIT weasel list pile up.
+   * Fiction is skipped: those words are often voice. Not every weasel in the upstream list
+   * (many, few, huge) — those flag ordinary sentences.
+   */
+  weaselCluster(text, push, budget, ctx) {
+    if (budget.remaining <= 0) return;
+    if (ProzaEdit.Genres && ProzaEdit.Genres.isFiction(ctx?.manuscriptType)) return;
+    const hedges = ["very", "quite", "extremely", "obviously", "clearly", "completely", "exceedingly", "fairly", "largely", "mostly", "relatively", "remarkably", "significantly", "substantially", "surprisingly", "interestingly"];
+    const re = new RegExp(`\\b(${hedges.join("|")})\\b`, "gi");
+    const hits = [];
+    let m;
+    while ((m = re.exec(text)) !== null && hits.length < 12) hits.push(m[0]);
+    if (hits.length < 4) return;
+    budget.remaining--;
+    const shown = [...new Set(hits.map((h) => h.toLowerCase()))].slice(0, 4).join(", ");
+    push({
+      ruleId: "sg:writegood:weasel",
+      module: this.MODULE,
+      type: "preference",
+      confidence: "low",
+      explanation: `Hedge words pile up here (${hits.length}: ${shown}). Cut a few if they do not earn their place (${this.sourceNote("writegood")}).`,
+      targetText: hits[0],
+      replacementText: "(review hedges)",
     });
   },
 
@@ -313,6 +348,7 @@ ProzaEdit.StyleGuideRules = {
       else if (g === "plain") {
         this.plainLanguage(text, lower, push, budget, ctx);
         this.gpo2016(text, push, budget);
+        this.weaselCluster(text, push, budget, ctx);
       }
       else if (g === "strunk") this.strunk1920(text, lower, push, budget, ctx);
       else if (g === "govuk") this.govuk(text, lower, push, ctx, budget);

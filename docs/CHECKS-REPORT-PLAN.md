@@ -1,6 +1,6 @@
 # Checks and reports — improvement plan
 
-**Live:** 2.0.0.49.  
+**Live:** 2.0.0.50.  
 **Goal:** Make local checks and the report as useful as the best editors, without live underlining, subscriptions, or copied rule text.
 
 ## What the report does today
@@ -36,7 +36,8 @@ Help → About → **Check for updates** already compares this pane with the liv
 | 1 | Hidden verbs (“make a decision” → “decide”) | Done in 2.0.0.46 |
 | 2 | Report summary grouped by check name | Done in 2.0.0.47 |
 | 3 | Consistency only when both forms appear (numbers, hyphen pairs) | Done in 2.0.0.48 |
-| 4 | Broader public plain-language list (multi-word only) and GPO “email” | **This build** |
-| 5 | Stronger Simple-view filter so noisy Advanced hits stay hidden | Not started |
+| 4 | Broader public plain-language list (multi-word only) and GPO “email” | Done in 2.0.0.49 |
+| 5 | MIT weasel-word tally for nonfiction (hedges only) | **This build** |
+| 6 | Stronger Simple-view filter so noisy Advanced hits stay hidden | Not started |
 
 Not planned: a full grammar parser, a Hunspell bundle, LanguageTool, or realtime underlines.

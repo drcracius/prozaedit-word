@@ -130,6 +130,16 @@ test("public plain-language phrases and GPO email form", () => {
   assert.equal(fic.confidence, "low");
 });
 
+test("MIT weasel list flags a pile of hedges in nonfiction only", () => {
+  const pile = "The results are very clear and quite strong and extremely useful and obviously relevant to the office team.";
+  const biz = P.Audit.run(pile, ctxFor("Business / Corporate Report")).suggestions.filter((s) => s.ruleId === "sg:writegood:weasel");
+  assert.equal(biz.length, 1);
+  assert.equal(biz[0].confidence, "low");
+  assert.equal(biz[0].targetText.toLowerCase(), "very");
+  assert.equal(P.Audit.run(pile, ctxFor("Fiction (General)")).suggestions.some((s) => s.ruleId === "sg:writegood:weasel"), false);
+  assert.equal(P.Audit.run("The results are very clear today for the office team.", ctxFor("Business / Corporate Report")).suggestions.some((s) => s.ruleId === "sg:writegood:weasel"), false);
+});
+
 test("mixed number and hyphen forms are flagged only when both appear", () => {
   const ids = (t, prefix) => P.Audit.run(t, ctxFor("Business / Corporate Report")).suggestions.filter((s) => s.ruleId.startsWith(prefix));
   const nums = ids("We bought 2 lamps and two chairs for the office last week.", "edit:num");

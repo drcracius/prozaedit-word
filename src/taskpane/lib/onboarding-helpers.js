@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.49",
+    version: "2.0.0.50",
     bullet:
-      "Plain-language checks now include more public-domain padding phrases (in the near future, a number of, and similar). GPO style prefers email as one word. Fiction keeps the wording cards quieter.",
+      "Nonfiction reports now flag a pile of hedge words (very, quite, extremely, and similar) from an MIT word list. One or two are left alone, and fiction is skipped.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },
