@@ -33,13 +33,13 @@ test("UiPrefs.getDefaultsPatchForGroup", () => {
   assert.equal(Object.keys(UiPrefs.getDefaultsPatchForGroup("reference")).length, 0);
   assert.equal(UiPrefs.getDefaultsPatchForGroup("unknown"), null);
   const onboarding = UiPrefs.getDefaultsPatchForGroup("onboarding");
-  assert.equal(onboarding.showSessionTips, true);
-  assert.equal(onboarding.showWhatsNew, true);
-  assert.equal(onboarding.showPriorSessionSummary, true);
+  assert.equal(onboarding.showSessionTips, false);
+  assert.equal(onboarding.showWhatsNew, false);
+  assert.equal(onboarding.showPriorSessionSummary, false);
   assert.equal(onboarding.showLongOperationWarnings, true);
-  assert.equal(onboarding.showDarkAppearanceTip, true);
+  assert.equal(onboarding.showDarkAppearanceTip, false);
   assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showLongOperationWarnings, true);
-  assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showDarkAppearanceTip, true);
+  assert.equal(UiPrefs.UI_CONFIG_DEFAULTS.showDarkAppearanceTip, false);
 });
 
 test("UiPrefs review-mode profile and filter default", () => {

@@ -10,7 +10,7 @@ test("Onboarding.readOnboardingFlagsFromConfig", () => {
   );
   assert.equal(flags.showSessionTips, false);
   assert.equal(flags.showWhatsNew, true);
-  assert.equal(flags.showPriorSessionSummary, true);
+  assert.equal(flags.showPriorSessionSummary, false);
 });
 
 test("Onboarding.applyPermanentOffPatch updates CONFIG flags", () => {

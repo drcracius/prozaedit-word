@@ -113,7 +113,6 @@ ProzaEdit.Onboarding = {
   shouldShowOnboardingTour(options) {
     options = options || {};
     if (options.onboardingTourComplete === true) return false;
-    if (options.showSessionTips === false) return false;
     if (options.checklistDismissed) return false;
     if (options.firstRunComplete === true) return false;
     return true;
@@ -134,7 +133,7 @@ ProzaEdit.Onboarding = {
   /** Skip session tips while Simple-mode first-run banner sequence is active (PE-64). */
   shouldShowSessionTipsOnLoad(options) {
     options = options || {};
-    if (options.showSessionTips === false) return false;
+    if (options.showSessionTips !== true) return false;
     if (options.firstRunComplete === true) return true;
     if (options.simpleMode) return false;
     return true;
@@ -229,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.38",
+    version: "2.0.0.39",
     bullet:
-      "Quieter first screen: icon workflow steps, Guide/Scope badges, closed Tips, and toolbar Run. Target shows Scope and Type up front; Audit summary and export live in collapsible blocks. Help and Settings drop repeat copy. Still offline-first (no web fonts). Genre checks, optional AI keys, anchored Apply, and chapter walks are unchanged.",
+      "Welcome banners (What's new, tips, last session, Simple view, dark tip) live under Help → What's new, tips & last session so home stays focused on editing. Turn optional top banners back on in Settings → Onboarding. Long-operation warnings are unchanged.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },
@@ -262,7 +261,7 @@ ProzaEdit.Onboarding = {
 
   shouldShowWhatsNewBanner(options) {
     options = options || {};
-    if (options.showWhatsNew === false) return false;
+    if (options.showWhatsNew !== true) return false;
     const version = String(options.buildVersion || options.version || "").trim();
     if (!version) return false;
     const key = ProzaEdit.Onboarding.whatsNewSeenStorageKey(version);
@@ -333,7 +332,7 @@ ProzaEdit.Onboarding = {
     const c = config && typeof config === "object" ? { ...config } : {};
     if (typeof c.showSessionTips === "boolean") return c;
     if (legacyPermanentHidden) c.showSessionTips = false;
-    else c.showSessionTips = true;
+    else c.showSessionTips = false;
     return c;
   },
 
@@ -347,16 +346,16 @@ ProzaEdit.Onboarding = {
     }
     if (!p || typeof p !== "object") return null;
     return {
-      showSessionTips: p.showSessionTips !== false,
-      showWhatsNew: p.showWhatsNew !== false,
-      showPriorSessionSummary: p.showPriorSessionSummary !== false,
-      showDarkAppearanceTip: p.showDarkAppearanceTip !== false,
+      showSessionTips: p.showSessionTips === true,
+      showWhatsNew: p.showWhatsNew === true,
+      showPriorSessionSummary: p.showPriorSessionSummary === true,
+      showDarkAppearanceTip: p.showDarkAppearanceTip === true,
     };
   },
 
   shouldShowDarkAppearanceTip(options) {
     options = options || {};
-    if (options.showDarkAppearanceTip === false) return false;
+    if (options.showDarkAppearanceTip !== true) return false;
     if (options.effectiveTheme !== "dark") return false;
     if (options.sessionDismissed) return false;
     try {

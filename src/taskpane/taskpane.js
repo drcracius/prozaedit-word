@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.38";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.39";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1994,11 +1994,11 @@ function collectUiConfig() {
     aiModel: getEl("aiModel")?.value || "",
     aiModelCustom: getEl("aiModelCustom")?.value.trim() || "",
     genreJargon: getEl("genreJargon")?.value || "none",
-    showSessionTips: isChecked("showSessionTips", true),
-    showWhatsNew: isChecked("showWhatsNew", true),
-    showPriorSessionSummary: isChecked("showPriorSessionSummary", true),
+    showSessionTips: isChecked("showSessionTips", false),
+    showWhatsNew: isChecked("showWhatsNew", false),
+    showPriorSessionSummary: isChecked("showPriorSessionSummary", false),
     showLongOperationWarnings: isChecked("showLongOperationWarnings", true),
-    showDarkAppearanceTip: isChecked("showDarkAppearanceTip", true),
+    showDarkAppearanceTip: isChecked("showDarkAppearanceTip", false),
     autoRefreshManuscriptContext: isChecked("autoRefreshManuscriptContext", false),
     themePreference: getThemePreferenceFromUi(),
     lastActiveTab: getCurrentActiveTabId(),
@@ -2096,11 +2096,11 @@ function applyUiConfig(p) {
   setC("contentNotes", p.contentNotes === true);
   setC("remindVersionHistory", p.remindVersionHistory);
   setC("fictionScopeReminder", p.fictionScopeReminder !== false);
-  setC("showSessionTips", p.showSessionTips !== false);
-  setC("showWhatsNew", p.showWhatsNew !== false);
-  setC("showPriorSessionSummary", p.showPriorSessionSummary !== false);
+  setC("showSessionTips", p.showSessionTips === true);
+  setC("showWhatsNew", p.showWhatsNew === true);
+  setC("showPriorSessionSummary", p.showPriorSessionSummary === true);
   setC("showLongOperationWarnings", p.showLongOperationWarnings !== false);
-  setC("showDarkAppearanceTip", p.showDarkAppearanceTip !== false);
+  setC("showDarkAppearanceTip", p.showDarkAppearanceTip === true);
   setThemePreferenceInUi(p.themePreference != null ? p.themePreference : "light");
   applyPeTheme(getThemePreferenceFromUi());
   if (p.continuityWarnLevel) setV("continuityWarnLevel", p.continuityWarnLevel);
@@ -2408,7 +2408,7 @@ function setupAutoSaveHandlers() {
   if (showTipsEl && !showTipsEl.dataset.peOnboardingFx) {
     showTipsEl.dataset.peOnboardingFx = "1";
     showTipsEl.addEventListener("change", () => {
-      if (!isChecked("showSessionTips", true)) {
+      if (!isChecked("showSessionTips", false)) {
         hideOnboardingBanner("peSessionTips");
       } else {
         ProzaEdit.Onboarding?.clearSessionDismissForPref?.("showSessionTips");
@@ -2421,7 +2421,7 @@ function setupAutoSaveHandlers() {
   if (showWhatsNewEl && !showWhatsNewEl.dataset.peOnboardingFx) {
     showWhatsNewEl.dataset.peOnboardingFx = "1";
     showWhatsNewEl.addEventListener("change", () => {
-      if (!isChecked("showWhatsNew", true)) {
+      if (!isChecked("showWhatsNew", false)) {
         hideOnboardingBanner("peWhatsNewBanner");
       } else {
         initWhatsNewBanner();
@@ -2433,7 +2433,7 @@ function setupAutoSaveHandlers() {
   if (showPriorEl && !showPriorEl.dataset.peOnboardingFx) {
     showPriorEl.dataset.peOnboardingFx = "1";
     showPriorEl.addEventListener("change", () => {
-      if (!isChecked("showPriorSessionSummary", true)) {
+      if (!isChecked("showPriorSessionSummary", false)) {
         hideOnboardingBanner("pePriorSessionBanner");
       } else {
         ProzaEdit.Onboarding?.clearSessionDismissForPref?.("showPriorSessionSummary");
@@ -2446,7 +2446,7 @@ function setupAutoSaveHandlers() {
   if (showDarkTipEl && !showDarkTipEl.dataset.peOnboardingFx) {
     showDarkTipEl.dataset.peOnboardingFx = "1";
     showDarkTipEl.addEventListener("change", () => {
-      if (!isChecked("showDarkAppearanceTip", true)) {
+      if (!isChecked("showDarkAppearanceTip", false)) {
         hideOnboardingBanner("peDarkAppearanceBanner");
       } else {
         ProzaEdit.Onboarding?.clearSessionDismissForPref?.("showDarkAppearanceTip");
@@ -3130,6 +3130,10 @@ function migrateLegacySessionTipsOnInit() {
   } catch (_) {}
 }
 
+function onboardingTopBannerPrefEnabled(checkboxId) {
+  return isChecked(checkboxId, false);
+}
+
 function initAboutSection() {
   const setText = (id, text) => {
     const el = getEl(id);
@@ -3145,6 +3149,67 @@ function initAboutSection() {
     const link = getEl("peWhatsNewReleaseLink");
     if (link && rel.releaseNotesUrl) link.href = rel.releaseNotesUrl;
   }
+  refreshHelpWelcomePanels();
+}
+
+function refreshHelpWelcomePanels() {
+  const setText = (id, text) => {
+    const el = getEl(id);
+    if (el && text != null) el.textContent = text;
+  };
+  const rel = ProzaEdit.Onboarding?.WHATS_NEW_RELEASE;
+  if (rel) {
+    setText("peHelpWhatsNewVersion", rel.version);
+    setText("peHelpWhatsNewBullet", rel.bullet);
+    const link = getEl("peHelpWhatsNewReleaseLink");
+    if (link && rel.releaseNotesUrl) link.href = rel.releaseNotesUrl;
+  } else {
+    setText("peHelpWhatsNewVersion", PROZAEDIT_BUILD_VERSION);
+  }
+
+  const simpleSec = getEl("peHelpSimpleModeSection");
+  const showSimple = ProzaEdit.Onboarding?.shouldShowSimpleModeFirstRunBanner?.({
+    firstRunComplete: configFirstRunComplete,
+    onboardingTourComplete: configOnboardingTourComplete,
+    simpleMode: isChecked("simpleMode", false),
+  });
+  if (simpleSec) {
+    if (showSimple) {
+      simpleSec.classList.remove("hidden");
+      setText("peHelpSimpleModeBody", ProzaEdit.Onboarding?.SIMPLE_MODE_FIRST_RUN_BANNER_LEAD || "");
+    } else {
+      simpleSec.classList.add("hidden");
+    }
+  }
+
+  const priorSec = getEl("peHelpPriorSessionSection");
+  const priorList = getEl("peHelpPriorSessionLines");
+  if (priorSec && priorList) {
+    let raw = null;
+    try {
+      raw = localStorage.getItem(ProzaEdit.Onboarding?.LAST_SESSION_SUMMARY_KEY || "pe-last-session-summary");
+    } catch (_) {}
+    const summary = ProzaEdit.Onboarding?.parseSessionSummary?.(raw);
+    const lines = summary ? ProzaEdit.Onboarding?.formatPriorSessionLines?.(summary) || [] : [];
+    if (lines.length) {
+      priorList.innerHTML = lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("");
+      priorSec.classList.remove("hidden");
+    } else {
+      priorList.innerHTML = "";
+      priorSec.classList.add("hidden");
+    }
+  }
+
+  const darkSec = getEl("peHelpDarkTipSection");
+  const effective = document.documentElement.getAttribute("data-pe-theme") || "light";
+  if (darkSec) {
+    if (effective === "dark" && ProzaEdit.Onboarding?.DARK_APPEARANCE_TIP_COPY) {
+      darkSec.classList.remove("hidden");
+      setText("peHelpDarkTipBody", ProzaEdit.Onboarding.DARK_APPEARANCE_TIP_COPY);
+    } else {
+      darkSec.classList.add("hidden");
+    }
+  }
 }
 
 function markWhatsNewVersionSeen() {
@@ -3158,17 +3223,21 @@ function markWhatsNewVersionSeen() {
 function initWhatsNewBanner() {
   const el = getEl("peWhatsNewBanner");
   if (!el) return;
+  refreshHelpWelcomePanels();
   const show = ProzaEdit.Onboarding?.shouldShowWhatsNewBanner?.({
-    showWhatsNew: isChecked("showWhatsNew", true),
+    showWhatsNew: onboardingTopBannerPrefEnabled("showWhatsNew"),
     buildVersion: PROZAEDIT_BUILD_VERSION,
   });
   if (!show) {
     el.classList.add("hidden");
     return;
   }
-  const firstRun = getEl("peSimpleModeFirstRunBanner");
-  if (firstRun && !firstRun.classList.contains("hidden")) {
-    // A brand-new user has nothing "new" to read; one banner at a time.
+  const firstRunActive = ProzaEdit.Onboarding?.shouldShowSimpleModeFirstRunBanner?.({
+    firstRunComplete: configFirstRunComplete,
+    onboardingTourComplete: configOnboardingTourComplete,
+    simpleMode: isChecked("simpleMode", false),
+  });
+  if (firstRunActive) {
     el.classList.add("hidden");
     markWhatsNewVersionSeen();
     return;
@@ -3186,7 +3255,8 @@ function initPriorSessionBanner() {
   const el = getEl("pePriorSessionBanner");
   const list = getEl("pePriorSessionLines");
   if (!el || !list) return;
-  if (!isChecked("showPriorSessionSummary", true)) {
+  refreshHelpWelcomePanels();
+  if (!onboardingTopBannerPrefEnabled("showPriorSessionSummary")) {
     el.classList.add("hidden");
     return;
   }
@@ -3248,6 +3318,7 @@ function writeLastSessionSummary(extra) {
   try {
     localStorage.setItem(ProzaEdit.Onboarding?.LAST_SESSION_SUMMARY_KEY || "pe-last-session-summary", JSON.stringify(patch));
   } catch (_) {}
+  refreshHelpWelcomePanels();
 }
 
 function isOnboardingTourShellOpen() {
@@ -3258,9 +3329,13 @@ function isOnboardingTourShellOpen() {
 function syncFirstAuditChecklistVisibility() {
   const el = getEl("peFirstAuditChecklist");
   if (!el) return;
+  const simpleFirstRunActive = ProzaEdit.Onboarding?.shouldShowSimpleModeFirstRunBanner?.({
+    firstRunComplete: configFirstRunComplete,
+    onboardingTourComplete: configOnboardingTourComplete,
+    simpleMode: isChecked("simpleMode", false),
+  });
   const show = ProzaEdit.Onboarding?.shouldShowFirstAuditChecklist?.({
-    simpleModeFirstRunBannerVisible:
-      !!getEl("peSimpleModeFirstRunBanner") && !getEl("peSimpleModeFirstRunBanner").classList.contains("hidden"),
+    simpleModeFirstRunBannerVisible: !!simpleFirstRunActive,
     onboardingTourOpen: isOnboardingTourShellOpen(),
     onboardingTourPending: shouldOfferOnboardingTourNow(),
     checklistDismissed: isFirstAuditChecklistDismissed(),
@@ -3274,8 +3349,11 @@ function syncFirstAuditChecklistVisibility() {
 }
 
 function initSessionTips() {
+  const tipsEl = getEl("peSessionTips");
+  if (tipsEl) tipsEl.classList.add("hidden");
+  refreshHelpWelcomePanels();
   const show = ProzaEdit.Onboarding?.shouldShowSessionTipsOnLoad?.({
-    showSessionTips: isChecked("showSessionTips", true),
+    showSessionTips: onboardingTopBannerPrefEnabled("showSessionTips"),
     firstRunComplete: configFirstRunComplete,
     simpleMode: isChecked("simpleMode", false),
   });
@@ -3307,22 +3385,21 @@ function dismissSessionTips(dontShowAgain) {
 function initSimpleModeFirstRunBanner() {
   const el = getEl("peSimpleModeFirstRunBanner");
   if (!el) return;
+  el.classList.add("hidden");
   const show = ProzaEdit.Onboarding?.shouldShowSimpleModeFirstRunBanner?.({
     firstRunComplete: configFirstRunComplete,
     onboardingTourComplete: configOnboardingTourComplete,
     simpleMode: isChecked("simpleMode", false),
   });
   if (!show) {
-    el.classList.add("hidden");
+    document.body.classList.remove("pe-simple-first-run-active");
+    syncFirstAuditChecklistVisibility();
+    refreshHelpWelcomePanels();
     return;
   }
-  const body = getEl("peSimpleModeFirstRunBannerBody");
-  if (body && ProzaEdit.Onboarding?.SIMPLE_MODE_FIRST_RUN_BANNER_LEAD) {
-    body.textContent = ProzaEdit.Onboarding.SIMPLE_MODE_FIRST_RUN_BANNER_LEAD;
-  }
-  el.classList.remove("hidden");
   document.body.classList.add("pe-simple-first-run-active");
   syncFirstAuditChecklistVisibility();
+  refreshHelpWelcomePanels();
 }
 
 function dismissSimpleModeFirstRunBanner(dontShowAgain) {
@@ -3353,12 +3430,15 @@ function isFirstAuditChecklistDismissed() {
 }
 
 function onboardingTourUiBlockingBanners() {
-  const simpleEl = getEl("peSimpleModeFirstRunBanner");
   const tipsEl = getEl("peSessionTips");
   const checklist = getEl("peFirstAuditChecklist");
+  const simpleFirstRunActive = ProzaEdit.Onboarding?.shouldShowSimpleModeFirstRunBanner?.({
+    firstRunComplete: configFirstRunComplete,
+    onboardingTourComplete: configOnboardingTourComplete,
+    simpleMode: isChecked("simpleMode", false),
+  });
   return {
-    simpleModeFirstRunBannerVisible:
-      !!simpleEl && !simpleEl.classList.contains("hidden"),
+    simpleModeFirstRunBannerVisible: !!simpleFirstRunActive,
     sessionTipsVisible: !!tipsEl && !tipsEl.classList.contains("hidden"),
     firstAuditChecklistExpanded: !!checklist && checklist.open && !checklist.classList.contains("hidden"),
     onboardingTourOpen: isOnboardingTourShellOpen(),
@@ -3535,9 +3615,10 @@ function updateAuditScopeFootnote() {
 function initDarkAppearanceTip() {
   const el = getEl("peDarkAppearanceBanner");
   if (!el) return;
+  refreshHelpWelcomePanels();
   const effective = document.documentElement.getAttribute("data-pe-theme") || "light";
   const show = ProzaEdit.Onboarding?.shouldShowDarkAppearanceTip?.({
-    showDarkAppearanceTip: isChecked("showDarkAppearanceTip", true),
+    showDarkAppearanceTip: onboardingTopBannerPrefEnabled("showDarkAppearanceTip"),
     effectiveTheme: effective,
   });
   if (!show) {
@@ -3663,6 +3744,7 @@ async function resetSettingsGroup(groupKey) {
     initSessionTips();
     initSimpleModeFirstRunBanner();
     initDarkAppearanceTip();
+    refreshHelpWelcomePanels();
   }
   persistSettings(false);
   showPeStatus(`${label} reset to defaults.`, "ok");

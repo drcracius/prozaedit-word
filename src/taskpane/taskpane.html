@@ -14,7 +14,7 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.38</span>)</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.39</span>)</p>
     <p id="peWhatsNewBullet" class="pe-top-banner-body">Quieter first screen: icon steps, Guide/Scope badges, closed Tips, toolbar Run. Scope and Type on Target; Audit summary in a collapsible block. Help/Settings trimmed. Still offline-first — genre checks, optional AI, Apply unchanged.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
@@ -84,7 +84,7 @@
     <p class="help-inline scope-mode-hint">Modes: <strong>highlighted selection</strong>; <strong>approximate page range</strong> (choose Page range, then set <strong>From page</strong> / <strong>To page</strong> — about 2,800 characters per page); <strong>chosen chapters</strong> (checklist when that mode is active); or <strong>full manuscript</strong>.</p>
     <p id="peGenreStaticHint" class="help-inline">Plot, character, and spoiler checks run only for <strong>Fiction</strong> types with those modules enabled; Academic and Business audits skip them.</p>
   </details>
-  <div id="peSessionTips" class="pe-session-tips help-box hidden" role="region" aria-label="First session tips">
+  <div id="peSessionTips" class="pe-session-tips help-box hidden pe-welcome-banner-host" role="region" aria-label="First session tips">
     <p class="pe-session-tips-lead"><strong>New this session?</strong> Quick workflow:</p>
     <ul class="help-list pe-session-tips-list">
       <li><strong>Target</strong> — set scope and type, then <strong>Checks</strong> — turn modules on → <strong>Run report</strong> → fix cards on <strong>Audit</strong>.</li>
@@ -537,8 +537,8 @@
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <p><strong>Accuracy:</strong> checks are tuned against a labeled test set (precision target 85% or better for what Simple view shows). Tense and viewpoint shifts are hints that ignore dialogue and flashbacks and appear in Simple view only when clearly accidental. <strong>Content notes</strong> (Settings → Safety, off by default) neutrally report strong language and violence; they never change your text or your score.</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.38</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.38</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.39</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.39</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>
@@ -547,6 +547,37 @@
       <p id="updateStatus" class="update-status" aria-live="polite"></p>
     </div>
     <h2 class="pe-section-title">ProzaEdit Help</h2>
+    <details id="peHelpWelcomePanel" class="help-box help-details">
+      <summary>What&apos;s new, tips &amp; last session</summary>
+      <div id="peHelpWhatsNewSection" class="help-muted" style="margin:8px 0;">
+        <p><strong>What&apos;s new</strong> (<span id="peHelpWhatsNewVersion">—</span>)</p>
+        <p id="peHelpWhatsNewBullet" class="help-inline"></p>
+        <p><a id="peHelpWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
+      </div>
+      <div id="peHelpSimpleModeSection" class="help-muted hidden" style="margin:8px 0;">
+        <p><strong>Simple view</strong></p>
+        <p id="peHelpSimpleModeBody" class="help-inline"></p>
+        <p class="help-inline" style="font-size:var(--pe-font-size-sm);">Turn off in <button type="button" class="btn-linkish" onclick="openSettingsModal('essentials')">Settings → Essentials</button>.</p>
+      </div>
+      <div id="peHelpSessionTipsSection" style="margin:8px 0;">
+        <p><strong>Quick workflow</strong></p>
+        <ul class="help-list">
+          <li><strong>Target</strong> — set scope and type, then <strong>Checks</strong> — turn modules on → <strong>Run report</strong> → fix cards on <strong>Audit</strong>.</li>
+          <li>Fiction-only modules and <strong>Timeline scan</strong> appear when manuscript type is Fiction.</li>
+          <li><strong>Simple / Advanced view</strong> (Settings → Essentials) changes what is shown, not how checks work.</li>
+        </ul>
+      </div>
+      <div id="peHelpPriorSessionSection" class="hidden" style="margin:8px 0;">
+        <p><strong>Last session</strong></p>
+        <ul id="peHelpPriorSessionLines" class="help-list"></ul>
+      </div>
+      <div id="peHelpDarkTipSection" class="help-muted hidden" style="margin:8px 0;">
+        <p><strong>Dark appearance</strong></p>
+        <p id="peHelpDarkTipBody" class="help-inline"></p>
+        <p class="help-inline" style="font-size:var(--pe-font-size-sm);"><button type="button" class="btn-linkish" onclick="openSettingsModal('appearance')">Settings → Appearance</button></p>
+      </div>
+      <p class="help-inline" style="font-size:var(--pe-font-size-sm);margin:8px 0 0;">Optional: show these at the top of the home screen in <button type="button" class="btn-linkish" onclick="openSettingsModal('onboarding')">Settings → Onboarding</button>.</p>
+    </details>
     <div class="help-box pe-start-here">
       <p><strong>Start here</strong></p>
       <ul class="help-list">
@@ -804,12 +835,12 @@
         </details>
         <details class="pe-settings-group" id="pe-settings-group-onboarding">
           <summary>Advanced — Onboarding</summary>
-          <div class="toggle-row"><span id="showSessionTips-lbl">Show new-session tips banner</span><input type="checkbox" id="showSessionTips" aria-labelledby="showSessionTips-lbl" checked></div>
-          <div class="toggle-row"><span id="showWhatsNew-lbl">Show What&apos;s new banner (once per release)</span><input type="checkbox" id="showWhatsNew" aria-labelledby="showWhatsNew-lbl" checked></div>
-          <div class="toggle-row"><span id="showPriorSessionSummary-lbl">Show prior-session recap banner</span><input type="checkbox" id="showPriorSessionSummary" aria-labelledby="showPriorSessionSummary-lbl" checked></div>
+          <div class="toggle-row"><span id="showSessionTips-lbl">Show new-session tips at top of home screen</span><input type="checkbox" id="showSessionTips" aria-labelledby="showSessionTips-lbl"></div>
+          <div class="toggle-row"><span id="showWhatsNew-lbl">Show What&apos;s new at top of home screen (once per release)</span><input type="checkbox" id="showWhatsNew" aria-labelledby="showWhatsNew-lbl"></div>
+          <div class="toggle-row"><span id="showPriorSessionSummary-lbl">Show last-session recap at top of home screen</span><input type="checkbox" id="showPriorSessionSummary" aria-labelledby="showPriorSessionSummary-lbl"></div>
           <div class="toggle-row"><span id="showLongOperationWarnings-lbl">Warn before long scans (80k+ characters; Run report always uses progress bar)</span><input type="checkbox" id="showLongOperationWarnings" aria-labelledby="showLongOperationWarnings-lbl" checked></div>
-          <div class="toggle-row"><span id="showDarkAppearanceTip-lbl">Show dark-appearance tip when the pane is dark</span><input type="checkbox" id="showDarkAppearanceTip" aria-labelledby="showDarkAppearanceTip-lbl" checked></div>
-          <p class="help-muted" style="font-size:var(--pe-font-size-sm);margin:4px 0 0;">Banners appear at the top of the pane. “Got it” hides until the next browser session; What&apos;s new can be dismissed per release. Long-operation warnings can be dismissed per action without turning this off.</p>
+          <div class="toggle-row"><span id="showDarkAppearanceTip-lbl">Show dark-appearance tip at top of home screen</span><input type="checkbox" id="showDarkAppearanceTip" aria-labelledby="showDarkAppearanceTip-lbl"></div>
+          <p class="help-muted" style="font-size:var(--pe-font-size-sm);margin:4px 0 0;">The same copy always lives under <strong>Help → What&apos;s new, tips &amp; last session</strong>. Top banners are optional. Long-operation warnings stay at the top when enabled.</p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="onboarding" style="margin-top:10px;">Reset Onboarding to defaults</button>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-appearance">

@@ -17,8 +17,9 @@ test("Onboarding.shouldShowOnboardingTour respects prefs and checklist", () => {
       onboardingTourComplete: false,
       firstRunComplete: false,
       showSessionTips: false,
+      checklistDismissed: false,
     }),
-    false
+    true
   );
   assert.equal(
     Onboarding.shouldShowOnboardingTour({

@@ -88,6 +88,12 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.39 — Welcome copy in Help (quiet home)
+
+- What's new, session tips, last-session recap, Simple-view first-run note, and dark-appearance tip no longer stack at the top of the home screen by default.
+- The same material lives under **Help → What's new, tips & last session**. Settings → Onboarding can turn optional top banners back on.
+- Long-operation warnings (large scope before Run report) are unchanged.
+
 ## 2.0.0.38 — Thesaurus no longer holds Word
 
 - Looking up the selected word reads Word first, then asks the word service. Other actions are not stuck behind that lookup.

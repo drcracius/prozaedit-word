@@ -51,6 +51,6 @@ test("Onboarding session summary serialize and format", () => {
 test("Onboarding.migrateShowSessionTipsFromLegacy", () => {
   const { Onboarding } = loadLib("src/taskpane/lib/onboarding-helpers.js");
   assert.equal(Onboarding.migrateShowSessionTipsFromLegacy({}, true).showSessionTips, false);
-  assert.equal(Onboarding.migrateShowSessionTipsFromLegacy({}, false).showSessionTips, true);
+  assert.equal(Onboarding.migrateShowSessionTipsFromLegacy({}, false).showSessionTips, false);
   assert.equal(Onboarding.migrateShowSessionTipsFromLegacy({ showSessionTips: false }, false).showSessionTips, false);
 });
