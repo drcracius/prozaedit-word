@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.31";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.32";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -412,6 +412,8 @@ function refreshChapterScopeLists() {
 function updateScopeCharPreviewDisplay(charCount, label, mode) {
   const el = getEl("scopeCharPreview");
   if (!el) return;
+  const n = Number(charCount);
+  charCount = Number.isFinite(n) && n > 0 ? n : 0;
   const limit = getScopeCharLimit(mode);
   const over = charCount > limit;
   const ok = !over && charCount > 0;
@@ -1817,12 +1819,16 @@ function showTab(tabId) {
 }
 
 function bindWorkflowStepper() {
-  const go = { "1": "tab1", "2": "tab3", "3": "tab4", "4": "tab4" };
+  const go = { "1": "tab1", "2": "tab3", "4": "tab4" };
   document.querySelectorAll(".workflow-step[data-workflow-step]").forEach((el) => {
     if (el.dataset.bound) return;
     el.dataset.bound = "1";
     const activate = () => {
       if (isPeOverlayDialogOpen()) return;
+      if (el.dataset.workflowStep === "3") {
+        runPrimaryAudit();
+        return;
+      }
       showTab(go[el.dataset.workflowStep] || "tab1");
     };
     el.addEventListener("keydown", (ev) => {
@@ -2551,7 +2557,11 @@ function applySimpleMode() {
   const targetHint = getEl("peTargetRecommendedHint");
   if (targetHint) targetHint.classList.add("hidden");
   const profileSection = document.querySelector(".pe-target-section");
-  if (on && profileSection) profileSection.removeAttribute("open");
+  if (profileSection && !on) delete profileSection.dataset.peSimpleCollapsedOnce;
+  if (on && profileSection && !profileSection.dataset.peSimpleCollapsedOnce) {
+    profileSection.removeAttribute("open");
+    profileSection.dataset.peSimpleCollapsedOnce = "1";
+  }
   updateAuditDefaultFilterHint();
   if (on && getCurrentActiveTabId() === "tab2") showTab("tab1");
   syncFirstAuditChecklistVisibility();
@@ -2810,9 +2820,7 @@ function updateChecksReportDepthHint() {
 }
 
 function updateAuditFilterLanesHintPlain() {
-  const el = getEl("peAuditFilterLanesHint");
-  if (!el || !ProzaEdit.PlainLanguage?.auditFilterLanesHint) return;
-  el.textContent = ProzaEdit.PlainLanguage.auditFilterLanesHint(isChecked("simpleMode", false));
+  /* Hint stays hidden on the Audit tab; do not write into a live region. */
 }
 
 function updateSimpleModeAuditBanner() {
@@ -2932,7 +2940,7 @@ function getDefaultAuditFilterLabel() {
 
 function updateAuditDefaultFilterHint() {
   const hint = getEl("auditDefaultFilterHint");
-  if (!hint) return;
+  if (!hint || hint.classList.contains("hidden")) return;
   if (isChecked("simpleMode", false)) {
     hint.innerHTML =
       'Simple mode: Audit opens on <strong>Important</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal(\'essentials\')">Settings → Essentials</button>). Filter chips below still work.';

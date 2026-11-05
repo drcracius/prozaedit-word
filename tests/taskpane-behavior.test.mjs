@@ -864,6 +864,25 @@ test("layout: full-manuscript scope tip shows only after refresh at 80k+ chars",
   }
 });
 
+test("layout: Run pill starts a report and a bad character count does not throw", async () => {
+  const t = await boot();
+  try {
+    t.peval(`window.__peRan = 0; runPrimaryAudit = () => { window.__peRan += 1; };`);
+    t.peval(`document.querySelector('[data-workflow-step="3"]').dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))`);
+    assert.equal(t.peval("window.__peRan"), 1);
+    t.peval(`updateScopeCharPreviewDisplay(undefined, "Scope", "selection")`);
+    assert.equal(t.el("scopeCharPreview").textContent.includes("NaN"), false);
+    const profile = t.document.querySelector(".pe-target-section");
+    t.peval(`document.getElementById("simpleMode").checked = true; applySimpleMode();`);
+    profile.setAttribute("open", "");
+    t.peval(`applySimpleMode()`);
+    assert.equal(profile.hasAttribute("open"), true);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => {
   const t = await boot();
   try {

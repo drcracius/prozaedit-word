@@ -14,7 +14,7 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.31</span>)</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.32</span>)</p>
     <p id="peWhatsNewBullet" class="pe-top-banner-body">Quieter first screen: icon steps, Guide/Scope badges, closed Tips, toolbar Run. Scope and Type on Target; Audit summary in a collapsible block. Help/Settings trimmed. Still offline-first — genre checks, optional AI, Apply unchanged.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
@@ -61,7 +61,7 @@
   <ol class="workflow-steps" aria-label="Workflow steps">
     <li class="workflow-step pe-workflow-step workflow-step-active active" data-workflow-step="1" role="button" tabindex="0" aria-label="Target" onclick="if(!isPeOverlayDialogOpen())showTab('tab1')"><span class="workflow-num">1</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="visually-hidden">Target</span></li>
     <li class="workflow-step pe-workflow-step" data-workflow-step="2" role="button" tabindex="0" aria-label="Checks" onclick="if(!isPeOverlayDialogOpen())showTab('tab3')"><span class="workflow-num">2</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="visually-hidden">Checks</span></li>
-    <li class="workflow-step pe-workflow-step" data-workflow-step="3" role="button" tabindex="0" aria-label="Run report" onclick="if(!isPeOverlayDialogOpen())showTab('tab4')"><span class="workflow-num">3</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="visually-hidden">Run report</span></li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="3" role="button" tabindex="0" aria-label="Run report" onclick="if(!isPeOverlayDialogOpen())runPrimaryAudit()"><span class="workflow-num">3</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="visually-hidden">Run report</span></li>
     <li class="workflow-step pe-workflow-step" data-workflow-step="4" role="button" tabindex="0" aria-label="Fix cards" onclick="if(!isPeOverlayDialogOpen())showTab('tab4')"><span class="workflow-num">4</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span class="visually-hidden">Fix cards</span></li>
   </ol>
   <p id="peWorkflowNextStep" class="pe-workflow-next-step help-muted hidden" role="status" aria-live="polite">Next step: set scope on Target, then Run report.</p>
@@ -473,8 +473,8 @@
       <button type="button" class="btn-secondary" onclick="clearAuditReport()" title="Clear cards and summary for a fresh audit">Clear report</button>
     </div>
     <p id="auditReportDepthHint" class="audit-report-depth-hint help-muted" style="font-size:var(--pe-font-size-sm);margin:4px 0 8px;" aria-live="polite">Report depth: Balanced (change in Settings)</p>
-    <p id="auditDefaultFilterHint" class="audit-default-filter-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;" aria-live="polite">Default filter: All (change in Settings)</p>
-    <p id="peAuditFilterLanesHint" class="pe-audit-filter-lanes-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;" aria-live="polite"><strong>Filter lanes:</strong> Pick one chip (Critical, Style, Style guide) to work one category at a time — not a full “run every report” pass.</p>
+    <p id="auditDefaultFilterHint" class="audit-default-filter-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;">Default filter: All (change in Settings)</p>
+    <p id="peAuditFilterLanesHint" class="pe-audit-filter-lanes-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;"><strong>Filter lanes:</strong> Pick one chip (Critical, Style, Style guide) to work one category at a time — not a full “run every report” pass.</p>
     <p id="peReviewModeAuditHint" class="pe-review-mode-audit-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;" aria-live="polite"></p>
     <p id="peAuditScopeFootnote" class="pe-audit-scope-footnote help-muted hidden" role="status" aria-live="polite"></p>
     <details class="help-box help-muted audit-share">
@@ -537,8 +537,8 @@
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <p><strong>Accuracy:</strong> checks are tuned against a labeled test set (precision target 85% or better for what Simple view shows). Tense and viewpoint shifts are hints that ignore dialogue and flashbacks and appear in Simple view only when clearly accidental. <strong>Content notes</strong> (Settings → Safety, off by default) neutrally report strong language and violence; they never change your text or your score.</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.31</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.31</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.32</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.32</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>

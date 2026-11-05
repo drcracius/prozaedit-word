@@ -88,6 +88,13 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.32 — Declutter follow-up (pane safety)
+
+- Lightning **Run** step starts a report (keyboard and click). Fix step still opens the issue list.
+- Simple view closes the optional profile once, then leaves it open if you expand it.
+- A missing character count no longer throws while refreshing scope.
+- Hidden audit hints no longer sit on a live region.
+
 ## 2.0.0.31 — Declutter first screen + Help trim (copy/UI only)
 
 - **First screen:** Closed **Tips** (`#peChromeHelp`), icon workflow pills, Guide/Scope badges (Dictionary badge removed), icon toolbar with visible **Run**, short **Scope** / **Type** on Target, Refresh icon.
