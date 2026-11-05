@@ -892,8 +892,22 @@ test("layout: Run pill starts a report and a bad character count does not throw"
 test("layout: a second Run is ignored until the first start finishes", async () => {
   const t = await boot();
   try {
-    await t.peval(`window.__starts = 0; prepareScopeForAudit = async () => { window.__starts += 1; return false; }; (async () => { runPrimaryAudit(); runPrimaryAudit(); await Promise.resolve(); })()`);
+    await t.peval(`(async () => { window.__starts = 0; prepareScopeForAudit = async () => { window.__starts += 1; return false; }; const first = runAuditInternal({}); runAuditInternal({}); await first; })()`);
     assert.equal(t.peval("window.__starts"), 1);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("layout: a failed scope measure is not reported as over the character limit", async () => {
+  const t = await boot();
+  try {
+    const ready = await t.peval(`document.getElementById("scope").value = "full"; refreshScopeCharPreview = () => { const el = document.getElementById("scopeCharPreview"); el.dataset.peMeasureFailed = "1"; el.classList.remove("over-limit"); el.textContent = "Could not measure this scope"; return Promise.resolve(); }; prepareScopeForAudit()`);
+    assert.equal(ready, false);
+    assert.match(t.el("peStatus").textContent, /Could not measure/);
+    assert.doesNotMatch(t.el("peStatus").textContent, /exceeds character limit/);
+    assert.equal(t.peval(`document.querySelector(".pe-toolbar .btn-tool-accent").disabled`), false);
     assert.deepEqual(t.errors, []);
   } finally {
     t.close();

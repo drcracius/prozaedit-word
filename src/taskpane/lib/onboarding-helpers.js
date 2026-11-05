@@ -229,7 +229,7 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.34",
+    version: "2.0.0.35",
     bullet:
       "Quieter first screen: icon workflow steps, Guide/Scope badges, closed Tips, and toolbar Run. Target shows Scope and Type up front; Audit summary and export live in collapsible blocks. Help and Settings drop repeat copy. Still offline-first (no web fonts). Genre checks, optional AI keys, anchored Apply, and chapter walks are unchanged.",
     releaseNotesUrl:

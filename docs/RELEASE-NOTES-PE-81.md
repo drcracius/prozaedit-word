@@ -88,6 +88,13 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.35 — Scope count mistakes
+
+- A failed character count no longer pretends the scope is over the limit, so Run is not blocked for the wrong reason.
+- Reloading chapters cannot start a second chapter read while the first is still going.
+- After chapters load, Run does not count the same text twice.
+- Toolbar **Run** turns off as soon as a report starts, and comes back if the start is cancelled or fails.
+
 ## 2.0.0.34 — Safer Run
 
 - A second **Run** is ignored until the first one has started, so two reads cannot overlap.

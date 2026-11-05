@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.34";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.35";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -396,8 +396,11 @@ function fillChapterSelects(list) {
   updateScopeChapterEmptyState();
 }
 
+let chapterListInFlight = null;
+
 function refreshChapterScopeLists() {
-  return wordRun("ch-list", async (ctx) => {
+  if (chapterListInFlight) return chapterListInFlight;
+  const run = wordRun("ch-list", async (ctx) => {
     const list = await ProzaEdit.ScopeReader.listChapters(ctx);
     fillChapterSelects(list);
     if (!list.length) throw new Error("No chapters — apply Heading 1–3 to chapter titles.");
@@ -406,7 +409,12 @@ function refreshChapterScopeLists() {
       showPeStatus(`Found ${scopeChapterListCache.length} chapter(s).`, "ok");
       return refreshScopeCharPreview();
     })
-    .catch((e) => reportActionError(e, "read the chapter list"));
+    .catch((e) => reportActionError(e, "read the chapter list"))
+    .finally(() => {
+      if (chapterListInFlight === run) chapterListInFlight = null;
+    });
+  chapterListInFlight = run;
+  return run;
 }
 
 function updateScopeCharPreviewDisplay(charCount, label, mode) {
@@ -421,6 +429,7 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
   const ok = !over && charCount > 0;
   el.classList.toggle("over-limit", over);
   el.classList.toggle("pe-scope-ok", ok);
+  delete el.dataset.peMeasureFailed;
   const fmt = charCount.toLocaleString();
   const lim = limit.toLocaleString();
   el.textContent = over
@@ -552,8 +561,9 @@ function refreshScopeCharPreview() {
       const el = getEl("scopeCharPreview");
       if (el) {
         el.textContent = wordRecoveryMessage(e, "measure this scope");
-        el.classList.add("over-limit");
+        el.classList.remove("over-limit");
         el.classList.remove("pe-scope-ok");
+        el.dataset.peMeasureFailed = "1";
       }
     });
 }
@@ -2426,9 +2436,11 @@ async function prepareScopeForAudit(retryOpts) {
   if (!(await maybeAutoRefreshManuscriptContextBeforeAudit())) return false;
   const scope = getScopeMode();
   if (scope !== "selection") {
+    let countedWithChapterLoad = false;
     if (scope === "selected-chapters" || scope === "chapter" || scope === "chapter-range") {
       if (!scopeChapterListCache.length) {
         await refreshChapterScopeLists();
+        countedWithChapterLoad = true;
         if (!scopeChapterListCache.length) {
           showPeStatus("No chapter list yet. Apply Heading 1–3 to chapter titles, then Reload the chapter list on Target.", "warn");
           showTab("tab1");
@@ -2441,8 +2453,13 @@ async function prepareScopeForAudit(retryOpts) {
         return false;
       }
     }
-    await refreshScopeCharPreview();
+    if (!countedWithChapterLoad) await refreshScopeCharPreview();
     const prev = getEl("scopeCharPreview");
+    if (prev?.dataset.peMeasureFailed === "1") {
+      showPeStatus(prev.textContent || "Could not measure this scope. Use Refresh count, then Run again.", "warn");
+      showTab("tab1");
+      return false;
+    }
     if (prev?.classList.contains("over-limit")) {
       showPeStatus("Scope exceeds character limit. Use Audit next chapter (Checks tab) to go chapter by chapter, or narrow pages/chapters.", "warn");
       renderChapterWalkPanel(true);
@@ -5257,25 +5274,38 @@ function runAuditInternal(opts) {
     return Promise.resolve(false);
   }
   auditStarting = true;
-  const start = () => {
-    return prepareScopeForAudit(opts).then((ready) => {
-      if (!ready) {
-        auditStarting = false;
-        return false;
-      }
-      return runAuditInternalCore(opts);
-    });
-  };
-  const actionId = opts.skipLongOpWarning
-    ? null
-    : ProzaEdit.LongOp?.actionIdForAudit?.(getScopeMode(), !!opts.extendedLocal, lastScopePreviewChars);
-  return runAfterLongOperationWarning(actionId, start)
+  const toolbarRun = document.querySelector(".pe-toolbar .btn-tool-accent");
+  if (toolbarRun) toolbarRun.disabled = true;
+  let chain;
+  try {
+    const start = () => {
+      return prepareScopeForAudit(opts).then((ready) => {
+        if (!ready) {
+          auditStarting = false;
+          return false;
+        }
+        return runAuditInternalCore(opts);
+      });
+    };
+    const actionId = opts.skipLongOpWarning
+      ? null
+      : ProzaEdit.LongOp?.actionIdForAudit?.(getScopeMode(), !!opts.extendedLocal, lastScopePreviewChars);
+    chain = runAfterLongOperationWarning(actionId, start);
+  } catch (e) {
+    auditStarting = false;
+    if (toolbarRun) toolbarRun.disabled = false;
+    reportActionError(e, "start this audit");
+    return Promise.resolve(false);
+  }
+  return chain
     .catch((e) => {
       reportActionError(e, "start this audit");
       return false;
     })
     .finally(() => {
       auditStarting = false;
+      const opOpen = getEl("peOpBar") && !getEl("peOpBar").classList.contains("hidden");
+      if (!auditBusy && !opOpen && toolbarRun) toolbarRun.disabled = false;
     });
 }
 
