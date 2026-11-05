@@ -784,6 +784,18 @@ body.pe-narrow-pane .btn-tool-icon-label {
   font-size: var(--pe-font-size-sm);
 }
 
+.btn-tool-icon-label:not(.btn-tool-icon-label-keep) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .audit-run-hub {
   margin-bottom: 10px;
   padding: 8px;
@@ -1146,6 +1158,20 @@ body.pe-narrow-pane .btn-tool-icon-label {
   width: auto;
   padding: 6px 10px;
   font-size: var(--pe-font-size-sm);
+}
+
+.pe-report-block {
+  margin: 0 0 8px;
+}
+
+.pe-report-block-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--pe-font-size-sm);
+}
+
+.pe-report-block .summary-report {
+  margin-top: 6px;
 }
 
 .summary-report {
@@ -1877,8 +1903,32 @@ body.pe-simple-first-run-active .pe-first-audit-checklist {
   margin-top: 2px;
 }
 
-body.pe-simple-mode .tab-btn .pe-tab-hint:not(.hidden) {
-  display: block;
+body.pe-simple-mode .tab-btn .pe-tab-hint {
+  display: none !important;
+}
+
+body.pe-simple-mode .pe-target-simple-mode-line {
+  display: none;
+}
+
+.pe-chrome-help > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.pe-workflow-step-icon {
+  flex-shrink: 0;
+}
+
+.pe-btn-refresh-scope {
+  margin-top: 4px;
+}
+
+.pe-info-badge .pe-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
 }
 
 .pe-audit-severity-legend {

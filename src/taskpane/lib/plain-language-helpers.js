@@ -132,10 +132,10 @@ ProzaEdit.PlainLanguage = {
 
   scopeSelectOptionLabel(mode) {
     const m = String(mode || "");
-    if (m === "selection") return "Text you selected";
-    if (m === "pages") return "A range of pages (estimated)";
-    if (m === "selected-chapters") return "One or more chapters (from headings)";
-    if (m === "full") return "Whole document";
+    if (m === "selection") return "Selection";
+    if (m === "pages") return "Pages";
+    if (m === "selected-chapters") return "Chapters";
+    if (m === "full") return "Full";
     return null;
   },
 };

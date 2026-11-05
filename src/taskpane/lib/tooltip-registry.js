@@ -43,6 +43,8 @@
       "Which heuristic pack leads the scan. Auto picks APA for academic, Bluebook-lite for business, CMOS-ish for technical/journalism.",
     "btn-session-tips-got-it":
       "Hide these session tips until you open ProzaEdit again in a new browser session. Help tab has the full Quick start guide.",
+    "btn-refresh-scope-count":
+      "Measure characters in the current scope (Word read). Use before a full-manuscript audit on long books.",
   };
 
   /** Short native `title` when hover tips are off (no duplicate long strings in HTML). */
@@ -58,6 +60,7 @@
     "btn-card-rewrite": "Open Rewrite for this finding",
     "btn-card-mute": "Mute this rule on this PC",
     "btn-card-dismiss": "Dismiss this wording on this PC",
+    "btn-refresh-scope-count": "Refresh scope character count",
   };
 
   function nativeTitleFor(el) {

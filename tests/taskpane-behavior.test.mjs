@@ -847,6 +847,45 @@ test("layout: confirm-open and tour-open inert the shortcut rail", async () => {
   }
 });
 
+test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => {
+  const t = await boot();
+  try {
+    const tips = t.el("peChromeHelp");
+    assert.ok(tips);
+    assert.equal(tips.open, false);
+    assert.ok(tips.contains(t.el("peDocScopeTrustLine")));
+    assert.ok(t.el("peTargetRecommendedHint").classList.contains("hidden"));
+    assert.ok(t.el("peWorkflowNextStep").classList.contains("hidden"));
+    const profile = t.document.querySelector(".pe-target-section");
+    const typeSel = t.el("manuscriptType");
+    assert.ok(profile && typeSel);
+    assert.equal(profile.contains(typeSel), false);
+    const pill = t.document.querySelector('[data-workflow-step="1"]');
+    assert.equal(pill.getAttribute("aria-label"), "Target");
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("layout: Pass 2a audit chrome (summary block, hidden hints, More)", async () => {
+  const t = await boot();
+  try {
+    const summary = t.el("summaryReport");
+    assert.equal(summary.id, "summaryReport");
+    assert.ok(summary.closest(".pe-report-block"));
+    assert.ok(t.el("auditDefaultFilterHint").classList.contains("hidden"));
+    assert.ok(t.el("peAuditFilterLanesHint").classList.contains("hidden"));
+    assert.equal(t.el("auditReportDepthHint").classList.contains("hidden"), false);
+    const share = t.document.querySelector(".audit-share summary");
+    assert.ok(share);
+    assert.match(share.textContent, /More/i);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: badge row and width-gated rail stay wired", async () => {
   const t = await boot();
   try {

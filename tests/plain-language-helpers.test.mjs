@@ -16,7 +16,10 @@ test("PlainLanguage scope friendly labels", () => {
   assert.equal(PlainLanguage.scopeFriendlyLabel("selection"), "Text you selected in Word");
   assert.equal(PlainLanguage.scopeFriendlyLabel("selected-chapters", { chapterCount: 1 }), "This chapter");
   assert.equal(PlainLanguage.scopeFriendlyLabel("full"), "Whole document");
-  assert.equal(PlainLanguage.scopeSelectOptionLabel("pages"), "A range of pages (estimated)");
+  assert.equal(PlainLanguage.scopeSelectOptionLabel("selection"), "Selection");
+  assert.equal(PlainLanguage.scopeSelectOptionLabel("pages"), "Pages");
+  assert.equal(PlainLanguage.scopeSelectOptionLabel("selected-chapters"), "Chapters");
+  assert.equal(PlainLanguage.scopeSelectOptionLabel("full"), "Full");
 });
 
 test("PlainLanguage audit filter hint differs for simple mode", () => {

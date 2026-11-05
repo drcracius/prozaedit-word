@@ -345,22 +345,15 @@ function syncScopePanels() {
 function updateFullManuscriptScopeTip() {
   const tip = getEl("peFullManuscriptScopeTip");
   if (!tip) return;
-  const show = getScopeMode() === "full";
+  const min = ProzaEdit.LongOp?.WARN_MIN_CHARS ?? 80000;
+  const show = getScopeMode() === "full" && lastScopePreviewChars >= min;
   tip.classList.toggle("hidden", !show);
 }
 
 function updateWorkflowNextStepHint() {
   const el = getEl("peWorkflowNextStep");
   if (!el) return;
-  const show = ProzaEdit.Onboarding?.shouldShowWorkflowNextStep?.({
-    sessionAuditCompleted: sessionAuditCompletedThisSession,
-    hasAuditCards: currentAuditSuggestions.length > 0,
-  });
-  if (show) {
-    el.textContent =
-      "Next step: set scope on Target (or keep your highlight), open Checks if needed, then Run report from the toolbar.";
-  }
-  el.classList.toggle("hidden", !show);
+  el.classList.add("hidden");
 }
 
 function markFirstRunCompleteAndPersist() {
@@ -436,6 +429,7 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
         : `~${fmt} chars (limit ${lim})`
       : "";
   lastScopePreviewChars = charCount > 0 ? charCount : 0;
+  updateFullManuscriptScopeTip();
   updateWorkflowStatusLine();
 }
 
@@ -2555,7 +2549,9 @@ function applySimpleMode() {
   const label = getEl("targetSimpleModeLabel");
   if (label) label.textContent = on ? "Simple" : "Advanced";
   const targetHint = getEl("peTargetRecommendedHint");
-  if (targetHint) targetHint.classList.toggle("hidden", !on);
+  if (targetHint) targetHint.classList.add("hidden");
+  const profileSection = document.querySelector(".pe-target-section");
+  if (on && profileSection) profileSection.removeAttribute("open");
   updateAuditDefaultFilterHint();
   if (on && getCurrentActiveTabId() === "tab2") showTab("tab1");
   syncFirstAuditChecklistVisibility();
