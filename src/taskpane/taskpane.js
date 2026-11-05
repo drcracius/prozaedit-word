@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.33";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.34";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -404,7 +404,7 @@ function refreshChapterScopeLists() {
   })
     .then(() => {
       showPeStatus(`Found ${scopeChapterListCache.length} chapter(s).`, "ok");
-      refreshScopeCharPreview();
+      return refreshScopeCharPreview();
     })
     .catch((e) => reportActionError(e, "read the chapter list"));
 }
@@ -1330,6 +1330,8 @@ function setLongOpProgressVisible(visible, label) {
     b.classList.toggle("hidden", !!visible);
     b.disabled = !!visible;
   });
+  const toolbarRun = document.querySelector(".pe-toolbar .btn-tool-accent");
+  if (toolbarRun) toolbarRun.disabled = !!visible;
   if (visible && focusWasOnAuditBtn && cancel) cancel.focus({ preventScroll: true });
 }
 
@@ -5254,8 +5256,8 @@ function runAuditInternal(opts) {
     warnOperationBusy();
     return Promise.resolve(false);
   }
+  auditStarting = true;
   const start = () => {
-    auditStarting = true;
     return prepareScopeForAudit(opts).then((ready) => {
       if (!ready) {
         auditStarting = false;

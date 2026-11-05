@@ -88,6 +88,12 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.34 — Safer Run
+
+- A second **Run** is ignored until the first one has started, so two reads cannot overlap.
+- Reloading the chapter list waits for the character count before it finishes.
+- The toolbar **Run** button is disabled while a long job is on screen.
+
 ## 2.0.0.33 — Shorter first screen
 
 - Type line shows the genre sentence only. The “rules of thumb” note stays for screen readers.

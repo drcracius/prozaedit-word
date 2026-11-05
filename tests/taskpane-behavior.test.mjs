@@ -889,6 +889,17 @@ test("layout: Run pill starts a report and a bad character count does not throw"
   }
 });
 
+test("layout: a second Run is ignored until the first start finishes", async () => {
+  const t = await boot();
+  try {
+    await t.peval(`window.__starts = 0; prepareScopeForAudit = async () => { window.__starts += 1; return false; }; (async () => { runPrimaryAudit(); runPrimaryAudit(); await Promise.resolve(); })()`);
+    assert.equal(t.peval("window.__starts"), 1);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => {
   const t = await boot();
   try {
