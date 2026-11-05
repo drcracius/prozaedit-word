@@ -238,7 +238,7 @@ ProzaEdit.ManuscriptOverview = {
 
   styleGuideLabel(ref, ctx) {
     const labels = {
-      "plain-us": "U.S. Plain Language (CC0)",
+      "plain-us": "U.S. Plain Language and GPO (public domain)",
       strunk: "Strunk 1920 (PD)",
       govuk: "GOV.UK A–Z (OGL v2.0)",
       microsoft: "Microsoft Style Guide (CC BY 4.0)",

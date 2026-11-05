@@ -20,7 +20,7 @@ ProzaEdit Word’s **audit, coach, rewrite, chronology, and citation logic** are
 | Source | Relationship |
 |--------|----------------|
 | **Paul Beverley — Word Macro Tools** | Public proofreading **workflows** (e.g. FRedit-style batch ideas) informed heuristic categories in `editor-heuristics.js` and help copy. **No VBA or macro source is included.** |
-| **Public style summaries** (Plain Language, GOV.UK, Strunk 1920, Microsoft/Google developer style, Red Hat) | Short **phrase lists** in `style-guide-rules.js` — not full style manuals or pasted guide text |
+| **Public style summaries** (plainlanguage.gov CC0, 18F CC0, GPO Style Manual 2016 public domain, GOV.UK OGL, Strunk 1920, Microsoft/Google/Red Hat) | Short **phrase lists** in `style-guide-rules.js` — not full style manuals or pasted guide text |
 | **APA / CMOS / Bluebook (names only)** | `citation-engine.js` uses regex/heuristic **pattern assist** — **not** compliance certification |
 
 ---
@@ -40,4 +40,4 @@ ProzaEdit Word’s **audit, coach, rewrite, chronology, and citation logic** are
 
 ---
 
-*Aligned with hosted build **2.0.0.15** and in-pane Help attribution.*
+*Aligned with hosted build **2.0.0.49**.*

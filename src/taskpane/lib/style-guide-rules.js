@@ -36,7 +36,8 @@ ProzaEdit.StyleGuideRules = {
 
   sourceNote(guideId) {
     const notes = {
-      plain: "Plain Language (plainlanguage.gov, CC0)",
+      plain: "Plain Language word list (plainlanguage.gov, CC0)",
+      gpo: "GPO Style Manual 2016 (U.S. public domain)",
       strunk: "Strunk 1920 (public domain)",
       govuk: "GOV.UK style (OGL v2.0)",
       microsoft: "Microsoft Writing Style Guide (CC BY 4.0)",
@@ -82,6 +83,22 @@ ProzaEdit.StyleGuideRules = {
       ["subsequent to", "after", "Plain language: common word"],
       ["utilize", "use", "Plain language: simpler verb"],
       ["utilization", "use", "Plain language: simpler noun"],
+      ["a number of", "some", "Plain language: say how many, or use some"],
+      ["as a means of", "to", "Plain language: shorter purpose phrase"],
+      ["at the present time", "now", "Plain language: cut padding"],
+      ["by means of", "by", "Plain language: shorter phrase"],
+      ["in a timely manner", "on time", "Plain language: shorter phrase"],
+      ["in an effort to", "to", "Plain language: shorter purpose phrase"],
+      ["in the amount of", "for", "Plain language: shorter phrase"],
+      ["in the near future", "soon", "Plain language: shorter time phrase"],
+      ["in the process of", "(omit)", "Plain language: often extra"],
+      ["in lieu of", "instead of", "Plain language: common words"],
+      ["inasmuch as", "since", "Plain language: common word"],
+      ["has a requirement for", "needs", "Plain language: shorter verb"],
+      ["in order that", "so", "Plain language: shorter purpose phrase"],
+      ["it is essential", "must", "Plain language: direct obligation"],
+      ["with respect to", "about", "Plain language: simpler preposition"],
+      ["in accordance with", "under", "Plain language: shorter phrase"],
       ["make a decision", "decide", "Plain language: use the verb, not a hidden verb"],
       ["make a determination", "determine", "Plain language: use the verb, not a hidden verb"],
       ["conduct an investigation", "investigate", "Plain language: use the verb, not a hidden verb"],
@@ -107,6 +124,23 @@ ProzaEdit.StyleGuideRules = {
         replacementText: "(active voice)",
       });
     }
+  },
+
+  /** GPO Style Manual 2016 is a U.S. government work. One verified word form, not the manual. */
+  gpo2016(text, push, budget) {
+    if (budget.remaining <= 0) return;
+    const m = /\be-mail\b/i.exec(text);
+    if (!m) return;
+    budget.remaining--;
+    const raw = m[0];
+    push({
+      ruleId: "sg:gpo:email",
+      module: this.MODULE,
+      type: "preference",
+      explanation: `GPO style lists this as one word, "email" (${this.sourceNote("gpo")}).`,
+      targetText: raw,
+      replacementText: raw[0] === raw[0].toUpperCase() ? "Email" : "email",
+    });
   },
 
   strunk1920(text, lower, push, budget, ctx) {
@@ -276,7 +310,10 @@ ProzaEdit.StyleGuideRules = {
     guides.forEach((g) => {
       if (budget.remaining <= 0) return;
       if (g === "custom") this.customPack(text, lower, push, ctx, budget);
-      else if (g === "plain") this.plainLanguage(text, lower, push, budget, ctx);
+      else if (g === "plain") {
+        this.plainLanguage(text, lower, push, budget, ctx);
+        this.gpo2016(text, push, budget);
+      }
       else if (g === "strunk") this.strunk1920(text, lower, push, budget, ctx);
       else if (g === "govuk") this.govuk(text, lower, push, ctx, budget);
       else if (g === "microsoft") this.microsoft(text, lower, push, budget);

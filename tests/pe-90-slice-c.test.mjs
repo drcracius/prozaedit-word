@@ -116,6 +116,20 @@ test("edit:quote: multi-paragraph speech and inch marks are balanced; a real str
   assert.equal(f(`"I never meant to leave, she said, and turned away from the door.`).length, 1);
 });
 
+test("public plain-language phrases and GPO email form", () => {
+  const cx = ctxFor("Business / Corporate Report", { language: "en-US" });
+  const sug = P.Audit.run("We will act in the near future on a number of files. Send an e-mail to the team.", cx).suggestions;
+  const soon = sug.find((s) => s.ruleId.startsWith("sg:plain:in_the_near_future"));
+  const email = sug.find((s) => s.ruleId === "sg:gpo:email");
+  assert.ok(soon);
+  assert.equal(soon.replacementText, "soon");
+  assert.equal(soon.confidence, "medium");
+  assert.ok(email);
+  assert.equal(email.replacementText, "email");
+  const fic = P.Audit.run("In the near future the ship sailed on the tide.", ctxFor("Fiction (General)")).suggestions.find((s) => s.ruleId.startsWith("sg:plain:in_the_near_future"));
+  assert.equal(fic.confidence, "low");
+});
+
 test("mixed number and hyphen forms are flagged only when both appear", () => {
   const ids = (t, prefix) => P.Audit.run(t, ctxFor("Business / Corporate Report")).suggestions.filter((s) => s.ruleId.startsWith(prefix));
   const nums = ids("We bought 2 lamps and two chairs for the office last week.", "edit:num");

@@ -1,6 +1,6 @@
 # Checks and reports — improvement plan
 
-**Live:** 2.0.0.48.  
+**Live:** 2.0.0.49.  
 **Goal:** Make local checks and the report as useful as the best editors, without live underlining, subscriptions, or copied rule text.
 
 ## What the report does today
@@ -19,14 +19,11 @@ Grammarly, ProWritingAid, Hemingway, and LanguageTool group a report into clarit
 
 ## Public sources — what is safe
 
-| Source | Use here? |
-| --- | --- |
-| Plain Language (public guidance), Strunk 1920 (public domain), GOV.UK (Open Government Licence), Microsoft / Google / Red Hat (Creative Commons) | Yes. Short original wording only. Already in the style packs. |
-| SCOWL / Hunspell English word lists | Permissive, with a copyright notice, and large. Parts trace to sources that are not freely redistributable. Do not bundle a full dictionary into this no-build pane. |
-| LanguageTool (LGPL) | A Java engine plus a server. Using it would send text off the device or add a heavy runtime. Do not vendor it. |
-| Grammarly, ProWritingAid, Hemingway, Chicago, APA | Private or copyrighted. Do not copy. |
+Full inventory: [STYLE-GUIDE-SOURCES.md](./STYLE-GUIDE-SOURCES.md).
 
-New checks stay as short original lists with the source named.
+In use: plainlanguage.gov word list (CC0; multi-word lines only), 18F Content Guide (CC0, same idea), GPO Style Manual 2016 (U.S. public domain; “email” as one word), Strunk 1920, GOV.UK (OGL), Microsoft / Google / Red Hat (Creative Commons).
+
+Not bundled: LanguageTool (LGPL, Java, ~8 MB of rules), SCOWL/Hunspell, the Australian Style Manual (not an open licence), and copyrighted manuals (Chicago, APA, MLA, AP, Guardian, BBC). Competitor phrase lists stay out.
 
 ## Updates
 
@@ -38,7 +35,8 @@ Help → About → **Check for updates** already compares this pane with the liv
 | --- | --- | --- |
 | 1 | Hidden verbs (“make a decision” → “decide”) | Done in 2.0.0.46 |
 | 2 | Report summary grouped by check name | Done in 2.0.0.47 |
-| 3 | Consistency only when both forms appear (numbers, hyphen pairs) | **This build** |
-| 4 | Stronger Simple-view filter so noisy Advanced hits stay hidden | Not started |
+| 3 | Consistency only when both forms appear (numbers, hyphen pairs) | Done in 2.0.0.48 |
+| 4 | Broader public plain-language list (multi-word only) and GPO “email” | **This build** |
+| 5 | Stronger Simple-view filter so noisy Advanced hits stay hidden | Not started |
 
 Not planned: a full grammar parser, a Hunspell bundle, LanguageTool, or realtime underlines.

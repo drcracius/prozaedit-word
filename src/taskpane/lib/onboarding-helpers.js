@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.48",
+    version: "2.0.0.49",
     bullet:
-      "Consistency checks now notice when a passage uses both a number word and its digit (two and 2) or both a hyphen form and an open form (long-term and long term). Simple view keeps these quieter.",
+      "Plain-language checks now include more public-domain padding phrases (in the near future, a number of, and similar). GPO style prefers email as one word. Fiction keeps the wording cards quieter.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },
