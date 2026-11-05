@@ -60,3 +60,4 @@ Verify: `bash scripts/verify-version-sync.sh` · **486** tests: `npm test` (need
 | [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) | Final mile (web-first) |
 | [prozaedit-features.md](./prozaedit-features.md) | As-built behavior |
 | [FULL-APP-REVIEW-PE-58.md](./FULL-APP-REVIEW-PE-58.md) | Full app review (PE-58) |
+| [AGENT-WORK-PLAN.md](./AGENT-WORK-PLAN.md) | What the coding agent still owes (not owner Word checks) |
