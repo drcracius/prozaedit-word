@@ -486,6 +486,14 @@ body.pe-narrow-pane .btn-tool-icon-label {
   min-width: 0;
 }
 
+.toggle-row.pe-check-now {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.toggle-row.pe-check-done {
+  opacity: 0.72;
+}
+
 .pe-op-bar-spinner {
   width: 18px;
   height: 18px;

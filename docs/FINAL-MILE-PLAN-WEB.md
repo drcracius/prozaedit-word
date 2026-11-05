@@ -58,7 +58,7 @@
 
 | Theme | What to verify | Fail if |
 |-------|----------------|---------|
-| **Long-op warnings** | Settings → Onboarding → **Warn before long operations** on; full manuscript / large scope shows banner; Continue / Not now / Don't show again | Banner missing on large scope or blocks without recovery |
+| **Long scans** | Settings → Onboarding → **Ask before citation/timeline/batch/deep scans** is **off** by default. **Run report** never uses that banner — it shows the progress ring, the check name, and Cancel | A normal Run report waits for Continue |
 | **Cancel audit** | Run audit → **Cancel** during Reading/Analyzing → status **Cancelled.**; buttons re-enabled | Stuck disabled UI or partial audit state |
 | **Cancel scans / batch** | Citation verify, timeline scan, batch sections — Cancel stops cleanly | Hang or silent failure |
 | **Shaper persistence (PE-45)** | Rewrite → Advanced lexical shaper → change sliders → save doc → reopen pane → values restored; **Reset** in panel → 3/4/2 | Sliders reset every session |

@@ -2,6 +2,7 @@
 
 **Audience:** coding agent (not the owner).  
 **Live build when this was written:** **2.0.0.42**.  
+**Shipped in 2.0.0.43:** Phase A (named checks on the progress line and Checks rows), Phase B (cancel keeps finished cards), Phase C (those four docs updated). Phase D is already covered by the quiet-home tour rules. Phases E and G are still open. Phase F stays ask-first.  
 **Out of scope here:** the owner’s own checks in real Word (Track Changes, real books, real AI keys, screen readers). Those stay off this list until the owner asks.
 
 **Done already (do not redo):** quiet first screen (declutter passes 1, 2a, 3, 4, 5), welcome banners in Help, progress ring + Cancel on Run report, optional long-scan “Continue” off by default and tied to large scope (~80k characters).

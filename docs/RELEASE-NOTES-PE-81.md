@@ -88,6 +88,11 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.43 — Named checks while a report runs
+
+- The progress line names the check that is running (Repetition, Proofreading, Plot, and so on). The matching row on Checks is marked.
+- If you cancel after at least one check finished, those cards stay and the pane says which checks did not run. Cancelling while Word is still being read still leaves no new cards.
+
 ## 2.0.0.42 — Long-scan notice matches large highlights
 
 - Citation, timeline, batch, and deep scans use the optional Continue notice for any **large scope** (about **80k+ characters**), including a big **selection**, not only chapter or full-document modes.

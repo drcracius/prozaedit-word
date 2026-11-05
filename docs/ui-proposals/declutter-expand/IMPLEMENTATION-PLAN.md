@@ -1,6 +1,6 @@
 # Declutter + expandable reports — implementation plan
 
-**Status:** Passes **1, 2a, 3, 4, 5** are **implemented** on branch `cursor/pe-declutter-first-screen` (build **2.0.0.31**, pushed). **Pass 2b** not scheduled. **Pending owner:** merge to `main` / Pages, real-Word smoke. Audit: [AUDIT-COMPLETE.md](./AUDIT-COMPLETE.md).
+**Status:** Passes **1, 2a, 3, 4, 5** are on the live project (through **2.0.0.43**). **Pass 2b** is not scheduled. Welcome banners live under Help. Run report uses a progress ring (no Continue step).
 
 **Restore:** tag `pe-pre-declutter-2.0.0.30` (`b4ea7d3` on `main`) — pre-declutter pane on `main` until merge.
 

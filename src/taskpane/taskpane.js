@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.42";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.43";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1383,6 +1383,62 @@ function setLongOpProgressVisible(visible, label) {
   });
   setToolbarRunDisabled(!!visible);
   if (visible && focusWasOnAuditBtn && cancel) cancel.focus({ preventScroll: true });
+}
+
+function checkPhaseRowId(phaseId) {
+  const map = {
+    chkSpellStyle: "chkSpell",
+    editorHeuristics: "chkSpell",
+    tensePov: "mDialogue",
+    sensory: "mPacing",
+    rhythm: "mPacing",
+    nonfiction: "chkSpell",
+    genreCraft: "mPacing",
+  };
+  return map[phaseId] || phaseId;
+}
+
+function checkPhaseLabel(phaseId) {
+  const labels = {
+    chkRep: "Repetition",
+    chkProp: "Names",
+    chkSpell: "Proofreading",
+    chkSpellStyle: "Style guide",
+    chkAI: "AI-like phrasing",
+    mPlot: "Plot",
+    mMotivation: "Characters",
+    mDialogue: "Dialogue",
+    mContinuity: "Continuity",
+    mPlausibility: "Plausibility",
+    mPacing: "Pacing",
+    mSpoiler: "Spoilers",
+    genreCraft: "Genre craft",
+    editorHeuristics: "House style",
+    tensePov: "Tense and viewpoint",
+    contentNotes: "Content notes",
+    extendedLocal: "Deeper local pass",
+    rhythm: "Rhythm",
+    fkLock: "Reading level",
+    sensory: "Sensory detail",
+    nonfiction: "Clarity",
+  };
+  return labels[phaseId] || "";
+}
+
+function setCheckPhaseMark(rowId, state) {
+  const input = rowId ? getEl(rowId) : null;
+  const row = input && input.closest ? input.closest(".toggle-row") : null;
+  if (!row) return;
+  row.classList.toggle("pe-check-now", state === "now");
+  row.classList.toggle("pe-check-done", state === "done");
+}
+
+function clearCheckPhaseMarks(which) {
+  const sel = which === "now" ? ".pe-check-now" : ".pe-check-now, .pe-check-done";
+  document.querySelectorAll(sel).forEach((row) => {
+    row.classList.remove("pe-check-now");
+    if (which !== "now") row.classList.remove("pe-check-done");
+  });
 }
 
 function setToolbarRunDisabled(disabled) {
@@ -5467,6 +5523,7 @@ function runAuditInternalCore(opts) {
   const sumEl = getEl("summaryReport");
   let longOp = null;
   let cancelled = false;
+  let stoppedEarly = false;
   let failed = false;
 
   const finish = () => {
@@ -5474,6 +5531,7 @@ function runAuditInternalCore(opts) {
     auditStarting = false;
     auditCtxSnapshot = null;
     setModuleButtonsDisabled(false);
+    clearCheckPhaseMarks();
     endLongOperation(longOp);
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, auditBtnDefault);
     const primary = getEl("btnAuditPrimary");
@@ -5484,6 +5542,18 @@ function runAuditInternalCore(opts) {
     if (isLongOpCancelledError(e)) {
       cancelled = true;
       clearRetry();
+      clearCheckPhaseMarks();
+      if (e.partial && Array.isArray(e.partial.suggestions) && e.partial.completedPhaseIds?.length) {
+        const skipped = (e.partial.skippedPhaseIds || []).map((id) => checkPhaseLabel(id)).filter(Boolean);
+        finalizeAudit(e.partial, opts.label || "Full audit (local)");
+        stoppedEarly = true;
+        const note = skipped.length
+          ? `Stopped early — not every check ran (${skipped.join(", ")}).`
+          : "Stopped early — not every check ran.";
+        if (sumEl) sumEl.textContent = note;
+        showPeStatus(note, "warn");
+        return false;
+      }
       resetAuditCardDisplayLimit();
       lastAuditExcerpt = "";
       currentAuditSuggestions = [];
@@ -5554,6 +5624,7 @@ function runAuditInternalCore(opts) {
     let text = await readScopeText(ctx, longOp);
     longOp.throwIfCancelled();
     timing.mark("read");
+    clearCheckPhaseMarks();
     const analyzeLabel = ProzaEdit.LongOp?.analyzePhaseStatus?.() || "Running checks…";
     longOp.setStatus(analyzeLabel);
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Running checks…");
@@ -5567,7 +5638,23 @@ function runAuditInternalCore(opts) {
     }
     await new Promise((r) => setTimeout(r, 0));
     longOp.throwIfCancelled();
-    const result = ProzaEdit.Audit.run(text, buildAuditContext({ extendedLocal: !!opts.extendedLocal }));
+    lastAuditExcerpt = text;
+    const result = await ProzaEdit.Audit.runWithProgress(text, buildAuditContext({ extendedLocal: !!opts.extendedLocal }), {
+      cancelled: () => longOp.isCancelled(),
+      yieldFn: () => new Promise((r) => setTimeout(r, 0)),
+      onPhase: (phase) => {
+        const rowId = checkPhaseRowId(phase.id);
+        if (phase.state === "start") {
+          clearCheckPhaseMarks("now");
+          setCheckPhaseMark(rowId, "now");
+          const msg = `Running ${phase.label}…`;
+          longOp.setStatus(msg);
+          if (sumEl) sumEl.textContent = msg;
+        } else if (phase.state === "done") {
+          setCheckPhaseMark(rowId, "done");
+        }
+      },
+    });
     timing.mark("analyze");
     longOp.throwIfCancelled();
     if (truncated) {
@@ -5595,7 +5682,9 @@ function runAuditInternalCore(opts) {
     .finally(() => {
       finish();
       const timingSummary = reportPhaseTiming(opts.label || "audit", timing);
-      if (cancelled) showPeStatus("Cancelled.", "warn");
+      if (stoppedEarly) {
+        /* status already set */
+      } else if (cancelled) showPeStatus("Cancelled.", "warn");
       else if (failed) {
         showPeStatus(
           getRetryController()?.has?.()

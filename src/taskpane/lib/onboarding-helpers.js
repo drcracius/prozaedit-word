@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.42",
+    version: "2.0.0.43",
     bullet:
-      "Optional long-scan Continue notices now respect large highlights (80k+ characters), not only whole-chapter or full-document scope. Run report still uses the progress ring with no extra Continue step.",
+      "While a report runs, the progress line names each check (Repetition, Proofreading, and so on) and the Checks row highlights. Cancel after a check has finished keeps those cards and says what did not run.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

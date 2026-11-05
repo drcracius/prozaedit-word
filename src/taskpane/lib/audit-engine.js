@@ -141,47 +141,8 @@ ProzaEdit.Audit = {
       };
     }
 
-    if (ctx.chkRep) this._repetition(text, lower, push);
-    if (ctx.chkProp) {
-      ProzaEdit.ProperNoun.findInconsistencies(text, ctx.dictionary, { knownNames: roster }).forEach(push);
-    }
-    if (ctx.chkSpell) this._proofing(text, lower, push, ctx.language);
-    if (ctx.chkAI) this._aiVoice(text, lower, push, ctx);
-    if (ctx.chkAIDetection) this._aiDetectionHeuristic(text, lower, push);
-
-    if (fiction) {
-      if (ctx.mPlot) this._plot(text, lower, push, ctx);
-      if (ctx.mMotivation) this._motivation(text, lower, push, ctx);
-      if (ctx.mDialogue) this._dialogue(text, lower, push, ctx);
-      if (ctx.mContinuity) this._continuity(text, lower, push);
-      if (ctx.mPlausibility) this._plausibility(text, lower, push);
-      if (ctx.mPacing) this._pacing(text, lower, push, ctx);
-      if (ctx.mSpoiler) this._spoiler(text, lower, push);
-      if (gp && (ctx.mPacing || ctx.mDialogue || ctx.mMotivation)) this._genreCraft(text, lower, push, ctx, gp);
-    }
-
-    if (ctx.chkSpell) {
-      this._manuscriptRules(text, lower, push, ctx);
-      if (ProzaEdit.StyleGuideRules?.apply) {
-        ProzaEdit.StyleGuideRules.apply(text, lower, push, ctx);
-      }
-      if (ctx.language === "en-GB") this._gbIseIze(text, lower, push);
-    }
-    if (ctx.chkRep || ctx.chkSpell) {
-      if (ProzaEdit.EditorHeuristics?.runStandardChecks) {
-        ProzaEdit.EditorHeuristics.runStandardChecks(text, push, ctx);
-      }
-    }
-    if (fiction && ctx.mDialogue && ProzaEdit.GenreChecks) {
-      ProzaEdit.GenreChecks.tense(text, push, ctx);
-      ProzaEdit.GenreChecks.pov(text, push, ctx);
-    }
-    if (ctx.contentNotes && ProzaEdit.GenreChecks) ProzaEdit.GenreChecks.contentNotes(text, push, ctx);
-    if (ctx.extendedLocal) this._extendedLocalPass(text, lower, push, ctx);
-    if ((fiction && ctx.mPacing) || ctx.chkRep) this._rhythmMonotony(text, push);
-    if (ctx.fkLock) this._fkLockFlag(text, push, ctx);
-    if (fiction && ctx.mPacing) this._sensoryWeakSpot(text, push);
-    if (!fiction && gp && ctx.chkSpell) this._nonfictionClarity(text, push, ctx, gp);
+    const steps = this._checkSteps({ text, lower, push, ctx, fiction, gp, roster });
+    for (const step of steps) step.fn();
 
     const metrics = ProzaEdit.Metrics.analyze(text);
     const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);
@@ -219,6 +180,193 @@ ProzaEdit.Audit = {
     const traffic = ProzaEdit.Metrics.trafficLight(score);
 
     return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext, genre };
+  },
+
+  /**
+   * Same checks as run(), but yields between them so the pane can show which one is active.
+   * @param {{ onPhase?: Function, yieldFn?: Function, cancelled?: Function }} [hooks]
+   */
+  async runWithProgress(text, ctx, hooks) {
+    text = String(text || "");
+    ctx = this._stripIneligibleFictionFlags(ctx || {});
+    hooks = hooks || {};
+    const roster = this._manuscriptRoster(ctx);
+    const G = ProzaEdit.Genres;
+    const gp = G ? G.params(ctx) : null;
+    const genre = gp ? { id: gp.profile.id, label: G.describe(ctx), jargon: gp.jargon.id } : null;
+    ctx = gp ? { ...ctx, _genre: gp } : ctx;
+    const manuscriptContext = {
+      indexPresent: !!(ctx.manuscriptContextIndex && !ctx.manuscriptContextIndex.invalid),
+      used: roster.length > 0,
+      namesUsed: roster.length,
+    };
+    const suggestions = [];
+    let idSeq = 0;
+    const muted = new Set(ctx.mutedRules || []);
+    const dict = new Set((ctx.dictionary || []).concat(G ? G.jargonTerms(ctx) : []).map((d) => String(d).toLowerCase()));
+    if (G && G.jargonTerms(ctx).length) ctx = { ...ctx, dictionary: (ctx.dictionary || []).concat(G.jargonTerms(ctx)) };
+    const lower = text.toLowerCase().replace(/[\u2018\u2019]/g, "'");
+    const push = (item) => {
+      if (!item.targetText || item.targetText.length > 255) return;
+      if (!item.ruleId) {
+        item.ruleId = `auto:${String(item.module || "rule").slice(0, 40)}:${String(item.targetText).slice(0, 40)}`.toLowerCase();
+      }
+      item = this._alignToDocumentCase(item, text, lower);
+      if (muted.has(item.ruleId)) return;
+      if (gp && G.isMuted(gp.profile, item.ruleId)) return;
+      if (ProzaEdit.Settings?.isTargetDismissedGlobally?.(item.targetText)) return;
+      suggestions.push({ ...item, id: item.id || `sug_${idSeq++}` });
+    };
+    const fiction = ProzaEdit.Genres
+      ? ProzaEdit.Genres.isFiction(ctx.manuscriptType)
+      : String(ctx.manuscriptType || "").includes("Fiction") && !/non-?fiction/i.test(String(ctx.manuscriptType));
+    const anyFiction =
+      fiction &&
+      (ctx.mPlot || ctx.mMotivation || ctx.mDialogue || ctx.mContinuity || ctx.mPlausibility || ctx.mPacing || ctx.mSpoiler);
+    const anyCore = ctx.contentNotes || ctx.chkRep || ctx.chkProp || ctx.chkSpell || ctx.chkAI || ctx.extendedLocal || anyFiction;
+    const finish = (extra) => {
+      const metrics = ProzaEdit.Metrics.analyze(text);
+      const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);
+      if ((fiction && ctx.mPacing) || ctx.chkSpell) {
+        if (!fiction && metrics.fleschKincaidGrade < gMin - 2) {
+          push({
+            ruleId: "read:too_simple",
+            module: "Pacing & Readability",
+            type: "preference",
+            explanation: `Reading level (~grade ${metrics.fleschKincaidGrade}) may be below target (${ctx.targetAudience}).`,
+            targetText: text.trim().substring(0, 80),
+            replacementText: "(raise lexical complexity)",
+          });
+        }
+        if (metrics.fleschKincaidGrade > gMax + 2 + (gp ? gp.profile.fkSlack : 0)) {
+          push({
+            ruleId: "read:too_complex",
+            module: "Pacing & Readability",
+            type: "preference",
+            explanation: `Reading level (~grade ${metrics.fleschKincaidGrade}) may exceed target (${ctx.targetAudience}).`,
+            targetText: text.trim().substring(0, 80),
+            replacementText: "(simplify syntax)",
+          });
+        }
+      }
+      const maxCards = ProzaEdit.ReportDensity?.maxCards?.(ctx.reportDensity) || 60;
+      const deduped = this._dedupe(suggestions).slice(0, maxCards).map((x) => ({ ...x, confidence: this.confidenceFor(x) }));
+      const persona = this.PERSONA_WEIGHTS[ctx.criticPersona] || this.PERSONA_WEIGHTS["Average Reader"];
+      const criticalCount = deduped.filter((s) => s.type === "confirmed").length;
+      const prefCount = deduped.filter((s) => s.type === "preference" && !String(s.ruleId).startsWith("content:")).length;
+      let score = 10 - criticalCount * persona.c - prefCount * persona.p;
+      if (score < 5) score = 5;
+      score = Math.round(score * 10) / 10;
+      return {
+        suggestions: deduped,
+        metrics,
+        score,
+        traffic: ProzaEdit.Metrics.trafficLight(score),
+        criticalCount,
+        prefCount,
+        manuscriptContext,
+        genre,
+        ...(extra || {}),
+      };
+    };
+    if (!anyCore && !ctx.fkLock) {
+      return {
+        suggestions: [],
+        metrics: ProzaEdit.Metrics.analyze(text),
+        score: 10,
+        traffic: ProzaEdit.Metrics.trafficLight(10),
+        criticalCount: 0,
+        prefCount: 0,
+        manuscriptContext,
+        genre,
+        completedPhaseIds: [],
+        skippedPhaseIds: [],
+      };
+    }
+    const steps = this._checkSteps({ text, lower, push, ctx, fiction, gp, roster });
+    const completedPhaseIds = [];
+    const skippedPhaseIds = [];
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (typeof hooks.cancelled === "function" && hooks.cancelled()) {
+        for (let j = i; j < steps.length; j++) skippedPhaseIds.push(steps[j].id);
+        const partial = finish({
+          stoppedEarly: completedPhaseIds.length > 0,
+          completedPhaseIds: completedPhaseIds.slice(),
+          skippedPhaseIds,
+        });
+        const err = new Error("Cancelled");
+        err.code = "PE_CANCELLED";
+        err.partial = completedPhaseIds.length ? partial : null;
+        throw err;
+      }
+      if (typeof hooks.onPhase === "function") hooks.onPhase({ id: step.id, label: step.label, state: "start" });
+      if (typeof hooks.yieldFn === "function") await hooks.yieldFn();
+      try {
+        step.fn();
+      } catch (e) {
+        if (typeof hooks.onPhase === "function") hooks.onPhase({ id: step.id, label: step.label, state: "error" });
+        throw e;
+      }
+      completedPhaseIds.push(step.id);
+      if (typeof hooks.onPhase === "function") hooks.onPhase({ id: step.id, label: step.label, state: "done" });
+    }
+    return finish({ stoppedEarly: false, completedPhaseIds, skippedPhaseIds: [] });
+  },
+
+  /** Ordered checks that run() actually executes. Ids match Checks toggles when one exists. */
+  _checkSteps(env) {
+    const { text, lower, push, ctx, fiction, gp, roster } = env;
+    const steps = [];
+    const add = (id, label, fn) => steps.push({ id, label, fn });
+    if (ctx.chkRep) add("chkRep", "Repetition", () => this._repetition(text, lower, push));
+    if (ctx.chkProp) {
+      add("chkProp", "Names", () => {
+        ProzaEdit.ProperNoun.findInconsistencies(text, ctx.dictionary, { knownNames: roster }).forEach(push);
+      });
+    }
+    if (ctx.chkSpell) add("chkSpell", "Proofreading", () => this._proofing(text, lower, push, ctx.language));
+    if (ctx.chkAI) add("chkAI", "AI-like phrasing", () => this._aiVoice(text, lower, push, ctx));
+    if (ctx.chkAIDetection) add("chkAIDetection", "AI-style patterns", () => this._aiDetectionHeuristic(text, lower, push));
+    if (fiction) {
+      if (ctx.mPlot) add("mPlot", "Plot", () => this._plot(text, lower, push, ctx));
+      if (ctx.mMotivation) add("mMotivation", "Characters", () => this._motivation(text, lower, push, ctx));
+      if (ctx.mDialogue) add("mDialogue", "Dialogue", () => this._dialogue(text, lower, push, ctx));
+      if (ctx.mContinuity) add("mContinuity", "Continuity", () => this._continuity(text, lower, push));
+      if (ctx.mPlausibility) add("mPlausibility", "Plausibility", () => this._plausibility(text, lower, push));
+      if (ctx.mPacing) add("mPacing", "Pacing", () => this._pacing(text, lower, push, ctx));
+      if (ctx.mSpoiler) add("mSpoiler", "Spoilers", () => this._spoiler(text, lower, push));
+      if (gp && (ctx.mPacing || ctx.mDialogue || ctx.mMotivation)) {
+        add("genreCraft", "Genre craft", () => this._genreCraft(text, lower, push, ctx, gp));
+      }
+    }
+    if (ctx.chkSpell) {
+      add("chkSpellStyle", "Style guide", () => {
+        this._manuscriptRules(text, lower, push, ctx);
+        if (ProzaEdit.StyleGuideRules?.apply) ProzaEdit.StyleGuideRules.apply(text, lower, push, ctx);
+        if (ctx.language === "en-GB") this._gbIseIze(text, lower, push);
+      });
+    }
+    if (ctx.chkRep || ctx.chkSpell) {
+      add("editorHeuristics", "House style", () => {
+        if (ProzaEdit.EditorHeuristics?.runStandardChecks) ProzaEdit.EditorHeuristics.runStandardChecks(text, push, ctx);
+      });
+    }
+    if (fiction && ctx.mDialogue && ProzaEdit.GenreChecks) {
+      add("tensePov", "Tense and viewpoint", () => {
+        ProzaEdit.GenreChecks.tense(text, push, ctx);
+        ProzaEdit.GenreChecks.pov(text, push, ctx);
+      });
+    }
+    if (ctx.contentNotes && ProzaEdit.GenreChecks) {
+      add("contentNotes", "Content notes", () => ProzaEdit.GenreChecks.contentNotes(text, push, ctx));
+    }
+    if (ctx.extendedLocal) add("extendedLocal", "Deeper local pass", () => this._extendedLocalPass(text, lower, push, ctx));
+    if ((fiction && ctx.mPacing) || ctx.chkRep) add("rhythm", "Rhythm", () => this._rhythmMonotony(text, push));
+    if (ctx.fkLock) add("fkLock", "Reading level", () => this._fkLockFlag(text, push, ctx));
+    if (fiction && ctx.mPacing) add("sensory", "Sensory detail", () => this._sensoryWeakSpot(text, push));
+    if (!fiction && gp && ctx.chkSpell) add("nonfiction", "Clarity", () => this._nonfictionClarity(text, push, ctx, gp));
+    return steps;
   },
 
   LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
