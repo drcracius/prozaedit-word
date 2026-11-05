@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.32";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.33";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -414,7 +414,9 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
   if (!el) return;
   const n = Number(charCount);
   charCount = Number.isFinite(n) && n > 0 ? n : 0;
-  const limit = getScopeCharLimit(mode);
+  let limit = Number(getScopeCharLimit(mode));
+  if (!Number.isFinite(limit) || limit <= 0) limit = MAX_LOCAL_AUDIT_CHARS;
+  const safeLabel = label == null || String(label).trim() === "" ? "Scope" : String(label);
   const over = charCount > limit;
   const ok = !over && charCount > 0;
   el.classList.toggle("over-limit", over);
@@ -422,8 +424,8 @@ function updateScopeCharPreviewDisplay(charCount, label, mode) {
   const fmt = charCount.toLocaleString();
   const lim = limit.toLocaleString();
   el.textContent = over
-    ? `${label}: ~${fmt} characters — over limit (${lim}). Choose a smaller scope, or audit one chapter at a time.`
-    : `${label}: ~${fmt} characters (limit ${lim}).`;
+    ? `${safeLabel}: ~${fmt} characters — over limit (${lim}). Choose a smaller scope, or audit one chapter at a time.`
+    : `${safeLabel}: ~${fmt} characters (limit ${lim}).`;
   lastScopePreviewSummary =
     charCount > 0
       ? over
@@ -487,7 +489,7 @@ function updateWorkflowStatusLine() {
   const guideBadge = getEl("peBadgeGuide");
   const scopeBadge = getEl("peBadgeScope");
   if (guideBadge) guideBadge.textContent = guidePart || "—";
-  if (scopeBadge) scopeBadge.textContent = lastScopePreviewSummary ? `${scopePart} · ${lastScopePreviewSummary}` : scopePart;
+  if (scopeBadge) scopeBadge.textContent = scopePart || "—";
   updateChecksScopeChip();
   updateWorkflowNextStepHint();
 }
@@ -1843,8 +1845,15 @@ function bindWorkflowStepper() {
 function updateGenreBlurb() {
   const el = getEl("peGenreBlurb");
   if (!el || !ProzaEdit.Genres) return;
-  const p = ProzaEdit.Genres.resolve(getEl("manuscriptType")?.value);
-  el.textContent = `${p.label}: ${p.blurb} Checks, thresholds and AI prompts follow this choice; it is saved with this document. Numbers are editorial rules of thumb, not published standards.`;
+  const p = ProzaEdit.Genres.resolve(getEl("manuscriptType")?.value) || {};
+  const label = p.label || "Type";
+  const blurb = p.blurb || "Pick the closest fit.";
+  el.textContent = "";
+  el.append(document.createTextNode(`${label}: ${blurb} `));
+  const note = document.createElement("span");
+  note.className = "visually-hidden";
+  note.textContent = "Saved with this document. Numbers are editorial rules of thumb, not published standards.";
+  el.append(note);
 }
 
 let fictionModuleMemo = null;

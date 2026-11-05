@@ -373,6 +373,7 @@ body.pe-narrow-pane .btn-tool-icon-label {
 }
 
 .workflow-step {
+  position: relative;
   flex: 1 1 5.5rem;
   display: flex;
   align-items: center;

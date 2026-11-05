@@ -872,6 +872,12 @@ test("layout: Run pill starts a report and a bad character count does not throw"
     assert.equal(t.peval("window.__peRan"), 1);
     t.peval(`updateScopeCharPreviewDisplay(undefined, "Scope", "selection")`);
     assert.equal(t.el("scopeCharPreview").textContent.includes("NaN"), false);
+    t.peval(`updateScopeCharPreviewDisplay(12000, "", "full")`);
+    assert.match(t.el("scopeCharPreview").textContent, /^Scope:/);
+    assert.doesNotMatch(t.el("peBadgeScope").textContent, /chars|characters/i);
+    t.peval(`adaptModules()`);
+    assert.ok(t.el("peGenreBlurb").querySelector(".visually-hidden"));
+    assert.match(t.el("peGenreBlurb").textContent, /rules of thumb/);
     const profile = t.document.querySelector(".pe-target-section");
     t.peval(`document.getElementById("simpleMode").checked = true; applySimpleMode();`);
     profile.setAttribute("open", "");

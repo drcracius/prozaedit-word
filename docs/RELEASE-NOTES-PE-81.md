@@ -88,6 +88,12 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.33 — Shorter first screen
+
+- Type line shows the genre sentence only. The “rules of thumb” note stays for screen readers.
+- The Scope badge stays the scope name. The character count stays under Scope.
+- A bad scope limit cannot throw while refreshing the count.
+
 ## 2.0.0.32 — Declutter follow-up (pane safety)
 
 - Lightning **Run** step starts a report (keyboard and click). Fix step still opens the issue list.
