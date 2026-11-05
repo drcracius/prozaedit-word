@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.35";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.36";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -188,7 +188,7 @@ function setupSafeHandlers() {
       updateWorkflowStatusLine();
       updateFullManuscriptScopeTip();
       if (scope.value === "selected-chapters" || scope.value === "chapter" || scope.value === "chapter-range") {
-        refreshChapterScopeLists();
+        reloadChapterScopeFromDocument();
       } else {
         refreshScopeCharPreview();
       }
@@ -398,7 +398,25 @@ function fillChapterSelects(list) {
 
 let chapterListInFlight = null;
 
+function wordReadBlocked() {
+  return !!(
+    mciBuildBusy ||
+    auditBusy ||
+    deepBusy ||
+    heatmapBusy ||
+    chronologyBusy ||
+    citationBusy ||
+    chatBusy ||
+    rewriteBusy ||
+    batchRunning
+  );
+}
+
 function refreshChapterScopeLists() {
+  if (wordReadBlocked()) {
+    showPeStatus("Wait for the current operation to finish.", "warn");
+    return Promise.resolve();
+  }
   if (chapterListInFlight) return chapterListInFlight;
   const run = wordRun("ch-list", async (ctx) => {
     const list = await ProzaEdit.ScopeReader.listChapters(ctx);
@@ -407,7 +425,6 @@ function refreshChapterScopeLists() {
   })
     .then(() => {
       showPeStatus(`Found ${scopeChapterListCache.length} chapter(s).`, "ok");
-      return refreshScopeCharPreview();
     })
     .catch((e) => reportActionError(e, "read the chapter list"))
     .finally(() => {
@@ -415,6 +432,14 @@ function refreshChapterScopeLists() {
     });
   chapterListInFlight = run;
   return run;
+}
+
+function reloadChapterScopeFromDocument() {
+  if (wordReadBlocked()) {
+    showPeStatus("Wait for the current operation to finish.", "warn");
+    return Promise.resolve();
+  }
+  return refreshChapterScopeLists().then(() => refreshScopeCharPreview());
 }
 
 function updateScopeCharPreviewDisplay(charCount, label, mode) {
@@ -531,16 +556,20 @@ function updateAuditTabBadge() {
 let scopePreviewSeq = 0;
 
 function refreshScopeCharPreview() {
-  const seq = ++scopePreviewSeq;
-  if (auditBusy) {
-    showPeStatus("Wait for audit to finish.", "warn");
+  if (wordReadBlocked()) {
+    showPeStatus("Wait for the current operation to finish.", "warn");
     return Promise.resolve();
   }
+  if (chapterListInFlight) return chapterListInFlight.then(() => refreshScopeCharPreview());
+  const seq = ++scopePreviewSeq;
   const mode = getScopeMode();
   if (mode === "selected-chapters" || mode === "chapter" || mode === "chapter-range") {
     if (!scopeChapterListCache.length) {
       updateScopeCharPreviewDisplay(0, "Chapters not loaded", mode);
-      return refreshChapterScopeLists();
+      return refreshChapterScopeLists().then(() => {
+        if (!scopeChapterListCache.length) return;
+        return refreshScopeCharPreview();
+      });
     }
     if (mode === "selected-chapters" && !getSelectedChapterIndicesFromUi().length) {
       updateScopeCharPreviewDisplay(0, "No chapters selected", mode);
@@ -1340,9 +1369,15 @@ function setLongOpProgressVisible(visible, label) {
     b.classList.toggle("hidden", !!visible);
     b.disabled = !!visible;
   });
-  const toolbarRun = document.querySelector(".pe-toolbar .btn-tool-accent");
-  if (toolbarRun) toolbarRun.disabled = !!visible;
+  setToolbarRunDisabled(!!visible);
   if (visible && focusWasOnAuditBtn && cancel) cancel.focus({ preventScroll: true });
+}
+
+function setToolbarRunDisabled(disabled) {
+  const toolbarRun = document.querySelector(".pe-toolbar .btn-tool-accent");
+  if (toolbarRun) toolbarRun.disabled = !!disabled;
+  const step = document.querySelector('[data-workflow-step="3"]');
+  if (step) step.setAttribute("aria-disabled", disabled ? "true" : "false");
 }
 
 function beginLongOperation(hooks) {
@@ -2436,11 +2471,9 @@ async function prepareScopeForAudit(retryOpts) {
   if (!(await maybeAutoRefreshManuscriptContextBeforeAudit())) return false;
   const scope = getScopeMode();
   if (scope !== "selection") {
-    let countedWithChapterLoad = false;
     if (scope === "selected-chapters" || scope === "chapter" || scope === "chapter-range") {
       if (!scopeChapterListCache.length) {
         await refreshChapterScopeLists();
-        countedWithChapterLoad = true;
         if (!scopeChapterListCache.length) {
           showPeStatus("No chapter list yet. Apply Heading 1–3 to chapter titles, then Reload the chapter list on Target.", "warn");
           showTab("tab1");
@@ -2453,7 +2486,7 @@ async function prepareScopeForAudit(retryOpts) {
         return false;
       }
     }
-    if (!countedWithChapterLoad) await refreshScopeCharPreview();
+    await refreshScopeCharPreview();
     const prev = getEl("scopeCharPreview");
     if (prev?.dataset.peMeasureFailed === "1") {
       showPeStatus(prev.textContent || "Could not measure this scope. Use Refresh count, then Run again.", "warn");
@@ -5274,8 +5307,7 @@ function runAuditInternal(opts) {
     return Promise.resolve(false);
   }
   auditStarting = true;
-  const toolbarRun = document.querySelector(".pe-toolbar .btn-tool-accent");
-  if (toolbarRun) toolbarRun.disabled = true;
+  setToolbarRunDisabled(true);
   let chain;
   try {
     const start = () => {
@@ -5293,7 +5325,7 @@ function runAuditInternal(opts) {
     chain = runAfterLongOperationWarning(actionId, start);
   } catch (e) {
     auditStarting = false;
-    if (toolbarRun) toolbarRun.disabled = false;
+    setToolbarRunDisabled(false);
     reportActionError(e, "start this audit");
     return Promise.resolve(false);
   }
@@ -5305,7 +5337,7 @@ function runAuditInternal(opts) {
     .finally(() => {
       auditStarting = false;
       const opOpen = getEl("peOpBar") && !getEl("peOpBar").classList.contains("hidden");
-      if (!auditBusy && !opOpen && toolbarRun) toolbarRun.disabled = false;
+      if (!auditBusy && !opOpen) setToolbarRunDisabled(false);
     });
 }
 

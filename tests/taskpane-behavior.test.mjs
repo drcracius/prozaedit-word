@@ -914,6 +914,19 @@ test("layout: a failed scope measure is not reported as over the character limit
   }
 });
 
+test("layout: chapter reload does not read Word while a report is running", async () => {
+  const t = await boot();
+  try {
+    t.peval(`auditBusy = true; window.__wordReads = 0; const prev = wordRun; wordRun = function () { window.__wordReads += 1; return prev.apply(this, arguments); };`);
+    await t.peval(`reloadChapterScopeFromDocument()`);
+    assert.equal(t.peval("window.__wordReads"), 0);
+    assert.match(t.el("peStatus").textContent, /Wait for the current operation/);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("layout: Pass 1 quiet chrome (Tips, type lift, hidden hints)", async () => {
   const t = await boot();
   try {

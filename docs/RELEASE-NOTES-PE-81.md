@@ -88,6 +88,12 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.36 — No second Word read during a report
+
+- Reloading the chapter list or refreshing the character count waits while a report, scan, or rewrite is already reading the document.
+- The character count starts only after the chapter list has finished, so those two reads do not overlap.
+- The lightning step is marked unavailable while **Run** is turned off.
+
 ## 2.0.0.35 — Scope count mistakes
 
 - A failed character count no longer pretends the scope is over the limit, so Run is not blocked for the wrong reason.
