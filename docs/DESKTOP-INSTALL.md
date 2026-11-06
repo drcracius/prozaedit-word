@@ -41,8 +41,9 @@ office.com -> Word -> Insert -> Add-ins -> Upload My Add-in -> `manifest.hosted.
 ## Check or undo
 
 - **Check (read-only):** `Verify-ProzaEdit-Install.bat` lists PASS/FAIL for the manifest, the share, the catalog entry and any blocking policy.
-- **Undo:** `powershell -File scripts\install\Install-ProzaEdit-GitHub.ps1 -Uninstall`
-- **Empty list after a manifest change:** re-run the `.bat` (it clears `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\`).
+- **Undo desktop only:** close Word, then double-click **`Uninstall-ProzaEdit.bat`** at the repo root (works from any folder; do not type a relative `powershell -File scripts\...` path unless you `cd` to the repo first).
+- **Undo Word on the web:** **Insert -> Add-ins -> My Add-ins -> ...** on ProzaEdit -> **Remove**. Do that before uploading a newer `manifest.hosted.xml`.
+- **Empty list after a manifest change:** re-run the install `.bat` (it clears `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\`).
 
 ## Not covered
 

@@ -76,6 +76,14 @@ if ($manifestOk) {
     if ($tooLong.Count -gt 0) { $tooLongDetail = "too long: " + (($tooLong | Select-Object -Unique) -join ", ") + " (Word Desktop silently skips this manifest; update the repo and re-run the installer)" }
     Write-Check -Ok ($tooLong.Count -eq 0) -Label "Resource ids valid for Word Desktop" -Detail $tooLongDetail
     Write-Check -Ok ($text -notmatch 'localhost') -Label "Manifest is the hosted one (no localhost)"
+    $badAppDomain = @()
+    foreach ($m in [regex]::Matches($text, '<AppDomain>([^<]+)</AppDomain>')) {
+      $ad = $m.Groups[1].Value.Trim().TrimEnd('/')
+      if ($ad -notmatch '^https://' -or ($ad -match '^https://[^/]+/.+')) { $badAppDomain += $ad }
+    }
+    $adDetail = "site roots only (Word web upload rejects a path)"
+    if ($badAppDomain.Count -gt 0) { $adDetail = "invalid: " + ($badAppDomain -join "; ") }
+    Write-Check -Ok ($badAppDomain.Count -eq 0) -Label "AppDomain entries valid for Word web upload" -Detail $adDetail
     $src = [string]$xml.OfficeApp.DefaultSettings.SourceLocation.DefaultValue
     Write-Check -Ok ($src -eq $ExpectedSourceLocation) -Label "SourceLocation is the GitHub Pages task pane" -Detail $src
     Write-Check -Ok ([string]$xml.OfficeApp.Id -eq $AddinId) -Label "Add-in Id" -Detail ([string]$xml.OfficeApp.Id)

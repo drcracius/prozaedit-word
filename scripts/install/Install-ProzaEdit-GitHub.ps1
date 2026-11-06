@@ -116,6 +116,13 @@ function Test-ManifestForDesktop([string]$Path) {
   }
   if ($text -match 'localhost') { $problems.Add("Manifest points at localhost. Use manifest.hosted.xml, not manifest.xml.") }
   if ($text -notmatch 'SourceLocation\s+DefaultValue="https://') { $problems.Add("SourceLocation is not an https URL.") }
+  foreach ($m in [regex]::Matches($text, '<AppDomain>([^<]+)</AppDomain>')) {
+    $ad = $m.Groups[1].Value.Trim().TrimEnd('/')
+    if ($ad -notmatch '^https://') { $problems.Add("AppDomain must use https: $ad") }
+    elseif ($ad -match '^https://[^/]+/.+') {
+      $problems.Add("AppDomain must be the site root only (Word web upload rejects a path): $ad")
+    }
+  }
 
   return [pscustomobject]@{ Ok = ($problems.Count -eq 0); Version = $version; Problems = $problems }
 }

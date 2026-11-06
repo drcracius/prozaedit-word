@@ -2,7 +2,7 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Build 2.0.0.60** is on **`main`** and GitHub Pages after deploy (~2 min). **506** tests. Owner Phase 1 (**PE-47**) open. Word Desktop install: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
+**Build 2.0.0.60** is on **`main`** and GitHub Pages after deploy (~2 min). **507** tests. Owner Phase 1 (**PE-47**) open. Word Desktop install: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
 
 **Next:** re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
 
@@ -13,14 +13,16 @@ Implementation roadmap: `docs/prozaedit-implementation-plan-audited.md`
 ## Step 6 — Install ProzaEdit from GitHub (one time)
 
 1. **Get the manifest file**
-   - On this PC:  
-     `C:\Users\obadr\Desktop\ProzaEdit - Word\prozaedit-word\manifest.hosted.xml`
-   - Or download the raw file (not the GitHub page):  
+   - On this PC (repo):  
+     `C:\Users\User\Desktop\prozaedit-word-repo\manifest.hosted.xml`
+   - Or the copy saved for upload:  
+     `C:\Users\User\OneDrive\Documents\ProzaEdit (app add-in)\manifest.hosted-2.0.0.60.xml`
+   - Or download the **raw** file (not the GitHub HTML page):  
      [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml)
 
-2. **Remove old localhost add-in (if Word still shows it)**
-   - Word → **Insert** → **Add-ins** → **My Add-ins**
-   - Open the **⋯** menu → remove any **ProzaEdit** tied to localhost / dev.
+2. **Remove any old ProzaEdit first**
+   - **Word on the web:** **Insert** → **Add-ins** → **My Add-ins** → **⋯** on ProzaEdit → **Remove**.
+   - **Word Desktop** (if **Home → ProzaEdit** is still there after that): close Word, double-click **`Uninstall-ProzaEdit.bat`** in the repo folder, then reopen Word.
 
 3. **Upload hosted manifest**
    - **Insert** → **Add-ins** → **My Add-ins** → **Upload My Add-in**
@@ -40,6 +42,7 @@ Implementation roadmap: `docs/prozaedit-implementation-plan-audited.md`
 | Symptom | Try |
 |--------|-----|
 | Add-in blank or error | Wait 2 minutes (GitHub Pages cache), close Word, reopen. |
+| **Manifest is not valid** | Remove old ProzaEdit (step 2); use the **raw** download link; need build **2.0.0.60+** (not an old OneDrive copy with `/prozaedit-word` in AppDomain). |
 | Still localhost | Remove old add-in; upload `manifest.hosted.xml` again. |
 | No **Home → ProzaEdit** | Upload manifest again; restart Word. |
 
@@ -60,6 +63,7 @@ Send them:
 | Helper | Purpose |
 |--------|---------|
 | **`Install-ProzaEdit-Desktop-GitHub.bat`** | Copy and check [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) in `%USERPROFILE%\ProzaEditCatalog\` (no registry changes) |
+| **`Uninstall-ProzaEdit.bat`** | Remove desktop catalog / developer sideload (Word on the web: remove via My Add-ins) |
 | **`Fix-ProzaEdit-SharedFolder.bat`** | Word Desktop, Shared Folder route (creates `\\PC\ProzaEditCatalog`, one admin prompt). See [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md) |
 | **`Sideload-ProzaEdit-Desktop.bat`** | Word Desktop, no admin: developer registry sideload |
 | **`Verify-ProzaEdit-Install.bat`** | Read-only PASS/FAIL check of either desktop route |

@@ -12,6 +12,7 @@ Word Desktop cannot "Upload My Add-in". Two supported routes (pick one, with Wor
 Other entry points (repo root):
 
 - `Install-ProzaEdit-Desktop-GitHub.bat`: copy + validate the manifest only (no registry changes).
+- `Uninstall-ProzaEdit.bat`: remove Shared Folder catalog, developer sideload, and share (Word must be closed).
 - `Verify-ProzaEdit-Install.bat`: read-only PASS/FAIL report. Send its output when asking for help.
 
 ## What the PowerShell script does
@@ -19,7 +20,7 @@ Other entry points (repo root):
 `Install-ProzaEdit-GitHub.ps1`:
 
 1. Copies `manifest.hosted.xml` from this repo (or downloads it with `-Download`) into `%USERPROFILE%\ProzaEditCatalog\`.
-2. Checks it the way Word Desktop does: resource ids max 32 characters, `https`, no `localhost`. Stops with a clear message if it fails.
+2. Checks it the way Word Desktop and Word web upload do: resource ids max 32 characters, `https`, no `localhost`, **AppDomain site roots only** (no `/prozaedit-word` path). Stops with a clear message if it fails.
 3. `-RegisterLocalCatalog`: shares the folder as `\\<this PC>\ProzaEditCatalog` (elevated step only for the share) and writes `HKCU\Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{GUID}` with `Url` = the **UNC path**, `Flags` = 1. Removes the old broken `file:///` entry if present.
 4. `-DeveloperSideload`: writes the manifest path to `HKCU\Software\Microsoft\Office\16.0\Wef\Developer` (value name = add-in id), the same key Microsoft's `office-addin-dev-settings` uses.
 5. `-ClearOfficeCache`: empties `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\` (Word must be closed).

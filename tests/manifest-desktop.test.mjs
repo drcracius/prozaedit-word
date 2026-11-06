@@ -70,6 +70,14 @@ test("hosted manifest uses https only and the GitHub Pages task pane", () => {
   assert.match(xml, /<SourceLocation DefaultValue="https:\/\/drcracius\.github\.io\/prozaedit-word\/src\/taskpane\/taskpane\.html"\/>/);
 });
 
+test("hosted AppDomain entries are site roots (Word web upload rejects a path)", () => {
+  const { xml } = parse("manifest.hosted.xml");
+  for (const m of xml.matchAll(/<AppDomain>([^<]+)<\/AppDomain>/g)) {
+    const url = m[1].trim().replace(/\/$/, "");
+    assert.match(url, /^https:\/\/[^/]+$/i, `AppDomain must not include a path: ${m[1]}`);
+  }
+});
+
 test("hosted manifest uses the site address Word accepts and the pictures from the working file", () => {
   const { xml } = parse("manifest.hosted.xml");
   assert.match(xml, /<AppDomain>https:\/\/drcracius\.github\.io<\/AppDomain>/);
@@ -88,4 +96,5 @@ test("desktop install script registers a UNC share (never file://) and offers th
   assert.match(ps, /New-SmbShare/, "creates the network share Word requires");
   assert.match(ps, /Wef\\Developer/i, "has the no-admin Developer registry sideload");
   assert.match(ps, /Test-ManifestForDesktop/, "validates the manifest before registering");
+  assert.match(ps, /AppDomain must be the site root only/, "rejects AppDomain paths Word web upload blocks");
 });

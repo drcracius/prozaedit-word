@@ -7,13 +7,16 @@ REQUIREMENTS
   - Internet while using ProzaEdit
 
 STEPS (Word on the web — easiest)
-  1. Save manifest.hosted.xml (Downloads is fine).
+  0. If ProzaEdit is already installed: My Add-ins → ... on ProzaEdit → Remove.
+  1. Save manifest.hosted.xml from the author's raw link (not the GitHub web page):
+     https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml
   2. Go to https://office.com → Word → create a NEW blank document.
   3. Add-ins → More Add-ins → My Add-ins → Manage My Add-ins
   4. Click Upload (dropdown menu) → Upload My Add-in → pick manifest.hosted.xml
   5. Open your real manuscript (same account). Home → ProzaEdit
 
 Note: Upload may fail on an old blank doc; use a fresh blank doc for step 2–4.
+If Word says the manifest is not valid, ask for a fresh raw download (build 2.0.0.60+).
 Desktop Word often has no Upload — use the browser steps above.
 
 DAILY USE
@@ -23,7 +26,7 @@ DAILY USE
 If Upload is missing on desktop Word, use https://office.com in a browser for step 2–4.
 
 OWNER / VALIDATION (not for testers)
-  Web 1.0 RC on main (2.0.0.16); PE-48 agent prep done; owner Phase 1 (PE-47) open.
+  Hosted build on main: see docs/WHEN-YOU-RETURN.md; owner Phase 1 (PE-47) open.
   Final mile: docs/FINAL-MILE-PLAN-WEB.md
   Phase 1 quickstart: docs/PHASE-1-QUICKSTART.md
   Log template: docs/templates/VALIDATION-LOG.md

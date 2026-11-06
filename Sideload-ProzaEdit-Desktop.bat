@@ -22,6 +22,6 @@ if %ERR% NEQ 0 (
 )
 
 echo Next: open Word with a blank document, then Home tab - ProzaEdit.
-echo To undo later: powershell -File scripts\install\Install-ProzaEdit-GitHub.ps1 -Uninstall
+echo To undo later: double-click Uninstall-ProzaEdit.bat in this folder.
 pause
 exit /b 0

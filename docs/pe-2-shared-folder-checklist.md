@@ -39,7 +39,7 @@
 
 ## Undo
 
-`powershell -File scripts\install\Install-ProzaEdit-GitHub.ps1 -Uninstall`
+Double-click **`Uninstall-ProzaEdit.bat`** at the repo root (with Word closed).
 
 ## Log the result
 
