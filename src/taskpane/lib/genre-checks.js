@@ -24,16 +24,27 @@ ProzaEdit.GenreChecks = {
   },
 
   _tenseCounts(narration) {
-    const words = narration.toLowerCase().match(/[a-z']+/g) || [];
+    const raw = String(narration).match(/[A-Za-z']+/g) || [];
+    const aux = /^(?:was|were|been|being|is|are)$/i;
+    const adj = /^(?:tired|excited|pleased|surprised|interested|concerned|worried|related|limited|advanced|detailed|experienced|complicated|determined|supposed|used|skilled|qualified|dedicated|committed|motivated|informed|alarmed|embarrassed|bored|scared)$/i;
     let past = 0;
     let present = 0;
-    for (let i = 0; i < words.length; i++) {
-      const w = words[i];
+    for (let i = 0; i < raw.length; i++) {
+      const w = raw[i].toLowerCase();
+      const prev = raw[i - 1] || "";
+      const prevLow = prev.toLowerCase();
+      const prev2 = (raw[i - 2] || "").toLowerCase();
+      if (aux.test(prevLow) && adj.test(w)) continue;
       if (this.PAST.has(w)) past++;
       else if (this.PRESENT.has(w)) present++;
-      else if (/^(he|she|they|i|we)$/.test(words[i - 1] || "") && /^[a-z]{3,}ed$/.test(w)) past++;
+      else if (/^[a-z]{3,}ed$/.test(w)) {
+        const name = /^[A-Z]/.test(prev) && !/^(The|A|An)$/.test(prev);
+        const subj = /^(he|she|they|i|we)$/.test(prevLow) || name;
+        const advSubj = /ly$/.test(prevLow) && (/^(he|she|they|i|we)$/.test(prev2) || (/^[A-Z]/.test(raw[i - 2] || "") && !/^(The|A|An)$/.test(raw[i - 2] || "")));
+        if (subj || advSubj) past++;
+      }
     }
-    return { past, present, total: words.length };
+    return { past, present, total: raw.length };
   },
 
   _fictionProfile(ctx) {
@@ -82,17 +93,36 @@ ProzaEdit.GenreChecks = {
     });
   },
 
+  _firstPersonOutsideThought(narration) {
+    const words = String(narration).match(/[A-Za-z']+/g) || [];
+    const skip = new Set();
+    const thought = /^(?:thought|wondered|realized|realised|knew)$/i;
+    for (let i = 0; i < words.length; i++) {
+      const pair = `${words[i]} ${words[i + 1] || ""}`.toLowerCase();
+      let from = -1;
+      if (thought.test(words[i])) from = i + 1;
+      else if (pair === "asked himself" || pair === "asked herself") from = i + 2;
+      if (from < 0) continue;
+      for (let k = from; k < from + 3 && k < words.length; k++) skip.add(k);
+    }
+    let n = 0;
+    words.forEach((w, i) => {
+      if (skip.has(i)) return;
+      if (w === "I" || /^(?:me|my|mine|myself)$/.test(w)) n++;
+    });
+    return n;
+  },
+
   pov(text, push, ctx) {
     const profile = this._fictionProfile(ctx);
     if (!profile) return;
     const paras = String(text).split(/\n\n+/);
-    const FIRST = /\b(I|me|my|mine|myself)\b/g;
     const THIRD = /\b(he|she|him|her|his|hers)\b/gi;
     let thirdParas = 0;
     const drift = [];
     paras.forEach((p, idx) => {
       const nar = this._narration(p);
-      const first = (nar.match(FIRST) || []).length;
+      const first = this._firstPersonOutsideThought(nar);
       const third = (nar.match(THIRD) || []).length;
       if (third >= 2 && first === 0) thirdParas++;
       if (first >= 3 && !/^\s*(dear|\*)/i.test(p)) drift.push({ p, idx, first, third });

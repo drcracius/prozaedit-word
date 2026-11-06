@@ -162,6 +162,7 @@ ProzaEdit.EditorHeuristics = {
         explanation: "Odd number of straight double quotation marks — check pairing.",
         targetText: '"',
         replacementText: "(pair quotes)",
+        confidence: "low",
       });
     }
     if (curlyOpen + curlyClose > 0 && curlyOpen !== curlyClose) {
@@ -172,6 +173,7 @@ ProzaEdit.EditorHeuristics = {
         explanation: "Curly quote marks may be unbalanced — review dialogue.",
         targetText: "\u201C\u201D",
         replacementText: "(pair quotes)",
+        confidence: "low",
       });
     }
   },

@@ -60,6 +60,44 @@
         .slice(0, max);
     },
 
+    _jsonArraySlice(text) {
+      let from = 0;
+      const src = String(text || "");
+      while (from < src.length) {
+        const start = src.indexOf("[", from);
+        if (start < 0) return null;
+        let depth = 0;
+        let inStr = false;
+        let esc = false;
+        for (let i = start; i < src.length; i++) {
+          const ch = src[i];
+          if (inStr) {
+            if (esc) esc = false;
+            else if (ch === "\\") esc = true;
+            else if (ch === '"') inStr = false;
+            continue;
+          }
+          if (ch === '"') {
+            inStr = true;
+            continue;
+          }
+          if (ch === "[") depth++;
+          else if (ch === "]") {
+            depth--;
+            if (depth === 0) {
+              const slice = src.slice(start, i + 1);
+              try {
+                if (Array.isArray(JSON.parse(slice))) return slice;
+              } catch (_) {}
+              break;
+            }
+          }
+        }
+        from = start + 1;
+      }
+      return null;
+    },
+
     /**
      * Parse and validate a JSON array of findings.
      * Drops: non-objects, missing/too short target, target not present verbatim in `source`, injection-like
@@ -71,12 +109,11 @@
       const max = options.max || 8;
       const dropped = { malformed: 0, notInSource: 0, unsafe: 0 };
       const text = String(reply || "").replace(/```(?:json)?/gi, "");
-      const start = text.indexOf("[");
-      const end = text.lastIndexOf("]");
-      if (start < 0 || end <= start) throw new Error("The AI reply was not valid JSON. Nothing was changed — use Run.");
+      const slice = this._jsonArraySlice(text);
+      if (!slice) throw new Error("The AI reply was not valid JSON. Nothing was changed — use Run.");
       let parsed;
       try {
-        parsed = JSON.parse(text.substring(start, end + 1));
+        parsed = JSON.parse(slice);
       } catch (_) {
         throw new Error("The AI reply was not valid JSON. Nothing was changed — use Run.");
       }

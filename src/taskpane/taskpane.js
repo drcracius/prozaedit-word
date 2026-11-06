@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.52";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.53";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -5637,15 +5637,8 @@ function runAuditInternalCore(opts) {
       await ctx.sync();
       longOp.throwIfCancelled();
       const pn = paras.items.length;
-      if (pn <= MAX_PARAS) {
-        const body = ctx.document.body;
-        body.load("text");
-        await ctx.sync();
-        longOp.throwIfCancelled();
-        lastDocStats = { paragraphs: pn, words: ProzaEdit.Metrics.countWords(body.text) };
-      } else {
-        lastDocStats = { paragraphs: pn, words: "(not counted for a very long document)" };
-      }
+      if (pn <= MAX_PARAS) lastDocStats = { paragraphs: pn, words: null };
+      else lastDocStats = { paragraphs: pn, words: "(not counted for a very long document)" };
     }
     let text = await readScopeText(ctx, longOp);
     longOp.throwIfCancelled();
@@ -5661,6 +5654,11 @@ function runAuditInternalCore(opts) {
     if (text.length > cap) {
       text = text.substring(0, cap);
       truncated = true;
+    }
+    if (lastDocStats && lastDocStats.words == null) {
+      lastDocStats.words = truncated
+        ? "(not counted for a very long document)"
+        : ProzaEdit.Metrics.countWords(text);
     }
     await new Promise((r) => setTimeout(r, 0));
     longOp.throwIfCancelled();
@@ -5949,13 +5947,10 @@ function dismissCard(item) {
   if (!item) return Promise.resolve();
   return withCardActionLock(`dismiss:${item.id}`, "dismiss this finding", async () => {
     let saved = true;
-    if (item.ruleId) saved = (await ProzaEdit.Settings.muteRule(item.ruleId)) !== false;
-    let dismissSaved = true;
-    if (item.targetText) dismissSaved = (await ProzaEdit.Settings.dismissTarget(item.targetText)) !== false;
-    dropSameRuleFindings(item);
+    if (item.targetText) saved = (await ProzaEdit.Settings.dismissTarget(item.targetText)) !== false;
     removeAuditCard(item.id);
-    if (!saved) showPeStatus("Dismissed in this browser, but Word could not save it in this document.", "warn");
-    else if (!dismissSaved) showPeStatus("Dismissed for now, but this browser could not remember it (storage is full or blocked). It may reappear in the next audit.", "warn");
+    if (!saved) showPeStatus("Dismissed for now, but this browser could not remember it (storage is full or blocked). It may reappear in the next audit.", "warn");
+    else showPeStatus("Finding dismissed.", "ok");
   });
 }
 
@@ -6701,20 +6696,26 @@ async function scanChapterHeatmap() {
   }
   heatmapBusy = true;
   setModuleButtonsDisabled(true);
-  showPeStatus("Building chapter heatmap…");
+  let longOp = null;
   try {
-    const entries = await wordRun("heatmap", (ctx) => ProzaEdit.ChapterHeatmap.scanDocument(ctx));
+    longOp = beginLongOperation({ initialStatus: "Building chapter heatmap…" });
+    const entries = await wordRun("heatmap", (ctx) => ProzaEdit.ChapterHeatmap.scanDocument(ctx, longOp));
     if (!entries?.length) throw new Error("No Heading 1–3 chapters found. Apply heading styles first.");
     const payload = JSON.stringify(entries.slice(0, 40));
     if (payload.length > 48000) throw new Error("The chapter chart is too large to save. Use fewer chapters.");
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CHAPTER_HEATMAP, payload);
     showPeStatus(`Heatmap saved (${entries.length} chapters). Run again to view.`, "ok");
   } catch (e) {
-    reportActionError(e, "build the chapter heatmap", {
-      retry: { label: "Chapter heatmap", run: () => scanChapterHeatmap() },
-    });
+    if (isLongOpCancelledError(e)) {
+      showPeStatus("Cancelled.", "warn");
+    } else {
+      reportActionError(e, "build the chapter heatmap", {
+        retry: { label: "Chapter heatmap", run: () => scanChapterHeatmap() },
+      });
+    }
   } finally {
     heatmapBusy = false;
+    endLongOperation(longOp);
     if (!auditBusy && !deepBusy) setModuleButtonsDisabled(false);
   }
 }
@@ -7438,10 +7439,11 @@ function setupEnterKeyHandler() {
   if (!input || input.dataset.boundEnter) return;
   input.dataset.boundEnter = "1";
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendChatMessage();
-    }
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (!getApiKey()) sendLocalCoachMessage();
+        else sendChatMessage();
+      }
   });
 }
 

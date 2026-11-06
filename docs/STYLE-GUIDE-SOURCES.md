@@ -15,7 +15,6 @@ Reviewed 2026-11-05. ProzaEdit keeps short original checks in `src/taskpane/lib/
 | [Google developer documentation style](https://developers.google.com/style) | CC BY 4.0 | Short developer-doc phrases. |
 | [Red Hat supplementary style guide](https://github.com/redhat-documentation/supplementary-style-guide) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | Short docs phrases. Share-alike applies to adaptations of their guide text; our lines are original. |
 | [weasel-words](https://github.com/btford/weasel-words) (Brian Ford) | MIT | A nonfiction tally when several hedge words pile up. Copyright (c) 2014-2019 Brian Ford. |
-| [Mailchimp Content Style Guide](https://styleguide.mailchimp.com/) word list | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) | Business manuscripts only: incentivize, learnings, thought leader, best-in-breed, crushing it, killing it. Adapted notes, not the guide’s sentences. **Not for commercial use.** Remove this pack before any sale. Credit: Mailchimp. |
 
 House rules the user types are their own content.
 
@@ -28,7 +27,7 @@ Private testing does not cancel copyright. This add-in is also public, so a nonc
 | Chicago, APA, MLA, AP, Guardian, BBC, Economist | No open licence. Copying the manuals is copyright infringement. There is no extra “do not use” sticker beyond copyright. | Not copied. |
 | Grammarly, ProWritingAid, Hemingway | No licence to copy their rule lists. The ideas (clarity, consistency) are not owned. | Not copied. |
 | Australian Government Style Manual | The site says government copyright, not an open licence. That is a missing permission, which means the default ban. | Not copied. |
-| Mailchimp Content Style Guide | **Not a ban.** CC BY-NC 4.0 allows noncommercial sharing if Mailchimp is credited. Commercial use is the explicit limit. | A short business-only pack is in. Remove it before any sale. |
+| Mailchimp Content Style Guide | CC BY-NC 4.0 allows noncommercial sharing if credited. Commercial use is outside that licence. | Not included. The business list in the add-in is original. |
 | Harper | **Not a ban.** Apache 2.0 allows use, including commercial use, with the licence and notices kept. | The engine is a Rust program and does not fit this pane. Reddit (r/emacs, r/neovim, 2025) recommends it as a local Grammarly alternative. |
 | LanguageTool | **Not a ban.** LGPL-2.1 allows use if the licence duties are met. | Skipped because the English rules are about 8 MB and need Java, not because the licence forbids it. |
 | proselint | **Not a ban on the program** (BSD-3). The caution is that many checks restate copyrighted usage books. | Not copied. |
@@ -40,4 +39,4 @@ Private testing does not cancel copyright. This add-in is also public, so a nonc
 
 Rules ship with the add-in build. Help → About → **Check for updates** compares this pane with the live manifest. There is no separate download for style packs.
 
-*Aligned with hosted build **2.0.0.52**.*
+*Aligned with hosted build **2.0.0.53**.*

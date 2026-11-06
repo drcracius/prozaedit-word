@@ -41,7 +41,6 @@ ProzaEdit.StyleGuideRules = {
       plain: "Plain Language word list (plainlanguage.gov, CC0)",
       gpo: "GPO Style Manual 2016 (U.S. public domain)",
       writegood: "weasel-words (Brian Ford, MIT)",
-      mailchimp: "Mailchimp Content Style Guide (CC BY-NC 4.0; not for commercial use)",
       strunk: "Strunk 1920 (public domain)",
       govuk: "GOV.UK style (OGL v2.0)",
       microsoft: "Microsoft Writing Style Guide (CC BY 4.0)",
@@ -116,27 +115,11 @@ ProzaEdit.StyleGuideRules = {
       ["have a discussion", "discuss", "Plain language: use the verb, not a hidden verb"],
       ["make an attempt", "try", "Plain language: use the verb, not a hidden verb"],
     ], ctx);
-    if (budget.remaining <= 0) return;
-    const passiveRe = /\b(am|is|are|was|were|be|been|being)\s+[\w']+ed\b/gi;
-    let passive = 0;
-    let m;
-    while ((m = passiveRe.exec(text)) !== null && passive < 12) passive++;
-    const fiction = ProzaEdit.Genres ? ProzaEdit.Genres.isFiction(ctx?.manuscriptType) : false;
-    if (!fiction && passive >= 8 && text.length > 400) {
-      budget.remaining--;
-      push({
-        ruleId: "sg:plain:passive_cluster",
-        module: this.MODULE,
-        type: "preference",
-        explanation: `Many passive-style constructions (~${passive}) — plain language favors active voice where possible (${this.sourceNote("plain")}).`,
-        targetText: text.trim().substring(0, 80),
-        replacementText: "(active voice)",
-      });
-    }
   },
 
   /** GPO Style Manual 2016 is a U.S. government work. One verified word form, not the manual. */
-  gpo2016(text, push, budget) {
+  gpo2016(text, push, budget, ctx) {
+    if (ctx && ctx.language && ctx.language !== "en-US") return;
     if (budget.remaining <= 0) return;
     const m = /\be-mail\b/i.exec(text);
     if (!m) return;
@@ -179,38 +162,6 @@ ProzaEdit.StyleGuideRules = {
     });
   },
 
-  /**
-   * Adapted from the Mailchimp Content Style Guide word list.
-   * CC BY-NC 4.0: noncommercial use only. Remove this pack before any sale.
-   * Changed from the guide: short original notes, not the guide's sentences.
-   */
-  mailchimpNoncommercial(text, lower, push, budget, ctx) {
-    if (!String(ctx?.manuscriptType || "").includes("Business")) return;
-    const rows = [
-      ["incentivize", "encourage"],
-      ["learnings", "lessons"],
-      ["thought leader", "(name the person)"],
-      ["best-in-breed", "(omit)"],
-      ["crushing it", "(plain words)"],
-      ["killing it", "(plain words)"],
-    ];
-    for (let i = 0; i < rows.length && budget.remaining > 0; i++) {
-      const hit = ProzaEdit.Audit?._find ? ProzaEdit.Audit._find(text, lower, rows[i][0]) : null;
-      if (!hit) continue;
-      budget.remaining--;
-      const id = rows[i][0].replace(/[^a-z0-9]+/gi, "_").slice(0, 24);
-      push({
-        ruleId: `sg:mc:${id}`,
-        module: this.MODULE,
-        type: "preference",
-        confidence: "low",
-        explanation: `Mailchimp’s word list treats “${hit}” as fluff (${this.sourceNote("mailchimp")}).`,
-        targetText: hit,
-        replacementText: rows[i][1],
-      });
-    }
-  },
-
   strunk1920(text, lower, push, budget, ctx) {
     this._phraseFlags(text, lower, push, budget, "strunk", [
       ["the fact that", "that", "Strunk: omit needless words"],
@@ -225,7 +176,7 @@ ProzaEdit.StyleGuideRules = {
   govuk(text, lower, push, ctx, budget) {
     const gb = ctx.language === "en-GB" || ctx.styleGuideRef === "govuk";
     if (!gb) return;
-    if (/\be-mail\b/i.test(text)) {
+    if (ctx.language === "en-GB" && budget.remaining > 0 && /\be-mail\b/i.test(text)) {
       budget.remaining--;
       push({
         ruleId: "sg:govuk:email",
@@ -371,24 +322,25 @@ ProzaEdit.StyleGuideRules = {
     if (ctx.chkSpell === false) return;
     const guides = this.resolveGuides(ctx);
     const ref = ctx.styleGuideRef || "auto";
-    let cap = 10;
-    if (ref === "custom") cap = 20;
-    else if (ref === "custom-plus-auto") cap = 24;
-    const budget = { remaining: cap };
+    const house = { remaining: ref === "custom" ? 20 : 24 };
+    const buckets = {
+      plain: { remaining: 4 },
+      strunk: { remaining: 2 },
+      domain: { remaining: 3 },
+      weasel: { remaining: 1 },
+      govuk: { remaining: 4 },
+    };
     guides.forEach((g) => {
-      if (budget.remaining <= 0) return;
-      if (g === "custom") this.customPack(text, lower, push, ctx, budget);
+      if (g === "custom") this.customPack(text, lower, push, ctx, house);
       else if (g === "plain") {
-        this.plainLanguage(text, lower, push, budget, ctx);
-        this.gpo2016(text, push, budget);
-        this.weaselCluster(text, push, budget, ctx);
-        this.mailchimpNoncommercial(text, lower, push, budget, ctx);
-      }
-      else if (g === "strunk") this.strunk1920(text, lower, push, budget, ctx);
-      else if (g === "govuk") this.govuk(text, lower, push, ctx, budget);
-      else if (g === "microsoft") this.microsoft(text, lower, push, budget);
-      else if (g === "google") this.googleDev(text, lower, push, ctx, budget);
-      else if (g === "redhat") this.redhat(text, lower, push, budget);
+        this.plainLanguage(text, lower, push, buckets.plain, ctx);
+        this.gpo2016(text, push, buckets.plain, ctx);
+        this.weaselCluster(text, push, buckets.weasel, ctx);
+      } else if (g === "strunk") this.strunk1920(text, lower, push, buckets.strunk, ctx);
+      else if (g === "govuk") this.govuk(text, lower, push, ctx, buckets.govuk);
+      else if (g === "microsoft") this.microsoft(text, lower, push, buckets.domain);
+      else if (g === "google") this.googleDev(text, lower, push, ctx, buckets.domain);
+      else if (g === "redhat") this.redhat(text, lower, push, buckets.domain);
     });
   },
 };

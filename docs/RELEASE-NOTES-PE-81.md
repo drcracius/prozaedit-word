@@ -88,6 +88,15 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.53 — Quieter checks
+
+- One passive-voice note per run. Fiction and non-fiction no longer raise two.
+- Business wording is one original list. A phrase is flagged only as a whole word.
+- Narration checks skip quoted speech. The card still quotes the original letters.
+- Dismiss hides that phrase. Mute still hides the rule.
+- A dialect card quotes the word as it appears, including an ending such as “organised”.
+- Not tried in Word. Apply with Track Changes is still mock-tested only.
+
 ## 2.0.0.52 — Quieter report path
 
 - **Run** finishes on **Fix**, with the summary and the first card. Start, Run, and Fix use the same names in Simple and Advanced.

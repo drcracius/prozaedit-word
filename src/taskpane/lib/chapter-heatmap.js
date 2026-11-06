@@ -26,7 +26,7 @@ ProzaEdit.ChapterHeatmap = {
     return html;
   },
 
-  async scanDocument(context) {
+  async scanDocument(context, longOp) {
     const paras = context.document.body.paragraphs;
     paras.load("items");
     await context.sync();
@@ -35,6 +35,8 @@ ProzaEdit.ChapterHeatmap = {
     for (let i = 0; i < total; i += 500) {
       for (let j = i; j < Math.min(total, i + 500); j++) paras.items[j].load(["text", "styleBuiltIn"]);
       await context.sync();
+      if (ProzaEdit.ScopeReader?.microYield) await ProzaEdit.ScopeReader.microYield();
+      if (longOp && typeof longOp.throwIfCancelled === "function") longOp.throwIfCancelled();
     }
     const entries = [];
     let current = null;

@@ -25,7 +25,9 @@ ProzaEdit.ProperNoun = {
   },
 
   extract(text, dictionaryLower) {
-    const re = /\b[A-Z][a-z]+(?:[''][A-Z][a-z]+)*(?:\s+[A-Z][a-z]+){0,2}\b/g;
+    const piece = "[A-Z][a-z]*(?:[A-Z][a-z]+)*";
+    const part = piece + "(?:['’\\-](?:" + piece + "))*";
+    const re = new RegExp("\\b" + part + "(?:\\s+" + part + "){0,2}\\b", "g");
     const counts = new Map();
     let m;
     while ((m = re.exec(text)) !== null) {
@@ -34,9 +36,9 @@ ProzaEdit.ProperNoun = {
       const lower = token.toLowerCase();
       if (dictionaryLower.has(lower)) continue;
       const first = token.split(" ")[0];
-      const skip = ["The", "He", "She", "They", "It", "We", "I", "But", "And", "Then", "When", "What", "Chapter", "His", "Her", "Their", "Our", "Your"];
+      const skip = ["The", "He", "She", "They", "It", "We", "I", "But", "And", "Then", "When", "What", "Chapter", "His", "Her", "Their", "Our", "Your", "However", "Therefore", "Meanwhile", "Suddenly", "Afterwards", "Afterward"];
       if (skip.includes(first)) continue;
-      if (first.length < 4 && !token.includes(" ")) continue;
+      if (first.length < 4 && !token.includes(" ") && !/['’\-]/.test(token)) continue;
       if (this.STOPWORDS.has(first.toLowerCase())) continue;
       counts.set(token, (counts.get(token) || 0) + 1);
     }

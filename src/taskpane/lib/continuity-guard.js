@@ -48,11 +48,13 @@ ProzaEdit.ContinuityGuard = {
   countOccurrences(hayLower, needle) {
     const n = String(needle || "").trim().toLowerCase();
     if (!n || n.length < 2) return 0;
+    const esc = n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(?:^|[^A-Za-z0-9])${esc}(?:[^A-Za-z0-9]|$)`, "g");
     let c = 0;
-    let i = 0;
-    while ((i = hayLower.indexOf(n, i)) !== -1) {
+    let m;
+    while ((m = re.exec(hayLower)) !== null) {
       c++;
-      i += n.length;
+      if (m.index === re.lastIndex) re.lastIndex++;
     }
     return c;
   },

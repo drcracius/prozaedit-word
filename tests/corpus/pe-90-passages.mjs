@@ -39,7 +39,7 @@ export const PE90 = [
   [TH, "planted-pleo", `It was an unexpected surprise to find the safe already open.`, ["rep:pleo:unexpected surprise"]],
   [FA, "planted-space", `The wizard lifted his staff , and the light went out.`, ["spell:punct:"]],
   [SF, "planted-doublespace", `The airlock cycled  twice before the light turned green.`, ["spell:double_space"]],
-  [LD, "planted-quote", `"I never meant to leave, she said, and turned to the window.`, ["edit:quote"]],
+  [LD, "adv-planted-quote", `"I never meant to leave, she said, and turned to the window.`, ["edit:quote"]],
   [HI, "adv-planted-aan", `He was an university man, and proud of it, though he never said so aloud.`, ["edit:aan"]],
   [NM, "planted-pleo", `I told the honest truth, and nobody believed a word.`, ["rep:pleo:honest truth"]],
   [AC, "planted-contraction", `We don't claim that the effect generalises beyond this sample, and it's likely smaller in practice. Results are reported in Table 2.`, ["acad:contraction"]],

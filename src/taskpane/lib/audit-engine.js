@@ -158,7 +158,7 @@ ProzaEdit.Audit = {
       };
     }
 
-    const steps = this._checkSteps({ text, lower, push, ctx, fiction, gp, roster });
+    const steps = this._checkSteps({ text, lower, ...this._fictionSearch(text, lower, fiction), push, ctx, fiction, gp, roster });
     for (const step of steps) step.fn();
 
     const metrics = ProzaEdit.Metrics.analyze(text);
@@ -300,7 +300,7 @@ ProzaEdit.Audit = {
         skippedPhaseIds: [],
       };
     }
-    const steps = this._checkSteps({ text, lower, push, ctx, fiction, gp, roster });
+    const steps = this._checkSteps({ text, lower, ...this._fictionSearch(text, lower, fiction), push, ctx, fiction, gp, roster });
     const completedPhaseIds = [];
     const skippedPhaseIds = [];
     for (let i = 0; i < steps.length; i++) {
@@ -331,12 +331,59 @@ ProzaEdit.Audit = {
     return finish({ stoppedEarly: false, completedPhaseIds, skippedPhaseIds: [] });
   },
 
+  /** Same length as text. Quoted speech becomes spaces so narration checks skip it. Straight apostrophes stay. */
+  blankQuotedSpeech(text) {
+    const s = String(text || "");
+    const out = new Array(s.length);
+    let straight = false;
+    let curly = false;
+    let single = false;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (!curly && !single && ch === '"') {
+        straight = !straight;
+        out[i] = " ";
+        continue;
+      }
+      if (!straight && !single && ch === "\u201c") {
+        curly = true;
+        out[i] = " ";
+        continue;
+      }
+      if (!straight && !single && ch === "\u201d") {
+        curly = false;
+        out[i] = " ";
+        continue;
+      }
+      if (!straight && !curly && ch === "\u2018") {
+        single = true;
+        out[i] = " ";
+        continue;
+      }
+      if (single && ch === "\u2019") {
+        single = false;
+        out[i] = " ";
+        continue;
+      }
+      out[i] = straight || curly || single ? " " : ch;
+    }
+    return out.join("");
+  },
+
+  _fictionSearch(text, lower, fiction) {
+    if (!fiction) return { searchText: text, searchLower: lower };
+    const searchText = this.blankQuotedSpeech(text);
+    return { searchText, searchLower: searchText.toLowerCase().replace(/[\u2018\u2019]/g, "'") };
+  },
+
   /** Ordered checks that run() actually executes. Ids match Checks toggles when one exists. */
   _checkSteps(env) {
-    const { text, lower, push, ctx, fiction, gp, roster } = env;
+    const { text, lower, searchText, searchLower, push, ctx, fiction, gp, roster } = env;
+    const hay = searchText || text;
+    const hayLower = searchLower || lower;
     const steps = [];
     const add = (id, label, fn) => steps.push({ id, label, fn });
-    if (ctx.chkRep) add("chkRep", "Repetition", () => this._repetition(text, lower, push));
+    if (ctx.chkRep) add("chkRep", "Repetition", () => this._repetition(hay, hayLower, push));
     if (ctx.chkProp) {
       add("chkProp", "Names", () => {
         ProzaEdit.ProperNoun.findInconsistencies(text, ctx.dictionary, { knownNames: roster }).forEach(push);
@@ -347,20 +394,20 @@ ProzaEdit.Audit = {
     if (ctx.chkAIDetection) add("chkAIDetection", "AI-style patterns", () => this._aiDetectionHeuristic(text, lower, push));
     if (fiction) {
       if (ctx.mPlot) add("mPlot", "Plot", () => this._plot(text, lower, push, ctx));
-      if (ctx.mMotivation) add("mMotivation", "Characters", () => this._motivation(text, lower, push, ctx));
+      if (ctx.mMotivation) add("mMotivation", "Characters", () => this._motivation(hay, hayLower, push, ctx));
       if (ctx.mDialogue) add("mDialogue", "Dialogue", () => this._dialogue(text, lower, push, ctx));
       if (ctx.mContinuity) add("mContinuity", "Continuity", () => this._continuity(text, lower, push));
-      if (ctx.mPlausibility) add("mPlausibility", "Plausibility", () => this._plausibility(text, lower, push));
+      if (ctx.mPlausibility) add("mPlausibility", "Plausibility", () => this._plausibility(hay, hayLower, push));
       if (ctx.mPacing) add("mPacing", "Pacing", () => this._pacing(text, lower, push, ctx));
-      if (ctx.mSpoiler) add("mSpoiler", "Spoilers", () => this._spoiler(text, lower, push));
+      if (ctx.mSpoiler) add("mSpoiler", "Spoilers", () => this._spoiler(hay, hayLower, push));
       if (gp && (ctx.mPacing || ctx.mDialogue || ctx.mMotivation)) {
-        add("genreCraft", "Genre craft", () => this._genreCraft(text, lower, push, ctx, gp));
+        add("genreCraft", "Genre craft", () => this._genreCraft(hay, hayLower, push, ctx, gp));
       }
     }
     if (ctx.chkSpell) {
       add("chkSpellStyle", "Style guide", () => {
         this._manuscriptRules(text, lower, push, ctx);
-        if (ProzaEdit.StyleGuideRules?.apply) ProzaEdit.StyleGuideRules.apply(text, lower, push, ctx);
+        if (ProzaEdit.StyleGuideRules?.apply) ProzaEdit.StyleGuideRules.apply(hay, hayLower, push, ctx);
         if (ctx.language === "en-GB") this._gbIseIze(text, lower, push);
       });
     }
@@ -386,7 +433,7 @@ ProzaEdit.Audit = {
     return steps;
   },
 
-  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "edit:num:", "edit:hyphen:", "sg:writegood:", "sg:mc:", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
+  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "edit:num:", "edit:hyphen:", "sg:writegood:", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
 
   /** high = objective (typo-class); medium = style judgment; low = noisy heuristic (hidden in Simple view by default). */
   confidenceFor(item) {
@@ -495,6 +542,19 @@ ProzaEdit.Audit = {
     }
   },
 
+  _inflectDialect(matched, fromRoot, toRoot) {
+    const src = String(matched || "");
+    const lower = src.toLowerCase();
+    const root = String(fromRoot || "").toLowerCase();
+    const to = String(toRoot || "");
+    if (!to || !lower.startsWith(root)) return "(align spelling)";
+    const ending = lower.slice(root.length);
+    if (ending && !/^(s|d|ed|ing)$/.test(ending)) return "(align spelling)";
+    let rep = to + ending;
+    if (src.charAt(0) !== src.charAt(0).toLowerCase()) rep = rep.charAt(0).toUpperCase() + rep.slice(1);
+    return rep;
+  },
+
   _proofing(text, lower, push, language) {
     if (/\S {2,}\S/.test(text)) {
       push({
@@ -537,19 +597,18 @@ ProzaEdit.Audit = {
     const foreign = language === "en-GB" ? us : uk;
     const stripped = text.replace(/["\u201C][^"\u201C\u201D]*["\u201D]/g, (q) => " ".repeat(q.length));
     foreign.forEach((word) => {
-      // Lowercase anywhere, or Capitalised only at a sentence start. Mid-sentence "Centre"/"Defence" is a name
-      // (Pompidou Centre, Ministry of Defence). Words inside quoted speech are a character's dialect, not an error.
-      // "analyses" is the ordinary plural of "analysis" in every dialect, not a UK verb form.
       const suffix = word === "analyse" ? "(?:d|ed|ing)?" : "(?:s|d|ed|ing)?";
       const re = new RegExp(`(?:\\b${word}${suffix}\\b|(?:^|[.!?]\\s+)${word[0].toUpperCase()}${word.slice(1)}${suffix}\\b)`);
-      if (re.test(stripped)) {
+      const m = re.exec(stripped);
+      if (m) {
+        const native = (language === "en-GB" ? uk : us)[foreign.indexOf(word)];
         push({
           ruleId: `spell:dialect:${word}`,
           module: "Proofreading & Language",
           type: "preference",
           explanation: `Dialect mismatch for ${language}.`,
-          targetText: word,
-          replacementText: "(align spelling standard)",
+          targetText: m[0],
+          replacementText: this._inflectDialect(m[0], word, native),
         });
       }
     });
@@ -561,6 +620,9 @@ ProzaEdit.Audit = {
       if (found.length >= 15) return;
       const gp = ctx && ctx._genre;
       if (gp && ProzaEdit.Genres.isMuted(gp.profile, `ai:voice:${phrase.trim()}`)) return;
+      const biz = String(ctx?.manuscriptType || "").includes("Business");
+      const jargon = (ProzaEdit.LexicalBanks?.BUSINESS_JARGON || []).some((row) => String(row[0]).toLowerCase() === phrase.trim().toLowerCase());
+      if (biz && jargon) return;
       const hit = this._find(text, lower, phrase);
       if (!hit) return;
       // "The Old/New Testament", "last will and testament" and a literal tapestry/beacon are ordinary nouns.
@@ -640,6 +702,28 @@ ProzaEdit.Audit = {
     }
   },
 
+  _PASSIVE_ADJ: /^(?:tired|excited|pleased|surprised|interested|concerned|worried|related|limited|advanced|detailed|experienced|complicated|determined|supposed|used|skilled|qualified|dedicated|committed|motivated|informed|alarmed|embarrassed|bored|scared)$/i,
+
+  _passiveCluster(text, push, opts) {
+    const re = /\b(?:was|were|been|being|is|are)\s+(?:(?:\w+ly|not|also|then|later|often)\s+)?([a-z]+ed)\b/gi;
+    const hits = [];
+    let m;
+    while ((m = re.exec(String(text || ""))) !== null && hits.length < 40) {
+      if (!this._PASSIVE_ADJ.test(m[1])) hits.push(m[0]);
+    }
+    if (hits.length < opts.limit || String(text || "").length <= (opts.minLen || 0)) return;
+    const card = {
+      ruleId: opts.ruleId,
+      module: opts.module,
+      type: "preference",
+      explanation: opts.explanation(hits.length),
+      targetText: hits[0],
+      replacementText: "(active verb)",
+    };
+    if (typeof opts.confidence === "function") card.confidence = opts.confidence(hits.length, opts.limit);
+    push(card);
+  },
+
   _motivation(text, lower, push, ctx) {
     const gp = ctx && ctx._genre;
     (gp ? gp.profile.weakCues : ["suddenly", "for some reason", "somehow", "started to", "began to"]).forEach((w) => {
@@ -655,17 +739,13 @@ ProzaEdit.Audit = {
         });
       }
     });
-    const passive = text.match(/\b(was|were|been|being)\s+[a-z]+ed\b/gi) || [];
-    if (passive.length >= (gp ? gp.passiveCluster : 5)) {
-      push({
-        ruleId: "mot:passive_cluster",
-        module: "Characterization & Motivation",
-        type: "preference",
-        explanation: "Passive voice cluster may reduce character agency.",
-        targetText: passive[0],
-        replacementText: "(active verb)",
-      });
-    }
+    this._passiveCluster(text, push, {
+      ruleId: "mot:passive_cluster",
+      module: "Characterization & Motivation",
+      limit: gp ? gp.passiveCluster : 5,
+      minLen: 0,
+      explanation: () => "Passive voice cluster may reduce character agency.",
+    });
   },
 
   _dialogue(text, lower, push, ctx) {
@@ -780,23 +860,14 @@ ProzaEdit.Audit = {
         });
       }
     });
-    const ADJ = /^(?:tired|excited|pleased|surprised|interested|concerned|worried|related|limited|advanced|detailed|experienced|complicated|determined|supposed|used|skilled|qualified|dedicated|committed|motivated|informed|alarmed|embarrassed|bored|scared)$/i;
-    const re = /\b(?:was|were|been|being|is|are)\s+(?:(?:\w+ly|not|also|then|later|often)\s+)?([a-z]+ed)\b/gi;
-    const hits = [];
-    let m;
-    while ((m = re.exec(text)) !== null && hits.length < 40) if (!ADJ.test(m[1])) hits.push(m[0]);
-    const limit = p.passiveCluster + 2;
-    if (hits.length >= limit && text.length > 300) {
-      push({
-        ruleId: "nf:passive_cluster",
-        module: "Pacing & Readability",
-        type: "preference",
-        confidence: hits.length >= limit * 1.5 ? "medium" : "low",
-        explanation: `Many passive-voice constructions (~${hits.length}); active voice is usually clearer in ${p.label.toLowerCase()}.`,
-        targetText: hits[0],
-        replacementText: "(active verb)",
-      });
-    }
+    this._passiveCluster(text, push, {
+      ruleId: "nf:passive_cluster",
+      module: "Pacing & Readability",
+      limit: p.passiveCluster + 2,
+      minLen: 300,
+      confidence: (n, limit) => (n >= limit * 1.5 ? "medium" : "low"),
+      explanation: (n) => `Many passive-voice constructions (~${n}); active voice is usually clearer in ${p.label.toLowerCase()}.`,
+    });
   },
 
   _genreCraft(text, lower, push, ctx, gp) {
@@ -1035,17 +1106,20 @@ ProzaEdit.Audit = {
       }
     }
     if (t.includes("Business")) {
-      ["synergy", "leverage", "circle back", "move the needle", "boil the ocean", "low-hanging fruit", "drill down", "touch base", "paradigm shift", "deep dive", "take this offline", "think outside the box", "win-win", "game changer", "game-changer", "value-add", "mission critical"].forEach((b) => {
-        if (lower.includes(b)) {
-          push({
-            ruleId: `biz:${b}`,
-            module: "Business / Corporate Report",
-            type: "preference",
-            explanation: `Corporate jargon "${b}"—prefer plain action language.`,
-            targetText: b,
-            replacementText: "(plain term)",
-          });
-        }
+      (ProzaEdit.LexicalBanks?.BUSINESS_JARGON || []).forEach(([phrase, replacement]) => {
+        const hit = this._find(text, lower, phrase);
+        if (!hit) return;
+        const rep = replacement || "(plain term)";
+        const open = String(rep).startsWith("(");
+        push({
+          ruleId: `biz:${phrase}`,
+          module: "Business / Corporate Report",
+          type: "preference",
+          ...(open ? { confidence: "low" } : {}),
+          explanation: `Corporate jargon "${hit}"—prefer plain action language.`,
+          targetText: hit,
+          replacementText: rep,
+        });
       });
     }
     if (t.includes("Technical / Journalism")) {

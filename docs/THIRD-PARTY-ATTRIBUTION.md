@@ -22,7 +22,6 @@ ProzaEdit Word’s **audit, coach, rewrite, chronology, and citation logic** are
 | **Paul Beverley — Word Macro Tools** | Public proofreading **workflows** (e.g. FRedit-style batch ideas) informed heuristic categories in `editor-heuristics.js` and help copy. **No VBA or macro source is included.** |
 | **Public style summaries** (plainlanguage.gov CC0, 18F CC0, GPO Style Manual 2016 public domain, GOV.UK OGL, Strunk 1920, Microsoft/Google/Red Hat) | Short **phrase lists** in `style-guide-rules.js` — not full style manuals or pasted guide text |
 | **weasel-words** (Brian Ford, MIT, Copyright (c) 2014-2019) | A short hedge-word tally in `style-guide-rules.js`. The MIT terms stay with the copy. Full terms: [MIT License](https://github.com/btford/weasel-words/blob/master/LICENSE). |
-| **Mailchimp Content Style Guide** (CC BY-NC 4.0) | A short business-only jargon pack in `style-guide-rules.js`. Noncommercial use only. Credit Mailchimp and link [the guide](https://styleguide.mailchimp.com/) and [the licence](https://creativecommons.org/licenses/by-nc/4.0/). The notes are adapted, not copied sentences. Remove this pack before any sale. |
 | **APA / CMOS / Bluebook (names only)** | `citation-engine.js` uses regex/heuristic **pattern assist** — **not** compliance certification |
 
 ---
@@ -42,4 +41,4 @@ ProzaEdit Word’s **audit, coach, rewrite, chronology, and citation logic** are
 
 ---
 
-*Aligned with hosted build **2.0.0.52**.*
+*Aligned with hosted build **2.0.0.53**.*

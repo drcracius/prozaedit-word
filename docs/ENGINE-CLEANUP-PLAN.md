@@ -1,6 +1,6 @@
 # ProzaEdit engine cleanup — implementation plan
 
-**Status:** not started. The add-in on `main` is still build **2.0.0.52**.
+**Status:** done in build **2.0.0.53**. The four slices shipped together.
 
 **This file on GitHub is the plan.** https://github.com/drcracius/prozaedit-word/blob/main/docs/ENGINE-CLEANUP-PLAN.md
 

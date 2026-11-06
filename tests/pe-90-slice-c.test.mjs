@@ -74,8 +74,10 @@ test("genre clichés/spoilers/weak cues match whole words and report the documen
   assert.ok(!r.suggestions.some((s) => s.ruleId === "genre:cliche:orbs"));
   const sp = r.suggestions.find((s) => s.ruleId.startsWith("spoiler:"));
   assert.ok(sp && sp.targetText === "little did she know");
-  const curly = P.Audit.run("\u201CShe let out a breath she didn\u2019t know she was holding,\u201D he said.", ctxFor("Fiction (General)")).suggestions.find((s) => s.ruleId.startsWith("genre:cliche"));
+  const curly = P.Audit.run("She let out a breath she didn\u2019t know she was holding, then sat down.", ctxFor("Fiction (General)")).suggestions.find((s) => s.ruleId.startsWith("genre:cliche"));
   assert.ok(curly && curly.targetText.includes("\u2019"), "target keeps the curly apostrophe so Word Find locates it");
+  const spoken = P.Audit.run("\u201CShe let out a breath she didn\u2019t know she was holding,\u201D he said.", ctxFor("Fiction (General)")).suggestions;
+  assert.equal(spoken.some((s) => s.ruleId.startsWith("genre:cliche")), false);
 });
 
 test("acad:contraction detects curly apostrophes and targets the actual contraction", () => {
@@ -136,10 +138,8 @@ test("should of is have, except in of course", () => {
   assert.equal(bad.replacementText, "should have");
   assert.equal(bad.confidence, "high");
   assert.equal(P.Audit.run("She should of course go home before dark.", ctxFor("Fiction (General)")).suggestions.some((s) => s.ruleId.startsWith("spell:of:")), false);
-  const mc = P.Audit.run("We will incentivize the team and share the learnings this week.", ctxFor("Business / Corporate Report")).suggestions.filter((s) => s.ruleId.startsWith("sg:mc:"));
-  assert.ok(mc.some((s) => s.ruleId === "sg:mc:incentivize"));
-  assert.ok(mc.every((s) => s.confidence === "low"));
-  assert.equal(P.Audit.run("We will incentivize the team and share the learnings this week.", ctxFor("Fiction (General)")).suggestions.some((s) => s.ruleId.startsWith("sg:mc:")), false);
+  const gone = P.Audit.run("We will incentivize the team and share the learnings this week.", ctxFor("Business / Corporate Report")).suggestions;
+  assert.equal(gone.some((s) => s.ruleId.startsWith("sg:mc:")), false);
 });
 
 test("MIT weasel list flags a pile of hedges in nonfiction only", () => {

@@ -186,12 +186,34 @@
     ],
   };
 
+  /** Original business-word list. Not taken from a third-party style guide. */
+  const BUSINESS_JARGON = [
+    ["synergy", "cooperation"],
+    ["leverage", "use"],
+    ["circle back", "follow up"],
+    ["move the needle", "make progress"],
+    ["boil the ocean", "(plain term)"],
+    ["low-hanging fruit", "easy wins"],
+    ["drill down", "examine"],
+    ["touch base", "contact"],
+    ["paradigm shift", "major change"],
+    ["deep dive", "close look"],
+    ["take this offline", "discuss separately"],
+    ["think outside the box", "(plain term)"],
+    ["win-win", "both benefit"],
+    ["game changer", "important change"],
+    ["game-changer", "important change"],
+    ["value-add", "benefit"],
+    ["mission critical", "essential"],
+  ];
+
   root.LexicalBanks = {
     PLEONASMS,
     PLEONASMS_SOFT,
     AI_PHRASES,
     SPOILER_PHRASES,
     WORDINESS,
+    BUSINESS_JARGON,
     INFORMAL_TO_FORMAL,
     CONTRACTIONS,
     EXTENDED_FILLERS,
