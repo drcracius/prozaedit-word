@@ -331,27 +331,36 @@ ProzaEdit.Audit = {
     return finish({ stoppedEarly: false, completedPhaseIds, skippedPhaseIds: [] });
   },
 
-  /** Same length as text. Only a closed pair of quotes becomes spaces. A stray opener leaves the rest of the text searchable. Straight apostrophes stay. */
+  /** Same length as text. A quote pair is blanked only when it closes before the next line break. A stray opener is left in place, so later lines still count. A curly apostrophe inside a word does not end a quote. Straight apostrophes stay. One pass, so a long run of quote marks cannot stall the check. */
   blankQuotedSpeech(text) {
     const s = String(text || "");
-    const out = s.split("");
-    const blank = (from, to) => {
-      for (let k = from; k <= to; k++) out[k] = " ";
+    const n = s.length;
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) out[i] = s[i];
+    let mode = "";
+    let open = -1;
+    const commit = (to) => {
+      for (let k = open; k <= to; k++) out[k] = " ";
+      mode = "";
+      open = -1;
     };
-    let i = 0;
-    while (i < s.length) {
+    for (let i = 0; i < n; i++) {
       const ch = s[i];
-      let close = -1;
-      if (ch === '"') close = s.indexOf('"', i + 1);
-      else if (ch === "\u201c") close = s.indexOf("\u201d", i + 1);
-      else if (ch === "\u2018") close = s.indexOf("\u2019", i + 1);
-      if (ch === '"' || ch === "\u201c" || ch === "\u2018") {
-        if (close < 0) break;
-        blank(i, close);
-        i = close + 1;
+      if (ch === "\n") {
+        mode = "";
+        open = -1;
         continue;
       }
-      i++;
+      if (!mode) {
+        if (ch === '"' || ch === "\u201c" || ch === "\u2018") {
+          mode = ch;
+          open = i;
+        }
+        continue;
+      }
+      if (mode === '"' && ch === '"') commit(i);
+      else if (mode === "\u201c" && ch === "\u201d") commit(i);
+      else if (mode === "\u2018" && ch === "\u2019" && !/[A-Za-z]/.test(s[i + 1] || "")) commit(i);
     }
     return out.join("");
   },

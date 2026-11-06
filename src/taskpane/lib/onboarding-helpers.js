@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.54",
+    version: "2.0.0.55",
     bullet:
-      "A stray quote no longer hides the rest of the notes. The chapter chart can be cancelled without locking the pane.",
+      "A quote that never closes no longer hides the notes in the next paragraph. Clear report now says Report cleared.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

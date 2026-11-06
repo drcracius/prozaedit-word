@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.54";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.55";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -6007,14 +6007,14 @@ function clearAuditReport() {
   const box = getEl("cardContainer");
   const sum = getEl("summaryReport");
   if (box) box.innerHTML = "";
-  if (sum) sum.innerHTML = "Audit cleared. Run again for a fresh pass.";
+  if (sum) sum.innerHTML = "Report cleared. Run again for a fresh pass.";
   getEl("trafficBar")?.classList.add("hidden");
   getEl("miniScores")?.classList.add("hidden");
   updateAuditScopeFootnote();
   ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.LAST_AUDIT, "");
   showAuditEmptyIfNeeded();
   updateAuditTabBadge();
-  showPeStatus("Audit report cleared.", "ok");
+  showPeStatus("Report cleared.", "ok");
 }
 
 let peGotoLock = null;

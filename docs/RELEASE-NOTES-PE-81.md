@@ -88,6 +88,13 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.55 — Quotes stay in their paragraph
+
+- A spoken line is skipped only when its closing quote is in the same paragraph. One unmatched quote no longer hides later paragraphs, and it no longer makes the check slow.
+- A curly apostrophe in a word such as “don’t” does not end a quote.
+- Clear report says “Report cleared.”
+- Not tried in Word.
+
 ## 2.0.0.54 — A stray quote no longer blanks the rest
 
 - Narration checks skip a finished pair of quotes. One unmatched quote no longer hides every note after it.
