@@ -24,5 +24,6 @@ if %ERR% NEQ 0 (
 )
 
 echo Desktop registration removed. Files in %%USERPROFILE%%\ProzaEditCatalog were left in place.
+echo To get a fresh manifest from GitHub, run Download-Manifest-From-GitHub.bat
 pause
 exit /b 0

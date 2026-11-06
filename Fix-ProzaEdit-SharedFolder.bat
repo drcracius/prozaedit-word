@@ -6,6 +6,8 @@ cd /d "%~dp0"
 echo.
 echo ProzaEdit - set up the Word Desktop SHARED FOLDER catalog
 echo ---------------------------------------------------------
+echo Downloads manifest.hosted.xml from GitHub, then registers the catalog.
+echo   https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml
 echo Word needs a network share (\\THIS-PC\ProzaEditCatalog).
 echo This creates it (one Windows admin prompt) and registers it.
 echo CLOSE WORD COMPLETELY FIRST (check Task Manager for WINWORD.EXE).

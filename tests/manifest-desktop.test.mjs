@@ -97,4 +97,20 @@ test("desktop install script registers a UNC share (never file://) and offers th
   assert.match(ps, /Wef\\Developer/i, "has the no-admin Developer registry sideload");
   assert.match(ps, /Test-ManifestForDesktop/, "validates the manifest before registering");
   assert.match(ps, /AppDomain must be the site root only/, "rejects AppDomain paths Word web upload blocks");
+  assert.match(ps, /Downloading manifest from GitHub \(authoritative\)/, "defaults to GitHub main, not a stale PC copy");
+});
+
+test("install helper bats exist and call the repo PowerShell script with a full path", () => {
+  for (const bat of [
+    "Download-Manifest-From-GitHub.bat",
+    "Install-ProzaEdit-Desktop-GitHub.bat",
+    "Fix-ProzaEdit-SharedFolder.bat",
+    "Sideload-ProzaEdit-Desktop.bat",
+    "Verify-ProzaEdit-Install.bat",
+    "Uninstall-ProzaEdit.bat",
+  ]) {
+    const text = fs.readFileSync(path.join(root, bat), "utf8");
+    assert.match(text, /cd \/d "%~dp0"/, `${bat} anchors to its folder`);
+    assert.match(text, /%~dp0scripts\\install\\/, `${bat} uses a full path to scripts`);
+  }
 });

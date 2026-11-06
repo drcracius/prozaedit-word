@@ -28,13 +28,22 @@ $AddinId = "d1829e3a-4931-4122-b911-37f22941aa99"
 $CatalogGuid = "{f4a7d3c1-8b2e-4c59-9a1d-6e0b3c5d7f21}"
 $MaxResourceIdLength = 32
 $ExpectedSourceLocation = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html"
+$ManifestUrl = "https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml"
 
 if (-not $CatalogDir) { $CatalogDir = Join-Path $env:USERPROFILE "ProzaEditCatalog" }
 
-# Default expected version = the repo checkout's manifest, so this script never goes stale.
-$repoManifest = Join-Path $PSScriptRoot "..\..\manifest.hosted.xml"
-if ((-not $ExpectedVersion) -and (Test-Path -LiteralPath $repoManifest)) {
-  try { $ExpectedVersion = [string]([xml](Get-Content -Raw -Path $repoManifest)).OfficeApp.Version } catch {}
+# Authoritative hosted build is on GitHub main (not an old PC copy).
+if (-not $ExpectedVersion) {
+  try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $remoteText = (Invoke-WebRequest -Uri $ManifestUrl -UseBasicParsing).Content
+    $ExpectedVersion = [string]([xml]$remoteText).OfficeApp.Version
+  } catch {
+    $repoManifest = Join-Path $PSScriptRoot "..\..\manifest.hosted.xml"
+    if (Test-Path -LiteralPath $repoManifest) {
+      try { $ExpectedVersion = [string]([xml](Get-Content -Raw -Path $repoManifest)).OfficeApp.Version } catch {}
+    }
+  }
 }
 
 $script:fail = 0
@@ -65,7 +74,7 @@ if ($manifestOk) {
   if ($xml) {
     $version = [string]$xml.OfficeApp.Version
     if ($ExpectedVersion) {
-      Write-Check -Ok ($version -eq $ExpectedVersion) -Label "Manifest Version matches repo ($ExpectedVersion)" -Detail "found $version"
+      Write-Check -Ok ($version -eq $ExpectedVersion) -Label "Manifest Version matches GitHub main ($ExpectedVersion)" -Detail "found $version"
     } else {
       Write-Info "Manifest Version $version (no repo copy to compare against)"
     }

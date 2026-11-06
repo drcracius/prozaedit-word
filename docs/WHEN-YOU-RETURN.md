@@ -2,7 +2,7 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Build 2.0.0.60** is on **`main`** and GitHub Pages after deploy (~2 min). **507** tests. Owner Phase 1 (**PE-47**) open. Word Desktop install: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
+**Build 2.0.0.60** is on **`main`** and GitHub Pages after deploy (~2 min). **508** tests. Owner Phase 1 (**PE-47**) open. Word Desktop install: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
 
 **Next:** re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
 
@@ -12,13 +12,10 @@ Implementation roadmap: `docs/prozaedit-implementation-plan-audited.md`
 
 ## Step 6 — Install ProzaEdit from GitHub (one time)
 
-1. **Get the manifest file**
-   - On this PC (repo):  
-     `C:\Users\User\Desktop\prozaedit-word-repo\manifest.hosted.xml`
-   - Or the copy saved for upload:  
-     `C:\Users\User\OneDrive\Documents\ProzaEdit (app add-in)\manifest.hosted-2.0.0.60.xml`
-   - Or download the **raw** file (not the GitHub HTML page):  
+1. **Get the manifest file (GitHub only — do not use an old PC copy)**
+   - **Browser:** download the **raw** file (not the GitHub HTML page):  
      [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml)
+   - **Or on this PC:** double-click **`Download-Manifest-From-GitHub.bat`** in the repo (saves to Downloads and `%USERPROFILE%\ProzaEditCatalog\`).
 
 2. **Remove any old ProzaEdit first**
    - **Word on the web:** **Insert** → **Add-ins** → **My Add-ins** → **⋯** on ProzaEdit → **Remove**.
@@ -62,7 +59,8 @@ Send them:
 
 | Helper | Purpose |
 |--------|---------|
-| **`Install-ProzaEdit-Desktop-GitHub.bat`** | Copy and check [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) in `%USERPROFILE%\ProzaEditCatalog\` (no registry changes) |
+| **`Download-Manifest-From-GitHub.bat`** | Download and validate [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) → Downloads + `%USERPROFILE%\ProzaEditCatalog\` (use for Word web upload) |
+| **`Install-ProzaEdit-Desktop-GitHub.bat`** | Same download + validate only (no registry changes) |
 | **`Uninstall-ProzaEdit.bat`** | Remove desktop catalog / developer sideload (Word on the web: remove via My Add-ins) |
 | **`Fix-ProzaEdit-SharedFolder.bat`** | Word Desktop, Shared Folder route (creates `\\PC\ProzaEditCatalog`, one admin prompt). See [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md) |
 | **`Sideload-ProzaEdit-Desktop.bat`** | Word Desktop, no admin: developer registry sideload |

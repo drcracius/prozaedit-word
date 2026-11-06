@@ -7,7 +7,7 @@
 
 1. Open **Word on the web** with a **new blank document**.
 2. **Insert → Add-ins → My Add-ins → Manage My Add-ins → Upload My Add-in**.
-3. Upload [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml).
+3. Download then upload [manifest.hosted.xml](https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml) (raw link only — not a saved copy from an old build).
 4. Open your real manuscript; use **Home → ProzaEdit** daily.
 
 Desktop Word often lacks Upload — use the browser with the same Microsoft account.

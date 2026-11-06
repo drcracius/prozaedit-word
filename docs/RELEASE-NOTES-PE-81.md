@@ -94,7 +94,7 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - The pictures stay the same as the file that already uploaded. The pane address is unchanged.
 - Download the raw file again: https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml
 - If Word still has the old ProzaEdit add-in, remove it, then upload this file.
-- Install helpers: **`Uninstall-ProzaEdit.bat`** (desktop registry; works from the repo folder). Word on the web: **My Add-ins → Remove**. Desktop and install scripts now reject an AppDomain path before registration. CI runs `npm run validate:manifest` (Microsoft production rules).
+- Install helpers: **`Download-Manifest-From-GitHub.bat`** (authoritative download for Word web upload), **`Uninstall-ProzaEdit.bat`** (desktop registry). Word on the web: **My Add-ins → Remove**. Install scripts download from GitHub by default; desktop and install scripts reject an AppDomain path before registration. CI runs `npm run validate:manifest` (Microsoft production rules).
 - Not tried in Word from here.
 
 ## 2.0.0.59 — Add-in file matches the one Word already accepts

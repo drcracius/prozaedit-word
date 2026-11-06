@@ -5,6 +5,7 @@ cd /d "%~dp0"
 
 echo.
 echo ProzaEdit - read-only install verification (no registry or file changes)
+echo Compares your catalog manifest to GitHub main when online.
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\install\Verify-ProzaEdit-Install.ps1"
@@ -12,7 +13,8 @@ set ERR=%ERRORLEVEL%
 
 echo.
 if %ERR% NEQ 0 (
-  echo One or more checks failed. See docs\pe-2-shared-folder-checklist.md
+  echo One or more checks failed. Run Download-Manifest-From-GitHub.bat, then retry.
+  echo See docs\pe-2-shared-folder-checklist.md
   pause
   exit /b %ERR%
 )

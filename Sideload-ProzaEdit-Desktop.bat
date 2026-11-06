@@ -6,6 +6,8 @@ cd /d "%~dp0"
 echo.
 echo ProzaEdit - load into Word Desktop without a network share or admin rights
 echo -------------------------------------------------------------------------
+echo Downloads manifest.hosted.xml from GitHub first:
+echo   https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml
 echo Uses the same registry entry Microsoft's own add-in dev tools use.
 echo CLOSE WORD COMPLETELY FIRST (check Task Manager for WINWORD.EXE).
 echo.

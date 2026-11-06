@@ -45,6 +45,7 @@ param(
   [string] $CatalogDir = "",
   [string] $ShareName = "ProzaEditCatalog",
   [switch] $Download,
+  [switch] $UseLocalRepoCopy,
   [switch] $RegisterLocalCatalog,
   [switch] $DeveloperSideload,
   [switch] $ClearOfficeCache,
@@ -132,12 +133,13 @@ function Get-ManifestIntoCatalog {
   $dest = Join-Path $CatalogDir "manifest.hosted.xml"
   $repoCopy = Join-Path $PSScriptRoot "..\..\manifest.hosted.xml"
 
-  if ((-not $Download) -and (Test-Path -LiteralPath $repoCopy)) {
+  $useRepo = $UseLocalRepoCopy -and (-not $Download) -and (Test-Path -LiteralPath $repoCopy)
+  if ($useRepo) {
     Copy-Item -LiteralPath $repoCopy -Destination $dest -Force
-    Write-Step "Copied manifest from this repo checkout."
+    Write-Step "Copied manifest from this repo checkout (dev only; Word upload should use GitHub)."
   } else {
     try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
-    Write-Step "Downloading manifest from GitHub..."
+    Write-Step "Downloading manifest from GitHub (authoritative): $ManifestUrl"
     Invoke-WebRequest -Uri $ManifestUrl -OutFile $dest -UseBasicParsing
   }
 
@@ -145,7 +147,7 @@ function Get-ManifestIntoCatalog {
   Write-Step "Saved: $dest (Version $($check.Version))"
   if (-not $check.Ok) {
     foreach ($p in $check.Problems) { Write-Host ("  - " + $p) -ForegroundColor Red }
-    throw "Manifest would not load in Word Desktop. If this came from GitHub, run 'git pull' (or merge the fix to main) and re-run; or omit -Download to use this repo copy."
+    throw "Manifest from GitHub would not load in Word. Check https://github.com/drcracius/prozaedit-word/blob/main/manifest.hosted.xml on main, or re-run Download-Manifest-From-GitHub.bat."
   }
   Write-Step "Manifest passes the desktop checks."
   return $dest
@@ -294,7 +296,9 @@ try {
     Write-Host "  Fix-ProzaEdit-SharedFolder.bat      (same as -RegisterLocalCatalog -ClearOfficeCache)"
     Write-Host "No admin, no share (developer registry sideload):"
     Write-Host "  Sideload-ProzaEdit-Desktop.bat      (same as -DeveloperSideload)"
-    Write-Host "Word on the web (no scripts):  office.com -> Word -> Insert -> Add-ins -> Upload My Add-in -> $manifestPath"
+    Write-Host "Word on the web: office.com -> Word -> Insert -> Add-ins -> Upload My Add-in"
+    Write-Host "  Use the file you downloaded from GitHub: $manifestPath"
+    Write-Host "  Or download again: $ManifestUrl"
   }
 
   Write-Host ""

@@ -21,7 +21,7 @@ Principles and authoritative references on GitHub `main`. Project Context may mi
 
 **Current hosted release:** **2.0.0.60** on `main` (handoff: [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md)). Testers re-upload `manifest.hosted.xml` once per manifest bump.
 
-Verify: `bash scripts/verify-version-sync.sh` · **507** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
+Verify: `bash scripts/verify-version-sync.sh` · **508** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
 
 ---
 
@@ -29,7 +29,7 @@ Verify: `bash scripts/verify-version-sync.sh` · **507** tests: `npm test` (need
 
 | Item | Status |
 |------|--------|
-| Web 1.0 RC on `main` | **2.0.0.60** engine cleanup, **507** tests (PE-62 baseline was 2.0.0.15) |
+| Web 1.0 RC on `main` | **2.0.0.60** engine cleanup, **508** tests (PE-62 baseline was 2.0.0.15) |
 | Agent prep | **PE-48** merged ([#5](https://github.com/drcracius/prozaedit-word/pull/5)) |
 | Final audit / doc sync | **PE-49** — [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md) |
 | Forum onboarding | **PE-61** — [RELEASE-NOTES-PE-61-ONBOARDING.md](./RELEASE-NOTES-PE-61-ONBOARDING.md) |
@@ -45,7 +45,7 @@ Verify: `bash scripts/verify-version-sync.sh` · **507** tests: `npm test` (need
 | Item | Location |
 |------|----------|
 | GitHub repo | https://github.com/drcracius/prozaedit-word |
-| Hosted manifest (raw) | https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml |
+| Hosted manifest (raw, **upload this to Word**) | https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml — PC copies are not authoritative; run `Download-Manifest-From-GitHub.bat` or the raw link |
 | Task pane (Pages) | https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html |
 | Add-in ID | `d1829e3a-4931-4122-b911-37f22941aa99` |
 
