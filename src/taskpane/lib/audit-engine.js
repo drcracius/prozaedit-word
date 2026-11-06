@@ -331,41 +331,27 @@ ProzaEdit.Audit = {
     return finish({ stoppedEarly: false, completedPhaseIds, skippedPhaseIds: [] });
   },
 
-  /** Same length as text. Quoted speech becomes spaces so narration checks skip it. Straight apostrophes stay. */
+  /** Same length as text. Only a closed pair of quotes becomes spaces. A stray opener leaves the rest of the text searchable. Straight apostrophes stay. */
   blankQuotedSpeech(text) {
     const s = String(text || "");
-    const out = new Array(s.length);
-    let straight = false;
-    let curly = false;
-    let single = false;
-    for (let i = 0; i < s.length; i++) {
+    const out = s.split("");
+    const blank = (from, to) => {
+      for (let k = from; k <= to; k++) out[k] = " ";
+    };
+    let i = 0;
+    while (i < s.length) {
       const ch = s[i];
-      if (!curly && !single && ch === '"') {
-        straight = !straight;
-        out[i] = " ";
+      let close = -1;
+      if (ch === '"') close = s.indexOf('"', i + 1);
+      else if (ch === "\u201c") close = s.indexOf("\u201d", i + 1);
+      else if (ch === "\u2018") close = s.indexOf("\u2019", i + 1);
+      if (ch === '"' || ch === "\u201c" || ch === "\u2018") {
+        if (close < 0) break;
+        blank(i, close);
+        i = close + 1;
         continue;
       }
-      if (!straight && !single && ch === "\u201c") {
-        curly = true;
-        out[i] = " ";
-        continue;
-      }
-      if (!straight && !single && ch === "\u201d") {
-        curly = false;
-        out[i] = " ";
-        continue;
-      }
-      if (!straight && !curly && ch === "\u2018") {
-        single = true;
-        out[i] = " ";
-        continue;
-      }
-      if (single && ch === "\u2019") {
-        single = false;
-        out[i] = " ";
-        continue;
-      }
-      out[i] = straight || curly || single ? " " : ch;
+      i++;
     }
     return out.join("");
   },

@@ -1,6 +1,6 @@
 # ProzaEdit engine cleanup — implementation plan
 
-**Status:** done in build **2.0.0.53**. The four slices shipped together.
+**Status:** done in build **2.0.0.53**. Build **2.0.0.54** keeps a stray quote from hiding the notes after it, and lets Cancel reach the chapter chart.
 
 **This file on GitHub is the plan.** https://github.com/drcracius/prozaedit-word/blob/main/docs/ENGINE-CLEANUP-PLAN.md
 

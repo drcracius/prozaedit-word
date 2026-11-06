@@ -88,6 +88,12 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.54 — A stray quote no longer blanks the rest
+
+- Narration checks skip a finished pair of quotes. One unmatched quote no longer hides every note after it.
+- The chapter chart pauses between batches, so Cancel can stop it. A chart already saved stays put.
+- Not tried in Word.
+
 ## 2.0.0.53 — Quieter checks
 
 - One passive-voice note per run. Fiction and non-fiction no longer raise two.

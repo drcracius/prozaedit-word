@@ -33,6 +33,16 @@ test("passive voice raises one card, and adjectives after was are not passive", 
   assert.equal(P.Audit.run(tired, ctxFor("Fiction (General)")).suggestions.some((s) => /passive_cluster/.test(s.ruleId)), false);
 });
 
+test("a stray quote does not hide narration after it", () => {
+  const text = 'She said "hello. She walked in order to find the door before dark.';
+  const cards = P.Audit.run(text, ctxFor("Fiction (General)")).suggestions;
+  assert.ok(cards.some((s) => String(s.ruleId).startsWith("sg:plain:in_order_to")));
+  assert.equal(P.Audit.blankQuotedSpeech(text).includes("in order to"), true);
+  const closed = P.Audit.blankQuotedSpeech('"very very", she walked home.');
+  assert.equal(closed.includes("very"), false);
+  assert.equal(closed.includes("walked"), true);
+});
+
 test("fiction narration checks skip quoted speech and still quote the original wording", () => {
   const quoted = `"very very very", she said, and then she walked home before dark.`;
   const inside = P.Audit.run(quoted, ctxFor("Fiction (General)")).suggestions.filter((s) => String(s.ruleId).startsWith("rep:") && /very/i.test(s.targetText || ""));

@@ -35,7 +35,7 @@ ProzaEdit.ChapterHeatmap = {
     for (let i = 0; i < total; i += 500) {
       for (let j = i; j < Math.min(total, i + 500); j++) paras.items[j].load(["text", "styleBuiltIn"]);
       await context.sync();
-      if (ProzaEdit.ScopeReader?.microYield) await ProzaEdit.ScopeReader.microYield();
+      await new Promise((resolve) => setTimeout(resolve, 0));
       if (longOp && typeof longOp.throwIfCancelled === "function") longOp.throwIfCancelled();
     }
     const entries = [];
