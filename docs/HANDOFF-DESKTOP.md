@@ -51,7 +51,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 511 tests expected, 0 fail
+npm test                          # 512 tests expected, 0 fail
 npm run validate:manifest         # expect "OK: manifest.hosted.xml passes Microsoft production validation."
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"
@@ -172,7 +172,7 @@ Full rationale per decision: roadmap section "Decisions needed from the owner" (
 
 1. Owner runs checklist items for Track Changes and real keys. If tracked Apply misbehaves, fix before anything else.
 2. Run an audit on one real manuscript, collect false positives, tune rules.
-3. CSP after a real-Word trial. 4. Worker hardening and Actions pinning. 5. CSS at 320 px. 6. Advanced-rule noise decision. Non-fiction checks and the combined AI test already shipped.
+3. CSP only after a real-Word trial. It can blank the pane, so it stays off. 4. The error-report worker now has an allow-list and a rate limit; do not deploy it until crash reports are wanted online. GitHub Actions are already pinned. 5. Narrow-pane styles are in the CSS; looking at a real 320 px pane is still an owner check. 6. Noisy Advanced rules stay, and Simple view already hides them. Non-fiction checks and the combined AI test already shipped.
 
 ## 15. Doc index
 

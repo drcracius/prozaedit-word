@@ -29,7 +29,7 @@ When ingest is not configured, Help also shows **Report on GitHub** → [new iss
 
 ## Owner: enable network ingest
 
-Shipped config keeps `DIAGNOSTICS_INGEST_URL` **empty** in `src/taskpane/lib/diagnostics-config.js` — no extra manifest `AppDomain` is required for that default.
+Shipped config keeps `DIAGNOSTICS_INGEST_URL` **empty** in `src/taskpane/lib/diagnostics-config.js` — no extra manifest `AppDomain` is required for that default. The worker code accepts only `https://drcracius.github.io` and localhost port 3000, and it stops one address after 20 reports in 10 minutes. It is still not deployed.
 
 **Step checklist (next build, 2.0.0.17):** [DIAGNOSTICS-DEPLOY-RUNBOOK.md](./DIAGNOSTICS-DEPLOY-RUNBOOK.md) — use only when a live Worker URL exists.
 

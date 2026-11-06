@@ -1,13 +1,42 @@
 const MAX_BODY = 32_000;
 const ALLOWED_KINDS = new Set(["crash", "unhandled", "user", "major"]);
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+const rateBuckets = new Map();
+
+export const ALLOWED_ORIGINS = [
+  "https://drcracius.github.io",
+  "https://localhost:3000",
+  "http://localhost:3000",
+];
+
+export function isAllowedOrigin(origin) {
+  return ALLOWED_ORIGINS.includes(origin);
+}
+
+export function takeRateSlot(key, now, state) {
+  const buckets = state || rateBuckets;
+  const t = typeof now === "number" ? now : Date.now();
+  const id = key || "unknown";
+  const rec = buckets.get(id);
+  if (!rec || t >= rec.reset) {
+    buckets.set(id, { count: 1, reset: t + RATE_WINDOW_MS });
+    return true;
+  }
+  if (rec.count >= RATE_LIMIT) return false;
+  rec.count += 1;
+  return true;
+}
 
 function corsHeaders(origin) {
-  return {
-    "Access-Control-Allow-Origin": origin || "*",
+  const headers = {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
   };
+  if (isAllowedOrigin(origin)) headers["Access-Control-Allow-Origin"] = origin;
+  return headers;
 }
 
 function json(data, status, extraHeaders) {
@@ -77,8 +106,11 @@ export function buildIssueBody(payload) {
 
 export default {
   async fetch(request, env) {
-    const origin = request.headers.get("Origin") || "*";
+    const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin);
+    if (!isAllowedOrigin(origin)) {
+      return json({ ok: false, error: "origin" }, 403, cors);
+    }
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors });
@@ -86,6 +118,11 @@ export default {
 
     if (request.method !== "POST") {
       return json({ ok: false, error: "method" }, 405, cors);
+    }
+
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    if (!takeRateSlot(ip)) {
+      return json({ ok: false, error: "rate" }, 429, cors);
     }
 
     const ct = request.headers.get("Content-Type") || "";
