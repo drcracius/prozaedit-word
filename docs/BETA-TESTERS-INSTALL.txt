@@ -16,7 +16,7 @@ STEPS (Word on the web — easiest)
   5. Open your real manuscript (same account). Home → ProzaEdit
 
 Note: Upload may fail on an old blank doc; use a fresh blank doc for step 2–4.
-If Word says the manifest is not valid, ask for a fresh raw download (build 2.0.0.60+).
+If Word says the manifest is not valid, ask for a fresh raw download (build 2.0.0.61+).
 Desktop Word often has no Upload — use the browser steps above.
 
 DAILY USE

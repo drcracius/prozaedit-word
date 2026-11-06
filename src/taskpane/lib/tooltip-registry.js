@@ -44,7 +44,7 @@
     "btn-session-tips-got-it":
       "Hide these session tips until you open ProzaEdit again in a new browser session. Help tab has the full Quick start guide.",
     "btn-refresh-scope-count":
-      "Measure characters in the current scope (Word read). Use before a full-manuscript audit on long books.",
+      "Count words in the current scope. Use it before a full-manuscript check on a long book.",
   };
 
   /** Short native `title` when hover tips are off (no duplicate long strings in HTML). */

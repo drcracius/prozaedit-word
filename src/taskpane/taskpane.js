@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.60";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.61";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -189,6 +189,9 @@ function setupSafeHandlers() {
       updateFullManuscriptScopeTip();
       if (scope.value === "selected-chapters" || scope.value === "chapter" || scope.value === "chapter-range") {
         reloadChapterScopeFromDocument();
+      } else if (scope.value === "pages") {
+        refreshScopeCharPreview();
+        refreshDocumentPageBounds();
       } else {
         refreshScopeCharPreview();
       }
@@ -248,6 +251,131 @@ function updateScopeChapterEmptyState() {
   empty.classList.toggle("hidden", !show);
 }
 
+function updateStyleGuideBlurb() {
+  const el = getEl("styleGuideBlurb");
+  const key = getEl("styleGuideRef")?.value || "auto";
+  const copy = {
+    auto: "Picks packs from your language and manuscript type. Fine for most people.",
+    "plain-us": "Plain words for public writing. Example: “e-mail” becomes “email.”",
+    strunk: "Cuts a few wordy phrases. Example: drop “the fact that.”",
+    govuk: "British public-site wording when Language is UK English.",
+    microsoft: "Short habits from software docs. Useful for product and UI text.",
+    "google-dev": "Short habits from developer docs. Useful for API notes and READMEs.",
+    redhat: "Short habits from technical writing. Useful for IT docs.",
+    "custom-plus-auto": "Your house rules, plus the Auto packs.",
+    custom: "Only the rules you wrote. No built-in pack.",
+  };
+  if (el) el.textContent = copy[key] || copy.auto;
+}
+
+function usePagesScope() {
+  const scope = getEl("scope");
+  if (scope) scope.value = "pages";
+  syncScopePanels();
+  updateWorkflowStatusLine();
+  refreshScopeCharPreview();
+  schedulePersistSettings();
+}
+
+function syncChapterBounds(count) {
+  const from = getEl("scopeChapterFrom");
+  const to = getEl("scopeChapterTo");
+  const empty = getEl("scopeChapterNone");
+  const usePages = getEl("btnUsePages");
+  const range = getEl("scopeChapterRange");
+  const n = Math.max(0, count | 0);
+  if (empty) empty.classList.toggle("hidden", n > 0);
+  if (usePages) usePages.classList.toggle("hidden", n > 0);
+  if (range) range.classList.toggle("hidden", n === 0);
+  [from, to].forEach((el) => {
+    if (!el) return;
+    if (!n) {
+      el.disabled = true;
+      el.max = "0";
+      return;
+    }
+    el.disabled = false;
+    el.max = String(n);
+    let v = parseInt(el.value, 10) || 1;
+    if (v > n) v = n;
+    if (v < 1) v = 1;
+    el.value = String(v);
+  });
+  if (n && from && to && parseInt(to.value, 10) < parseInt(from.value, 10)) to.value = from.value;
+}
+
+function applyPageBounds(bounds) {
+  const hint = getEl("scopePageBoundHint");
+  const from = getEl("scopePageFrom");
+  const to = getEl("scopePageTo");
+  if (!bounds) return;
+  if (bounds.empty) {
+    [from, to].forEach((el) => {
+      if (!el) return;
+      el.disabled = true;
+      el.max = "0";
+    });
+    if (hint) hint.textContent = "This document has no text yet.";
+    return;
+  }
+  const per = ProzaEdit.ScopeReader?.WORDS_PER_PAGE || 250;
+  const pages = Math.max(1, Math.ceil((bounds.words || 0) / per));
+  [from, to].forEach((el) => {
+    if (!el) return;
+    el.disabled = false;
+    el.max = String(pages);
+    let v = parseInt(el.value, 10) || 1;
+    if (v > pages) el.value = String(pages);
+    if (v < 1) el.value = "1";
+  });
+  if (from && to && parseInt(to.value, 10) < parseInt(from.value, 10)) to.value = from.value;
+  if (hint) {
+    hint.textContent = bounds.stoppedEarly
+      ? "Document is longer than this check's limit. Page numbers above are only the part that can be checked."
+      : `About ${pages} page${pages === 1 ? "" : "s"} in this document (estimate).`;
+  }
+}
+
+function applyChapterRangeFromInputs() {
+  const from = parseInt(getEl("scopeChapterFrom")?.value, 10) || 1;
+  let to = parseInt(getEl("scopeChapterTo")?.value, 10) || from;
+  if (to < from) {
+    to = from;
+    const toEl = getEl("scopeChapterTo");
+    if (toEl) toEl.value = String(to);
+  }
+  window.__peSyncingChapterChecks = true;
+  document.querySelectorAll("#scopeChapterChecklist input[type=checkbox]").forEach((el) => {
+    const n = parseInt(el.value, 10);
+    el.checked = n >= from && n <= to;
+  });
+  window.__peSyncingChapterChecks = false;
+  const hint = getEl("scopeChapterCustomHint");
+  if (hint) hint.textContent = "";
+  updateScopeChapterEmptyState();
+  refreshScopeCharPreview();
+  schedulePersistSettings();
+}
+
+function refreshDocumentPageBounds() {
+  if (wordReadBlocked()) return Promise.resolve();
+  return wordRun("page-bounds", async (ctx) => {
+    return ProzaEdit.ScopeReader.measureScope(ctx, {
+      mode: "full",
+      maxChars: ProzaEdit.ScopeReader.getLimit("full"),
+    });
+  })
+    .then((result) => {
+      const text = result?.text || "";
+      applyPageBounds({
+        words: ProzaEdit.Metrics?.countWords?.(text) || 0,
+        stoppedEarly: !!result?.stoppedEarly,
+        empty: !text.trim(),
+      });
+    })
+    .catch(() => {});
+}
+
 function selectAllChapterChecks(on) {
   document.querySelectorAll("#scopeChapterChecklist input[type=checkbox]").forEach((el) => {
     el.checked = !!on;
@@ -263,7 +391,7 @@ function renderChapterChecklist(list, selectedIndices) {
   container.innerHTML = "";
   if (!list.length) {
     container.innerHTML =
-      '<p class="scope-chapter-empty">No Heading 1–3 chapters — apply heading styles, then Reload.</p>';
+      '<p class="scope-chapter-empty">No chapters found. Chapter titles need Word\'s Heading 1, Heading 2, or Heading 3 style.</p>';
     return;
   }
   const normalized = ProzaEdit.ScopeReader.normalizeSelectedChapterIndices(selectedIndices, list);
@@ -281,6 +409,16 @@ function renderChapterChecklist(list, selectedIndices) {
     label.appendChild(span);
     container.appendChild(label);
   });
+  const checked = getSelectedChapterIndicesFromUi();
+  const fromEl = getEl("scopeChapterFrom");
+  const toEl = getEl("scopeChapterTo");
+  if (checked.length && fromEl && toEl) {
+    fromEl.value = String(checked[0]);
+    toEl.value = String(checked[checked.length - 1]);
+    const contiguous = checked[checked.length - 1] - checked[0] + 1 === checked.length;
+    const hint = getEl("scopeChapterCustomHint");
+    if (hint) hint.textContent = contiguous ? "" : "Custom selection. The checked chapters are what Run reads.";
+  }
 }
 
 function syncUtilityRailChrome() {
@@ -369,18 +507,28 @@ function setupScopeUi() {
   if (checklist && !checklist.dataset.scopeBound) {
     checklist.dataset.scopeBound = "1";
     checklist.addEventListener("change", () => {
+      if (!window.__peSyncingChapterChecks) {
+        const hint = getEl("scopeChapterCustomHint");
+        if (hint) hint.textContent = "Custom selection. The checked chapters are what Run reads.";
+      }
       updateScopeChapterEmptyState();
       refreshScopeCharPreview();
       schedulePersistSettings();
     });
   }
-  ["scopePageFrom", "scopePageTo"].forEach((id) => {
+  ["scopePageFrom", "scopePageTo", "scopeChapterFrom", "scopeChapterTo"].forEach((id) => {
     const el = getEl(id);
     if (el && !el.dataset.scopeBound) {
       el.dataset.scopeBound = "1";
       el.addEventListener("change", () => {
         schedulePersistSettings();
-        refreshScopeCharPreview();
+        if (id === "scopeChapterFrom" || id === "scopeChapterTo") applyChapterRangeFromInputs();
+        else {
+          const from = parseInt(getEl("scopePageFrom")?.value, 10) || 1;
+          const toEl = getEl("scopePageTo");
+          if (toEl && (parseInt(toEl.value, 10) || 1) < from) toEl.value = String(from);
+          refreshScopeCharPreview();
+        }
       });
     }
   });
@@ -421,10 +569,15 @@ function refreshChapterScopeLists() {
   const run = wordRun("ch-list", async (ctx) => {
     const list = await ProzaEdit.ScopeReader.listChapters(ctx);
     fillChapterSelects(list);
-    if (!list.length) throw new Error("No chapters — apply Heading 1–3 to chapter titles.");
+    syncChapterBounds(list.length);
   })
     .then(() => {
-      showPeStatus(`Found ${scopeChapterListCache.length} chapter(s).`, "ok");
+      const n = scopeChapterListCache.length;
+      if (!n) {
+        showPeStatus("No chapters found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.", "warn");
+        return;
+      }
+      showPeStatus(`Found ${n} chapter(s).`, "ok");
     })
     .catch((e) => reportActionError(e, "read the chapter list"))
     .finally(() => {
@@ -442,33 +595,47 @@ function reloadChapterScopeFromDocument() {
   return refreshChapterScopeLists().then(() => refreshScopeCharPreview());
 }
 
-function updateScopeCharPreviewDisplay(charCount, label, mode) {
+function updateScopeCharPreviewDisplay(charCount, label, mode, extra) {
   const el = getEl("scopeCharPreview");
   if (!el) return;
+  extra = extra || {};
   const n = Number(charCount);
   charCount = Number.isFinite(n) && n > 0 ? n : 0;
   let limit = Number(getScopeCharLimit(mode));
   if (!Number.isFinite(limit) || limit <= 0) limit = MAX_LOCAL_AUDIT_CHARS;
+  const wordBudget = Math.max(1, Math.round(limit / (ProzaEdit.ScopeReader?.CHARS_PER_WORD || 6)));
+  const words =
+    extra.text != null && ProzaEdit.Metrics?.countWords
+      ? ProzaEdit.Metrics.countWords(extra.text)
+      : Math.round(charCount / (ProzaEdit.ScopeReader?.CHARS_PER_WORD || 6));
   const safeLabel = label == null || String(label).trim() === "" ? "Scope" : String(label);
-  const over = charCount > limit;
-  const ok = !over && charCount > 0;
-  el.classList.toggle("over-limit", over);
+  const over = !extra.stoppedEarly && words > wordBudget;
+  const ok = !over && !extra.stoppedEarly && words > 0;
+  el.classList.toggle("over-limit", over || !!extra.stoppedEarly);
   el.classList.toggle("pe-scope-ok", ok);
   delete el.dataset.peMeasureFailed;
-  const fmt = charCount.toLocaleString();
-  const lim = limit.toLocaleString();
-  el.textContent = over
-    ? `${safeLabel}: ~${fmt} characters — over limit (${lim}). Choose a smaller scope, or audit one chapter at a time.`
-    : `${safeLabel}: ~${fmt} characters (limit ${lim}).`;
-  lastScopePreviewSummary =
-    charCount > 0
+  const fmt = words.toLocaleString();
+  const lim = wordBudget.toLocaleString();
+  if (extra.stoppedEarly) {
+    el.textContent = `${safeLabel}: More than ${fmt} words (this check's limit). Not the whole document.`;
+  } else if (!charCount && !words) {
+    el.textContent = mode === "selection" ? "Highlight text, or choose Pages, Chapters, or Full. 0 words." : `${safeLabel}: 0 words.`;
+  } else {
+    el.textContent = over
+      ? `${safeLabel}: ~${fmt} words — over limit (${lim}). Choose a smaller scope, or audit one chapter at a time.`
+      : `${safeLabel}: ~${fmt} words (limit ${lim}).`;
+  }
+  lastScopePreviewSummary = extra.stoppedEarly
+    ? `more than ${fmt} words`
+    : words > 0
       ? over
-        ? `~${fmt} chars (over ${lim} limit)`
-        : `~${fmt} chars (limit ${lim})`
+        ? `~${fmt} words (over ${lim} limit)`
+        : `~${fmt} words (limit ${lim})`
       : "";
   lastScopePreviewChars = charCount > 0 ? charCount : 0;
   updateFullManuscriptScopeTip();
   updateWorkflowStatusLine();
+  if (extra.documentBounds) applyPageBounds(extra.documentBounds);
 }
 
 function getScopeModeLabel(mode) {
@@ -513,7 +680,7 @@ function updateWorkflowStatusLine() {
   const line = getEl("peWorkflowStatusLine");
   const mode = getScopeMode();
   const scopePart = getScopeModeLabel(mode);
-  const charPart = lastScopePreviewSummary || "use Refresh count on Start for character estimate";
+  const charPart = lastScopePreviewSummary || "use Refresh count for a word estimate";
   const guidePart = getActiveStyleGuideLabel();
   if (line) {
     line.textContent = `Guide: ${guidePart} · Scope: ${scopePart} — ${charPart}`;
@@ -580,10 +747,15 @@ function refreshScopeCharPreview() {
   return wordRun("scope-measure", async (ctx) => {
     const opts = getScopeOptions();
     const result = await ProzaEdit.ScopeReader.measureScope(ctx, opts);
-    return { len: (result.text || "").length, label: result.label || mode };
+    return { len: (result.text || "").length, label: result.label || mode, text: result.text || "", stoppedEarly: !!result.stoppedEarly };
   })
-    .then(({ len, label }) => {
-      if (seq === scopePreviewSeq) updateScopeCharPreviewDisplay(len, label, mode);
+    .then((info) => {
+      if (seq !== scopePreviewSeq) return;
+      updateScopeCharPreviewDisplay(info.len, info.label, mode, {
+        text: info.text,
+        stoppedEarly: info.stoppedEarly,
+        documentBounds: mode === "full" ? { words: ProzaEdit.Metrics?.countWords?.(info.text) || 0, stoppedEarly: info.stoppedEarly, empty: !info.len } : null,
+      });
     })
     .catch((e) => {
       if (seq !== scopePreviewSeq) return;
@@ -648,7 +820,7 @@ function buildManuscriptIndexNow() {
         maxChars: 600000,
         cancelCheck,
         onProgress,
-      });
+      }).then((read) => (read && read.text) || "");
     }
     const opts = getScopeOptions();
     if (opts.mode === "selected-chapters" || opts.mode === "chapter" || opts.mode === "chapter-range") {
@@ -1808,6 +1980,7 @@ function onProzaEditOfficeReady(info) {
     setupSettingsKeyboardShortcut();
     tryOpenSettingsFromLocationHash();
     updateWorkflowStatusLine();
+    updateStyleGuideBlurb();
     updateFullManuscriptScopeTip();
     updateWorkflowNextStepHint();
     updateChecksScopeChip();
@@ -4186,6 +4359,8 @@ function setupUndoRedoShortcuts() {
   });
 }
 
+let lastScopeReadStoppedEarly = false;
+
 async function readScopeText(context, longOpController) {
   const mode = getScopeMode();
   const opts = getScopeOptions();
@@ -4221,8 +4396,10 @@ async function readScopeText(context, longOpController) {
       );
     }
   }
+  lastScopeReadStoppedEarly = false;
   const measured = await ProzaEdit.ScopeReader.measureScope(context, opts);
   const text = measured.text || "";
+  lastScopeReadStoppedEarly = !!measured.stoppedEarly;
   if (!text.trim()) {
     if (mode === "selection") throw new Error("Highlight text in Word, or choose page/chapter/full scope.");
     throw new Error("No text for this scope.");
@@ -5651,8 +5828,8 @@ function runAuditInternalCore(opts) {
     if (sumEl) sumEl.textContent = analyzeLabel;
     let truncated = false;
     const cap = getScopeCharLimit(getScopeMode());
-    if (text.length > cap) {
-      text = text.substring(0, cap);
+    if (text.length > cap || lastScopeReadStoppedEarly) {
+      if (text.length > cap) text = text.substring(0, cap);
       truncated = true;
     }
     if (lastDocStats && lastDocStats.words == null) {
@@ -5687,7 +5864,7 @@ function runAuditInternalCore(opts) {
         ruleId: "sys:truncated",
         module: "ProzaEdit",
         type: "preference",
-        explanation: "Excerpt truncated for performance. Select a smaller part, or audit one chapter at a time, to cover everything.",
+        explanation: "This check stopped after about " + (ProzaEdit.Metrics?.countWords?.(text) || 0).toLocaleString() + " words. The rest of the document was not checked. Use Chapters or Pages for the rest, or Audit next chapter.",
         targetText: "(truncated)",
         replacementText: "(smaller scope)",
       });
@@ -6931,7 +7108,7 @@ async function runDeepAuditAI() {
     !(await aiConfirmOnce({
       title: `Deep audit via ${aiLabel()}`,
       message:
-        `Deep Audit uses 1 ${aiLabel()} API call and sends up to ${MAX_DEEP.toLocaleString()} characters of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry the deeper local report (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
+        `Deep Audit uses 1 ${aiLabel()} API call and sends about ${Math.round(MAX_DEEP / 6).toLocaleString()} words of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry the deeper local report (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -7304,7 +7481,7 @@ async function runSmartRewrite() {
   if (
     !(await aiConfirmOnce({
       title: `Rewrite via ${aiLabel()}`,
-      message: `Rewrite via ${aiLabel()} uses API tokens and sends your selected text (up to ${MAX_CHAT.toLocaleString()} characters) to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_CHAT + 1500 + aiIndexChars(), 1024)}${geminiIndexDisclosure()}\n\nContinue?`,
+      message: `Rewrite via ${aiLabel()} uses API tokens and sends your selected text (about ${Math.round(MAX_CHAT / 6).toLocaleString()} words at most) to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_CHAT + 1500 + aiIndexChars(), 1024)}${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))

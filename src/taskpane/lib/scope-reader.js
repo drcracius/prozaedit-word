@@ -2,15 +2,27 @@
 window.ProzaEdit = window.ProzaEdit || {};
 
 ProzaEdit.ScopeReader = {
-  /** Approximate chars per printed page for page-range mode (Word JS has no page API). */
-  CHARS_PER_PAGE: 2800,
+  /** About 250 words per page. Word's add-in API has no real page count. */
+  WORDS_PER_PAGE: 250,
+  /** Safety buffer: character cap = word budget × this. */
+  CHARS_PER_WORD: 6,
+  CHARS_PER_PAGE: 1500,
+
+  WORD_BUDGETS: {
+    selection: 25000,
+    pages: 25000,
+    chapter: 25000,
+    "chapter-range": 33334,
+    "selected-chapters": 33334,
+    full: 75000,
+  },
 
   LIMITS: {
     selection: 150000,
     pages: 150000,
     chapter: 150000,
-    "chapter-range": 200000,
-    "selected-chapters": 200000,
+    "chapter-range": 200004,
+    "selected-chapters": 200004,
     full: 450000,
   },
 
@@ -229,7 +241,7 @@ ProzaEdit.ScopeReader = {
       await context.sync();
       for (let i = start; i <= end; i++) {
         text += (paras.items[i].text || "") + "\n";
-        if (text.length >= maxChars) return text.substring(0, maxChars);
+        if (text.length >= maxChars) return { text: text.substring(0, maxChars), stoppedEarly: true };
       }
       if (typeof opts.onProgress === "function") {
         opts.onProgress({
@@ -241,7 +253,7 @@ ProzaEdit.ScopeReader = {
       }
       if (bi + 1 < batches.length) await this.microYield();
     }
-    return text;
+    return { text, stoppedEarly: false };
   },
 
   async textFromParagraphRange(context, startPara, endPara, opts, expectTitle) {
@@ -286,8 +298,8 @@ ProzaEdit.ScopeReader = {
   async readFullManuscriptChunked(context, opts) {
     opts = opts || {};
     const maxChars = opts.maxChars != null ? Number(opts.maxChars) : this.getLimit("full");
-    const text = await this.readBodyTextChunked(context, { ...opts, maxChars });
-    return { text, label: "full manuscript" };
+    const read = await this.readBodyTextChunked(context, { ...opts, maxChars });
+    return { text: read.text || "", label: "full manuscript", stoppedEarly: !!read.stoppedEarly };
   },
 
   async readByPageRange(context, pageFrom, pageTo, opts) {
@@ -366,7 +378,7 @@ ProzaEdit.ScopeReader = {
       if (!ch) continue;
       text += await this.textFromParagraphRange(context, ch.startPara, ch.endPara, { ...opts, _paras: sharedParas }, ch.title);
       if (text.length > maxChars) {
-        throw new Error(`Chosen chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
+        throw new Error(`Chosen chapters exceed the word limit. Select fewer chapters.`);
       }
       if (typeof opts.onProgress === "function") {
         opts.onProgress({
@@ -394,14 +406,8 @@ ProzaEdit.ScopeReader = {
       return { text: sel.text || "", label: "selection" };
     }
     if (mode === "full") {
-      if (typeof opts.cancelCheck === "function" || typeof opts.onProgress === "function") {
-        const merged = { ...opts, maxChars: opts.maxChars != null ? opts.maxChars : this.getLimit("full") };
-        return this.readFullManuscriptChunked(context, merged);
-      }
-      const body = context.document.body;
-      body.load("text");
-      await context.sync();
-      return { text: body.text || "", label: "full manuscript" };
+      const merged = { ...opts, maxChars: opts.maxChars != null ? opts.maxChars : this.getLimit("full") };
+      return this.readFullManuscriptChunked(context, merged);
     }
     if (mode === "pages") {
       return this.readByPageRange(context, opts.pageFrom, opts.pageTo, opts);
@@ -497,7 +503,7 @@ ProzaEdit.ScopeReader = {
             out.push({ index: i, text, headingLevel });
           }
           if (chars > maxChars) {
-            throw new Error(`Chosen chapters exceed ${maxChars.toLocaleString()} characters. Select fewer chapters.`);
+            throw new Error(`Chosen chapters exceed the word limit. Select fewer chapters.`);
           }
         }
       }

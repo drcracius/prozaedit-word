@@ -14,7 +14,7 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.60</span>)</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.61</span>)</p>
     <p id="peWhatsNewBullet" class="pe-top-banner-body">Run opens the report. Cards keep Go to and Apply up front; other actions are under More. A house rule wins when it names the same phrase as a built-in check.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
@@ -62,7 +62,7 @@
     <li class="workflow-step pe-workflow-step workflow-step-active active" data-workflow-step="1" role="button" tabindex="0" aria-label="Start" onclick="if(!isPeOverlayDialogOpen())showTab('tab1')"><span class="workflow-num">1</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="visually-hidden">Start</span></li>
     <li class="workflow-step pe-workflow-step" data-workflow-step="2" role="button" tabindex="0" aria-label="Run tab" onclick="if(!isPeOverlayDialogOpen())showTab('tab3')"><span class="workflow-num">2</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="visually-hidden">Run tab</span></li>
     <li class="workflow-step pe-workflow-step" data-workflow-step="3" role="button" tabindex="0" aria-label="Run" onclick="if(!isPeOverlayDialogOpen())runPrimaryAudit()"><span class="workflow-num">3</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="visually-hidden">Run</span></li>
-    <li class="workflow-step pe-workflow-step" data-workflow-step="4" role="button" tabindex="0" aria-label="Review" onclick="if(!isPeOverlayDialogOpen())showTab('tab4')"><span class="workflow-num">4</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span class="visually-hidden">Review</span></li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="4" role="button" tabindex="0" aria-label="Fix" onclick="if(!isPeOverlayDialogOpen())showTab('tab4')"><span class="workflow-num">4</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span class="visually-hidden">Fix</span></li>
   </ol>
   <p id="peWorkflowNextStep" class="pe-workflow-next-step help-muted hidden" role="status" aria-live="polite">Next step: set scope on Start, then Run.</p>
   <div id="peOverheadBadges" class="pe-overhead-badges" aria-label="Guide and scope">
@@ -81,7 +81,7 @@
     <p id="peDocScopeTrustLine" class="pe-doc-scope-trust-line help-muted" role="note">Dictionary: this Word document · Mute: this document + this browser · Dismiss wording: this browser only (not other PCs or files).</p>
     <p class="pe-target-callout help-box" style="margin-top:8px;"><strong>Start here:</strong> pick <strong>scope</strong> below, then open <strong>Run</strong> to audit. Profile and style guide are under advanced sections. Toolbar <strong>Settings</strong> holds dictionary, safety, and custom rules.</p>
     <p class="pe-target-scope-hint help-muted" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;">Scope first — profile &amp; style below or in <strong>Settings</strong></p>
-    <p class="help-inline scope-mode-hint">Modes: <strong>highlighted selection</strong>; <strong>approximate page range</strong> (choose Page range, then set <strong>From page</strong> / <strong>To page</strong> — about 2,800 characters per page); <strong>chosen chapters</strong> (checklist when that mode is active); or <strong>full manuscript</strong>.</p>
+    <p class="help-inline scope-mode-hint">Choose what Run reads. <strong>Refresh count</strong> shows words.</p>
     <p id="peGenreStaticHint" class="help-inline">Plot, character, and spoiler checks run only for <strong>Fiction</strong> types with those modules enabled; Academic and Business audits skip them.</p>
   </details>
   <div id="peSessionTips" class="pe-session-tips help-box hidden pe-welcome-banner-host" role="region" aria-label="First session tips">
@@ -144,7 +144,7 @@
     </div>
   </div>
   </div>
-  <p id="peWorkflowStatusLine" class="pe-workflow-status-line help-muted pe-workflow-status-static" aria-live="polite">Scope: highlighted selection — refresh count on Start for character estimate.</p>
+  <p id="peWorkflowStatusLine" class="pe-workflow-status-line help-muted pe-workflow-status-static" aria-live="polite">Scope: highlighted selection — Refresh count for a word estimate.</p>
   <nav id="peWorkflowCrossNav" class="pe-workflow-cross-nav hidden" aria-label="Related workflow steps"></nav>
   <div class="nav-tabs" role="tablist" aria-label="ProzaEdit sections">
     <button type="button" class="tab-btn active" data-pe-tab="tab1" id="peTabBtn1" aria-controls="tab1" data-pe-tab-default-label="Start" role="tab" aria-selected="true" onclick="showTab('tab1')"><span data-pe-tab-label>Start</span></button>
@@ -173,7 +173,8 @@
       </button>
     </div>
     <div id="scopePagesPanel" class="form-group scope-subpanel hidden">
-      <p class="help-inline" style="margin:0 0 6px;font-size:var(--pe-font-size-sm);">Word has no page API — pages are estimated at ~2,800 characters each.</p>
+      <p class="help-inline" style="margin:0 0 6px;font-size:var(--pe-font-size-sm);">About 250 words per page. Word does not tell the add-in the real page count.</p>
+      <p id="scopePageBoundHint" class="help-inline" style="margin:0 0 6px;font-size:var(--pe-font-size-sm);"></p>
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
         <div>
           <label for="scopePageFrom">From page</label>
@@ -186,15 +187,31 @@
       </div>
     </div>
     <div id="scopeChapterPanel" class="form-group scope-subpanel hidden">
-      <div id="scopeChapterSelectedWrap">
-        <p class="help-inline scope-chapter-hint">Pick any chapters (non-contiguous OK). Reload after you add headings.</p>
+      <p id="scopeChapterNone" class="scope-chapter-empty hidden" role="status">No chapters found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.</p>
+      <button type="button" id="btnUsePages" class="btn-secondary pe-btn hidden" onclick="usePagesScope()">Use pages</button>
+      <div id="scopeChapterRange">
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+          <div>
+            <label for="scopeChapterFrom">From chapter</label>
+            <input type="number" id="scopeChapterFrom" min="1" value="1" style="width:70px;margin:0;" aria-label="From chapter">
+          </div>
+          <div>
+            <label for="scopeChapterTo">To chapter</label>
+            <input type="number" id="scopeChapterTo" min="1" value="1" style="width:70px;margin:0;" aria-label="To chapter">
+          </div>
+        </div>
+        <p id="scopeChapterCustomHint" class="help-inline" style="margin:6px 0 0;font-size:var(--pe-font-size-sm);"></p>
+      </div>
+      <details id="scopeChapterSelectedWrap">
+        <summary>Choose individual chapters</summary>
+        <p class="help-inline scope-chapter-hint">Pick any chapters. A Heading 2 or Heading 3 is its own chapter, not only Heading 1.</p>
         <div id="scopeChapterChecklist" class="scope-chapter-checklist" role="group" aria-label="Chapters to include in analysis"></div>
         <p id="scopeChapterEmptyState" class="scope-chapter-empty hidden" role="status">No chapters selected — check at least one below, or reload the chapter list.</p>
         <div class="scope-chapter-actions">
           <button type="button" class="btn-linkish" onclick="selectAllChapterChecks(true)">Select all</button>
           <button type="button" class="btn-linkish" onclick="selectAllChapterChecks(false)">Clear all</button>
         </div>
-      </div>
+      </details>
       <button type="button" class="btn-linkish" onclick="reloadChapterScopeFromDocument()">Reload chapter list from document</button>
     </div>
     <details class="help-box help-muted pe-mci-target-block" id="peMciTargetBlock" data-simple-hide>
@@ -239,7 +256,7 @@
       <p class="help-inline">Adds those terms to the allowed-words list for this document and relaxes passive-voice limits where that genre needs it.</p>
     </div>
     <div class="form-group">
-      <label for="targetAudience">Target Reader / Education Level</label>
+      <label for="targetAudience">Target Reader (Age &amp; Education Level)</label>
       <select id="targetAudience">
         <option value="Middle School">Middle School (ages 11–14)</option>
         <option value="High School">High School (ages 14–18)</option>
@@ -272,10 +289,10 @@
         <option value="en-GB">British English (UK)</option>
       </select>
     </div>
-    <h2 class="pe-section-title">Style &amp; language</h2>
+    <h2 class="pe-section-title">Style &amp; Guide Rules</h2>
     <div class="form-group">
       <label for="styleGuideRef">Preferred style guide</label>
-      <select id="styleGuideRef" onchange="toggleCustomStylePanel()">
+      <select id="styleGuideRef" onchange="toggleCustomStylePanel(); updateStyleGuideBlurb();">
         <option value="auto">Auto (language + manuscript type)</option>
         <option value="plain-us">U.S. Plain Language and GPO (public domain)</option>
         <option value="strunk">Strunk Elements of Style 1920 (public domain)</option>
@@ -286,11 +303,12 @@
         <option value="custom-plus-auto">Custom house style + Auto packs</option>
         <option value="custom">Custom house style only (your rules)</option>
       </select>
+      <p id="styleGuideBlurb" style="font-size:var(--pe-font-size-sm);color:var(--text-muted);margin:4px 0 0;">Picks packs from your language and manuscript type. Fine for most people.</p>
       <p style="font-size:var(--pe-font-size-sm);color:var(--text-muted);margin:4px 0 0;">Built-in guides use local heuristics only. Sources: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/STYLE-GUIDE-SOURCES.md" target="_blank" rel="noopener">STYLE-GUIDE-SOURCES.md</a> · <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a>.</p>
     </div>
     <p id="targetCustomRulesSummary" class="pe-target-custom-rules-line help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:4px 0 0;">Custom rules: <span id="targetCustomRulesCount">0</span> — <button type="button" class="btn-linkish" onclick="openSettingsModal('style')">manage in Settings</button></p>
     <p class="pe-target-simple-mode-line help-muted" style="font-size:var(--pe-font-size-sm);margin:8px 0 0;">View: <strong id="targetSimpleModeLabel">Advanced</strong> (Simple / Advanced) — <button type="button" class="btn-linkish" onclick="openSettingsModal('essentials')">change in Settings</button></p>
-    <button type="button" id="btnSaveTarget" class="btn-secondary" onclick="saveConfiguration()">Save now</button>
+    <button type="button" id="btnSaveTarget" class="btn-secondary hidden" onclick="saveConfiguration()">Save now</button>
     <p class="pe-target-autosave-hint hidden" style="font-size:var(--pe-font-size-sm);color:var(--text-muted);margin:4px 0 0;">These fields auto-save when you change them. Advanced options are in <strong>Settings</strong>.</p>
   </div>
 
@@ -323,12 +341,12 @@
     <div class="form-group pe-mci-checks-block" id="peMciChecksBlock" data-simple-hide>
       <p id="peMciStatusChecks" class="pe-mci-status pe-mci-none" aria-live="polite">Book outline not built</p>
       <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContext" onclick="runBuildFullManuscriptContext(true)">Build book outline</button>
-      <p class="help-inline" style="margin:4px 0 0;font-size:var(--pe-font-size-sm);">A heuristic local outline (not AI): chapter list, word counts, first/last lines, recurring names, time cues. Stored in this document only; included in an AI request only if you use an AI action. If it goes stale it is still used but flagged, and you will see a refresh notice.</p>
+      <p class="help-inline" style="margin:4px 0 0;font-size:var(--pe-font-size-sm);">Same book outline as Start. <button type="button" class="btn-linkish" onclick="showTab('tab1')">Open Start</button></p>
     </div>
     <details class="help-box pe-chapter-walk" id="peChapterWalk">
       <summary>Long book? Audit one chapter at a time</summary>
-      <p class="help-inline" style="margin:6px 0 0;">Whole-book audits stop at about 450,000 characters (roughly 75,000 words). This goes through your chapters (Heading 1–3) one at a time, keeps your place, and adds each result to one combined summary. You can cancel any chapter and carry on later.</p>
-      <p id="peChapterWalkProgress" class="pe-chapter-walk-progress" role="status" aria-live="polite" aria-atomic="true">Needs Heading 1–3 on chapter titles. Click the button to start.</p>
+      <p class="help-inline" style="margin:6px 0 0;">A full check stops at about 75,000 words. Audit next chapter walks Heading 1, 2, or 3 titles one at a time and keeps one combined summary.</p>
+      <p id="peChapterWalkProgress" class="pe-chapter-walk-progress" role="status" aria-live="polite" aria-atomic="true">Needs Heading 1, Heading 2, or Heading 3 on chapter titles. Click the button to start.</p>
       <button type="button" class="btn-secondary pe-btn" id="btnAuditNextChapter" onclick="auditNextChapter()">Audit first chapter</button>
       <button type="button" class="btn-linkish pe-btn hidden" id="btnSkipChapter" onclick="skipChapterWalkChapter()">Skip this chapter</button>
       <button type="button" class="btn-linkish pe-btn hidden" id="btnRestartChapterWalk" onclick="restartChapterWalk()">Start over</button>
@@ -443,8 +461,9 @@
     <p id="peSimpleModeAuditBanner" class="pe-simple-audit-banner hidden" role="status" aria-live="polite"></p>
     <p id="auditScopeChip" class="pe-scope-chip pe-audit-scope-chip help-muted" aria-live="polite">Scope (read-only): —</p>
     <div class="audit-run-hub audit-run-hub-inline">
-      <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run">Run</button>
-      <label class="toggle-row compact"><span>Deeper checks</span><input type="checkbox" data-audit-extended="1" id="auditExtended"></label>
+      <p class="help-inline">Run is at the top of the pane.</p>
+      <button class="btn-main btn-main-hub pe-btn pe-btn-primary hidden" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run">Run</button>
+      <label class="toggle-row compact hidden"><span>Deeper checks</span><input type="checkbox" data-audit-extended="1" id="auditExtended"></label>
       <button type="button" class="btn-linkish" onclick="showTab('tab3')">Configure checks →</button>
     </div>
     <p class="active-checks-hint"></p>
@@ -521,7 +540,7 @@
     <details class="help-box help-muted pe-gemini-block pe-ai-help" id="peAiHelpCoach" style="margin-top:8px;">
       <summary><span data-pe-ai-help-title>Optional AI help (uses your API key and tokens)</span></summary>
       <div class="form-group" style="border:none;padding:0;margin-top:6px;">
-        <p class="help-inline pe-cloud-disclosure">Cloud action: the prompt and chosen context are sent to the AI provider you picked in Settings only when you click <strong>Send via AI</strong>. Context is selection-only by default; turning that off can send a document excerpt. If you built a book outline, that heuristic outline (chapter titles, first/last lines, recurring names) is included in the request too. Local Coach and Run never use AI. Gemini free-tier prompts may be used by Google to improve its products (paid keys are not). If a request fails with a plain network error, check the key first — OpenAI hides key errors from browsers.</p>
+        <p class="help-inline pe-cloud-disclosure">Optional AI help uses your own API key only when you click <strong>Send via AI</strong>. Context is selection-only by default. If you built a book outline, that heuristic outline is included in the request. Nothing runs in the background, and nothing is applied automatically. Audits and Local Coach stay on your device without a key. A ChatGPT Plus, Claude Pro, Gemini, or Copilot subscription is not an API key.</p>
         <div class="pe-ai-help-setup" data-pe-ai-help-setup>
           <p class="help-inline" style="font-size:var(--pe-font-size-sm);margin:0 0 6px;">AI help is <strong>off</strong> until you add an AI provider API key.</p>
           <button type="button" class="btn-secondary pe-btn" onclick="openAiHelpSetup()">Set up AI help (add API key)</button>
@@ -540,8 +559,8 @@
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <p><strong>Accuracy:</strong> checks are tuned against a labeled test set (precision target 85% or better for what Simple view shows). Tense and viewpoint shifts are hints that ignore dialogue and flashbacks and appear in Simple view only when clearly accidental. <strong>Content notes</strong> (Settings → Safety, off by default) neutrally report strong language and violence; they never change your text or your score.</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.60</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.60</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.61</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.61</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>

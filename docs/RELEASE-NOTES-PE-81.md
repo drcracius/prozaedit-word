@@ -88,6 +88,15 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.61 — Words, honest full checks, chapter range
+
+- Scope counts show **words**. The safety limit is still characters in the background (about 6 characters per word).
+- A full check that hits the limit says it **stopped**. It no longer looks like the whole book was read.
+- Chapters use **From** and **To**, like pages. If no Heading 1, 2, or 3 titles are found, the message is short and offers **Use pages**.
+- Page and chapter numbers cannot go past the document (pages are still an estimate).
+- User guide: [USER-GUIDE.md](./USER-GUIDE.md).
+- Not tried in Word from here.
+
 ## 2.0.0.60 — Word's check accepts the add-in file
 
 - Word's own check rejected one line: the allowed website included a folder name (`/prozaedit-word`). That line is now the site only (`https://drcracius.github.io`).

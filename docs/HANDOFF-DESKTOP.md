@@ -15,7 +15,7 @@ Read this first. It is written for a fresh agent with no chat history. Handoff t
 
 Task-pane add-in for Microsoft Word (Office.js) that gives writers a local-first editorial audit, Coach, and Rewrite, genre-aware (12 profiles), with optional AI help using the user's own API key (Gemini, OpenAI, Claude, OpenRouter). Hosted on GitHub Pages (`https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html`); registered in Word by uploading `manifest.hosted.xml`. No build step, no backend.
 
-## 3. Current state (2.0.0.60)
+## 3. Current state (2.0.0.61)
 
 - Verdict (PE-96): ready for a wider beta, not a public launch. Automated tests are green (`npm test`, wiring, contrast).
 - Welcome tips live under **Help**. **Run** uses a progress ring, names each check, and opens the report on **Fix**. Extra card actions sit under **More**. The old “Continue” banner is off unless Settings → Onboarding asks before long scans.
@@ -51,7 +51,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 508 tests expected, 0 fail
+npm test                          # 511 tests expected, 0 fail
 npm run validate:manifest         # expect "OK: manifest.hosted.xml passes Microsoft production validation."
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"
@@ -62,7 +62,7 @@ Version-sync also requires `docs/WHEN-YOU-RETURN.md` to contain the exact phrase
 
 ## 6. Release and versioning
 
-1. Bump `<Version>` in `manifest.hosted.xml` **and** `manifest.xml`, and `PROZAEDIT_BUILD_VERSION` in `taskpane.js`; update the hard-coded 2.0.0.x mentions (README, `docs/WHEN-YOU-RETURN.md`, `docs/source-of-truth.md`, `docs/QUICK-START.md`, `docs/PRIVACY-AND-DATA-PE.md`, `onboarding-helpers.js`, `tests/pe-84-pane.test.mjs`) and add a section to `RELEASE-NOTES-PE-81.md`.
+1. Bump `<Version>` in `manifest.hosted.xml` **and** `manifest.xml`, and `PROZAEDIT_BUILD_VERSION` in `taskpane.js`; update the hard-coded 2.0.0.x mentions (README, `docs/WHEN-YOU-RETURN.md`, `docs/source-of-truth.md`, `docs/QUICK-START.md`, `docs/PRIVACY-AND-DATA-PE.md`, `docs/USER-GUIDE.md`, `onboarding-helpers.js`, `tests/pe-84-pane.test.mjs`) and add a section to `RELEASE-NOTES-PE-81.md`.
 2. Run the verifiers above.
 3. Merge to `main`; GitHub Pages serves the pane (allow ~2 minutes; hard refresh Ctrl+F5 in Word web).
 4. **Manifest re-upload** (Word -> Insert -> Add-ins -> My Add-ins -> Upload My Add-in -> `manifest.hosted.xml`, use office.com if desktop has no Upload): needed only if Help -> About "Manifest version" is older than the build. Version-only bumps do not change structure, so usually just reopen the pane. The 2.0.0.20 bump (WordApi 1.3) required one re-upload. The hosted `AppDomain` must be `https://drcracius.github.io` with no folder. Word's upload check rejects `https://drcracius.github.io/prozaedit-word`. Keep the ribbon pictures on icon-32.png and icon-64.png. Add provider domains only if one is blocked in real Word.
