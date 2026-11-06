@@ -357,7 +357,8 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .pe-brand-wordmark {
   display: block;
-  max-width: min(100%, 180px);
+  width: 100%;
+  max-width: 180px;
   height: auto;
   margin: 0;
   object-fit: contain;
@@ -374,11 +375,12 @@ body.pe-narrow-pane .btn-tool-icon-label {
 
 .workflow-step {
   position: relative;
-  flex: 1 1 5.5rem;
+  flex: 1 1 4.5rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   font-size: var(--pe-font-size-sm);
   font-weight: 600;
   color: var(--text-muted);
@@ -1984,8 +1986,24 @@ body.pe-simple-mode .workflow-step {
   flex-shrink: 0;
 }
 
+.workflow-step-label {
+  display: block;
+  max-width: 100%;
+  font-size: var(--pe-font-size-2xs);
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .pe-btn-refresh-scope {
   margin-top: 4px;
+}
+
+.pe-refresh-count-label {
+  font-size: var(--pe-font-size-sm);
+  font-weight: 600;
 }
 
 .pe-info-badge .pe-icon {
@@ -2785,6 +2803,8 @@ details.card[open] > .card-summary .card-caret {
   .pe-toolbar { gap: 4px; padding-left: 4px; padding-right: 4px; }
   .pe-op-bar { padding: 6px 4px; }
   .btn-tool-icon-label-keep { font-size: 12px; }
+  .workflow-step { flex: 1 1 40%; }
+  .workflow-step-label { font-size: 11px; }
 }
 
 .pe-overhead-badges {

@@ -49,6 +49,7 @@ test("PE-93: 300k-word fiction doc - index build, timeline and audit-refusal fin
     await run(t, "btnBuildManuscriptContext");
     assert.match(t.status(), /outline ready/i);
     assert.ok(Date.now() - t0 < 20000, "index build < 20 s");
+    t.el("scope").value = "full";
     t0 = Date.now();
     await run(t, "btnScanTimeline");
     assert.match(t.status(), /exceeds character limit|Timeline scan complete/i, "whole-book timeline is refused cleanly or completes");
@@ -90,6 +91,7 @@ for (const [name, genre, btn, re] of [
     const d = bigDoc(name === "index build" ? 9000 : 1500);
     const t = await boot(d, genre);
     try {
+      if (btn === "btnScanTimeline") t.el("scope").value = "full";
       let syncs = 0;
       t.state.syncHook = async () => {
         syncs++;

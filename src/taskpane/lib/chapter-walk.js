@@ -132,7 +132,7 @@
       `Chapters done: ${t.chapters} of ${(chapters || []).length} (about ${t.words.toLocaleString()} words)`,
       `Critical: ${t.critical} · Style: ${t.style}`,
     ];
-    if (t.skipped) lines.push(`${t.skipped} chapter(s) skipped (too long for one pass; use Page range for those).`);
+    if (t.skipped) lines.push(`${t.skipped} chapter(s) skipped (too long for one pass; use Pages for those).`);
     if (t.truncated) lines.push(`${t.truncated} chapter(s) were longer than the limit and only partly checked.`);
     return lines;
   }

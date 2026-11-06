@@ -63,7 +63,7 @@ test("pane: chapter walk audits one chapter per click, merges, resumes after rel
     assert.match(t.el("peChapterWalkProgress").textContent, /Chapter 3 of 4/);
     assert.ok(t.el("cardContainer").children.length > afterOne, "merged cards grow");
     assert.match(t.el("summaryReport").textContent, /Chapter 2 of 4/);
-    assert.equal(t.peval("getScopeMode()"), "full", "user's scope is restored after each chapter");
+    assert.equal(t.peval("getScopeMode()"), "selection", "user's scope is restored after each chapter");
     assert.ok(!t.el("btnRestartChapterWalk").classList.contains("hidden"));
     await t.click("btnRestartChapterWalk");
     await sleep(50);

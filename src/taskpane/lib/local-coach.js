@@ -99,7 +99,7 @@ ProzaEdit.LocalCoach = {
       re: /\b(plot|chapter|structure|arc|midpoint|climax)\b/i,
       tips: [
         "End chapters on unresolved tension; logistics-only endings often flag in the report.",
-        "Audit one chapter at a time (Target → Chosen chapters) to keep long manuscripts manageable (0 tokens).",
+        "Check one chapter at a time (Start → Chapters) to keep long manuscripts manageable (0 tokens).",
       ],
     },
     {

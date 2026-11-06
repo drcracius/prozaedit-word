@@ -120,9 +120,9 @@ test("PE-86: dash rules never propose replacement text and em-dash flag is densi
   if (dense) assert.match(dense.replacementText, /^\(.*\)$/);
 });
 
-test("PE-86: first-screen defaults - scope is Full manuscript, AI-voice check off, no 10px text, no dev copy", () => {
+test("PE-86: first-screen defaults - scope is Selection, AI-voice check off, no 10px text, no dev copy", () => {
   const html = fs.readFileSync(path.join(root, "src/taskpane/taskpane.html"), "utf8");
-  assert.match(html, /<option value="full" selected>/);
+  assert.match(html, /<option value="selection" selected>/);
   assert.doesNotMatch(html, /id="chkAI"[^>]*checked/);
   assert.doesNotMatch(html, /font-size:\s*(?:[0-9]|10|11)px/);
   assert.doesNotMatch(html.match(/id="peSessionTips"[\s\S]*?<\/ul>/)[0], /manifest\.hosted/);

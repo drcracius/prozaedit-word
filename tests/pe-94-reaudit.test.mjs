@@ -58,7 +58,7 @@ test("PE-94: chapter walk x 12 genres x Simple/Advanced completes all chapters, 
         assert.ok(n >= 3, `${g}: merged findings ${n}`);
         const ids = t.peval("currentAuditSuggestions.map((s) => s.id).join('|')").split("|");
         assert.equal(new Set(ids).size, ids.length, "merged ids unique");
-        assert.equal(t.peval("getScopeMode()"), "full");
+        assert.equal(t.peval("getScopeMode()"), "selection");
         assert.deepEqual(t.errors.map((e) => String(e && e.message)), [], g);
       } finally {
         await sleep(50);
@@ -85,7 +85,7 @@ test("PE-94: cancel at every stage of a chapter step leaves position and totals 
       const done1 = t.peval("ProzaEdit.ChapterWalk.doneCount(chapterWalkState)");
       assert.ok(done1 === done0 || done1 === done0 + 1, `stage ${stage}: ${done0}->${done1}`);
       assert.equal(t.peval("isOperationBusy()"), false);
-      assert.equal(t.peval("getScopeMode()"), "full", "scope restored after cancel");
+      assert.equal(t.peval("getScopeMode()"), "selection", "scope restored after cancel");
       const stored = JSON.parse(t.mock.settings.PROZAEDIT_CHAPTER_WALK);
       assert.equal(Object.keys(stored.done).length, done1, "stored matches in-memory");
       while (t.peval("ProzaEdit.ChapterWalk.nextIndex(chapterWalkState, scopeChapterListCache)")) await step(t);
@@ -104,6 +104,7 @@ test("PE-94: 300k-word book - whole-book audit refused, chapter walk steps stay 
   assert.ok(words >= 290000, String(words));
   const t = await boot(d, "Fiction (General)", true);
   try {
+    t.el("scope").value = "full";
     t.click("btnRunAudit");
     await sleep(30);
     if (!t.el("peLongOpWarningBanner").classList.contains("hidden")) t.click("btnLongOpContinue");
@@ -183,14 +184,14 @@ test("copy: retired insider terms are gone from UI, help and live docs; new term
   }
   const html = fs.readFileSync(path.join(root, "src/taskpane/taskpane.html"), "utf8");
   assert.match(html, /Deeper checks/);
-  assert.match(html, /Chosen chapters/);
+  assert.match(html, />Chapters</);
   assert.match(html, /Book outline/);
 });
 
 test("helpers: onboarding session lines are friendly; name nudge accepts accented/hyphenated names; tooltip Escape hides", () => {
   const ns = loadLibs(["src/taskpane/lib/onboarding-helpers.js", "src/taskpane/lib/plain-language-helpers.js"]);
   const lines = ns.Onboarding.formatPriorSessionLines({ lastVisitAt: "2026-01-02T03:04:05.000Z", lastTab: "tab4", scopeMode: "selected-chapters", ranAudit: true });
-  assert.ok(lines.includes("Scope: Chosen chapters"), lines.join("|"));
+  assert.ok(lines.includes("Scope: Chapters"), lines.join("|"));
   assert.ok(!lines[0].includes("T03:04:05"));
   for (const n of ["Élodie", "Zoë Brontë", "Anne-Marie", "McDonald", "O'Neil"]) {
     assert.equal(ns.PlainLanguage.isNameLikeMuteTarget({ targetText: n }), true, n);

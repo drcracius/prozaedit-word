@@ -60,7 +60,7 @@ ProzaEdit.Onboarding = {
     "Simple mode is on — fewer tabs, important issues first. Turn off in Settings → Essentials.",
 
   FULL_MANUSCRIPT_SCOPE_TIP:
-    "For very long documents, use Audit next chapter on Run (one chapter at a time), or choose Chosen chapters or Page range on Start.",
+    "For very long documents, use Audit next chapter on Run (one chapter at a time), or choose Chapters or Pages on Start.",
 
   MANUAL_AUDIT_HELP_COPY:
     "ProzaEdit runs when you click Run — not live underlines while you type.",
@@ -172,7 +172,7 @@ ProzaEdit.Onboarding = {
       lines.push("This was a large scope — runs can take longer on full manuscripts.");
     }
     lines.push(
-      "Next run: try Audit next chapter on Run, Chosen chapters or Page range, and keep the Important filter for a faster first pass."
+      "Next run: try Audit next chapter on Run, Chapters or Pages, and keep the Important filter for a faster first pass."
     );
     return lines.join(" ");
   },
@@ -228,19 +228,19 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.62",
+    version: "2.0.0.63",
     bullet:
-      "Page numbers stay within the document. Heading styles are spelled out. Size limits are shown in words.",
+      "The steps at the top are named. A new document starts on Selection. Page boxes say they are estimates.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },
 
   SCOPE_FRIENDLY: {
     selection: "Text you selected",
-    pages: "Page range",
+    pages: "Pages",
     chapter: "One chapter",
     "chapter-range": "Chapters",
-    "selected-chapters": "Chosen chapters",
+    "selected-chapters": "Chapters",
     full: "Whole document",
   },
 

@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.62";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.63";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -191,7 +191,7 @@ function setupSafeHandlers() {
         reloadChapterScopeFromDocument();
       } else if (scope.value === "pages") {
         refreshScopeCharPreview();
-        refreshDocumentPageBounds();
+        if (!showKnownPageBounds()) refreshDocumentPageBounds();
       } else {
         refreshScopeCharPreview();
       }
@@ -274,7 +274,7 @@ function usePagesScope() {
   syncScopePanels();
   updateWorkflowStatusLine();
   refreshScopeCharPreview();
-  refreshDocumentPageBounds();
+  if (!showKnownPageBounds()) refreshDocumentPageBounds();
   schedulePersistSettings();
 }
 
@@ -325,7 +325,7 @@ function applyPageBounds(bounds) {
   }
   const per = ProzaEdit.ScopeReader?.WORDS_PER_PAGE || 250;
   const pages = Math.max(1, Math.ceil((bounds.words || 0) / per));
-  knownDocumentPageBounds = { empty: false, pages, stoppedEarly: !!bounds.stoppedEarly };
+  knownDocumentPageBounds = { empty: false, pages, words: bounds.words || 0, stoppedEarly: !!bounds.stoppedEarly };
   [from, to].forEach((el) => {
     if (!el) return;
     el.disabled = false;
@@ -340,6 +340,13 @@ function applyPageBounds(bounds) {
       ? "Document is longer than this check's limit. Page numbers above are only the part that can be checked."
       : `About ${pages} page${pages === 1 ? "" : "s"} in this document (estimate).`;
   }
+}
+
+function showKnownPageBounds() {
+  const b = knownDocumentPageBounds;
+  if (!b) return false;
+  applyPageBounds(b.empty ? { empty: true } : { words: b.words || 0, stoppedEarly: !!b.stoppedEarly });
+  return true;
 }
 
 function clampKnownPageInputs() {
@@ -380,6 +387,8 @@ function applyChapterRangeFromInputs() {
 function refreshDocumentPageBounds() {
   if (pageBoundsInFlight) return pageBoundsInFlight;
   if (wordReadBlocked()) return Promise.resolve();
+  const hint = getEl("scopePageBoundHint");
+  if (hint && !knownDocumentPageBounds) hint.textContent = "Counting this document…";
   pageBoundsInFlight = wordRun("page-bounds", async (ctx) => {
     return ProzaEdit.ScopeReader.measureScope(ctx, {
       mode: "full",
@@ -399,20 +408,6 @@ function refreshDocumentPageBounds() {
       pageBoundsInFlight = null;
     });
   return pageBoundsInFlight;
-}
-
-function scheduleDocumentPageBounds() {
-  const run = (triesLeft) => {
-    if (knownDocumentPageBounds && !knownDocumentPageBounds.stoppedEarly) return;
-    if (wordReadBlocked() || chapterListInFlight) {
-      if (triesLeft > 0) setTimeout(() => run(triesLeft - 1), 4000);
-      return;
-    }
-    const hint = getEl("scopePageBoundHint");
-    if (hint && !hint.textContent) hint.textContent = "Counting this document…";
-    refreshDocumentPageBounds();
-  };
-  setTimeout(() => run(2), 1600);
 }
 
 function selectAllChapterChecks(on) {
@@ -692,7 +687,7 @@ function getScopeModeLabel(mode) {
   if (m === "selected-chapters" || m === "chapter" || m === "chapter-range") {
     const n = getSelectedChapterIndicesFromUi().length;
     if (m === "selected-chapters" && n) return `${n} chapter(s) selected`;
-    return "Chosen chapters";
+    return "Chapters";
   }
   if (m === "full") return "Full manuscript";
   return m;
@@ -2024,7 +2019,6 @@ function onProzaEditOfficeReady(info) {
     tryOpenSettingsFromLocationHash();
     updateWorkflowStatusLine();
     updateStyleGuideBlurb();
-    scheduleDocumentPageBounds();
     updateFullManuscriptScopeTip();
     updateWorkflowNextStepHint();
     updateChecksScopeChip();
@@ -2767,7 +2761,7 @@ async function prepareScopeForAudit(retryOpts) {
         }
       }
       if (scope === "selected-chapters" && !getSelectedChapterIndicesFromUi().length) {
-        showPeStatus("Select at least one chapter on Start (checklist under Chosen chapters), or reload the chapter list.", "warn");
+        showPeStatus("Select at least one chapter on Start, or reload the chapter list.", "warn");
         showTab("tab1");
         return false;
       }
@@ -3967,7 +3961,7 @@ async function resetSettingsGroup(groupKey) {
     safety: "Safety",
     onboarding: "Onboarding",
     appearance: "Appearance",
-    audit: "Audit & reports",
+    audit: "Reports",
     privacy: "Privacy & diagnostics",
     dictionary: "Dictionary",
     manuscript: "Book outline",

@@ -14,7 +14,7 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.62</span>)</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.63</span>)</p>
     <p id="peWhatsNewBullet" class="pe-top-banner-body">Run opens the report. Cards keep Go to and Apply up front; other actions are under More. A house rule wins when it names the same phrase as a built-in check.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
@@ -46,7 +46,7 @@
     <div class="pe-top-banner-actions">
       <button type="button" class="btn-secondary" onclick="dismissSimpleModeFirstRunBanner(false)">Got it</button>
       <button type="button" class="btn-linkish" onclick="dismissSimpleModeFirstRunBanner(true)">Don&apos;t show again</button>
-      <button type="button" class="btn-linkish" onclick="openSettingsModal('safety')">Settings → Safety</button>
+      <button type="button" class="btn-linkish" onclick="openSettingsModal('essentials')">Settings → Essentials</button>
     </div>
   </div>
   <div id="pePriorSessionBanner" class="pe-top-banner help-box hidden" role="region" aria-label="Prior session summary">
@@ -59,10 +59,10 @@
     </div>
   </div>
   <ol class="workflow-steps" aria-label="Workflow steps">
-    <li class="workflow-step pe-workflow-step workflow-step-active active" data-workflow-step="1" role="button" tabindex="0" aria-label="Start" onclick="if(!isPeOverlayDialogOpen())showTab('tab1')"><span class="workflow-num">1</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="visually-hidden">Start</span></li>
-    <li class="workflow-step pe-workflow-step" data-workflow-step="2" role="button" tabindex="0" aria-label="Run tab" onclick="if(!isPeOverlayDialogOpen())showTab('tab3')"><span class="workflow-num">2</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="visually-hidden">Run tab</span></li>
-    <li class="workflow-step pe-workflow-step" data-workflow-step="3" role="button" tabindex="0" aria-label="Run" onclick="if(!isPeOverlayDialogOpen())runPrimaryAudit()"><span class="workflow-num">3</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="visually-hidden">Run</span></li>
-    <li class="workflow-step pe-workflow-step" data-workflow-step="4" role="button" tabindex="0" aria-label="Fix" onclick="if(!isPeOverlayDialogOpen())showTab('tab4')"><span class="workflow-num">4</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span class="visually-hidden">Fix</span></li>
+    <li class="workflow-step pe-workflow-step workflow-step-active active" data-workflow-step="1" role="button" tabindex="0" aria-label="Start" onclick="if(!isPeOverlayDialogOpen())showTab('tab1')"><span class="workflow-num">1</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="workflow-step-label">Start</span></li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="2" role="button" tabindex="0" aria-label="Set checks" onclick="if(!isPeOverlayDialogOpen())showTab('tab3')"><span class="workflow-num">2</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="workflow-step-label">Set checks</span></li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="3" role="button" tabindex="0" aria-label="Run" onclick="if(!isPeOverlayDialogOpen())runPrimaryAudit()"><span class="workflow-num">3</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="workflow-step-label">Run</span></li>
+    <li class="workflow-step pe-workflow-step" data-workflow-step="4" role="button" tabindex="0" aria-label="Fix" onclick="if(!isPeOverlayDialogOpen())showTab('tab4')"><span class="workflow-num">4</span><svg class="pe-icon pe-workflow-step-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span class="workflow-step-label">Fix</span></li>
   </ol>
   <p id="peWorkflowNextStep" class="pe-workflow-next-step help-muted hidden" role="status" aria-live="polite">Next step: set scope on Start, then Run.</p>
   <div id="peOverheadBadges" class="pe-overhead-badges" aria-label="Guide and scope">
@@ -73,16 +73,13 @@
     <summary><svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> Tips</summary>
     <p><strong>Local-first:</strong> audit, coach, paraphrase = <strong>0 API tokens</strong>. Partner tools in Word:</p>
     <ul class="help-list">
-      <li><strong>F7 / Editor</strong> — spelling &amp; grammar (Checks → open Editor)</li>
+      <li><strong>F7 / Editor</strong> — spelling and grammar (Run → open Editor)</li>
       <li><strong>Copilot</strong> — Fix → Copy for Copilot → paste in Word chat</li>
       <li><strong>Word Macro Tools</strong> (Paul Beverley; optional) — batch find/replace workflows; not bundled (see <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/WORKFLOWS.md" target="_blank" rel="noopener">WORKFLOWS.md</a>)</li>
     </ul>
     <p class="help-foot">Backups: Version History. Editorial checks are original JS — <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/THIRD-PARTY-ATTRIBUTION.md" target="_blank" rel="noopener">THIRD-PARTY-ATTRIBUTION.md</a>.</p>
     <p id="peDocScopeTrustLine" class="pe-doc-scope-trust-line help-muted" role="note">Dictionary: this Word document · Mute: this document + this browser · Dismiss wording: this browser only (not other PCs or files).</p>
-    <p class="pe-target-callout help-box" style="margin-top:8px;"><strong>Start here:</strong> pick <strong>scope</strong> below, then open <strong>Run</strong> to audit. Profile and style guide are under advanced sections. Toolbar <strong>Settings</strong> holds dictionary, safety, and custom rules.</p>
-    <p class="pe-target-scope-hint help-muted" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;">Scope first — profile &amp; style below or in <strong>Settings</strong></p>
-    <p class="help-inline scope-mode-hint">Choose what Run reads. <strong>Refresh count</strong> shows words.</p>
-    <p id="peGenreStaticHint" class="help-inline">Plot, character, and spoiler checks run only for <strong>Fiction</strong> types with those modules enabled; Academic and Business audits skip them.</p>
+    <p id="peGenreStaticHint" class="help-inline">Plot, character, and spoiler checks run only for <strong>Fiction</strong> types with those modules enabled. Academic and Business types skip them.</p>
   </details>
   <div id="peSessionTips" class="pe-session-tips help-box hidden pe-welcome-banner-host" role="region" aria-label="First session tips">
     <p class="pe-session-tips-lead"><strong>New this session?</strong> Quick workflow:</p>
@@ -157,19 +154,21 @@
   </div>
 
   <div id="tab1" class="tab-content active" role="tabpanel" aria-labelledby="peTabBtn1">
-    <p id="peTargetRecommendedHint" class="pe-target-recommended help-box hidden" style="margin-top:0;" role="status"><strong>Recommended:</strong> <strong>Chosen chapters</strong> scope + report depth <strong>Light</strong> or <strong>Balanced</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">Settings → Audit</button> · <button type="button" class="btn-linkish" onclick="showTab('tab7')">Help: chapter-first</button>).</p>
+    <p id="peTargetRecommendedHint" class="pe-target-recommended help-box hidden" style="margin-top:0;" role="status"><strong>Recommended:</strong> <strong>Chapters</strong> plus report depth <strong>Light</strong> or <strong>Balanced</strong> (<button type="button" class="btn-linkish" onclick="openSettingsModal('audit')">Settings → Reports</button> · <button type="button" class="btn-linkish" onclick="showTab('tab7')">Help: chapter-first</button>).</p>
     <div class="form-group pe-target-scope-primary">
       <label for="scope">Scope</label>
       <select id="scope" data-pe-tip="sel-manuscript-scope" aria-label="Manuscript scope for audit">
-        <option value="selection">Selection</option>
+        <option value="selection" selected>Selection</option>
         <option value="pages">Pages</option>
         <option value="selected-chapters">Chapters</option>
-        <option value="full" selected>Full</option>
+        <option value="full">Full</option>
       </select>
-      <p id="peFullManuscriptScopeTip" class="help-muted pe-full-ms-tip hidden" role="status" aria-live="polite">For very long documents, try <strong>Chosen chapters</strong> or <strong>Page range</strong> (faster on long books). See <button type="button" class="btn-linkish" onclick="showTab('tab7')">Help</button> for the chapter-by-chapter workflow.</p>
+      <p class="help-inline scope-mode-hint">Choose what Run reads. <strong>Count</strong> shows words.</p>
+      <p id="peFullManuscriptScopeTip" class="help-muted pe-full-ms-tip hidden" role="status" aria-live="polite">For a long book, try <strong>Chapters</strong> or <strong>Pages</strong>. See <button type="button" class="btn-linkish" onclick="showTab('tab7')">Help</button> for one chapter at a time.</p>
       <p id="scopeCharPreview" class="scope-char-preview" aria-live="polite">—</p>
       <button type="button" id="btnRefreshScopeCount" class="btn-secondary btn-tool-icon pe-btn-refresh-scope" onclick="refreshScopeCharPreview()" aria-label="Refresh count" data-pe-tip="btn-refresh-scope-count">
         <svg class="pe-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+        <span class="pe-refresh-count-label">Count</span>
       </button>
     </div>
     <div id="scopePagesPanel" class="form-group scope-subpanel hidden">
@@ -177,12 +176,12 @@
       <p id="scopePageBoundHint" class="help-inline" style="margin:0 0 6px;font-size:var(--pe-font-size-sm);"></p>
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
         <div>
-          <label for="scopePageFrom">From page</label>
-          <input type="number" id="scopePageFrom" min="1" value="1" style="width:70px;margin:0;" aria-label="From page">
+          <label for="scopePageFrom">From page (estimate)</label>
+          <input type="number" id="scopePageFrom" min="1" value="1" style="width:70px;margin:0;" aria-label="From page, estimate">
         </div>
         <div>
-          <label for="scopePageTo">To page</label>
-          <input type="number" id="scopePageTo" min="1" value="5" style="width:70px;margin:0;" aria-label="To page">
+          <label for="scopePageTo">To page (estimate)</label>
+          <input type="number" id="scopePageTo" min="1" value="5" style="width:70px;margin:0;" aria-label="To page, estimate">
         </div>
       </div>
     </div>
@@ -214,10 +213,10 @@
       </details>
       <button type="button" class="btn-linkish" onclick="reloadChapterScopeFromDocument()">Reload chapter list from document</button>
     </div>
-    <details class="help-box help-muted pe-mci-target-block" id="peMciTargetBlock" data-simple-hide>
+    <details class="help-box help-muted pe-mci-target-block" id="peMciTargetBlock">
       <summary>Book outline (optional)</summary>
       <p id="peMciStatusTarget" class="pe-mci-status pe-mci-none" aria-live="polite">Book outline not built</p>
-      <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContextTarget" onclick="runBuildFullManuscriptContext(true)">Build book outline</button>
+      <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContext" onclick="runBuildFullManuscriptContext(true)">Build book outline</button>
       <p class="help-inline" style="margin:6px 0 0;font-size:var(--pe-font-size-sm);">Background chunked read for story arc and continuity — stored locally in this document (<span id="peMciStorageHintTarget">—</span>). Chapter-scoped audits use it when fresh.</p>
     </details>
     <div class="form-group pe-target-type-primary">
@@ -340,7 +339,7 @@
     </details>
     <div class="form-group pe-mci-checks-block" id="peMciChecksBlock" data-simple-hide>
       <p id="peMciStatusChecks" class="pe-mci-status pe-mci-none" aria-live="polite">Book outline not built</p>
-      <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContext" onclick="runBuildFullManuscriptContext(true)">Build book outline</button>
+      <p class="help-inline" style="margin:4px 0 0;font-size:var(--pe-font-size-sm);"><button type="button" class="btn-linkish" onclick="showTab('tab1')">Build book outline on Start</button></p>
     </div>
     <details class="help-box pe-chapter-walk" id="peChapterWalk">
       <summary>Long book? Audit one chapter at a time</summary>
@@ -372,7 +371,7 @@
       </details>
       <label class="toggle-row compact" style="margin-top:8px;"><span>Deeper checks (fillers, duplicates, deeper editorial pass)</span><input type="checkbox" data-audit-extended="1" id="auditExtendedChecks"></label>
     <div class="partner-tools" aria-label="Partner tools in Word">
-      <span class="partner-tools-label">After audit, use in Word</span>
+      <span class="partner-tools-label">After Run, use in Word</span>
       <div class="partner-tools-row">
         <button type="button" class="btn-partner" onclick="openWordProofing()">F7 / Editor</button>
         <button type="button" class="btn-partner btn-partner-accent" onclick="copyAuditForCopilotFromAnywhere()">Copy for Copilot</button>
@@ -386,8 +385,7 @@
     <details class="help-box help-muted pe-mci-simple-block hidden" id="peMciSimpleBlock">
       <summary>Book outline (Simple mode)</summary>
       <p id="peMciStatusSimple" class="pe-mci-status pe-mci-none" aria-live="polite">Book outline not built</p>
-      <button type="button" class="btn-secondary pe-btn" onclick="runBuildFullManuscriptContext(true)">Build book outline</button>
-      <p class="help-inline" style="margin:4px 0 0;font-size:var(--pe-font-size-sm);">Also in Settings → Manuscript. May take minutes on long docs; you can keep using Word.</p>
+      <p class="help-inline" style="margin:4px 0 0;font-size:var(--pe-font-size-sm);"><button type="button" class="btn-linkish" onclick="showTab('tab1')">Build book outline on Start</button></p>
     </details>
     <details class="help-box help-muted" style="margin:8px 0;">
       <summary>Long manuscript tools (optional)</summary>
@@ -460,18 +458,17 @@
     <p id="peSimpleModeAuditBanner" class="pe-simple-audit-banner hidden" role="status" aria-live="polite"></p>
     <p id="auditScopeChip" class="pe-scope-chip pe-audit-scope-chip help-muted" aria-live="polite">Scope (read-only): —</p>
     <div class="audit-run-hub audit-run-hub-inline">
-      <p class="help-inline">Run is at the top of the pane.</p>
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary hidden" id="btnAuditPrimary" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run">Run</button>
       <label class="toggle-row compact hidden"><span>Deeper checks</span><input type="checkbox" data-audit-extended="1" id="auditExtended"></label>
       <button type="button" class="btn-linkish" onclick="showTab('tab3')">Configure checks →</button>
     </div>
     <p class="active-checks-hint"></p>
-    <div class="audit-pins">
-      <span class="audit-pins-label">Target (quick)</span>
+    <details class="audit-pins" id="peFixSetup">
+      <summary class="audit-pins-label">Change setup</summary>
       <select id="pinManuscriptType" title="Manuscript type" aria-label="Manuscript type"></select>
       <select id="pinScope" title="Analysis scope" aria-label="Analysis scope"></select>
       <select id="pinCriticPersona" title="Critic persona" aria-label="Critic persona"></select>
-    </div>
+    </details>
     <div id="trafficBar" class="traffic-bar hidden"></div>
     <div id="miniScores" class="mini-scores hidden"></div>
     <details class="pe-report-block help-box help-muted" open>
@@ -558,8 +555,8 @@
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <p><strong>Accuracy:</strong> checks are tuned against a labeled test set (precision target 85% or better for what Simple view shows). Tense and viewpoint shifts are hints that ignore dialogue and flashbacks and appear in Simple view only when clearly accidental. <strong>Content notes</strong> (Settings → Safety, off by default) neutrally report strong language and violence; they never change your text or your score.</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.62</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.62</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.63</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.63</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>
@@ -874,14 +871,14 @@
           <summary>Book outline</summary>
           <p class="help-inline" style="font-size:var(--pe-font-size-sm);margin:4px 0 8px;">Separate from audit scope: a lightweight full-document profile for Coach, Rewrite, and continuity when you audit one chapter.</p>
           <p id="peMciStatusSettings" class="pe-mci-status pe-mci-none" aria-live="polite">Book outline not built</p>
-          <button type="button" class="btn-secondary pe-btn" style="margin-bottom:8px;" onclick="runBuildFullManuscriptContext(true)">Build book outline</button>
+          <p class="help-inline" style="margin:0 0 8px;"><button type="button" class="btn-linkish" onclick="closeSettingsModal(); showTab('tab1');">Build book outline on Start</button></p>
           <p id="peMciStorageHintSettings" class="help-muted" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;">—</p>
           <div class="toggle-row"><span id="autoRefreshManuscriptContext-lbl">Auto-refresh context before audit (when stale)</span><input type="checkbox" id="autoRefreshManuscriptContext" aria-labelledby="autoRefreshManuscriptContext-lbl"></div>
           <p class="help-inline" style="font-size:var(--pe-font-size-sm);margin:4px 0 0;">Off by default — turning on may start a background read before Run. You can cancel from the banner.</p>
           <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="manuscript" style="margin-top:10px;">Reset Manuscript settings</button>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-audit">
-          <summary>Advanced — Audit &amp; reports</summary>
+          <summary>Reports</summary>
           <div class="form-group" style="margin-top:6px;">
             <label for="reportDensity">Report depth</label>
             <select id="reportDensity" title="Light = fewer cards and shorter summary; Dense = maximum detail" aria-describedby="peReportDensityPlainHint">
@@ -903,7 +900,7 @@
             <p style="font-size:var(--pe-font-size-sm);color:var(--text-muted);margin:4px 0 0;">Session chips on Fix still change the live filter. Simple view hides quieter notes until you choose Show them on the report.</p>
           </div>
           <div class="toggle-row"><span id="auditExtendedSettings-lbl">Deeper checks (fillers, duplicates, deeper editorial pass)</span><input type="checkbox" data-audit-extended="1" id="auditExtendedSettings" aria-labelledby="auditExtendedSettings-lbl"></div>
-          <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="audit" style="margin-top:10px;">Reset Audit &amp; reports to defaults</button>
+          <button type="button" class="btn-secondary pe-settings-reset" data-pe-settings-reset="audit" style="margin-top:10px;">Reset Reports to defaults</button>
         </details>
         <details class="pe-settings-group" id="pe-settings-group-privacy">
           <summary>Advanced — Privacy &amp; diagnostics</summary>

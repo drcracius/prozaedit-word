@@ -88,6 +88,15 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.63 — Clearer steps and one place to start
+
+- The four steps show the words Start, Set checks, Run, and Fix. Set checks opens the Run tab. Run starts the check.
+- A new document starts on Selection. A scope you already saved stays as it is.
+- Page boxes say they are estimates. The page count runs when you choose Pages, not when the pane opens.
+- Book outline is built on Start. Run and Settings link there.
+- Fix keeps type, scope, and critic persona under Change setup, closed until you open it.
+- Not tried in Word from here.
+
 ## 2.0.0.62 — Page limits, plain heading names, word-sized messages
 
 - Page numbers are counted soon after the pane opens, then kept inside the document. Pages are still an estimate (about 250 words each).
