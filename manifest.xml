@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xsi:type="TaskPaneApp">
   <Id>d1829e3a-4931-4122-b911-37f22941aa99</Id>
-  <!-- Local sideload only; hosted registration tracks manifest.hosted.xml (2.0.0.57). -->
-  <Version>2.0.0.57</Version>
+  <!-- Local sideload only; hosted registration tracks manifest.hosted.xml (2.0.0.58). -->
+  <Version>2.0.0.58</Version>
   <ProviderName>ProzaEdit Publishing Tools</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="ProzaEdit"/>
@@ -66,9 +66,9 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="ProzaEdit.Icon16" DefaultValue="https://localhost:3000/assets/icon-32.png"/>
+        <bt:Image id="ProzaEdit.Icon16" DefaultValue="https://localhost:3000/assets/icon-16.png"/>
         <bt:Image id="ProzaEdit.Icon32" DefaultValue="https://localhost:3000/assets/icon-32.png"/>
-        <bt:Image id="ProzaEdit.Icon80" DefaultValue="https://localhost:3000/assets/icon-64.png"/>
+        <bt:Image id="ProzaEdit.Icon80" DefaultValue="https://localhost:3000/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="ProzaEdit.TaskpaneUrl" DefaultValue="https://localhost:3000/src/taskpane/taskpane.html"/>

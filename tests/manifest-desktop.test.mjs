@@ -70,6 +70,32 @@ test("hosted manifest uses https only and the GitHub Pages task pane", () => {
   assert.match(xml, /<SourceLocation DefaultValue="https:\/\/drcracius\.github\.io\/prozaedit-word\/src\/taskpane\/taskpane\.html"\/>/);
 });
 
+test("hosted manifest domains have no folder path, and ribbon icons are the sizes Word requires", () => {
+  const { xml } = parse("manifest.hosted.xml");
+  for (const m of xml.matchAll(/<AppDomain>([^<]+)<\/AppDomain>/g)) {
+    const pathName = new URL(m[1]).pathname;
+    assert.ok(pathName === "/" || pathName === "", `domain must not include a folder: ${m[1]}`);
+  }
+  const sizeOf = (file) => {
+    const buf = fs.readFileSync(path.join(root, file));
+    assert.equal(buf.toString("ascii", 12, 16), "IHDR");
+    return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+  };
+  const icon16 = sizeOf("assets/icon-16.png");
+  const icon32 = sizeOf("assets/icon-32.png");
+  const icon64 = sizeOf("assets/icon-64.png");
+  const icon80 = sizeOf("assets/icon-80.png");
+  assert.deepEqual(icon16, { w: 16, h: 16 });
+  assert.deepEqual(icon32, { w: 32, h: 32 });
+  assert.deepEqual(icon64, { w: 64, h: 64 });
+  assert.deepEqual(icon80, { w: 80, h: 80 });
+  assert.match(xml, /id="ProzaEdit\.Icon16"[^>]*icon-16\.png"/);
+  assert.match(xml, /id="ProzaEdit\.Icon32"[^>]*icon-32\.png"/);
+  assert.match(xml, /id="ProzaEdit\.Icon80"[^>]*icon-80\.png"/);
+  assert.match(xml, /<IconUrl DefaultValue="[^"]*icon-32\.png"\/>/);
+  assert.match(xml, /<HighResolutionIconUrl DefaultValue="[^"]*icon-64\.png"\/>/);
+});
+
 test("desktop install script registers a UNC share (never file://) and offers the Developer sideload", () => {
   const ps = fs.readFileSync(path.join(root, "scripts/install/Install-ProzaEdit-GitHub.ps1"), "utf8");
   assert.doesNotMatch(ps, /AbsoluteUri/, "Word's Shared Folder needs a UNC path, not a file:// URI");
