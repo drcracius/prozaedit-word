@@ -1,6 +1,6 @@
 # ProzaEdit engine cleanup — implementation plan
 
-**Status:** done in build **2.0.0.53**. Later builds keep a stray quote inside its own paragraph (**2.0.0.59**) and let Cancel reach the chapter chart.
+**Status:** done in build **2.0.0.53**. Later builds keep a stray quote inside its own paragraph (**2.0.0.60**) and let Cancel reach the chapter chart.
 
 **This file on GitHub is the plan.** https://github.com/drcracius/prozaedit-word/blob/main/docs/ENGINE-CLEANUP-PLAN.md
 

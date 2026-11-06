@@ -70,9 +70,10 @@ test("hosted manifest uses https only and the GitHub Pages task pane", () => {
   assert.match(xml, /<SourceLocation DefaultValue="https:\/\/drcracius\.github\.io\/prozaedit-word\/src\/taskpane\/taskpane\.html"\/>/);
 });
 
-test("hosted manifest matches the file Word already accepts, aside from the version", () => {
+test("hosted manifest uses the site address Word accepts and the pictures from the working file", () => {
   const { xml } = parse("manifest.hosted.xml");
-  assert.match(xml, /<AppDomain>https:\/\/drcracius\.github\.io\/prozaedit-word<\/AppDomain>/);
+  assert.match(xml, /<AppDomain>https:\/\/drcracius\.github\.io<\/AppDomain>/);
+  assert.doesNotMatch(xml, /<AppDomain>https:\/\/drcracius\.github\.io\/prozaedit-word<\/AppDomain>/);
   assert.match(xml, /id="ProzaEdit\.Icon16"[^>]*icon-32\.png"/);
   assert.match(xml, /id="ProzaEdit\.Icon32"[^>]*icon-32\.png"/);
   assert.match(xml, /id="ProzaEdit\.Icon80"[^>]*icon-64\.png"/);

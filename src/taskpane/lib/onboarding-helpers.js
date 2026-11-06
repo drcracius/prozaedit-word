@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.59",
+    version: "2.0.0.60",
     bullet:
-      "The add-in file matches the copy Word already accepted. Download it again from the raw link.",
+      "The add-in file now lists the website without a folder name, which is the line Word was rejecting. Download the raw file again.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },
