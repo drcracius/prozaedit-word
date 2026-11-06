@@ -48,6 +48,10 @@ test("a stray quote does not hide narration after it", () => {
   const curly = P.Audit.blankQuotedSpeech("\u2018don\u2019t stop,\u2019 she walked home.");
   assert.equal(curly.includes("don"), false);
   assert.equal(curly.includes("walked"), true);
+  const soft = P.Audit.blankQuotedSpeech("\"hello\r\"very very\", she walked home.");
+  assert.equal(soft.includes("hello"), true);
+  assert.equal(soft.includes("very"), false);
+  assert.equal(soft.includes("walked"), true);
 });
 
 test("fiction narration checks skip quoted speech and still quote the original wording", () => {

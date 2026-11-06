@@ -88,6 +88,11 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.56 — A quote stops at a line break
+
+- A spoken line is skipped only until the next line break, including a break inside a paragraph. An unmatched quote cannot hide the following lines.
+- Not tried in Word.
+
 ## 2.0.0.55 — Quotes stay in their paragraph
 
 - A spoken line is skipped only when its closing quote is in the same paragraph. One unmatched quote no longer hides later paragraphs, and it no longer makes the check slow.

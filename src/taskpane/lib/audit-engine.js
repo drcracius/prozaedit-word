@@ -346,7 +346,7 @@ ProzaEdit.Audit = {
     };
     for (let i = 0; i < n; i++) {
       const ch = s[i];
-      if (ch === "\n") {
+      if (ch === "\n" || ch === "\r" || ch === "\u000b" || ch === "\u000c" || ch === "\u2028" || ch === "\u2029") {
         mode = "";
         open = -1;
         continue;
