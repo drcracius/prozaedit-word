@@ -88,12 +88,15 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.59 — Add-in file matches the one Word already accepts
+
+- The add-in file is the same as the copy that uploaded two days ago. Only the version number is newer.
+- Download the raw file again: https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml
+- Not tried in Word from here.
+
 ## 2.0.0.58 — Word can accept the add-in file
 
-- The ribbon icons are now the exact sizes Word checks: 16, 32, and 80.
-- The allowed site address no longer includes a folder name, which Word was rejecting.
-- Download the raw file, not the GitHub page: https://github.com/drcracius/prozaedit-word/raw/main/manifest.hosted.xml
-- Not tried in Word.
+- A picture-size and website-address change was tried. Word still rejected the file. That change was undone in 2.0.0.59.
 
 ## 2.0.0.57 — The messages match the Run button
 
