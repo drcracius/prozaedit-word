@@ -3,6 +3,8 @@
 **Live build:** 2.0.0.52.  
 **This plan is for the public add-in only.** No private branch and no copyrighted style manuals.
 
+The engine slices are in [ENGINE-CLEANUP-PLAN.md](./ENGINE-CLEANUP-PLAN.md). Where the two files disagree, that file wins.
+
 ## Aim
 
 One pass over the text should feel like one editor, not a pile of style packs. Prefer a correct, quiet report over a longer one. A new check is allowed only when it catches something the current checks miss, and only from a source whose licence already allows this public add-in.

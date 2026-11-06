@@ -20,6 +20,7 @@ Task-pane add-in for Microsoft Word (Office.js) that gives writers a local-first
 - Verdict (PE-96): ready for a wider beta, not a public launch. Automated tests are green (`npm test`, wiring, contrast).
 - Welcome tips live under **Help**. **Run** uses a progress ring, names each check, and opens the report on **Fix**. Extra card actions sit under **More**. The old “Continue” banner is off unless Settings → Onboarding asks before long scans.
 - Proofreading catches “should of” → “have”. Business text can flag a short Mailchimp jargon list (not for commercial use). See [STYLE-GUIDE-SOURCES.md](./STYLE-GUIDE-SOURCES.md).
+- Next engine work is [ENGINE-CLEANUP-PLAN.md](./ENGINE-CLEANUP-PLAN.md). That file on `main` is the plan. A copy kept only on a PC is not.
 - Biggest unknown: **Apply with Track Changes in real Word** (desktop, web, Mac) has only run against a mock.
 - Also never exercised live: the 4 AI providers (keys, model ids, CORS). Model catalogue last reviewed 2026-11-01.
 - Rule precision measured on 489 labelled passages across 3 corpora (author-written, not a real manuscript), precision >= 0.95.
@@ -174,4 +175,4 @@ Full rationale per decision: roadmap section "Decisions needed from the owner" (
 
 ## 15. Doc index
 
-[README](../README.md) · [WHEN-YOU-RETURN](./WHEN-YOU-RETURN.md) · [source-of-truth](./source-of-truth.md) · [RELEASE-NOTES-PE-81](./RELEASE-NOTES-PE-81.md) · [PRIVACY-AND-DATA-PE](./PRIVACY-AND-DATA-PE.md) · [GENRE-PROFILES](./GENRE-PROFILES.md) · [OWNER-CHECKLIST-2.0.0.26](./OWNER-CHECKLIST-2.0.0.26.md) · [DESKTOP-INSTALL](./DESKTOP-INSTALL.md) · [FINAL-READINESS-PE-96](./FINAL-READINESS-PE-96.md) · [prozaedit-features](./prozaedit-features.md) (older feature reference, predates PE-81).
+[README](../README.md) · [WHEN-YOU-RETURN](./WHEN-YOU-RETURN.md) · [source-of-truth](./source-of-truth.md) · [ENGINE-CLEANUP-PLAN](./ENGINE-CLEANUP-PLAN.md) · [RELEASE-NOTES-PE-81](./RELEASE-NOTES-PE-81.md) · [PRIVACY-AND-DATA-PE](./PRIVACY-AND-DATA-PE.md) · [GENRE-PROFILES](./GENRE-PROFILES.md) · [OWNER-CHECKLIST-2.0.0.26](./OWNER-CHECKLIST-2.0.0.26.md) · [DESKTOP-INSTALL](./DESKTOP-INSTALL.md) · [FINAL-READINESS-PE-96](./FINAL-READINESS-PE-96.md) · [prozaedit-features](./prozaedit-features.md) (older feature reference, predates PE-81).
