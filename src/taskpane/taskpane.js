@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.56";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.57";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -4941,7 +4941,7 @@ function fallbackCopyText(text) {
 
 async function copyFeedbackLetter() {
   if (!lastFeedbackLetter && !currentAuditSuggestions.length) {
-    showPeStatus("Run an audit first.", "warn");
+    showPeStatus("Run first.", "warn");
     return;
   }
   const text =
@@ -5195,7 +5195,7 @@ const geminiGenerateWithQuota = aiGenerateWithQuota;
 
 async function copyAuditForCopilotFromAnywhere() {
   if (!currentAuditSuggestions.length) {
-    showPeStatus("Run an audit first, then copy for Copilot.", "warn");
+    showPeStatus("Run first, then copy for Copilot.", "warn");
     showTab("tab3");
     return;
   }
@@ -5205,7 +5205,7 @@ async function copyAuditForCopilotFromAnywhere() {
 
 async function copyAuditForCopilot() {
   if (!currentAuditSuggestions.length) {
-    showPeStatus("Run an audit first.", "warn");
+    showPeStatus("Run first.", "warn");
     return;
   }
   const text = buildCopilotAuditText();
@@ -5625,7 +5625,7 @@ function runAuditInternalCore(opts) {
   } catch (e) {
     handleFailure(e);
     finish();
-    showPeStatus("Audit could not start. Try again.", "warn");
+    showPeStatus("Run could not start. Try again.", "warn");
     return Promise.resolve(false);
   }
 
@@ -5712,8 +5712,8 @@ function runAuditInternalCore(opts) {
       else if (failed) {
         showPeStatus(
           getRetryController()?.has?.()
-            ? "Audit could not finish. Review the recovery steps above, or use Try again."
-            : "Audit could not finish. Review the recovery steps above.",
+            ? "Run could not finish. Review the recovery steps above, or use Try again."
+            : "Run could not finish. Review the recovery steps above.",
           "warn"
         );
       } else {

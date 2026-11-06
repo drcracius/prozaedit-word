@@ -88,6 +88,12 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.57 — The messages match the Run button
+
+- If a check has not been run yet, the pane says **Run first.**
+- If Run cannot start or cannot finish, the message says **Run**, the same word as the button.
+- Not tried in Word.
+
 ## 2.0.0.56 — A quote stops at a line break
 
 - A spoken line is skipped only until the next line break, including a break inside a paragraph. An unmatched quote cannot hide the following lines.

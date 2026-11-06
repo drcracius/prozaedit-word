@@ -24,7 +24,7 @@ ProzaEdit.ReportDocxExport = {
   downloadAuditReportFile(ext, text, ui) {
     ui = ui || {};
     if (!text) {
-      if (ui.showPeStatus) ui.showPeStatus("Run an audit first.", "warn");
+      if (ui.showPeStatus) ui.showPeStatus("Run first.", "warn");
       return;
     }
     try {
@@ -49,7 +49,7 @@ ProzaEdit.ReportDocxExport = {
   async insertAuditReportInWord(text, deps) {
     deps = deps || {};
     if (!text) {
-      if (deps.showPeStatus) deps.showPeStatus("Run an audit first.", "warn");
+      if (deps.showPeStatus) deps.showPeStatus("Run first.", "warn");
       return;
     }
     if (typeof deps.confirmAsync === "function") {
@@ -83,7 +83,7 @@ ProzaEdit.ReportDocxExport = {
   async exportComprehensiveWordReport(text, deps) {
     deps = deps || {};
     if (!text) {
-      if (deps.showPeStatus) deps.showPeStatus("Run an audit first.", "warn");
+      if (deps.showPeStatus) deps.showPeStatus("Run first.", "warn");
       return;
     }
     try {
@@ -116,7 +116,7 @@ ProzaEdit.ReportDocxExport = {
   exportAuditReportPdfGuide(text, deps) {
     deps = deps || {};
     if (!text) {
-      if (deps.showPeStatus) deps.showPeStatus("Run an audit first.", "warn");
+      if (deps.showPeStatus) deps.showPeStatus("Run first.", "warn");
       return Promise.resolve();
     }
     return this.exportComprehensiveWordReport(text, deps).then(() => {
