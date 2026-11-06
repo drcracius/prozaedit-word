@@ -14,7 +14,7 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.61</span>)</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.62</span>)</p>
     <p id="peWhatsNewBullet" class="pe-top-banner-body">Run opens the report. Cards keep Go to and Apply up front; other actions are under More. A house rule wins when it names the same phrase as a built-in check.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
@@ -341,7 +341,6 @@
     <div class="form-group pe-mci-checks-block" id="peMciChecksBlock" data-simple-hide>
       <p id="peMciStatusChecks" class="pe-mci-status pe-mci-none" aria-live="polite">Book outline not built</p>
       <button type="button" class="btn-secondary pe-btn" id="btnBuildManuscriptContext" onclick="runBuildFullManuscriptContext(true)">Build book outline</button>
-      <p class="help-inline" style="margin:4px 0 0;font-size:var(--pe-font-size-sm);">Same book outline as Start. <button type="button" class="btn-linkish" onclick="showTab('tab1')">Open Start</button></p>
     </div>
     <details class="help-box pe-chapter-walk" id="peChapterWalk">
       <summary>Long book? Audit one chapter at a time</summary>
@@ -392,7 +391,7 @@
     </details>
     <details class="help-box help-muted" style="margin:8px 0;">
       <summary>Long manuscript tools (optional)</summary>
-      <p class="help-inline">Chapter heatmap needs <strong>Heading 1–3</strong> styles on chapter titles.</p>
+      <p class="help-inline">Chapter heatmap needs Word's <strong>Heading 1</strong>, <strong>Heading 2</strong>, or <strong>Heading 3</strong> style on chapter titles.</p>
       <div class="form-group" style="border:none;padding:0;margin-top:6px;">
         <label for="sectionParagraphCount">Paragraphs per section</label>
         <input type="number" id="sectionParagraphCount" min="5" max="150" value="40">
@@ -559,8 +558,8 @@
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <p><strong>Accuracy:</strong> checks are tuned against a labeled test set (precision target 85% or better for what Simple view shows). Tense and viewpoint shifts are hints that ignore dialogue and flashbacks and appear in Simple view only when clearly accidental. <strong>Content notes</strong> (Settings → Safety, off by default) neutrally report strong language and violence; they never change your text or your score.</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.61</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.61</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.62</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.62</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>
@@ -647,7 +646,7 @@
           <li>Backup: Settings → Dictionary → <strong>Copy dictionary JSON</strong>; restore with Import on this or another <code>.docx</code>.</li>
         </ol>
       </details>
-      <p><strong>Long documents:</strong> On Run, <strong>Audit next chapter</strong> goes through a long book one chapter at a time, remembers your place and combines the results (needs Heading 1–3 on chapter titles). You can also prefer <strong>Chosen chapters</strong> or <strong>Page range</strong> on Start. The status bar shows read progress (~paragraphs). <strong>Cancel</strong> stops after the current Word batch; use <strong>Run</strong> again without reloading. If you cancel mid-read, the pane remembers the last paragraph progress for this browser tab only (see status hint on the next run).</p>
+      <p><strong>Long documents:</strong> On Run, <strong>Audit next chapter</strong> goes through a long book one chapter at a time, remembers your place, and combines the results. Chapter titles need Word's <strong>Heading 1</strong>, <strong>Heading 2</strong>, or <strong>Heading 3</strong> style. You can also use <strong>Chapters</strong> or <strong>Pages</strong> on Start. The status bar shows read progress (~paragraphs). <strong>Cancel</strong> stops after the current Word batch; use <strong>Run</strong> again without reloading. If you cancel mid-read, the pane remembers the last paragraph progress for this browser tab only (see status hint on the next run).</p>
       <details class="help-box help-details" id="peHelpGotoTroubleshoot">
         <summary>Go to troubleshooting</summary>
         <ul class="help-list">

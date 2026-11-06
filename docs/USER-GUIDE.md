@@ -1,6 +1,6 @@
 # How to use ProzaEdit
 
-This guide matches build **2.0.0.61**. If Help → About shows an older number, download the add-in file again from the raw link below.
+This guide matches build **2.0.0.62**. If Help → About shows an older number, download the add-in file again from the raw link below.
 
 ## 1. Install
 
@@ -16,7 +16,7 @@ On the desktop app, use `Download-Manifest-From-GitHub.bat`, then `Fix-ProzaEdit
 **Scope** is the part Run reads.
 
 - **Selection** — text you highlighted. If nothing is highlighted, you see 0 words.
-- **Pages** — about **250 words** per page. Word does not give this add-in a real page number, so the count is an estimate. You cannot pick a page past that estimate.
+- **Pages** — about **250 words** per page. Word does not give this add-in a real page number, so the count is an estimate. Soon after the pane opens, it counts the document. You cannot pick a page past that estimate.
 - **Chapters** — set **From chapter** and **To chapter**, like pages. Titles must use Word’s **Heading 1**, **Heading 2**, or **Heading 3** style. A Heading 2 or Heading 3 is its own chapter. If none are found, the pane says so and offers **Use pages**. It does not switch by itself.
 - **Full** — the whole document, up to about **75,000 words**. If the book is longer, the pane says the check **stopped**. It does not pretend to have read the rest.
 

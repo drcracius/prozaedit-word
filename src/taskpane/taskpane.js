@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.61";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.62";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -274,6 +274,7 @@ function usePagesScope() {
   syncScopePanels();
   updateWorkflowStatusLine();
   refreshScopeCharPreview();
+  refreshDocumentPageBounds();
   schedulePersistSettings();
 }
 
@@ -304,12 +305,16 @@ function syncChapterBounds(count) {
   if (n && from && to && parseInt(to.value, 10) < parseInt(from.value, 10)) to.value = from.value;
 }
 
+let knownDocumentPageBounds = null;
+let pageBoundsInFlight = null;
+
 function applyPageBounds(bounds) {
   const hint = getEl("scopePageBoundHint");
   const from = getEl("scopePageFrom");
   const to = getEl("scopePageTo");
   if (!bounds) return;
   if (bounds.empty) {
+    knownDocumentPageBounds = { empty: true, pages: 0, stoppedEarly: false };
     [from, to].forEach((el) => {
       if (!el) return;
       el.disabled = true;
@@ -320,6 +325,7 @@ function applyPageBounds(bounds) {
   }
   const per = ProzaEdit.ScopeReader?.WORDS_PER_PAGE || 250;
   const pages = Math.max(1, Math.ceil((bounds.words || 0) / per));
+  knownDocumentPageBounds = { empty: false, pages, stoppedEarly: !!bounds.stoppedEarly };
   [from, to].forEach((el) => {
     if (!el) return;
     el.disabled = false;
@@ -334,6 +340,20 @@ function applyPageBounds(bounds) {
       ? "Document is longer than this check's limit. Page numbers above are only the part that can be checked."
       : `About ${pages} page${pages === 1 ? "" : "s"} in this document (estimate).`;
   }
+}
+
+function clampKnownPageInputs() {
+  const b = knownDocumentPageBounds;
+  if (!b || b.empty) return;
+  const from = getEl("scopePageFrom");
+  const to = getEl("scopePageTo");
+  [from, to].forEach((el) => {
+    if (!el) return;
+    el.max = String(b.pages);
+    const v = parseInt(el.value, 10);
+    if (v > b.pages) el.value = String(b.pages);
+  });
+  if (from && to && (parseInt(to.value, 10) || 1) < (parseInt(from.value, 10) || 1)) to.value = from.value;
 }
 
 function applyChapterRangeFromInputs() {
@@ -358,8 +378,9 @@ function applyChapterRangeFromInputs() {
 }
 
 function refreshDocumentPageBounds() {
+  if (pageBoundsInFlight) return pageBoundsInFlight;
   if (wordReadBlocked()) return Promise.resolve();
-  return wordRun("page-bounds", async (ctx) => {
+  pageBoundsInFlight = wordRun("page-bounds", async (ctx) => {
     return ProzaEdit.ScopeReader.measureScope(ctx, {
       mode: "full",
       maxChars: ProzaEdit.ScopeReader.getLimit("full"),
@@ -373,7 +394,25 @@ function refreshDocumentPageBounds() {
         empty: !text.trim(),
       });
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => {
+      pageBoundsInFlight = null;
+    });
+  return pageBoundsInFlight;
+}
+
+function scheduleDocumentPageBounds() {
+  const run = (triesLeft) => {
+    if (knownDocumentPageBounds && !knownDocumentPageBounds.stoppedEarly) return;
+    if (wordReadBlocked() || chapterListInFlight) {
+      if (triesLeft > 0) setTimeout(() => run(triesLeft - 1), 4000);
+      return;
+    }
+    const hint = getEl("scopePageBoundHint");
+    if (hint && !hint.textContent) hint.textContent = "Counting this document…";
+    refreshDocumentPageBounds();
+  };
+  setTimeout(() => run(2), 1600);
 }
 
 function selectAllChapterChecks(on) {
@@ -520,10 +559,14 @@ function setupScopeUi() {
     const el = getEl(id);
     if (el && !el.dataset.scopeBound) {
       el.dataset.scopeBound = "1";
+      if (id === "scopePageFrom" || id === "scopePageTo") {
+        el.addEventListener("input", () => clampKnownPageInputs());
+      }
       el.addEventListener("change", () => {
         schedulePersistSettings();
         if (id === "scopeChapterFrom" || id === "scopeChapterTo") applyChapterRangeFromInputs();
         else {
+          clampKnownPageInputs();
           const from = parseInt(getEl("scopePageFrom")?.value, 10) || 1;
           const toEl = getEl("scopePageTo");
           if (toEl && (parseInt(toEl.value, 10) || 1) < from) toEl.value = String(from);
@@ -1981,6 +2024,7 @@ function onProzaEditOfficeReady(info) {
     tryOpenSettingsFromLocationHash();
     updateWorkflowStatusLine();
     updateStyleGuideBlurb();
+    scheduleDocumentPageBounds();
     updateFullManuscriptScopeTip();
     updateWorkflowNextStepHint();
     updateChecksScopeChip();
@@ -2717,7 +2761,7 @@ async function prepareScopeForAudit(retryOpts) {
       if (!scopeChapterListCache.length) {
         await refreshChapterScopeLists();
         if (!scopeChapterListCache.length) {
-          showPeStatus("No chapter list yet. Apply Heading 1–3 to chapter titles, then Reload the chapter list on Start.", "warn");
+          showPeStatus("No chapters found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style. Then reload the chapter list on Start.", "warn");
           showTab("tab1");
           return false;
         }
@@ -2736,7 +2780,7 @@ async function prepareScopeForAudit(retryOpts) {
       return false;
     }
     if (prev?.classList.contains("over-limit")) {
-      showPeStatus("Scope exceeds character limit. Use Audit next chapter (Checks tab) to go chapter by chapter, or narrow pages/chapters.", "warn");
+      showPeStatus("This scope is over the word limit. Use Audit next chapter on Run, or a smaller page or chapter range.", "warn");
       renderChapterWalkPanel(true);
       return false;
     }
@@ -5563,7 +5607,7 @@ function finalizeAudit(result, label, fopts) {
   updateAuditScopeFootnote();
   if (lastAuditHadTruncation) {
     showPeStatus(
-      "Scope hit the character cap — open the Truncated scope card below, or try Chosen chapters / Page range.",
+      "This check stopped at the word limit. See the card below, or use Chapters or Pages for the rest.",
       "warn"
     );
   }
@@ -6416,7 +6460,7 @@ function renderChapterWalkPanel(openIt) {
   const next = list.length ? CW.nextIndex(st, list) : 0;
   const nextCh = list.find((c) => c.index === next);
   if (!list.length) {
-    line.textContent = done ? `${done} chapter(s) audited earlier. Reload the chapter list to continue.` : "Needs Heading 1–3 on chapter titles. Click the button to start.";
+    line.textContent = done ? `${done} chapter(s) audited earlier. Reload the chapter list to continue.` : "Needs Word's Heading 1, Heading 2, or Heading 3 style on chapter titles. Click the button to start.";
   } else if (!next) {
     line.textContent = `${CW.progressLabel(st, list)}. ${CW.summaryLines(st, list).join(" · ")}`;
   } else {
@@ -6877,7 +6921,7 @@ async function scanChapterHeatmap() {
   try {
     longOp = beginLongOperation({ initialStatus: "Building chapter heatmap…" });
     const entries = await wordRun("heatmap", (ctx) => ProzaEdit.ChapterHeatmap.scanDocument(ctx, longOp));
-    if (!entries?.length) throw new Error("No Heading 1–3 chapters found. Apply heading styles first.");
+    if (!entries?.length) throw new Error("No chapters found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.");
     const payload = JSON.stringify(entries.slice(0, 40));
     if (payload.length > 48000) throw new Error("The chapter chart is too large to save. Use fewer chapters.");
     await ProzaEdit.Settings.setAsync(ProzaEdit.Settings.KEYS.CHAPTER_HEATMAP, payload);
@@ -6904,7 +6948,7 @@ async function captureReferenceStyle() {
       sel.load("text");
       await ctx.sync();
       const t = (sel.text || "").trim();
-      if (!t || t.length < 80) throw new Error("Highlight a reference passage (80+ characters).");
+      if (!t || t.length < 80) throw new Error("Highlight a reference passage (at least about 15 words).");
       return t.substring(0, MAX_LOCAL_AUDIT_CHARS);
     });
     const metrics = ProzaEdit.Metrics.analyze(text);

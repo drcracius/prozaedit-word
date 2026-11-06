@@ -55,7 +55,7 @@ test("PE-93: 300k-word fiction doc - index build, timeline and audit-refusal fin
     assert.ok(Date.now() - t0 < 20000, "timeline < 20 s");
     t0 = Date.now();
     await run(t, "btnRunAudit");
-    assert.match(t.status(), /exceeds character limit/i, "whole-book audit is refused, not attempted");
+    assert.match(t.status(), /word limit/i, "whole-book audit is refused, not attempted");
     assert.ok(Date.now() - t0 < 5000);
     assert.ok(HEAP() - h0 < 400, "heap growth < 400 MB");
     assert.deepEqual(t.errors, []);

@@ -107,7 +107,7 @@ test("PE-94: 300k-word book - whole-book audit refused, chapter walk steps stay 
     t.click("btnRunAudit");
     await sleep(30);
     if (!t.el("peLongOpWarningBanner").classList.contains("hidden")) t.click("btnLongOpContinue");
-    await waitFor(() => /exceeds character limit/i.test(t.status()), { timeout: 30000, message: "refusal" });
+    await waitFor(() => /word limit/i.test(t.status()), { timeout: 30000, message: "refusal" });
     assert.ok(t.el("peChapterWalk").open, "refusal opens the chapter panel");
     const t0 = Date.now();
     await step(t);

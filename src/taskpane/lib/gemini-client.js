@@ -61,7 +61,7 @@ ProzaEdit.Gemini = {
     const t = String(text || "");
     const max = Math.max(1000, maxChars || this.MAX_PROMPT_CHARS);
     if (t.length <= max) return t;
-    const marker = `\n[… ${t.length - max} characters omitted from the middle to fit the AI prompt size limit …]\n`;
+    const marker = `\n[… about ${Math.max(1, Math.round((t.length - max) / 6))} words omitted from the middle to fit the AI prompt size limit …]\n`;
     const room = max - marker.length;
     const head = Math.floor(room * 0.4);
     const out = `${t.substring(0, head)}${marker}${t.substring(t.length - (room - head))}`;
@@ -72,7 +72,7 @@ ProzaEdit.Gemini = {
   elideMiddle(text, max, label) {
     const t = String(text || "");
     if (t.length <= max) return t;
-    const marker = `\n[… ${t.length - max} characters omitted from the middle${label ? ` of ${label}` : ""} to fit the AI prompt size limit …]\n`;
+    const marker = `\n[… about ${Math.max(1, Math.round((t.length - max) / 6))} words omitted from the middle${label ? ` of ${label}` : ""} to fit the AI prompt size limit …]\n`;
     if (max <= marker.length + 40) return "";
     const room = max - marker.length;
     const head = Math.ceil(room * 0.55);

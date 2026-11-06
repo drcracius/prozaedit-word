@@ -167,7 +167,7 @@ ProzaEdit.Onboarding = {
     options = options || {};
     const lines = [];
     if (options.hadTruncation) {
-      lines.push("This run hit the scope character cap — see the Truncated scope card above.");
+      lines.push("This run hit the word limit — see the card above that says the check stopped.");
     } else if (ProzaEdit.Onboarding.shouldShowAuditScopeFootnote(options)) {
       lines.push("This was a large scope — runs can take longer on full manuscripts.");
     }
@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.61",
+    version: "2.0.0.62",
     bullet:
-      "Scope now shows words. A full check says when it stops. Chapters use From and To, like pages.",
+      "Page numbers stay within the document. Heading styles are spelled out. Size limits are shown in words.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

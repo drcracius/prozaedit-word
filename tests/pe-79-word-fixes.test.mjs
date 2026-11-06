@@ -349,7 +349,7 @@ test("Gemini budget: instruction, question and the end of the excerpt survive; i
   assert.match(built.text, /What is wrong with the pacing\?/);
   assert.match(built.text, /START-OF-EXCERPT/);
   assert.match(built.text, /END-OF-EXCERPT/, "tail of the excerpt is kept");
-  assert.match(built.text, /characters omitted from the middle/);
+  assert.match(built.text, /words omitted from the middle/);
   assert.equal(built.trimmed[0].id, "index", "index is trimmed first");
   assert.equal(built.trimmed[0].to, 0);
   assert.match(built.note, /book outline left out/);

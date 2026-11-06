@@ -343,7 +343,7 @@ ProzaEdit.ScopeReader = {
     const list = chapters || (await this.listChapters(context));
     const n = parseInt(chapterNum, 10);
     const ch = list.find((c) => c.index === n);
-    if (!ch) throw new Error(`Chapter ${n} not found. Use Heading 1–3 on chapter titles.`);
+    if (!ch) throw new Error(`Chapter ${n} not found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.`);
     const text = await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts, ch.title);
     return { text, label: `Ch. ${n}: ${ch.title}` };
   },
@@ -355,7 +355,7 @@ ProzaEdit.ScopeReader = {
     const b = Math.max(parseInt(fromNum, 10) || 1, parseInt(toNum, 10) || 1);
     const start = list.find((c) => c.index === a);
     const end = list.find((c) => c.index === b);
-    if (!start || !end) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
+    if (!start || !end) throw new Error("Chapter range not found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.");
     const text = await this.textFromParagraphRange(context, start.startPara, end.endPara, opts, start.title);
     return { text, label: `Ch. ${a}–${b}` };
   },
@@ -457,7 +457,7 @@ ProzaEdit.ScopeReader = {
       const list = opts.chapters || (await this.listChapters(context));
       const n = parseInt(opts.chapterSingle, 10) || 1;
       const ch = list.find((c) => c.index === n);
-      if (!ch) throw new Error(`Chapter ${n} not found. Use Heading 1–3 on chapter titles.`);
+      if (!ch) throw new Error(`Chapter ${n} not found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.`);
       start = ch.startPara;
       end = ch.endPara;
       if (!rangeOk(start, end)) throw stale();
@@ -467,7 +467,7 @@ ProzaEdit.ScopeReader = {
       const b = Math.max(parseInt(opts.chapterFrom, 10) || 1, parseInt(opts.chapterTo, 10) || 1);
       const startCh = list.find((c) => c.index === a);
       const endCh = list.find((c) => c.index === b);
-      if (!startCh || !endCh) throw new Error("Chapter range not found. Apply Heading 1–3 styles.");
+      if (!startCh || !endCh) throw new Error("Chapter range not found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.");
       start = startCh.startPara;
       end = endCh.endPara;
       if (!rangeOk(start, end)) throw stale();

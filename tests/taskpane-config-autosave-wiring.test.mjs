@@ -38,7 +38,7 @@ test("collectUiConfig and autosave include batchSectionCount and rewriteMode", (
 
 test("finalizeAudit surfaces truncation in status bar", () => {
   const src = fs.readFileSync(taskpanePath, "utf8");
-  assert.match(src, /sys_trunc[\s\S]*showPeStatus\([\s\S]*character cap/);
+  assert.match(src, /sys_trunc[\s\S]*showPeStatus\([\s\S]*word limit/);
 });
 
 test("onboarding tour and audit footnote DOM ids wired", () => {

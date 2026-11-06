@@ -1,6 +1,6 @@
 # Scope, counts, and wording — audit and implementation plan
 
-**Status:** implemented in **2.0.0.61**. Not tried in real Word.
+**Status:** implemented in **2.0.0.61**, leftover wording and page limits finished in **2.0.0.62**. Not tried in real Word.
 
 **Build this plan was read against:** hosted **2.0.0.60** (`manifest.hosted.xml`, `PROZAEDIT_BUILD_VERSION`). Sources: `src/taskpane/taskpane.js`, `src/taskpane/taskpane.html`, `src/taskpane/lib/scope-reader.js`, `src/taskpane/lib/text-metrics.js`, `src/taskpane/lib/audit-review-helpers.js`, `docs/source-of-truth.md`, `docs/prozaedit-features.md` (that features file is stale at 2.0.0.15 — do not treat it as current behavior).
 

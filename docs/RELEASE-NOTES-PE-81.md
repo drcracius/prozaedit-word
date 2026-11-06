@@ -88,6 +88,14 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.62 — Page limits, plain heading names, word-sized messages
+
+- Page numbers are counted soon after the pane opens, then kept inside the document. Pages are still an estimate (about 250 words each).
+- Help, the chapter chart, and the heatmap name Heading 1, Heading 2, and Heading 3. They no longer say “Heading 1–3.”
+- Messages that writers see use words. The safety limits in the code stay in characters.
+- The extra book-outline sentence on Run is gone. The Build book outline button remains.
+- Not tried in Word from here.
+
 ## 2.0.0.61 — Words, honest full checks, chapter range
 
 - Scope counts show **words**. The safety limit is still characters in the background (about 6 characters per word).

@@ -60,7 +60,7 @@
     "btn-card-rewrite": "Open Rewrite for this finding",
     "btn-card-mute": "Mute this rule on this PC",
     "btn-card-dismiss": "Dismiss this wording on this PC",
-    "btn-refresh-scope-count": "Refresh scope character count",
+    "btn-refresh-scope-count": "Count words in the current scope",
   };
 
   function nativeTitleFor(el) {

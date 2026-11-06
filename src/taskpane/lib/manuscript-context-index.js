@@ -1093,7 +1093,7 @@ ProzaEdit.ManuscriptContextIndex = {
     const stored = index ? this.trimForStorage(index) : null;
     const chars = stored ? this.estimateJsonChars(stored) : 0;
     const where = "own document-settings key; heuristic outline, not AI";
-    if (!chars || chars < 1024) return `~${chars} characters (${where})`;
+    if (!chars || chars < 1024) return `Under 1 KB (${where})`;
     return `~${Math.round(chars / 1024)} KB (${where})`;
   },
 };
