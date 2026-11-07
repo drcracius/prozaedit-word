@@ -1,6 +1,7 @@
 # Agent work plan (what still needs to be built)
 
 **Audience:** coding agent (not the owner).  
+**Current engine/UI path:** [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md) (wins over this file for master-engine work).  
 **Live build when this was written:** **2.0.0.42**.  
 **Shipped in 2.0.0.43:** Phase A (named checks on the progress line and Checks rows), Phase B (cancel keeps finished cards), Phase C (those four docs updated). Phase D is already covered by the quiet-home tour rules.
 **Shipped in 2.0.0.45:** Deep report runs local checks before any AI call. Cancel during those checks does not call AI. Cancel while waiting for AI keeps the local cards. A content-security policy is still not added. Phase F stays ask-first.  
