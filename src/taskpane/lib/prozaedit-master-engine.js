@@ -747,9 +747,11 @@
   };
 
   /**
-   * Extra cards for the live Audit.run path. Mirrors the compiled master
-   * AuditPipeline (word lists + name/echo/tense/rhythm/prefix checks).
-   * Cards are preference and low-confidence so Simple view stays quiet.
+   * Extra cards for live Audit.run. Only the compiled-master checks that
+   * other modules do not already run (POS homophones, tag-adverbs, similar
+   * names, word echoes, prefix spelling). Wordiness/hidden-verb/jargon
+   * phrases stay on the style-guide and bank paths so Run does not scan
+   * the same list twice. Low-confidence so Simple stays quiet.
    */
   Engine.contributeSupplemental = function contributeSupplemental(text, options) {
     options = options || {};
@@ -763,6 +765,8 @@
       const dictionary = options.dictionary || [];
       const cleanNarration = isFiction ? Engine.DialogueImmunity.stripDialogue(srcText) : srcText;
       const taggedTokens = Engine.MicroPOS.tokenizeAndTag(cleanNarration);
+      const jargon = new Set((Engine.LexicalRules.CORPORATE_JARGON || []).map((r) => String(r[0] || "").toLowerCase()));
+      const skipJargon = isFiction || /Business/i.test(String(options.manuscriptType || ""));
       const out = [];
       const push = (f) => {
         if (!f || !f.targetText || f.targetText.length > 255) return;
@@ -779,6 +783,7 @@
         const token = taggedTokens[i];
         const rule = singleWordIndex.get(token.lower);
         if (!rule) continue;
+        if (skipJargon && jargon.has(token.lower)) continue;
         if (rule.guard && !rule.guard(i, taggedTokens)) continue;
         push({
           ruleId: `rule:${token.lower}`,
@@ -790,32 +795,6 @@
           replacementText: rule.replace
         });
       }
-
-      const addPhraseList = (arr, lane, type) => {
-        (arr || []).forEach((row) => {
-          if (out.length >= MAX_CONTRIB_FINDINGS) return;
-          const target = row[0];
-          const replace = row[1];
-          const expl = row[2] || "Prefer a plainer term.";
-          if (!target || !String(target).includes(" ")) return;
-          const hits = Engine.AuditPipeline._findBoundedPhrases(cleanNarration, target);
-          hits.forEach((hit) => {
-            push({
-              ruleId: `phrase:${String(target).replace(/\s+/g, "_")}`,
-              lane,
-              type,
-              confidence: "low",
-              explanation: expl,
-              targetText: hit.match,
-              replacementText: Engine.MutationUtils.alignCase(hit.match, replace)
-            });
-          });
-        });
-      };
-      addPhraseList(Engine.LexicalRules.WORDINESS, "Clarity", "preference");
-      addPhraseList(Engine.LexicalRules.NOMINALIZATIONS, "Clarity", "preference");
-      addPhraseList(Engine.LexicalRules.UNCOMPARABLES, "Clarity", "preference");
-      if (!isFiction) addPhraseList(Engine.LexicalRules.CORPORATE_JARGON, "Clarity", "preference");
 
       if (isFiction && options.mDialogue !== false) {
         const tags = Engine.LexicalRules.TAG_ADVERBS || [];
@@ -837,12 +816,6 @@
             });
           }
         }
-        Engine.Heuristics.scanRhythmMono(cleanNarration).forEach((f) => {
-          push({ ...f, confidence: f.confidence || "low" });
-        });
-        Engine.Heuristics.scanTenseAndPOV(taggedTokens).forEach((f) => {
-          push({ ...f, confidence: f.confidence || "low" });
-        });
       }
 
       if (options.chkProp !== false) {

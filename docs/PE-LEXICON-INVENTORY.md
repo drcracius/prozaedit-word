@@ -1,6 +1,6 @@
 # Lexicon inventory (Phase 1)
 
-Canonical tables live in `src/taskpane/lib/lexical-banks.js`. The compiled master engine hydrates from those tables. OneDrive Gemini dumps were **not** pasted in as scripts.
+Canonical tables live in `src/taskpane/lib/lexical-banks.js`. **Run** uses them via the style-guide pack (with source notes) and the pleonasm/jargon checkers. **Rewrite** uses the same tables (wordiness, hidden verbs, uncomparables, pleonasms). The compiled master engine hydrates from those tables and adds only checks the other modules do not already run. OneDrive Gemini dumps were **not** pasted in as scripts.
 
 | Source | Action |
 |--------|--------|

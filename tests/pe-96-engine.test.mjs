@@ -124,6 +124,7 @@ test("PE-96: local rewrite keeps sentence capitals and never produces ungrammati
   assert.equal(R.run("creative", "He ran suddenly, then stopped."), "He ran suddenly, then stopped.");
   assert.equal(R.run("academic", "Very good results. I think it's really quite fine. It was very very bad."), "Good results. The analysis indicates it is fine. It was bad.");
   assert.equal(R.run("fluency", "In fact, he left. As a matter of fact, she stayed. It is, in fact, true."), "He left. She stayed. It is, true.");
+  assert.equal(R.run("fluency", "We will make a decision. It was very unique."), "We will decide. It was unique.");
   const f = R.run("formal", "It's a lot of money and a lot of cars. The plan was kind of odd. Kind of odd. I get it, I got up.");
   assert.ok(f.includes("a great deal of money"), f);
   assert.ok(f.includes("many cars"), f);

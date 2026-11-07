@@ -12,7 +12,7 @@
 | 1 Lexicon | Done (banks + inventory) | Owner licence call on Wikipedia/EU/proselint |
 | 2 Master in pane | Done (script + `contributeSupplemental`) | Live path does **not** replace `Audit.run` with `AuditPipeline.audit()`; dialogue blanking still uses `blankQuotedSpeech` (safer for stray quotes) |
 | 3 Lanes | Done (chips, `.lane`, coach) | Owner click-through in Word |
-| 4 Heuristics | Done on live Run as extra low-confidence cards: prefixes, tag-adverbs, wordiness, hidden verbs, names, echoes, tense/POV, rhythm | Owner: if Simple still looks quiet on a real book, keep it; extra notes show in Advanced |
+| 4 Heuristics | Live extra pass = unique master checks (POS, tag-adverbs, similar names, echoes, prefixes). Wordiness/hidden verbs stay on the style-guide path (one scan). Rewrite uses the same banks. | Owner: if Simple still looks quiet on a real book, keep it; extra notes show in Advanced |
 | 5 Simpler Run | Done: Simple hides core + fiction check lists (`ids` kept); More checks still has timeline/citations | Owner first-run with a non-technical tester |
 | 6 Delete duplicates | Hydrate from banks only | Files not deleted (`audit-engine.js` still the orchestrator) |
 | 7 Launch | USER-GUIDE lanes note | Owner re-test Word, testers, CSP/diagnostics |

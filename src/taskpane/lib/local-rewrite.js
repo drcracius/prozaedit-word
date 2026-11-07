@@ -10,6 +10,14 @@ ProzaEdit.LocalRewrite = {
     return ProzaEdit.LexicalBanks?.WORDINESS || [];
   },
 
+  get NOMINALIZATIONS() {
+    return ProzaEdit.LexicalBanks?.NOMINALIZATIONS || [];
+  },
+
+  get UNCOMPARABLES() {
+    return ProzaEdit.LexicalBanks?.UNCOMPARABLES || [];
+  },
+
   get INFORMAL_TO_FORMAL() {
     return ProzaEdit.LexicalBanks?.INFORMAL_TO_FORMAL || [];
   },
@@ -47,21 +55,29 @@ ProzaEdit.LocalRewrite = {
     }).replace(/\u0001(\s*)([a-z])/g, (m, sp, ch) => sp + ch.toUpperCase()).replace(/\u0001/g, "");
   },
 
-  _applyPleonasms(text) {
+  _applyBankPairs(text, list) {
     let t = text;
-    const list = ProzaEdit.LexicalBanks?.PLEONASMS || ProzaEdit.Audit?.PLEONASMS || [];
-    list.forEach(([target, replacement]) => {
-      t = this._replaceWord(t, target, replacement);
+    (list || []).forEach((row) => {
+      const find = row && row[0];
+      const raw = row && row[1];
+      if (!find || !raw || String(raw).startsWith("(")) return;
+      const repl = String(raw).split(" / ")[0].trim();
+      if (!repl) return;
+      t = this._replaceWord(t, find, repl);
     });
     return t;
   },
 
+  _applyPleonasms(text) {
+    return this._applyBankPairs(text, ProzaEdit.LexicalBanks?.PLEONASMS || ProzaEdit.Audit?.PLEONASMS || []);
+  },
+
   fluency(text) {
     let t = this._normalize(text);
-    this.WORDINESS.forEach(([a, b]) => {
-      t = this._replaceWord(t, a, b);
-    });
+    t = this._applyBankPairs(t, this.WORDINESS);
+    t = this._applyBankPairs(t, this.NOMINALIZATIONS);
     t = this._applyPleonasms(t);
+    t = this._applyBankPairs(t, this.UNCOMPARABLES);
     t = this._dropPhrase(t, /\b(?:in fact|as a matter of fact),?[ \t]*/gi);
     return t.trim();
   },

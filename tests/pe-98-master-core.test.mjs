@@ -104,13 +104,13 @@ test("contributeSupplemental returns [] on throw and caps huge input", () => {
   assert.ok(extra.length <= 36);
 });
 
-test("live Run uses master wordiness, name-similarity, and echo checks", () => {
+test("live extra pass uses master name-similarity and echo, not a second wordiness scan", () => {
   const pe = loadLibs(["src/taskpane/lib/lexical-banks.js", "src/taskpane/lib/prozaedit-master-engine.js"]);
   const extra = pe.MasterEngine.contributeSupplemental(
     "In order to finish, Marcus met Marcia. Beautiful beautiful lanterns filled the hall.",
     { manuscriptType: "Fiction (General)", chkRep: true, chkProp: true, mDialogue: true }
   );
-  assert.ok(extra.some((f) => String(f.ruleId).startsWith("phrase:in_order_to")));
+  assert.ok(!extra.some((f) => String(f.ruleId).startsWith("phrase:")));
   assert.ok(extra.some((f) => String(f.ruleId).startsWith("prop:collision")));
   assert.ok(extra.some((f) => String(f.ruleId).startsWith("rep:echo")));
   assert.ok(extra.every((f) => f.confidence === "low"));
