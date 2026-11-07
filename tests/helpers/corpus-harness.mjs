@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const LIBS = ["long-operation-controller", "settings-store", "text-metrics", "proper-noun-analyse", "genre-profiles", "lexical-banks", "editor-heuristics", "style-guide-rules", "audit-engine", "genre-checks", "manuscript-overview", "local-coach"];
+const LIBS = ["long-operation-controller", "settings-store", "text-metrics", "proper-noun-analyse", "genre-profiles", "lexical-banks", "prozaedit-master-engine", "editor-heuristics", "style-guide-rules", "audit-engine", "genre-checks", "manuscript-overview", "local-coach"];
 
 export function loadEngine() {
   const store = new Map();

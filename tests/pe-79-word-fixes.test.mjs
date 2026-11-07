@@ -17,6 +17,8 @@ const LIBS = [
   "src/taskpane/lib/scope-reader.js",
   "src/taskpane/lib/manuscript-context-index.js",
   "src/taskpane/lib/genre-profiles.js",
+  "src/taskpane/lib/lexical-banks.js",
+  "src/taskpane/lib/prozaedit-master-engine.js",
   "src/taskpane/lib/audit-engine.js",
   "src/taskpane/lib/ai-safety.js",
   "src/taskpane/lib/ai-providers.js",

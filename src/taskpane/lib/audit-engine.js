@@ -194,8 +194,7 @@ ProzaEdit.Audit = {
     const metrics = ProzaEdit.Metrics.analyze(text);
     this._noteReadingLevel(metrics, ctx, fiction, gp, push, text);
 
-    const maxCards = ProzaEdit.ReportDensity?.maxCards?.(ctx.reportDensity) || 60;
-    const deduped = this._dedupe(suggestions).slice(0, maxCards).map((x) => ({ ...x, confidence: this.confidenceFor(x) }));
+    const deduped = this._finalizeCards(suggestions, ctx);
     const persona = this.PERSONA_WEIGHTS[ctx.criticPersona] || this.PERSONA_WEIGHTS["Average Reader"];
     const criticalCount = deduped.filter((s) => s.type === "confirmed").length;
     const prefCount = deduped.filter((s) => s.type === "preference" && !String(s.ruleId).startsWith("content:")).length;
@@ -203,8 +202,11 @@ ProzaEdit.Audit = {
     if (score < 5) score = 5;
     score = Math.round(score * 10) / 10;
     const traffic = ProzaEdit.Metrics.trafficLight(score);
+    const summary = ProzaEdit.MasterEngine?.Lanes?.summarize
+      ? ProzaEdit.MasterEngine.Lanes.summarize(deduped, criticalCount, prefCount)
+      : { total: deduped.length, critical: criticalCount, style: prefCount, byLane: {} };
 
-    return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext, genre };
+    return { suggestions: deduped, metrics, score, traffic, criticalCount, prefCount, manuscriptContext, genre, summary };
   },
 
   /**
@@ -252,14 +254,16 @@ ProzaEdit.Audit = {
     const finish = (extra) => {
       const metrics = ProzaEdit.Metrics.analyze(text);
       this._noteReadingLevel(metrics, ctx, fiction, gp, push, text);
-      const maxCards = ProzaEdit.ReportDensity?.maxCards?.(ctx.reportDensity) || 60;
-      const deduped = this._dedupe(suggestions).slice(0, maxCards).map((x) => ({ ...x, confidence: this.confidenceFor(x) }));
+      const deduped = this._finalizeCards(suggestions, ctx);
       const persona = this.PERSONA_WEIGHTS[ctx.criticPersona] || this.PERSONA_WEIGHTS["Average Reader"];
       const criticalCount = deduped.filter((s) => s.type === "confirmed").length;
       const prefCount = deduped.filter((s) => s.type === "preference" && !String(s.ruleId).startsWith("content:")).length;
       let score = 10 - criticalCount * persona.c - prefCount * persona.p;
       if (score < 5) score = 5;
       score = Math.round(score * 10) / 10;
+      const summary = ProzaEdit.MasterEngine?.Lanes?.summarize
+        ? ProzaEdit.MasterEngine.Lanes.summarize(deduped, criticalCount, prefCount)
+        : { total: deduped.length, critical: criticalCount, style: prefCount, byLane: {} };
       return {
         suggestions: deduped,
         metrics,
@@ -269,6 +273,7 @@ ProzaEdit.Audit = {
         prefCount,
         manuscriptContext,
         genre,
+        summary,
         ...(extra || {}),
       };
     };
@@ -411,10 +416,15 @@ ProzaEdit.Audit = {
     if (ctx.fkLock) add("fkLock", "Reading level", () => this._fkLockFlag(text, push, ctx));
     if (fiction && ctx.mPacing) add("sensory", "Sensory detail", () => this._sensoryWeakSpot(text, push));
     if (!fiction && gp && ctx.chkSpell) add("nonfiction", "Clarity", () => this._nonfictionClarity(text, push, ctx, gp));
+    if (ProzaEdit.MasterEngine && ProzaEdit.MasterEngine.contributeSupplemental) {
+      add("masterCore", "Phrase and grammar", () => {
+        ProzaEdit.MasterEngine.contributeSupplemental(text, ctx).forEach(push);
+      });
+    }
     return steps;
   },
 
-  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "edit:num:", "edit:hyphen:", "sg:writegood:", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
+  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "edit:num:", "edit:hyphen:", "edit:prefix", "sg:writegood:", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "craft:tag_adverb", "craft:rhythm", "rule:", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
 
   /** high = objective (typo-class); medium = style judgment; low = noisy heuristic (hidden in Simple view by default). */
   confidenceFor(item) {
@@ -422,6 +432,17 @@ ProzaEdit.Audit = {
     const id = String(item.ruleId || "");
     if (this.LOW_CONFIDENCE_PREFIXES.some((p) => id.startsWith(p))) return "low";
     return item.type === "confirmed" ? "high" : "medium";
+  },
+
+  _finalizeCards(suggestions, ctx) {
+    const maxCards = ProzaEdit.ReportDensity?.maxCards?.(ctx && ctx.reportDensity) || 60;
+    return this._dedupe(suggestions).slice(0, maxCards).map((x) => {
+      const confidence = this.confidenceFor(x);
+      const lane = ProzaEdit.MasterEngine?.Lanes?.forRuleId
+        ? ProzaEdit.MasterEngine.Lanes.forRuleId(x.ruleId, x)
+        : x.lane || "Clarity";
+      return { ...x, confidence, lane };
+    });
   },
 
   /** Same target + type collapses to one card; the highest-confidence rule wins. A house rule on that phrase wins over a built-in, even across types. */
