@@ -15,9 +15,9 @@ Read this first. It is written for a fresh agent with no chat history. Handoff t
 
 Task-pane add-in for Microsoft Word (Office.js) that gives writers a local-first editorial audit, Coach, and Rewrite, genre-aware (12 profiles), with optional AI help using the user's own API key (Gemini, OpenAI, Claude, OpenRouter). Hosted on GitHub Pages (`https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html`); registered in Word by uploading `manifest.hosted.xml`. No build step, no backend.
 
-## 3. Current state (2.0.0.65)
+## 3. Current state (2.0.0.66)
 
-- **Restore point:** tag `v2.0.0.65` / `pe-97-restore-pre-master-engine`, branch `pre-master-engine-v4`. Master engine **reference only** in `docs/ProzaEdit - Comprehensive Master Engine & Lexical Suite.js`; integration plan in `docs/ProzaEdit-Major Style and Lexical Update.md`. Live pane still uses `audit-engine.js` until that phase ships.
+- **Engine:** `src/taskpane/lib/prozaedit-master-engine.js` is loaded (dialogue immunity, Micro-POS, lanes, extra phrase/grammar). `audit-engine.js` still orchestrates genre/plot/spell/AI-voice. Pre-engine restore remains tag `v2.0.0.65`. Roadmap: [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md). Do not follow the big-bang deletes in `docs/ProzaEdit-Major Style and Lexical Update.md`.
 - Verdict (PE-96): ready for a wider beta, not a public launch. Automated tests are green (`npm test`, wiring, contrast).
 - Welcome tips live under **Help**. **Run** uses a progress ring, names each check, and opens the report on **Fix**. Extra card actions sit under **More**. The old “Continue” banner is off unless Settings → Onboarding asks before long scans.
 - Proofreading catches “should of” → “have”. Business text uses one original jargon list. See [STYLE-GUIDE-SOURCES.md](./STYLE-GUIDE-SOURCES.md).
@@ -52,7 +52,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 515 tests expected, 0 fail
+npm test                          # 523 tests expected, 0 fail
 npm run validate:manifest         # expect "OK: manifest.hosted.xml passes Microsoft production validation."
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"
@@ -171,10 +171,12 @@ Full rationale per decision: roadmap section "Decisions needed from the owner" (
 
 ## 14. Next steps (ranked, from PE-93/PE-96)
 
+Follow [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md): Phase 0 (owner Word proof) then Phase 1 (licensed banks from the compiled master) then Phase 2 (promote master `.js` into `lib/`).
+
 1. Owner runs checklist items for Track Changes and real keys. If tracked Apply misbehaves, fix before anything else.
 2. Run an audit on one real manuscript, collect false positives, tune rules.
 3. CSP only after a real-Word trial. It can blank the pane, so it stays off. 4. The error-report worker now has an allow-list and a rate limit; do not deploy it until crash reports are wanted online. GitHub Actions are already pinned. 5. Narrow-pane styles are in the CSS; looking at a real 320 px pane is still an owner check. 6. Noisy Advanced rules stay, and Simple view already hides them. Non-fiction checks and the combined AI test already shipped.
 
 ## 15. Doc index
 
-[README](../README.md) · [WHEN-YOU-RETURN](./WHEN-YOU-RETURN.md) · [source-of-truth](./source-of-truth.md) · [ENGINE-CLEANUP-PLAN](./ENGINE-CLEANUP-PLAN.md) · [RELEASE-NOTES-PE-81](./RELEASE-NOTES-PE-81.md) · [PRIVACY-AND-DATA-PE](./PRIVACY-AND-DATA-PE.md) · [GENRE-PROFILES](./GENRE-PROFILES.md) · [OWNER-CHECKLIST-2.0.0.26](./OWNER-CHECKLIST-2.0.0.26.md) · [DESKTOP-INSTALL](./DESKTOP-INSTALL.md) · [FINAL-READINESS-PE-96](./FINAL-READINESS-PE-96.md) · [prozaedit-features](./prozaedit-features.md) (older feature reference, predates PE-81).
+[README](../README.md) · [WHEN-YOU-RETURN](./WHEN-YOU-RETURN.md) · [source-of-truth](./source-of-truth.md) · [PE-ROADMAP-MASTER](./PE-ROADMAP-MASTER.md) · [ENGINE-CLEANUP-PLAN](./ENGINE-CLEANUP-PLAN.md) · [RELEASE-NOTES-PE-81](./RELEASE-NOTES-PE-81.md) · [PRIVACY-AND-DATA-PE](./PRIVACY-AND-DATA-PE.md) · [GENRE-PROFILES](./GENRE-PROFILES.md) · [OWNER-CHECKLIST-2.0.0.26](./OWNER-CHECKLIST-2.0.0.26.md) · [DESKTOP-INSTALL](./DESKTOP-INSTALL.md) · [FINAL-READINESS-PE-96](./FINAL-READINESS-PE-96.md) · [prozaedit-features](./prozaedit-features.md) (older feature reference, predates PE-81).

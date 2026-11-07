@@ -176,6 +176,7 @@ test("wiring: Content notes toggle is in the page, persisted, reset-able and pas
   const prefs = fs.readFileSync(path.join(root, "src/taskpane/lib/ui-prefs-helpers.js"), "utf8");
   assert.match(html, /id="contentNotes"/);
   assert.ok(html.indexOf("lib/genre-checks.js") > 0 && html.indexOf("lib/genre-checks.js") < html.indexOf("lib/audit-engine.js"));
+  assert.ok(html.indexOf("lib/prozaedit-master-engine.js") > 0 && html.indexOf("lib/prozaedit-master-engine.js") < html.indexOf("lib/audit-engine.js"));
   assert.match(js, /contentNotes: isChecked\("contentNotes", false\)/);
   assert.match(js, /setC\("contentNotes"/);
   assert.match(prefs, /contentNotes: false/);

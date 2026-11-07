@@ -1,6 +1,6 @@
 # How to use ProzaEdit
 
-This guide matches build **2.0.0.65**. If Help → About shows an older number, the live copy has not been updated yet.
+This guide matches build **2.0.0.66**. If Help → About shows an older number, the live copy has not been updated yet.
 
 ## 1. Install
 

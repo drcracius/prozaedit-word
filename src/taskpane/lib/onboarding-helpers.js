@@ -228,9 +228,9 @@ ProzaEdit.Onboarding = {
     "Dark pane is for long audits; switch to Light or Match system in Settings → Essentials if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.65",
+    version: "2.0.0.66",
     bullet:
-      "Restore point before the planned master engine. Replace list, page UX, and plainer labels from 2.0.0.64 are included.",
+      "Your compiled master engine now runs inside the pane: phrase/grammar core, four filter lanes, and extra licensed wording lists. Timeline and citations stay separate scans.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

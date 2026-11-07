@@ -2,13 +2,13 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Build 2.0.0.65** is the working copy. It is not the copy Word opens until it is published. **515** tests. Owner Phase 1 (**PE-47**) open. Word Desktop install: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
+**Build 2.0.0.66** is the working copy. It is not the copy Word opens until it is published. **523** tests. Owner Phase 1 (**PE-47**) open. Word Desktop install: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
 
 **Next:** re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
 
 **After install:** [PHASE-1-QUICKSTART.md](./PHASE-1-QUICKSTART.md) → [FULL-TEST-CHECKLIST-WORD-WEB.md](./FULL-TEST-CHECKLIST-WORD-WEB.md) · [FINAL-MILE-PLAN-WEB.md](./FINAL-MILE-PLAN-WEB.md) · [FINAL-AUDIT-PE-49.md](./FINAL-AUDIT-PE-49.md).
 
-Implementation roadmap: `docs/prozaedit-implementation-plan-audited.md`
+Product roadmap (engine + UI to “best PE”): [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md). Older implementation notes: `docs/prozaedit-implementation-plan-audited.md`.
 
 ## Step 6 — Install ProzaEdit from GitHub (one time)
 
@@ -52,7 +52,7 @@ Send them:
 
 ## Version alignment (authoritative)
 
-- **Hosted beta:** `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` must match (currently **2.0.0.65**).
+- **Hosted beta:** `manifest.hosted.xml` `<Version>` and `PROZAEDIT_BUILD_VERSION` in `src/taskpane/taskpane.js` must match (currently **2.0.0.66**).
 - **Local dev:** `manifest.xml` (local sideload) now tracks the same version as `manifest.hosted.xml` (tests enforce it).
 
 ## Install helpers on GitHub

@@ -96,6 +96,12 @@ ProzaEdit.LocalCoach = {
       ],
     },
     {
+      re: /\b(audit|report|finding|findings|issues|cards|how many|what did you find|summary)\b/i,
+      tips: [
+        "Run a report on Fix, then ask again — Local Coach can summarise the last scan by lane (Correctness, Clarity, Consistency, Craft).",
+      ],
+    },
+    {
       re: /\b(plot|chapter|structure|arc|midpoint|climax)\b/i,
       tips: [
         "End chapters on unresolved tension; logistics-only endings often flag in the report.",
@@ -162,10 +168,24 @@ ProzaEdit.LocalCoach = {
     return lines.join("\n");
   },
 
+  formatLaneSummary(summary) {
+    const by = summary && summary.byLane;
+    if (!by) return "";
+    const parts = ["Correctness", "Clarity", "Consistency", "Craft"]
+      .map((lane) => (by[lane] ? `${by[lane]} ${lane}` : null))
+      .filter(Boolean);
+    if (!parts.length) return "The last report found no issues in the four lanes.";
+    return `The last report found ${parts.join(", ")} issue${summary.total === 1 ? "" : "s"} in this passage.`;
+  },
+
   answer(question, profileText, ctx) {
     const q = String(question || "").trim();
     const lines = ["**ProzaEdit Local Coach**", ""];
     if (profileText) lines.push(profileText, "");
+    const laneLine = this.formatLaneSummary(ctx && ctx.lastAuditSummary);
+    if (laneLine && /\b(audit|report|finding|findings|issues|cards|how many|what did you find|summary|lane)\b/i.test(q)) {
+      lines.push(`• ${laneLine}`, "");
+    }
     for (const block of this.INTENT_TIPS) {
       if (block.re.test(q)) {
         block.tips.forEach((t) => lines.push(`• ${t}`));

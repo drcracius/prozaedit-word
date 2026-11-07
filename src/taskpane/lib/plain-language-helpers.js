@@ -49,6 +49,10 @@ ProzaEdit.PlainLanguage = {
     if (key === "confirmed") return simpleMode ? "Important" : "Critical";
     if (key === "preference") return "Style";
     if (key === "styleguide") return "Style guide";
+    if (key === "lane:Correctness") return "Correctness";
+    if (key === "lane:Clarity") return "Clarity";
+    if (key === "lane:Consistency") return "Consistency";
+    if (key === "lane:Craft") return "Craft";
     return "All";
   },
 

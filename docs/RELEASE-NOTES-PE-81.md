@@ -88,6 +88,16 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.66 — Master engine in the pane (Phases 1–6 of the product roadmap)
+
+- Loads `prozaedit-master-engine.js` (your compiled v4 core): dialogue-safe scanning, Micro-POS, four lanes, extra phrase/grammar.
+- Live `audit-engine.js` still runs genre, plot, spell, AI-voice, house rules, MCI names. No legacy files deleted.
+- Fix tab filters: All, Correctness, Clarity, Consistency, Craft (Critical / Style / Style guide remain).
+- Lexical banks gained licensed extras; Wikipedia/EU/proselint dumps stayed out. See [PE-LEXICON-INVENTORY.md](./PE-LEXICON-INVENTORY.md).
+- Local Coach can summarise the last report by lane.
+- Run copy: extra scans sit under More checks. Checkbox ids kept for the tour.
+- Not tried in Word from here. Pre-engine rollback: tag `v2.0.0.65`.
+
 ## 2.0.0.65 — Restore point before master engine (planning docs only)
 
 - Ships 2.0.0.64 pane work: replace list, desktop page layout where Word allows it, page-count cancel, plainer labels, Essentials theme link.

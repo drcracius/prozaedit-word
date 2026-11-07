@@ -14,7 +14,7 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.65</span>)</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.66</span>)</p>
     <p id="peWhatsNewBullet" class="pe-top-banner-body">Run opens the report. Cards keep Go to and Apply up front; other actions are under More. A house rule wins when it names the same phrase as a built-in check.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
@@ -332,8 +332,8 @@
       <summary>First time here</summary>
       <ol class="help-list pe-first-audit-steps">
         <li>Set scope on <strong>Start</strong></li>
-        <li>Enable <strong>1–2 checks</strong> below (not every module)</li>
-        <li><strong>Run</strong> (toolbar or button below)</li>
+        <li>Genre and language on <strong>Start</strong> pick which local checks run</li>
+        <li><strong>Run</strong> (toolbar or button below). Extra scans (timeline, citations) are under More checks</li>
         <li>Fix the red cards first; use Dictionary for real names</li>
       </ol>
       <p class="help-inline" style="margin:6px 0 0;font-size:var(--pe-font-size-sm);">Step-by-step guide: <a href="https://github.com/drcracius/prozaedit-word/blob/main/docs/PHASE-1-QUICKSTART.md" target="_blank" rel="noopener">PHASE-1-QUICKSTART.md</a></p>
@@ -354,7 +354,7 @@
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run">Run</button>
       <p id="peChecksRunAuditTagline" class="pe-checks-run-tagline help-muted">ProzaEdit checks when you click Run — it does not underline while you type.</p>
       <p id="peChecksReportDepthPlainHint" class="pe-checks-depth-plain help-muted hidden" aria-live="polite"></p>
-      <p id="activeChecksHint" class="active-checks-hint">Turn on checks below, then Run.</p>
+      <p id="activeChecksHint" class="active-checks-hint">Run a report. Optional scans (timeline, citations, fiction modules) sit under More checks.</p>
     </div>
     <h2 class="pe-section-title">What to check</h2>
     <div class="form-group form-group-flush">
@@ -418,7 +418,7 @@
       <p class="help-inline">Fiction checks run only when the manuscript type is fiction.</p>
     </div>
     <details class="help-box help-muted pe-citation-block" id="peCitationPanel">
-      <summary>Citation check (optional)</summary>
+      <summary>Also scan: citation check (optional)</summary>
       <p class="help-inline" style="margin:4px 0 8px;font-size:var(--pe-font-size-sm);">Looks for common citation patterns in the scope on Start. It is a helper, not a Chicago, APA, or Bluebook certificate. Turn it on below.</p>
       <div class="form-group form-group-flush">
         <div class="toggle-row"><span id="chkCitationScan-lbl">Enable citation pattern scan (opt-in)</span><input type="checkbox" id="chkCitationScan" aria-labelledby="chkCitationScan-lbl"></div>
@@ -479,10 +479,14 @@
     <p id="peAuditSeverityLegend" class="pe-severity-legend pe-audit-severity-legend help-muted" aria-label="Severity color legend"></p>
     <div class="audit-toolbar">
       <div class="filter-chips" role="group" aria-label="Filter findings">
+        <button type="button" class="chip chip-active" data-audit-filter="all" onclick="setAuditCardFilter('all')">All</button>
+        <button type="button" class="chip" data-audit-filter="lane:Correctness" onclick="setAuditCardFilter('lane:Correctness')">Correctness</button>
+        <button type="button" class="chip" data-audit-filter="lane:Clarity" onclick="setAuditCardFilter('lane:Clarity')">Clarity</button>
+        <button type="button" class="chip" data-audit-filter="lane:Consistency" onclick="setAuditCardFilter('lane:Consistency')">Consistency</button>
+        <button type="button" class="chip" data-audit-filter="lane:Craft" onclick="setAuditCardFilter('lane:Craft')">Craft</button>
         <button type="button" class="chip" data-audit-filter="confirmed" onclick="setAuditCardFilter('confirmed')">Critical</button>
         <button type="button" class="chip" data-audit-filter="preference" onclick="setAuditCardFilter('preference')">Style</button>
         <button type="button" class="chip" data-audit-filter="styleguide" onclick="setAuditCardFilter('styleguide')">Style guide</button>
-        <button type="button" class="chip chip-active" data-audit-filter="all" onclick="setAuditCardFilter('all')">All</button>
       </div>
       <div class="filter-chips" role="group" aria-label="Sort findings">
         <button type="button" class="chip chip-sort chip-active" data-audit-sort="priority" onclick="setAuditCardSort('priority')">Priority</button>
@@ -493,7 +497,7 @@
     </div>
     <p id="auditReportDepthHint" class="audit-report-depth-hint help-muted" style="font-size:var(--pe-font-size-sm);margin:4px 0 8px;" aria-live="polite">Report depth: Balanced (change in Settings)</p>
     <p id="auditDefaultFilterHint" class="audit-default-filter-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;">Default filter: All (change in Settings)</p>
-    <p id="peAuditFilterLanesHint" class="pe-audit-filter-lanes-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;"><strong>Filter lanes:</strong> Pick one chip (Critical, Style, Style guide) to work one category at a time — not a full “run every report” pass.</p>
+    <p id="peAuditFilterLanesHint" class="pe-audit-filter-lanes-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;"><strong>Filter lanes:</strong> Correctness, Clarity, Consistency, and Craft group cards. Critical / Style / Style guide still work.</p>
     <p id="peReviewModeAuditHint" class="pe-review-mode-audit-hint help-muted hidden" style="font-size:var(--pe-font-size-sm);margin:0 0 8px;" aria-live="polite"></p>
     <p id="peAuditScopeFootnote" class="pe-audit-scope-footnote help-muted hidden" role="status" aria-live="polite"></p>
     <details class="help-box help-muted audit-share">
@@ -556,8 +560,8 @@
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <p><strong>Accuracy:</strong> checks are tuned against a labeled test set (precision target 85% or better for what Simple view shows). Tense and viewpoint shifts are hints that ignore dialogue and flashbacks and appear in Simple view only when clearly accidental. <strong>Content notes</strong> (Settings → Safety, off by default) neutrally report strong language and violence; they never change your text or your score.</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.65</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.65</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.66</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.66</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>
@@ -904,6 +908,10 @@
             <label for="settingsDefaultAuditFilter">Default audit filter</label>
             <select id="settingsDefaultAuditFilter" title="Starting filter when you open Fix. Simple view still hides quieter notes until you choose Show them.">
               <option value="all">All</option>
+              <option value="lane:Correctness">Correctness</option>
+              <option value="lane:Clarity">Clarity</option>
+              <option value="lane:Consistency">Consistency</option>
+              <option value="lane:Craft">Craft</option>
               <option value="confirmed">Critical</option>
               <option value="preference">Style</option>
               <option value="styleguide">Style guide</option>
@@ -1016,6 +1024,7 @@
   <script src="lib/proper-noun-analyse.js"></script>
   <script src="lib/genre-profiles.js"></script>
   <script src="lib/lexical-banks.js"></script>
+  <script src="lib/prozaedit-master-engine.js"></script>
   <script src="lib/editor-heuristics.js"></script>
   <script src="lib/custom-style-guide.js"></script>
   <script src="lib/style-guide-rules.js"></script>

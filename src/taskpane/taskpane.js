@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.65";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.66";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1301,7 +1301,17 @@ const AUDIT_FILTER_LABELS = {
   confirmed: "Critical",
   preference: "Style",
   styleguide: "Style guide",
+  "lane:Correctness": "Correctness",
+  "lane:Clarity": "Clarity",
+  "lane:Consistency": "Consistency",
+  "lane:Craft": "Craft",
 };
+
+const AUDIT_FILTER_MODES = Object.keys(AUDIT_FILTER_LABELS);
+
+function isAuditFilterMode(mode) {
+  return AUDIT_FILTER_MODES.includes(String(mode || ""));
+}
 
 function auditFilterDisplayLabel(mode) {
   const key = String(mode || "all");
@@ -2427,7 +2437,7 @@ function applyUiConfig(p) {
     const mode = String(p.rewriteMode);
     setV("rewriteMode", ["fluency", "formal", "creative", "academic"].includes(mode) ? mode : "fluency");
   }
-  if (p.auditCardFilter && ["all", "confirmed", "preference", "styleguide"].includes(p.auditCardFilter)) {
+  if (p.auditCardFilter && isAuditFilterMode(p.auditCardFilter)) {
     auditCardFilter = p.auditCardFilter;
     updateAuditFilterChips();
   } else if (p.simpleMode) {
@@ -3368,7 +3378,7 @@ function updateAuditDefaultFilterHint() {
 
 function syncSettingsDefaultAuditFilterSelect() {
   const sel = getEl("settingsDefaultAuditFilter");
-  if (!sel || !["all", "confirmed", "preference", "styleguide"].includes(auditCardFilter)) return;
+  if (!sel || !isAuditFilterMode(auditCardFilter)) return;
   sel.value = auditCardFilter;
   updateAuditDefaultFilterHint();
 }
@@ -3377,7 +3387,7 @@ function applyDefaultAuditFilterFromSettings() {
   const sel = getEl("settingsDefaultAuditFilter");
   if (!sel) return;
   const mode = sel.value;
-  if (!["all", "confirmed", "preference", "styleguide"].includes(mode)) return;
+  if (!isAuditFilterMode(mode)) return;
   auditCardFilter = mode;
   updateAuditFilterChips();
   applyAuditCardFilter();
@@ -3412,7 +3422,7 @@ function isReviewModeProfileActive() {
 
 function applyReviewModeAuditFilterDefault() {
   const mode = ProzaEdit.UiPrefs?.reviewModeDefaultAuditFilter?.() || "styleguide";
-  if (!["all", "confirmed", "preference", "styleguide"].includes(mode)) return;
+  if (!isAuditFilterMode(mode)) return;
   auditCardFilter = mode;
   updateAuditFilterChips();
   applyAuditCardFilter();
@@ -5084,12 +5094,16 @@ function updateAuditFilterChips() {
     } else if (btn.dataset.auditFilter === "styleguide") {
       const n = modeVisibleSuggestions().filter((s) => isStyleGuideFinding(s)).length;
       btn.textContent = n ? `Style guide (${n})` : "Style guide";
+    } else if (String(btn.dataset.auditFilter || "").startsWith("lane:")) {
+      const lane = btn.dataset.auditFilter.slice(5);
+      const n = modeVisibleSuggestions().filter((s) => (s.lane || "Clarity") === lane).length;
+      btn.textContent = n ? `${lane} (${n})` : lane;
     }
   });
 }
 
 function setAuditCardFilter(mode) {
-  if (!["all", "confirmed", "preference", "styleguide"].includes(mode)) return;
+  if (!isAuditFilterMode(mode)) return;
   auditCardFilter = mode;
   updateAuditFilterChips();
   applyAuditCardFilter();
@@ -5146,6 +5160,10 @@ function filteredAuditSuggestions() {
   if (auditCardFilter === "confirmed") list = list.filter((s) => s.type === "confirmed");
   else if (auditCardFilter === "preference") list = list.filter((s) => s.type !== "confirmed");
   else if (auditCardFilter === "styleguide") list = list.filter((s) => isStyleGuideFinding(s));
+  else if (String(auditCardFilter).startsWith("lane:")) {
+    const lane = auditCardFilter.slice(5);
+    list = list.filter((s) => (s.lane || "Clarity") === lane);
+  }
   auditLowConfidenceHidden = 0;
   if (isChecked("simpleMode", false) && !auditShowLowConfidence) {
     const kept = list.filter((s) => s.confidence !== "low");
@@ -6476,7 +6494,9 @@ async function sendLocalCoachMessage() {
   } catch (_) {}
   const statusLine = manuscriptContextStatusLine();
   const profile = [buildManuscriptProfile({ baseOnly: true }), statusLine].filter(Boolean).join("\n");
-  const reply = ProzaEdit.LocalCoach.answer(prompt, snippet ? `${profile}\n\nSelection excerpt:\n${snippet}` : profile, collectUiConfig());
+  const coachCtx = collectUiConfig();
+  coachCtx.lastAuditSummary = lastAuditResultForMode?.result?.summary || null;
+  const reply = ProzaEdit.LocalCoach.answer(prompt, snippet ? `${profile}\n\nSelection excerpt:\n${snippet}` : profile, coachCtx);
   appendCoachMessage(reply, false);
   showPeStatus("Local Coach.", "ok");
 }
