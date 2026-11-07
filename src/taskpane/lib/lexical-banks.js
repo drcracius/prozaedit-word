@@ -31,6 +31,7 @@
     ["general consensus", "consensus"],
     ["sum total", "total"],
     ["very unique", "unique"],
+    ["more unique", "unique"],
   ];
 
   /** Idiomatic doublets: usually deliberate, so shown only in Advanced (low confidence) and never auto-rewritten. */
@@ -42,6 +43,18 @@
     ["advance warning", "warning"],
     ["past experience", "experience"],
     ["foreign imports", "imports"],
+    ["actual experience", "experience"],
+    ["armed gunman", "gunman"],
+    ["nodded his head", "nodded"],
+    ["nodded her head", "nodded"],
+    ["shrugged his shoulders", "shrugged"],
+    ["shrugged her shoulders", "shrugged"],
+    ["first and foremost", "first"],
+    ["postpone until later", "postpone"],
+    ["reply back", "reply"],
+    ["consensus of opinion", "consensus"],
+    ["completely empty", "empty"],
+    ["more preferable", "preferable"],
   ];
 
   const AI_PHRASES = [
@@ -90,6 +103,39 @@
     ["with regard to", "about"],
     ["in spite of the fact that", "although"],
     ["for the purpose of", "to"],
+    ["in the near future", "soon"],
+    ["inasmuch as", "since"],
+    ["the fact that", "that"],
+  ];
+
+  /** Hidden verbs — Clarity lane; also used by style-guide plain-language cards. */
+  const NOMINALIZATIONS = [
+    ["make a decision", "decide"],
+    ["make a determination", "determine"],
+    ["conduct an investigation", "investigate"],
+    ["give consideration to", "consider"],
+    ["reach an agreement", "agree"],
+    ["perform an evaluation", "evaluate"],
+    ["make an attempt", "try"],
+  ];
+
+  /** Absolute adjectives — extra rows live in PLEONASMS / PLEONASMS_SOFT so Simple view stays quiet. */
+  const UNCOMPARABLES = [
+    ["very unique", "unique"],
+    ["more unique", "unique"],
+    ["most unique", "unique"],
+    ["completely empty", "empty"],
+    ["more preferable", "preferable"],
+    ["very dead", "dead"],
+  ];
+
+  /** Fiction craft: dialogue tags with adverbs (low-confidence cards). */
+  const TAG_ADVERBS = [
+    ["said angrily", "snapped"],
+    ["said softly", "murmured"],
+    ["said loudly", "bellowed"],
+    ["asked curiously", "asked"],
+    ["shouted furiously", "shouted"],
   ];
 
   /** Kept for compatibility; the formal rewrite handles "a lot of" and "kind/sort of" by context, not blind substitution. */
@@ -204,7 +250,7 @@
     ["game changer", "important change"],
     ["game-changer", "important change"],
     ["value-add", "benefit"],
-    ["mission critical", "essential"],
+    ["mission critical", "essential", "Prefer a concrete obligation."],
   ];
 
   root.LexicalBanks = {
@@ -213,6 +259,9 @@
     AI_PHRASES,
     SPOILER_PHRASES,
     WORDINESS,
+    NOMINALIZATIONS,
+    UNCOMPARABLES,
+    TAG_ADVERBS,
     BUSINESS_JARGON,
     INFORMAL_TO_FORMAL,
     CONTRACTIONS,

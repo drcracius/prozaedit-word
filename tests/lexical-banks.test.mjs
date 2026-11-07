@@ -8,5 +8,7 @@ test("LexicalBanks exports non-empty shared lists", () => {
   assert.ok(Array.isArray(banks.PLEONASMS) && banks.PLEONASMS.length > 5);
   assert.ok(Array.isArray(banks.AI_PHRASES) && banks.AI_PHRASES.includes("delve"));
   assert.ok(Array.isArray(banks.WORDINESS));
+  assert.ok(Array.isArray(banks.PLEONASMS_SOFT) && banks.PLEONASMS_SOFT.length > 5);
+  assert.ok(Array.isArray(banks.NOMINALIZATIONS) && banks.NOMINALIZATIONS.length);
   assert.ok(banks.VIVID_VERB_MAP && typeof banks.VIVID_VERB_MAP === "object");
 });
