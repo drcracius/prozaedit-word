@@ -32,13 +32,13 @@ The steps at the top are **Start**, **Set checks**, **Run**, and **Fix**. **Set 
 
 Run checks the scope on Start. It does not underline while you type.
 
-Turn on only the checks you want. Fiction checks turn off when the type is not fiction. Citation and timeline tools look at the same scope and only run when you click them.
+Genre and language on Start decide most local checks. **Simple** hides the individual check list and uses the usual checks. Extra scans (timeline, citations, fiction modules) sit under **More checks**, or turn Simple off in Settings to pick each one. Fiction checks turn off when the type is not fiction. Citation and timeline tools look at the same scope and only run when you click them.
 
 **Audit next chapter** walks one heading chapter at a time and keeps one combined summary. Use it when Full says it stopped.
 
 ## 4. Fix
 
-Cards are the notes from the last Run. **Go to** jumps to a note. **Apply** changes the document after you confirm. **Last edit** on the toolbar jumps to the last change ProzaEdit made. Those are different buttons.
+Cards are the notes from the last Run. Filter chips on Fix: **All**, then **Correctness** (proof), **Clarity** (wording), **Consistency** (spelling/names), and **Craft** (fiction craft). Critical / Style / Style guide still work. **Go to** jumps to a note. **Apply** changes the document after you confirm. **Last edit** on the toolbar jumps to the last change ProzaEdit made. Those are different buttons.
 
 **Run** stays at the top. This tab does not start a second run.
 
@@ -56,7 +56,7 @@ Cards are the notes from the last Run. **Go to** jumps to a note. **Apply** chan
 
 ## 7. Settings that change a check
 
-- **Simple / Advanced** hides extra tabs. It does not change the rules.
+- **Simple / Advanced** hides extra tabs and the individual Run check list. It does not change which usual checks run.
 - **Report depth** changes how many cards you see.
 - **Language** switches US and UK spelling.
 - **Your dictionary** stops name notes you do not want.

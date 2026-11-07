@@ -98,7 +98,13 @@
     TEMPORAL_REGEX.forEach(({ type, re }) => {
       re.lastIndex = 0;
       let match;
+      let steps = 0;
       while ((match = re.exec(trimmed)) !== null) {
+        if (!match[0]) {
+          re.lastIndex++;
+          continue;
+        }
+        if (++steps > 40) break;
         events.push({
           paraIndex,
           type,
@@ -189,6 +195,10 @@
       let m;
       let n = 0;
       while ((m = FUTURE_REVEAL.exec(text)) !== null && n < 2) {
+        if (!m[0]) {
+          FUTURE_REVEAL.lastIndex++;
+          continue;
+        }
         n += 1;
         push({
           ruleId: `chrono:future:${m[0].slice(0, 20).toLowerCase()}`,

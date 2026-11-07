@@ -895,6 +895,17 @@ body.pe-narrow-pane .btn-tool-icon-label {
   opacity: 0.95;
 }
 
+.pe-simple-checks-hint {
+  display: none;
+  font-size: var(--pe-font-size-sm);
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
+.pe-simple-mode .pe-simple-checks-hint {
+  display: block;
+}
+
 .audit-run-hub-inline {
   display: flex;
   flex-wrap: wrap;

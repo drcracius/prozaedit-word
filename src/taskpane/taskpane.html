@@ -87,7 +87,7 @@
     <ul class="help-list pe-session-tips-list">
       <li><strong>Start</strong> — set scope and type, then <strong>Run</strong> — turn modules on and run → review cards on <strong>Fix</strong>.</li>
       <li>Fiction-only modules and <strong>Timeline scan</strong> appear when manuscript type is Fiction.</li>
-      <li><strong>Simple / Advanced view</strong> (Settings → Essentials) changes what is shown, not how checks work: Simple hides Thesaurus, the lexical shaper and extra tuning; Coach, Rewrite and <strong>AI help (optional)</strong> stay available in both. Other persistent prefs are under toolbar <strong>Settings</strong>.</li>
+      <li><strong>Simple / Advanced view</strong> (Settings → Essentials) changes what is shown, not how checks work: Simple hides Thesaurus, the lexical shaper, extra tuning, and the individual check list; Coach, Rewrite and <strong>AI help (optional)</strong> stay available in both. Other persistent prefs are under toolbar <strong>Settings</strong>.</li>
     </ul>
     <div class="pe-top-banner-actions">
       <button type="button" class="btn-secondary pe-session-tips-dismiss" onclick="dismissSessionTips(false)" data-pe-tip="btn-session-tips-got-it">Got it</button>
@@ -356,13 +356,16 @@
       <p id="peChecksReportDepthPlainHint" class="pe-checks-depth-plain help-muted hidden" aria-live="polite"></p>
       <p id="activeChecksHint" class="active-checks-hint">Run a report. Optional scans (timeline, citations, fiction modules) sit under More checks.</p>
     </div>
+    <p id="peSimpleChecksHint" class="help-muted pe-simple-checks-hint">Simple runs the usual local checks. Extra scans stay under More checks. Turn Simple off in Settings to pick each check.</p>
+    <div id="peChecksCoreToggles" data-simple-hide>
     <h2 class="pe-section-title">What to check</h2>
     <div class="form-group form-group-flush">
       <div class="toggle-row" data-pe-tip="chk-repetition"><span id="chkRep-lbl">Repetition &amp; redundancy (word-pair check)</span><input type="checkbox" id="chkRep" aria-labelledby="chkRep-lbl" checked></div>
       <div class="toggle-row"><span id="chkProp-lbl">Names that don't match (use Dictionary if a name is fine)</span><input type="checkbox" id="chkProp" aria-labelledby="chkProp-lbl" checked></div>
       <div class="toggle-row"><span id="chkSpell-lbl">Proofreading &amp; language (US/UK + style guide packs)</span><input type="checkbox" id="chkSpell" aria-labelledby="chkSpell-lbl" checked></div>
-      <div class="toggle-row" data-simple-hide><span id="chkAI-lbl">Style resembles common AI phrasing (experimental)</span><input type="checkbox" id="chkAI" aria-labelledby="chkAI-lbl"></div>
+      <div class="toggle-row"><span id="chkAI-lbl">Style resembles common AI phrasing (experimental)</span><input type="checkbox" id="chkAI" aria-labelledby="chkAI-lbl"></div>
       <p style="font-size:var(--pe-font-size-sm);color:var(--text-muted);margin:4px 0 0;">Experimental pattern check only — it cannot tell who or what wrote a text, and is not proof of AI use or plagiarism.</p>
+    </div>
     </div>
     <details id="peChecksMoreOptional" class="help-box help-muted pe-checks-more-optional">
       <summary>More checks (optional)</summary>
@@ -406,6 +409,7 @@
         <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="scanChapterHeatmap()">Chapter chart (on this computer)</button>
       </div>
     </details>
+    <div id="peFictionModulesBlock" data-simple-hide>
     <h2 class="pe-section-title">Fiction modules</h2>
     <div class="form-group form-group-flush">
       <div class="toggle-row"><span id="mPlot-lbl">1. Plot & Chapter Structure</span><input type="checkbox" id="mPlot" aria-labelledby="mPlot-lbl" checked></div>
@@ -416,6 +420,7 @@
       <div class="toggle-row"><span id="mPacing-lbl">6. Pacing & Readability</span><input type="checkbox" id="mPacing" aria-labelledby="mPacing-lbl" checked></div>
       <div class="toggle-row"><span id="mSpoiler-lbl">7. Spoiler Control</span><input type="checkbox" id="mSpoiler" aria-labelledby="mSpoiler-lbl" checked></div>
       <p class="help-inline">Fiction checks run only when the manuscript type is fiction.</p>
+    </div>
     </div>
     <details class="help-box help-muted pe-citation-block" id="peCitationPanel">
       <summary>Also scan: citation check (optional)</summary>
@@ -621,7 +626,7 @@
         <summary>First time here</summary>
         <ol class="help-list pe-first-audit-steps">
           <li>Set scope on <strong>Start</strong></li>
-          <li>Enable <strong>1–2 checks</strong> on Run</li>
+          <li>On Run, click <strong>Run</strong>. Extra scans sit under More checks</li>
           <li><strong>Run</strong></li>
           <li>Fix the red cards first</li>
         </ol>
@@ -808,7 +813,7 @@
       <div class="pe-settings-body">
         <details class="pe-settings-group" id="pe-settings-group-essentials" open>
           <summary>Essentials</summary>
-          <div class="toggle-row"><span id="simpleMode-lbl">Simple view (on) / Advanced view (off) — Simple hides Thesaurus, shaper &amp; extra tuning; AI help stays available</span><input type="checkbox" id="simpleMode" aria-labelledby="simpleMode-lbl"></div>
+          <div class="toggle-row"><span id="simpleMode-lbl">Simple view (on) / Advanced view (off) — Simple hides Thesaurus, shaper, extra tuning, and the individual check list; AI help stays available</span><input type="checkbox" id="simpleMode" aria-labelledby="simpleMode-lbl"></div>
           <p id="peSimpleModeEssentialsIntro" class="help-muted pe-simple-mode-essentials-intro hidden" style="font-size:var(--pe-font-size-sm);margin:6px 0 4px;">Simple view hides the Thesaurus tab, the lexical shaper, and extra tuning. Coach, Rewrite and optional AI help stay available. Turn Simple off for every control.</p>
           <p id="peSimpleModeAdvancedTabsList" class="help-muted pe-simple-advanced-tabs hidden" style="font-size:var(--pe-font-size-sm);margin:4px 0 6px;"></p>
           <button type="button" class="btn-linkish pe-btn" id="btnTurnOffSimpleMode" onclick="turnOffSimpleModeFromEssentials()">Switch to Advanced view</button>

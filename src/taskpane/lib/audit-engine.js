@@ -20,7 +20,9 @@ ProzaEdit.Audit = {
     if (!p) return null;
     const W = this._WORDCH;
     let i = 0;
+    let steps = 0;
     while ((i = lower.indexOf(p, i)) !== -1) {
+      if (++steps > 100000) break;
       const b = lower[i - 1];
       const a = lower[i + p.length];
       const leftOk = !W.test(p[0]) || !b || !W.test(b);
@@ -37,7 +39,9 @@ ProzaEdit.Audit = {
     if (!p) return false;
     const W = this._WORDCH;
     let i = 0;
+    let steps = 0;
     while ((i = text.indexOf(p, i)) !== -1) {
+      if (++steps > 100000) break;
       const b = text[i - 1];
       const a = text[i + p.length];
       const leftOk = !W.test(p[0]) || !b || !W.test(b);
@@ -416,15 +420,21 @@ ProzaEdit.Audit = {
     if (ctx.fkLock) add("fkLock", "Reading level", () => this._fkLockFlag(text, push, ctx));
     if (fiction && ctx.mPacing) add("sensory", "Sensory detail", () => this._sensoryWeakSpot(text, push));
     if (!fiction && gp && ctx.chkSpell) add("nonfiction", "Clarity", () => this._nonfictionClarity(text, push, ctx, gp));
-    if (ProzaEdit.MasterEngine && ProzaEdit.MasterEngine.contributeSupplemental) {
+    if (
+      ProzaEdit.MasterEngine &&
+      ProzaEdit.MasterEngine.contributeSupplemental &&
+      (ctx.chkSpell || ctx.chkRep || ctx.mDialogue)
+    ) {
       add("masterCore", "Phrase and grammar", () => {
-        ProzaEdit.MasterEngine.contributeSupplemental(text, ctx).forEach(push);
+        try {
+          ProzaEdit.MasterEngine.contributeSupplemental(text, ctx).forEach(push);
+        } catch (_) {}
       });
     }
     return steps;
   },
 
-  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "edit:num:", "edit:hyphen:", "edit:prefix", "sg:writegood:", "pov:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "craft:tag_adverb", "craft:rhythm", "rule:", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
+  LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "rep:echo", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "edit:num:", "edit:hyphen:", "edit:prefix", "sg:writegood:", "pov:", "tense:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "craft:tag_adverb", "craft:rhythm", "rule:", "phrase:", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],
 
   /** high = objective (typo-class); medium = style judgment; low = noisy heuristic (hidden in Simple view by default). */
   confidenceFor(item) {
@@ -519,7 +529,7 @@ ProzaEdit.Audit = {
         });
       }
     });
-    const words = lower.match(/\b[\w'-]+\b/g) || [];
+    const words = (lower.match(/\b[\w'-]+\b/g) || []).slice(0, 80000);
     let n = 0;
     const seen = new Map();
     for (let i = 0; i < words.length - 1 && n < 16; i++) {
@@ -711,6 +721,10 @@ ProzaEdit.Audit = {
     const hits = [];
     let m;
     while ((m = re.exec(String(text || ""))) !== null && hits.length < 40) {
+      if (!m[0]) {
+        re.lastIndex++;
+        continue;
+      }
       if (!this._PASSIVE_ADJ.test(m[1])) hits.push(m[0]);
     }
     if (hits.length < opts.limit || String(text || "").length <= (opts.minLen || 0)) return;

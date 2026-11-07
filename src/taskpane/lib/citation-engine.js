@@ -67,7 +67,13 @@
   function auditApa(text, push, inText) {
     APA_PAREN.lastIndex = 0;
     let match;
+    let steps = 0;
     while ((match = APA_PAREN.exec(text)) !== null) {
+      if (!match[0]) {
+        APA_PAREN.lastIndex++;
+        continue;
+      }
+      if (++steps > 200) break;
       const authors = match[1];
       inText.push({
         raw: match[0],
@@ -101,7 +107,13 @@
     }
 
     APA_PAREN_NO_YEAR.lastIndex = 0;
+    steps = 0;
     while ((match = APA_PAREN_NO_YEAR.exec(text)) !== null) {
+      if (!match[0]) {
+        APA_PAREN_NO_YEAR.lastIndex++;
+        continue;
+      }
+      if (++steps > 200) break;
       const snippet = match[0];
       if (startsWithNonAuthor(match[1])) continue;
       if (/\d{4}/.test(text.substring(match.index, match.index + 40))) continue;
@@ -117,7 +129,13 @@
     }
 
     const narrativeYearGap = /\b([A-Z][A-Za-z''\-]+(?:\s+(?:&|and)\s+[A-Z][A-Za-z''\-]+)?)\s+(?!et\s+al\.)(?:found|reported|argued|showed|noted|claimed|wrote)\b/gi;
+    steps = 0;
     while ((match = narrativeYearGap.exec(text)) !== null) {
+      if (!match[0]) {
+        narrativeYearGap.lastIndex++;
+        continue;
+      }
+      if (++steps > 200) break;
       if (startsWithNonAuthor(match[1])) continue;
       const after = text.substring(match.index, match.index + 120);
       if (/\(\d{4}[a-z]?\)/.test(after) || /\(\d{4}[a-z]?/.test(after)) continue;
@@ -135,7 +153,13 @@
   function auditChicago(text, push, inText) {
     CMOS_PAREN.lastIndex = 0;
     let match;
+    let steps = 0;
     while ((match = CMOS_PAREN.exec(text)) !== null) {
+      if (!match[0]) {
+        CMOS_PAREN.lastIndex++;
+        continue;
+      }
+      if (++steps > 200) break;
       inText.push({
         raw: match[0],
         authors: match[1],
@@ -162,7 +186,13 @@
     REPORTER.lastIndex = 0;
     let match;
     let lastFullCiteAt = -1;
+    let steps = 0;
     while ((match = REPORTER.exec(text)) !== null) {
+      if (!match[0]) {
+        REPORTER.lastIndex++;
+        continue;
+      }
+      if (++steps > 200) break;
       const year = match[6] || match[7];
       if (!year) continue;
       inText.push({
@@ -179,7 +209,13 @@
 
     ID_IBID.lastIndex = 0;
     const idTokens = [];
+    steps = 0;
     while ((match = ID_IBID.exec(text)) !== null) {
+      if (!match[0]) {
+        ID_IBID.lastIndex++;
+        continue;
+      }
+      if (++steps > 200) break;
       idTokens.push({ raw: match[0], index: match.index });
     }
 

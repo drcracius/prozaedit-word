@@ -2,7 +2,26 @@
 
 **Audience:** owner + coding agent.  
 **Start from:** restore point **2.0.0.65** (`v2.0.0.65`, `pre-master-engine-v4`).  
-**Agent implementation through Phase 6:** working copy **2.0.0.66** (`prozaedit-master-engine.js` loaded; `audit-engine.js` still the orchestrator). Phase 0 and Phase 7 stay owner Word checks.  
+**Agent implementation through Phase 6:** working copy **2.0.0.66** (`prozaedit-master-engine.js` loaded; `audit-engine.js` still the orchestrator). Phase 0 and Phase 7 stay owner Word checks.
+
+## Status vs this plan (2.0.0.66)
+
+| Phase | Agent code | Still missing |
+|-------|------------|----------------|
+| 0 Word proof | — | Owner Track Changes, keys, real manuscript FPs |
+| 1 Lexicon | Done (banks + inventory) | Owner licence call on Wikipedia/EU/proselint |
+| 2 Master in pane | Done (script + `contributeSupplemental`) | Live path does **not** replace `Audit.run` with `AuditPipeline.audit()`; dialogue blanking still uses `blankQuotedSpeech` (safer for stray quotes) |
+| 3 Lanes | Done (chips, `.lane`, coach) | Owner click-through in Word |
+| 4 Heuristics | Done on live Run as extra low-confidence cards: prefixes, tag-adverbs, wordiness, hidden verbs, names, echoes, tense/POV, rhythm | Owner: if Simple still looks quiet on a real book, keep it; extra notes show in Advanced |
+| 5 Simpler Run | Done: Simple hides core + fiction check lists (`ids` kept); More checks still has timeline/citations | Owner first-run with a non-technical tester |
+| 6 Delete duplicates | Hydrate from banks only | Files not deleted (`audit-engine.js` still the orchestrator) |
+| 7 Launch | USER-GUIDE lanes note | Owner re-test Word, testers, CSP/diagnostics |
+
+**Freeze/crash (agent, 2.0.0.66 working copy):** master scans are capped; empty-regex loops cannot spin; extra master pass cannot crash a report. Name, capitalisation, continuity, timeline, citation, Apply occurrence, and leftover exec loops now have lastIndex + iteration caps. Desktop and web still share one pane and matching manifest versions.
+
+**Highest-level core still owner-gated:** Track Changes Apply in real Word; one live key per AI provider; one 80k-word manuscript FP list; 320px/dark/keyboard; three testers.
+
+**Next agent work (only after you try a real book in Word, or an explicit ask):** one-file cleanup (Phase 6). Do not delete `audit-engine.js` yet.  
 **This file wins** over [ProzaEdit-Major Style and Lexical Update.md](./ProzaEdit-Major%20Style%20and%20Lexical%20Update.md) where they disagree. That older file is a **big-bang** sketch. This one is the **ordered** path.
 
 **North star:** a Word-only, offline-first editor’s pane: one coherent local engine (your compiled master `.js` as the hub), genre-aware cards that stay quiet in Simple view, safe Apply, chapter walks for long books, optional BYO-key AI. Best result from the right AI at lowest cost; local first.
@@ -251,5 +270,4 @@ Suggested tags: `pe-98-lexicon`, `pe-98-master-core`, `pe-98-lanes`, `pe-98-heur
 
 ## Next action
 
-**Owner:** start **Phase 0** in Word (Track Changes + one manuscript FPs).  
-**Agent:** start **Phase 1** when you say **“start Phase 1”** (inventory + licensed bank merge). **Phase 2** when you say **“promote master”** (your `.js` in `lib/`).
+**Owner:** in Word, try **Apply** with Track Changes on, and Run on a real chapter. Send any notes that fired on writing you consider fine.

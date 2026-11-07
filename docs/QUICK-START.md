@@ -23,7 +23,7 @@ Partner stack after cards: Word **F7/Editor**, **Copy for Copilot**, external to
 
 ## Simple mode
 
-**Settings → Essentials → Simple / Advanced** hides the Thesaurus tab, the lexical shaper and extra tuning (toggle label explains it). Local audit, Coach, and Rewrite remain available. **AI help (optional)** stays visible on Coach and Rewrite in Simple mode: it is off until you add a Gemini API key, and its button takes you to Settings → Essentials. Nothing is sent to Gemini until you click a Gemini button; the optional manuscript index is included in that request (see [MANUSCRIPT-CONTEXT-INDEX.md](./MANUSCRIPT-CONTEXT-INDEX.md)).
+**Settings → Essentials → Simple / Advanced** hides the Thesaurus tab, the lexical shaper, extra tuning, and the individual Run check list (toggle label explains it). Local audit, Coach, and Rewrite remain available. **AI help (optional)** stays visible on Coach and Rewrite in Simple mode: it is off until you add a Gemini API key, and its button takes you to Settings → Essentials. Nothing is sent to Gemini until you click a Gemini button; the optional manuscript index is included in that request (see [MANUSCRIPT-CONTEXT-INDEX.md](./MANUSCRIPT-CONTEXT-INDEX.md)).
 
 ## Hover tips
 

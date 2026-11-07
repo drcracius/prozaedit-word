@@ -30,7 +30,13 @@ ProzaEdit.ProperNoun = {
     const re = new RegExp("\\b" + part + "(?:\\s+" + part + "){0,2}\\b", "g");
     const counts = new Map();
     let m;
+    let steps = 0;
     while ((m = re.exec(text)) !== null) {
+      if (!m[0]) {
+        re.lastIndex++;
+        continue;
+      }
+      if (++steps > 8000) break;
       const token = m[0].trim();
       if (token.length < 2 || token.length > 40) continue;
       const lower = token.toLowerCase();
@@ -61,7 +67,13 @@ ProzaEdit.ProperNoun = {
     const forms = new Set();
     const wordRe = /\b[A-Z][a-z]{4,}\b/g;
     let wm;
-    while ((wm = wordRe.exec(text)) !== null && forms.size < 400) forms.add(wm[0]);
+    while ((wm = wordRe.exec(text)) !== null && forms.size < 400) {
+      if (!wm[0]) {
+        wordRe.lastIndex++;
+        continue;
+      }
+      forms.add(wm[0]);
+    }
     for (const form of forms) {
       if (out.length >= limit) break;
       const fl = form.toLowerCase();

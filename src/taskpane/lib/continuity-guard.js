@@ -53,7 +53,12 @@ ProzaEdit.ContinuityGuard = {
     let c = 0;
     let m;
     while ((m = re.exec(hayLower)) !== null) {
+      if (!m[0]) {
+        re.lastIndex++;
+        continue;
+      }
       c++;
+      if (c > 8000) break;
       if (m.index === re.lastIndex) re.lastIndex++;
     }
     return c;

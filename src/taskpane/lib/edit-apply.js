@@ -90,10 +90,12 @@ ProzaEdit.EditApply = {
     for (let i = 0; i < paras.length; i++) {
       const P = this._norm(paras[i]);
       let at = P.indexOf(want);
+      let steps = 0;
       while (at !== -1) {
         count++;
         if (!found) found = { P, at, i };
         at = P.indexOf(want, at + 1);
+        if (++steps > 10000) break;
       }
       if (count > 1) return { anchor: null, count };
     }
@@ -113,10 +115,13 @@ ProzaEdit.EditApply = {
 
   _occurrences(P, want) {
     const out = [];
+    if (!want || !P) return out;
     let at = P.indexOf(want);
+    let steps = 0;
     while (at !== -1) {
       out.push(at);
       at = P.indexOf(want, at + 1);
+      if (++steps > 10000) break;
     }
     return out;
   },

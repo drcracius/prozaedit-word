@@ -20,6 +20,40 @@
     return root.LexicalBanks || {};
   }
 
+  const MAX_TOKENS = 80000;
+  const MAX_PHRASE_HITS = 40;
+  const MAX_CONTRIB_FINDINGS = 36;
+  const MAX_SCAN_CHARS = 400000;
+
+  function wordTokenRe() {
+    try {
+      return new RegExp("[\\p{L}\\p{N}'-]+", "gu");
+    } catch (_) {
+      return /[A-Za-z0-9\u00C0-\u024F'-]+/g;
+    }
+  }
+
+  /** Bounded exec so a zero-width match cannot spin the pane forever. */
+  function collectExec(re, text, limit) {
+    const out = [];
+    if (!re || !text) return out;
+    const cap = limit > 0 ? limit : MAX_PHRASE_HITS;
+    re.lastIndex = 0;
+    let m;
+    let steps = 0;
+    while ((m = re.exec(text)) !== null) {
+      if (!m[0]) {
+        re.lastIndex++;
+        if (re.lastIndex > text.length) break;
+        continue;
+      }
+      out.push(m);
+      if (out.length >= cap) break;
+      if (++steps > cap * 8) break;
+    }
+    return out;
+  }
+
   /* ==========================================================================
      1. DIALOGUE IMMUNITY ENGINE
      ========================================================================== */
@@ -30,18 +64,16 @@
      */
     stripDialogue(text) {
       if (!text || typeof text !== "string") return "";
-      
-      return text
-        // 1. Double quotes (standard, curly, typographical)
-        .replace(/["“”«»][^"“”«»\r\n]*["“”«»]/g, (m) => " ".repeat(m.length))
-        
-        // 2. Single quotation marks (bounded by non-word chars) protecting don't/it's
-        .replace(/(^|[\s(\[{])['‘]([^\r\n]+?)['’](?=[\s)\]},.!?;:]|$)/g, (m, lead) => {
-          return lead + " ".repeat(m.length - lead.length);
-        })
-        
-        // 3. Em-dash interrupted dialogue blocks
-        .replace(/["“][^"”\r\n]*[—–-]["”]?/g, (m) => " ".repeat(m.length));
+      try {
+        return text
+          .replace(/["“”«»][^"“”«»\r\n]{0,8000}["“”«»]/g, (m) => " ".repeat(m.length))
+          .replace(/(^|[\s(\[{])['‘]([^\r\n']{0,2000})['’](?=[\s)\]},.!?;:]|$)/g, (m, lead) => {
+            return lead + " ".repeat(m.length - lead.length);
+          })
+          .replace(/["“][^"”\r\n]{0,8000}[—–-]["”]?/g, (m) => " ".repeat(m.length));
+      } catch (_) {
+        return text;
+      }
     }
   };
 
@@ -60,10 +92,11 @@
      */
     tokenizeAndTag(text) {
       const tokens = [];
-      const tokenRe = /\b[\p{L}\p{N}'-]+\b/gu;
-      let m;
-
-      while ((m = tokenRe.exec(text)) !== null) {
+      if (!text) return tokens;
+      const tokenRe = wordTokenRe();
+      const matches = collectExec(tokenRe, String(text), MAX_TOKENS);
+      for (let i = 0; i < matches.length; i++) {
+        const m = matches[i];
         const word = m[0];
         const lower = word.toLowerCase();
         let tag = "UNK";
@@ -119,13 +152,14 @@
     },
 
     calculateScores(text) {
-      const words = text.match(/\b[\p{L}\p{N}'-]+\b/gu) || [];
+      const src = String(text || "");
+      const words = collectExec(wordTokenRe(), src, MAX_TOKENS).map((m) => m[0]);
       const wordCount = words.length;
       if (wordCount === 0) return { wordCount: 0, fleschKincaidGrade: 0, fleschReadingEase: 100, averageSentenceLength: 0, dialogueRatio: 0, sentenceVariance: 0 };
 
       const sentences = this.splitSentences(text);
       const sentenceCount = Math.max(1, sentences.length);
-      const sentenceLengths = sentences.map(s => (s.match(/\b[\p{L}\p{N}'-]+\b/gu) || []).length);
+      const sentenceLengths = sentences.map((s) => collectExec(wordTokenRe(), s, 4000).length);
 
       let totalSyllables = 0;
       for (let i = 0; i < words.length; i++) totalSyllables += this.countSyllables(words[i]);
@@ -137,8 +171,8 @@
       const fk = Math.max(0, Math.round((0.39 * asl + 11.8 * asw - 15.59) * 10) / 10);
       const variance = sentenceLengths.reduce((acc, len) => acc + Math.pow(len - asl, 2), 0) / sentenceCount;
 
-      const dialogueText = (text.match(/["“”][^"“”\r\n]*["“”]/g) || []).join(" ");
-      const dialogueWords = (dialogueText.match(/\b[\p{L}\p{N}'-]+\b/gu) || []).length;
+      const dialogueText = (src.match(/["“”][^"“”\r\n]{0,8000}["“”]/g) || []).join(" ");
+      const dialogueWords = collectExec(wordTokenRe(), dialogueText, MAX_TOKENS).length;
       const dialogueRatio = Math.round((dialogueWords / wordCount) * 100);
 
       return { wordCount, sentenceCount, fleschKincaidGrade: fk, fleschReadingEase: fre, averageSentenceLength: Math.round(asl * 10) / 10, dialogueRatio, sentenceVariance: Math.round(variance * 10) / 10 };
@@ -251,17 +285,20 @@
   Engine.Heuristics = {
     scanProperNounCollisions(cleanText, dictionary, limit = 8) {
       const dictLower = new Set((dictionary || []).map((d) => String(d).toLowerCase()));
-      const nameRe = /\b[\p{Lu}][\p{L}]+(?:['\u2019\-][\p{Lu}][\p{L}]+)*(?:\s+[\p{Lu}][\p{L}]+){0,2}\b/gu;
-      const counts = new Map();
-      let m;
-
-      while ((m = nameRe.exec(cleanText)) !== null) {
-        const token = m[0].trim();
-        if (token.length < 4 || token.length > 35) continue;
-        const lower = token.toLowerCase();
-        if (dictLower.has(lower) || Engine.MicroPOS.DETERMINERS.has(lower)) continue;
-        counts.set(token, (counts.get(token) || 0) + 1);
+      let nameRe;
+      try {
+        nameRe = new RegExp("[\\p{Lu}][\\p{L}]+(?:['\\u2019\\-][\\p{Lu}][\\p{L}]+)*(?:\\s+[\\p{Lu}][\\p{L}]+){0,2}", "gu");
+      } catch (_) {
+        nameRe = /\b[A-Z][A-Za-z]+(?:['\u2019-][A-Z][A-Za-z]+)*(?:\s+[A-Z][A-Za-z]+){0,2}\b/g;
       }
+      const counts = new Map();
+      collectExec(nameRe, String(cleanText || ""), 4000).forEach((m) => {
+        const token = m[0].trim();
+        if (token.length < 4 || token.length > 35) return;
+        const lower = token.toLowerCase();
+        if (dictLower.has(lower) || Engine.MicroPOS.DETERMINERS.has(lower)) return;
+        counts.set(token, (counts.get(token) || 0) + 1);
+      });
 
       const forms = [...counts.keys()];
       const findings = [];
@@ -337,10 +374,12 @@
         const closedRe = new RegExp(`\\b(${pfx})([a-z]{3,})\\b`, "gi");
         const hyphenated = new Set();
         const closed = new Set();
-        let m;
-
-        while ((m = hyphenRe.exec(text)) !== null) if (PREFIX_ROOTS.has(m[2].toLowerCase())) hyphenated.add(m[2].toLowerCase());
-        while ((m = closedRe.exec(text)) !== null) if (PREFIX_ROOTS.has(m[2].toLowerCase())) closed.add(m[2].toLowerCase());
+        collectExec(hyphenRe, text, 400).forEach((m) => {
+          if (PREFIX_ROOTS.has(String(m[2] || "").toLowerCase())) hyphenated.add(m[2].toLowerCase());
+        });
+        collectExec(closedRe, text, 800).forEach((m) => {
+          if (PREFIX_ROOTS.has(String(m[2] || "").toLowerCase())) closed.add(m[2].toLowerCase());
+        });
 
         for (const base of hyphenated) {
           if (findings.length >= limit) break;
@@ -363,7 +402,14 @@
     scanRhythmMono(text) {
       const sentences = Engine.Metrics.splitSentences(text);
       if (sentences.length < 5) return [];
-      const lengths = sentences.map((s) => (s.match(/\b[\p{L}\p{N}'-]+\b/gu) || []).length);
+      const countWords = (s) => {
+        try {
+          return (s.match(/\b[\p{L}\p{N}'-]+\b/gu) || []).length;
+        } catch (_) {
+          return (s.match(/\b[A-Za-z0-9\u00C0-\u024F'-]+\b/g) || []).length;
+        }
+      };
+      const lengths = sentences.map(countWords);
       const findings = [];
       let runStart = 0, runLength = 1;
 
@@ -465,14 +511,19 @@
     },
 
     _findBoundedPhrases(text, phrase) {
-      const esc = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
-      const re = new RegExp(`(^|[^\\p{L}\\p{N}_])(${esc})(?=[^\\p{L}\\p{N}_]|$)`, "giu");
-      const matches = [];
-      let m;
-      while ((m = re.exec(text)) !== null) {
-        matches.push({ match: m[2], index: m.index + m[1].length });
+      const p = String(phrase || "").trim();
+      if (!p || !text) return [];
+      const esc = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+      let re;
+      try {
+        re = new RegExp(`(^|[^\\p{L}\\p{N}_])(${esc})(?=[^\\p{L}\\p{N}_]|$)`, "giu");
+      } catch (_) {
+        re = new RegExp(`(^|[^A-Za-z0-9_])(${esc})(?=[^A-Za-z0-9_]|$)`, "gi");
       }
-      return matches;
+      return collectExec(re, String(text), MAX_PHRASE_HITS).map((m) => ({
+        match: m[2],
+        index: m.index + String(m[1] || "").length
+      })).filter((hit) => hit.match);
     },
 
     audit(text, options = {}) {
@@ -671,6 +722,7 @@
   };
 
   Engine.hydrateBanks = function hydrateBanks() {
+    if (Engine._banksHydrated) return;
     const B = banks();
     const merge = (into, extra) => {
       if (!Array.isArray(extra) || !extra.length) return into;
@@ -691,71 +743,126 @@
     merge(Engine.LexicalRules.CORPORATE_JARGON, B.BUSINESS_JARGON);
     merge(Engine.LexicalRules.TAG_ADVERBS, B.TAG_ADVERBS);
     Engine.AuditPipeline._singleWordRules = null;
+    Engine._banksHydrated = true;
   };
 
   /**
-   * Extra cards for the live Audit.run path. Skips tense/POV, name collisions, and
-   * proximity echoes (legacy modules already cover those). All cards are preference
-   * and mostly low-confidence so Simple view stays quiet.
+   * Extra cards for the live Audit.run path. Mirrors the compiled master
+   * AuditPipeline (word lists + name/echo/tense/rhythm/prefix checks).
+   * Cards are preference and low-confidence so Simple view stays quiet.
    */
   Engine.contributeSupplemental = function contributeSupplemental(text, options) {
     options = options || {};
-    Engine.hydrateBanks();
-    const srcText = String(text || "");
-    if (!srcText) return [];
-    const isFiction = isFictionType(options.manuscriptType);
-    const cleanNarration = isFiction ? Engine.DialogueImmunity.stripDialogue(srcText) : srcText;
-    const taggedTokens = Engine.MicroPOS.tokenizeAndTag(cleanNarration);
-    const out = [];
-    const push = (f) => {
-      if (!f || !f.targetText || f.targetText.length > 255) return;
-      f.lane = Engine.Lanes.forRuleId(f.ruleId, f);
-      f.module = f.module || (f.lane === "Craft" ? "Genre craft" : f.lane === "Correctness" ? "Proofreading & Language" : f.lane === "Consistency" ? "Editorial consistency" : "Repetition & Redundancy");
-      out.push(f);
-    };
+    try {
+      Engine.hydrateBanks();
+      let srcText = String(text || "");
+      if (!srcText) return [];
+      if (srcText.length > MAX_SCAN_CHARS) srcText = srcText.slice(0, MAX_SCAN_CHARS);
+      const muted = new Set(options.mutedRules || []);
+      const isFiction = isFictionType(options.manuscriptType);
+      const dictionary = options.dictionary || [];
+      const cleanNarration = isFiction ? Engine.DialogueImmunity.stripDialogue(srcText) : srcText;
+      const taggedTokens = Engine.MicroPOS.tokenizeAndTag(cleanNarration);
+      const out = [];
+      const push = (f) => {
+        if (!f || !f.targetText || f.targetText.length > 255) return;
+        if (muted.has(f.ruleId)) return;
+        if (out.length >= MAX_CONTRIB_FINDINGS) return;
+        f.lane = Engine.Lanes.forRuleId(f.ruleId, f);
+        f.confidence = f.confidence || "low";
+        f.module = f.module || (f.lane === "Craft" ? "Genre craft" : f.lane === "Correctness" ? "Proofreading & Language" : f.lane === "Consistency" ? "Editorial consistency" : "Repetition & Redundancy");
+        out.push(f);
+      };
 
-    const singleWordIndex = Engine.AuditPipeline._buildSingleWordIndex();
-    for (let i = 0; i < taggedTokens.length; i++) {
-      const token = taggedTokens[i];
-      const rule = singleWordIndex.get(token.lower);
-      if (!rule || !rule.guard) continue;
-      if (!rule.guard(i, taggedTokens)) continue;
-      push({
-        ruleId: `rule:${token.lower}`,
-        lane: rule.lane === "Style" ? "Clarity" : rule.lane,
-        type: "preference",
-        confidence: "low",
-        explanation: rule.expl,
-        targetText: token.raw,
-        replacementText: rule.replace
-      });
-    }
+      const singleWordIndex = Engine.AuditPipeline._buildSingleWordIndex();
+      for (let i = 0; i < taggedTokens.length && out.length < MAX_CONTRIB_FINDINGS; i++) {
+        const token = taggedTokens[i];
+        const rule = singleWordIndex.get(token.lower);
+        if (!rule) continue;
+        if (rule.guard && !rule.guard(i, taggedTokens)) continue;
+        push({
+          ruleId: `rule:${token.lower}`,
+          lane: rule.lane === "Style" ? "Clarity" : rule.lane,
+          type: "preference",
+          confidence: "low",
+          explanation: rule.expl || "Prefer a plainer or more precise term.",
+          targetText: token.raw,
+          replacementText: rule.replace
+        });
+      }
 
-    if (isFiction && options.mDialogue !== false) {
-      const tags = Engine.LexicalRules.TAG_ADVERBS || [];
-      tags.forEach((row) => {
-        const target = row[0];
-        const hint = row[1];
-        if (!target) return;
-        Engine.AuditPipeline._findBoundedPhrases(srcText, target).forEach((hit) => {
-          push({
-            ruleId: `craft:tag_adverb:${target.replace(/\s+/g, "_")}`,
-            lane: "Craft",
-            type: "preference",
-            confidence: "low",
-            explanation: `Told dialogue emotion: "${hit.match}". Use an action beat instead.`,
-            targetText: hit.match,
-            replacementText: hint
+      const addPhraseList = (arr, lane, type) => {
+        (arr || []).forEach((row) => {
+          if (out.length >= MAX_CONTRIB_FINDINGS) return;
+          const target = row[0];
+          const replace = row[1];
+          const expl = row[2] || "Prefer a plainer term.";
+          if (!target || !String(target).includes(" ")) return;
+          const hits = Engine.AuditPipeline._findBoundedPhrases(cleanNarration, target);
+          hits.forEach((hit) => {
+            push({
+              ruleId: `phrase:${String(target).replace(/\s+/g, "_")}`,
+              lane,
+              type,
+              confidence: "low",
+              explanation: expl,
+              targetText: hit.match,
+              replacementText: Engine.MutationUtils.alignCase(hit.match, replace)
+            });
           });
         });
+      };
+      addPhraseList(Engine.LexicalRules.WORDINESS, "Clarity", "preference");
+      addPhraseList(Engine.LexicalRules.NOMINALIZATIONS, "Clarity", "preference");
+      addPhraseList(Engine.LexicalRules.UNCOMPARABLES, "Clarity", "preference");
+      if (!isFiction) addPhraseList(Engine.LexicalRules.CORPORATE_JARGON, "Clarity", "preference");
+
+      if (isFiction && options.mDialogue !== false) {
+        const tags = Engine.LexicalRules.TAG_ADVERBS || [];
+        for (let t = 0; t < tags.length && out.length < MAX_CONTRIB_FINDINGS; t++) {
+          const target = tags[t][0];
+          const hint = tags[t][1];
+          if (!target) continue;
+          const hits = Engine.AuditPipeline._findBoundedPhrases(srcText, target);
+          for (let h = 0; h < hits.length && out.length < MAX_CONTRIB_FINDINGS; h++) {
+            const hit = hits[h];
+            push({
+              ruleId: `craft:tag_adverb:${String(target).replace(/\s+/g, "_")}`,
+              lane: "Craft",
+              type: "preference",
+              confidence: "low",
+              explanation: `Told dialogue emotion: "${hit.match}". Use an action beat instead.`,
+              targetText: hit.match,
+              replacementText: hint
+            });
+          }
+        }
+        Engine.Heuristics.scanRhythmMono(cleanNarration).forEach((f) => {
+          push({ ...f, confidence: f.confidence || "low" });
+        });
+        Engine.Heuristics.scanTenseAndPOV(taggedTokens).forEach((f) => {
+          push({ ...f, confidence: f.confidence || "low" });
+        });
+      }
+
+      if (options.chkProp !== false) {
+        Engine.Heuristics.scanProperNounCollisions(cleanNarration, dictionary, 6).forEach((f) => {
+          push({ ...f, confidence: f.confidence || "low" });
+        });
+      }
+      if (options.chkRep !== false) {
+        Engine.Heuristics.scanWordProximity(taggedTokens, 6).forEach((f) => {
+          push({ ...f, confidence: f.confidence || "low" });
+        });
+      }
+      Engine.Heuristics.scanPrefixConsistency(srcText, 4).forEach((f) => {
+        push({ ...f, confidence: f.confidence || "low" });
       });
+
+      return out;
+    } catch (_) {
+      return [];
     }
-
-    Engine.Heuristics.scanPrefixConsistency(srcText, 4).forEach((f) => {
-      push({ ...f, confidence: f.confidence || "low" });
-    });
-
-    return out;
   };
 
 })(typeof window !== "undefined" ? window : globalThis);

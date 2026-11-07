@@ -43,7 +43,7 @@ ProzaEdit.Onboarding = {
     {
       id: "run",
       title: "2. Run",
-      body: "On Run, leave one or two switches on (you do not need them all). Then click Run — ProzaEdit waits for you; it does not underline as you type.",
+      body: "On Run, click Run. Simple uses the usual checks. Extra scans sit under More checks; turn Simple off in Settings to pick each one. ProzaEdit waits for you; it does not underline as you type.",
       tabId: "tab3",
       anchorSelector: "#btnRunAudit",
     },
@@ -67,7 +67,7 @@ ProzaEdit.Onboarding = {
 
   FIRST_AUDIT_CHECKLIST_STEPS: [
     "On Target, choose what to check (highlight, a chapter, or a page range).",
-    "On Run, turn on one or two checks — not every switch.",
+    "On Run, click Run. Extra scans sit under More checks.",
     "Click Run (toolbar or the big button on Run).",
     "On Fix, start with Important items; Mute or Dictionary for names that are correct.",
   ],
@@ -230,7 +230,7 @@ ProzaEdit.Onboarding = {
   WHATS_NEW_RELEASE: {
     version: "2.0.0.66",
     bullet:
-      "Your compiled master engine now runs inside the pane: phrase/grammar core, four filter lanes, and extra licensed wording lists. Timeline and citations stay separate scans.",
+      "Your compiled master engine now runs inside the pane: phrase/grammar core, four filter lanes, and extra licensed wording lists. Simple Run hides the individual check list; extra scans stay under More checks. Timeline and citations stay separate scans.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

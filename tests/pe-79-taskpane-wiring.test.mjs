@@ -209,6 +209,31 @@ test("PE-79: no stylesheet rule hides the Gemini/AI help block in Simple mode", 
   assert.ok(!/pe-simple-mode[^{}]*\.pe-ai-help[^{}]*\{[^}]*display\s*:\s*none/i.test(css));
 });
 
+test("Simple Run hides the check list but keeps checkbox ids for Advanced", async () => {
+  const html = fs.readFileSync(path.join(root, "src/taskpane/taskpane.html"), "utf8");
+  const css = fs.readFileSync(path.join(root, "src/taskpane/taskpane.css"), "utf8");
+  assert.match(html, /id="peChecksCoreToggles"[^>]*data-simple-hide/);
+  assert.match(html, /id="peFictionModulesBlock"[^>]*data-simple-hide/);
+  assert.match(html, /id="chkRep"/);
+  assert.match(html, /id="mPlot"/);
+  assert.match(css, /\.pe-simple-mode \[data-simple-hide\]/);
+  const t = await boot();
+  try {
+    t.el("simpleMode").checked = true;
+    t.peval("applySimpleMode()");
+    assert.ok(t.document.body.classList.contains("pe-simple-mode"));
+    assert.equal(t.el("chkRep").checked, true);
+    assert.equal(t.el("chkSpell").checked, true);
+    t.el("simpleMode").checked = false;
+    t.peval("applySimpleMode()");
+    assert.ok(!t.document.body.classList.contains("pe-simple-mode"));
+    assert.ok(t.el("peChecksCoreToggles"));
+    assert.ok(t.el("peFictionModulesBlock"));
+  } finally {
+    t.close();
+  }
+});
+
 test("PE-79: the UI and docs no longer call the index an AI summary and say it is sent with Gemini", () => {
   const html = fs.readFileSync(path.join(root, "src/taskpane/taskpane.html"), "utf8");
   assert.ok(!/AI[- ]generated (manuscript )?summary/i.test(html));

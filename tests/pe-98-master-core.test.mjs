@@ -76,6 +76,46 @@ test("lexical banks include licensed extras as soft or hard rows", () => {
   assert.ok(Array.isArray(pe.LexicalBanks.NOMINALIZATIONS));
 });
 
+test("phrase find misses do not hang on long text", () => {
+  const P = loadEngine();
+  const hay = `${"absorbing orbs ".repeat(8000)} the end.`;
+  const t0 = Date.now();
+  assert.equal(P.Audit._find(hay, hay.toLowerCase(), "end result"), null);
+  assert.equal(P.Audit._containsExact(hay, "xyzzy"), false);
+  assert.ok(Date.now() - t0 < 2000);
+});
+
+test("bounded phrase scan ignores empty targets and does not hang", () => {
+  const pe = loadLib("src/taskpane/lib/prozaedit-master-engine.js");
+  assert.equal(pe.MasterEngine.AuditPipeline._findBoundedPhrases("hello world", "").length, 0);
+  assert.equal(pe.MasterEngine.AuditPipeline._findBoundedPhrases("", "hello").length, 0);
+  const hits = pe.MasterEngine.AuditPipeline._findBoundedPhrases("the end result was fine", "end result");
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].match.toLowerCase(), "end result");
+});
+
+test("contributeSupplemental returns [] on throw and caps huge input", () => {
+  const pe = loadLibs(["src/taskpane/lib/lexical-banks.js", "src/taskpane/lib/prozaedit-master-engine.js"]);
+  const huge = `${"word ".repeat(120000)} said angrily now`;
+  const t0 = Date.now();
+  const extra = pe.MasterEngine.contributeSupplemental(huge, { manuscriptType: "Fiction (General)", mDialogue: true });
+  assert.ok(Date.now() - t0 < 4000);
+  assert.ok(Array.isArray(extra));
+  assert.ok(extra.length <= 36);
+});
+
+test("live Run uses master wordiness, name-similarity, and echo checks", () => {
+  const pe = loadLibs(["src/taskpane/lib/lexical-banks.js", "src/taskpane/lib/prozaedit-master-engine.js"]);
+  const extra = pe.MasterEngine.contributeSupplemental(
+    "In order to finish, Marcus met Marcia. Beautiful beautiful lanterns filled the hall.",
+    { manuscriptType: "Fiction (General)", chkRep: true, chkProp: true, mDialogue: true }
+  );
+  assert.ok(extra.some((f) => String(f.ruleId).startsWith("phrase:in_order_to")));
+  assert.ok(extra.some((f) => String(f.ruleId).startsWith("prop:collision")));
+  assert.ok(extra.some((f) => String(f.ruleId).startsWith("rep:echo")));
+  assert.ok(extra.every((f) => f.confidence === "low"));
+});
+
 test("contributeSupplemental tag adverbs stay low confidence", () => {
   const pe = loadLibs(["src/taskpane/lib/lexical-banks.js", "src/taskpane/lib/prozaedit-master-engine.js"]);
   const extra = pe.MasterEngine.contributeSupplemental('She said angrily, "Go."', {

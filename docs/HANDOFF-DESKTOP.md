@@ -52,7 +52,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 523 tests expected, 0 fail
+npm test                          # 528 tests expected, 0 fail
 npm run validate:manifest         # expect "OK: manifest.hosted.xml passes Microsoft production validation."
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"
@@ -171,7 +171,7 @@ Full rationale per decision: roadmap section "Decisions needed from the owner" (
 
 ## 14. Next steps (ranked, from PE-93/PE-96)
 
-Follow [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md): Phase 0 (owner Word proof) then Phase 1 (licensed banks from the compiled master) then Phase 2 (promote master `.js` into `lib/`).
+Follow [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md). Phases 1–5 are in **2.0.0.66**. Next is owner Word proof on desktop and web (Track Changes Apply, one real chapter, any notes that fire on writing you consider fine). Do not delete `audit-engine.js`.
 
 1. Owner runs checklist items for Track Changes and real keys. If tracked Apply misbehaves, fix before anything else.
 2. Run an audit on one real manuscript, collect false positives, tune rules.
