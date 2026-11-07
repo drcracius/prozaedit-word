@@ -63,6 +63,25 @@ test("fiction narration checks skip quoted speech and still quote the original w
   if (outside) assert.equal(narr.includes(outside.targetText), true);
 });
 
+test("fiction story checks ignore time jumps and long sentences that live only in dialogue", () => {
+  const spokenTime = `"The next day we left," she said. "Hours later we sat down." Then she poured tea.`;
+  const ids = (t) => P.Audit.run(t, ctxFor("Fiction (General)")).suggestions.map((s) => s.ruleId);
+  assert.equal(ids(spokenTime).includes("cont:time_skips"), false);
+  const spokenLong =
+    `"I want you to know that I never meant to hurt you, that I thought about it for months, and that every night I lay awake wondering whether there was a different way to tell you about the letter I found." ` +
+    `She closed the door.`;
+  assert.equal(ids(spokenLong).some((r) => String(r).startsWith("pace:long")), false);
+  const narrTime = "The next day they left. Hours later they sat down.";
+  assert.ok(ids(narrTime).includes("cont:time_skips"));
+});
+
+test("tense drift ignores a present-tense line that is only inside quotes", () => {
+  const past = Array(8).fill("She walked to the hall. He closed the door. They sat.").join(" ");
+  const quotedPresent = `${past} "I am going now," she said. ${past}`;
+  const hits = P.Audit.run(quotedPresent, ctxFor("Fiction (General)")).suggestions.filter((s) => String(s.ruleId).startsWith("tense:drift"));
+  assert.equal(hits.length, 0);
+});
+
 test("a dialect card quotes the inflected word and maps the ending", () => {
   const hit = P.Audit.run("They organised the files before noon.", ctxFor("Business / Corporate Report", { language: "en-US" })).suggestions.find((s) => s.ruleId === "spell:dialect:organise");
   assert.ok(hit);

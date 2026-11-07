@@ -20,6 +20,9 @@ ProzaEdit.GenreChecks = {
   VIOLENCE_TOLERANCE: { "thriller-suspense": 9, "mystery-crime": 9, fantasy: 8, historical: 8, scifi: 8, romance: 4, "literary-drama": 5, "general-fiction": 5 },
 
   _narration(p) {
+    if (ProzaEdit.Audit && typeof ProzaEdit.Audit.blankQuotedSpeech === "function") {
+      return ProzaEdit.Audit.blankQuotedSpeech(p);
+    }
     return String(p).replace(/["\u201c][^"\u201d]*["\u201d]?/g, " ").replace(/\u2018[^\u2019]*\u2019/g, " ");
   },
 

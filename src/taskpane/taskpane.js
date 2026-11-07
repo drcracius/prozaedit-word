@@ -2306,6 +2306,7 @@ function adaptModules() {
   if (citeScanBtn) citeScanBtn.disabled = !citeEligible || !citeOptIn;
   if (citeTargetBtn) citeTargetBtn.disabled = !citeEligible || !citeOptIn;
   updateActiveChecksHint();
+  updateSimpleChecksHint();
   schedulePersistSettings();
 }
 
@@ -2666,6 +2667,14 @@ function shortManuscriptTypeLabel(type) {
   return t.split("/")[0].trim() || "Manuscript";
 }
 
+function updateSimpleChecksHint() {
+  const el = getEl("peSimpleChecksHint");
+  if (!el) return;
+  el.textContent = isFictionManuscriptType()
+    ? "Simple runs the usual local checks plus story checks (plot, dialogue, viewpoint, pacing). Extra scans stay under More checks. Turn Simple off in Settings to pick each check."
+    : "Simple runs the usual local checks. Extra scans stay under More checks. Turn Simple off in Settings to pick each check.";
+}
+
 function updateActiveChecksHint() {
   const nodes = document.querySelectorAll(".active-checks-hint");
   if (!nodes.length) return;
@@ -3001,6 +3010,7 @@ function applyPlainLanguageLayer() {
   if (intro) intro.classList.add("hidden");
   if (turnOff) turnOff.classList.toggle("hidden", !on);
   updatePlainLanguageScopeSelect();
+  updateSimpleChecksHint();
   updatePlainLanguageControlHints();
   updateAuditFilterLanesHintPlain();
   updateSimpleModeAuditBanner();

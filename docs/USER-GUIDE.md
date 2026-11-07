@@ -32,7 +32,7 @@ The steps at the top are **Start**, **Set checks**, **Run**, and **Fix**. **Set 
 
 Run checks the scope on Start. It does not underline while you type.
 
-Genre and language on Start decide most local checks. **Simple** hides the individual check list and uses the usual checks. Extra scans (timeline, citations, fiction modules) sit under **More checks**, or turn Simple off in Settings to pick each one. Fiction checks turn off when the type is not fiction. Citation and timeline tools look at the same scope and only run when you click them.
+Genre and language on Start decide most local checks. **Simple** hides the individual check list and uses the usual checks. If the type is fiction, story checks (plot, dialogue, viewpoint, pacing) still run. Extra scans (timeline, citations) sit under **More checks**, or turn Simple off in Settings to pick each one. Fiction checks turn off when the type is not fiction. Quoted speech is skipped for story checks so a character’s line is not treated as the narrator. Citation and timeline tools look at the same scope and only run when you click them.
 
 **Audit next chapter** walks one heading chapter at a time and keeps one combined summary. Use it when Full says it stopped.
 

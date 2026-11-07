@@ -347,7 +347,7 @@ ProzaEdit.Audit = {
         continue;
       }
       if (!mode) {
-        if (ch === '"' || ch === "\u201c" || ch === "\u2018") {
+        if (ch === '"' || ch === "\u201c" || ch === "\u2018" || ch === "\u00ab") {
           mode = ch;
           open = i;
         }
@@ -355,6 +355,7 @@ ProzaEdit.Audit = {
       }
       if (mode === '"' && ch === '"') commit(i);
       else if (mode === "\u201c" && ch === "\u201d") commit(i);
+      else if (mode === "\u00ab" && ch === "\u00bb") commit(i);
       else if (mode === "\u2018" && ch === "\u2019" && !/[A-Za-z]/.test(s[i + 1] || "")) commit(i);
     }
     return out.join("");
@@ -386,9 +387,9 @@ ProzaEdit.Audit = {
       if (ctx.mPlot) add("mPlot", "Plot", () => this._plot(text, lower, push, ctx));
       if (ctx.mMotivation) add("mMotivation", "Characters", () => this._motivation(hay, hayLower, push, ctx));
       if (ctx.mDialogue) add("mDialogue", "Dialogue", () => this._dialogue(text, lower, push, ctx));
-      if (ctx.mContinuity) add("mContinuity", "Continuity", () => this._continuity(text, lower, push));
+      if (ctx.mContinuity) add("mContinuity", "Continuity", () => this._continuity(hay, hayLower, push));
       if (ctx.mPlausibility) add("mPlausibility", "Plausibility", () => this._plausibility(hay, hayLower, push));
-      if (ctx.mPacing) add("mPacing", "Pacing", () => this._pacing(text, lower, push, ctx));
+      if (ctx.mPacing) add("mPacing", "Pacing", () => this._pacing(hay, hayLower, push, ctx));
       if (ctx.mSpoiler) add("mSpoiler", "Spoilers", () => this._spoiler(hay, hayLower, push));
       if (gp && (ctx.mPacing || ctx.mDialogue || ctx.mMotivation)) {
         add("genreCraft", "Genre craft", () => this._genreCraft(hay, hayLower, push, ctx, gp));
@@ -416,9 +417,9 @@ ProzaEdit.Audit = {
       add("contentNotes", "Content notes", () => ProzaEdit.GenreChecks.contentNotes(text, push, ctx));
     }
     if (ctx.extendedLocal) add("extendedLocal", "Deeper local pass", () => this._extendedLocalPass(text, lower, push, ctx));
-    if ((fiction && ctx.mPacing) || ctx.chkRep) add("rhythm", "Rhythm", () => this._rhythmMonotony(text, push));
+    if ((fiction && ctx.mPacing) || ctx.chkRep) add("rhythm", "Rhythm", () => this._rhythmMonotony(fiction ? hay : text, push));
     if (ctx.fkLock) add("fkLock", "Reading level", () => this._fkLockFlag(text, push, ctx));
-    if (fiction && ctx.mPacing) add("sensory", "Sensory detail", () => this._sensoryWeakSpot(text, push));
+    if (fiction && ctx.mPacing) add("sensory", "Sensory detail", () => this._sensoryWeakSpot(hay, push));
     if (!fiction && gp && ctx.chkSpell) add("nonfiction", "Clarity", () => this._nonfictionClarity(text, push, ctx, gp));
     if (
       ProzaEdit.MasterEngine &&
@@ -1027,7 +1028,7 @@ ProzaEdit.Audit = {
 
   _extendedLocalPass(text, lower, push, ctx) {
     ctx = ctx || {};
-    const narration = text.replace(/["\u201C][^"\u201C\u201D]*["\u201D]/g, (q) => " ".repeat(q.length));
+    const narration = this.blankQuotedSpeech ? this.blankQuotedSpeech(text) : text.replace(/["\u201C][^"\u201C\u201D]*["\u201D]/g, (q) => " ".repeat(q.length));
     (ProzaEdit.LexicalBanks?.EXTENDED_FILLERS || []).forEach(([word, hint]) => {
       if (new RegExp(`\\b${word}\\b`, "i").test(narration)) {
         push({
