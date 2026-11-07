@@ -1,6 +1,6 @@
 # Privacy and data (ProzaEdit Word)
 
-**Build:** 2.0.0.63 hosted task pane · **Owner-editable** summary for Help and Settings.
+**Build:** 2.0.0.65 hosted task pane · **Owner-editable** summary for Help and Settings.
 
 ---
 
@@ -10,7 +10,7 @@
 |--------|---------------------------|
 | **Run audit** (local checks) | **No** — scoped text is read from Word in the browser; findings stay in the pane unless you Apply. |
 | **Local Coach** | **No** — rule-based tips only. |
-| **Local paraphrase (Rewrite)** | **No** — runs in the browser. |
+| **Replace list (Rewrite)** | **No** — the list is stored in this browser only. The document changes in Word. |
 | **Timeline / citation scans** | **No** — local heuristics on scoped text. |
 | **Undo / dictionary / mute** | **No cloud** — stored in Word document settings and/or browser storage (see below). |
 

@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.63";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.65";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -37,6 +37,7 @@ let auditBusy = false;
 let deepBusy = false;
 let chatBusy = false;
 let rewriteBusy = false;
+let replaceListBusy = false;
 let lastRewritePreview = "";
 let lastRewriteOriginal = "";
 let historyBusy = false;
@@ -307,6 +308,19 @@ function syncChapterBounds(count) {
 
 let knownDocumentPageBounds = null;
 let pageBoundsInFlight = null;
+let pageBoundsBusy = false;
+let pageBoundsDocKey = "";
+
+function setPageFieldLabels(layout) {
+  const fromLbl = document.querySelector('label[for="scopePageFrom"]');
+  const toLbl = document.querySelector('label[for="scopePageTo"]');
+  const from = getEl("scopePageFrom");
+  const to = getEl("scopePageTo");
+  if (fromLbl) fromLbl.textContent = layout ? "From page" : "From page (estimate)";
+  if (toLbl) toLbl.textContent = layout ? "To page" : "To page (estimate)";
+  if (from) from.setAttribute("aria-label", layout ? "From page" : "From page, estimate");
+  if (to) to.setAttribute("aria-label", layout ? "To page" : "To page, estimate");
+}
 
 function applyPageBounds(bounds) {
   const hint = getEl("scopePageBoundHint");
@@ -314,7 +328,7 @@ function applyPageBounds(bounds) {
   const to = getEl("scopePageTo");
   if (!bounds) return;
   if (bounds.empty) {
-    knownDocumentPageBounds = { empty: true, pages: 0, stoppedEarly: false };
+    knownDocumentPageBounds = { empty: true, pages: 0, stoppedEarly: false, layout: !!bounds.layout };
     [from, to].forEach((el) => {
       if (!el) return;
       el.disabled = true;
@@ -323,9 +337,17 @@ function applyPageBounds(bounds) {
     if (hint) hint.textContent = "This document has no text yet.";
     return;
   }
+  const layout = !!bounds.layout;
   const per = ProzaEdit.ScopeReader?.WORDS_PER_PAGE || 250;
-  const pages = Math.max(1, Math.ceil((bounds.words || 0) / per));
-  knownDocumentPageBounds = { empty: false, pages, words: bounds.words || 0, stoppedEarly: !!bounds.stoppedEarly };
+  const pages = layout ? Math.max(1, bounds.pages | 0) : Math.max(1, Math.ceil((bounds.words || 0) / per));
+  knownDocumentPageBounds = {
+    empty: false,
+    pages,
+    words: bounds.words || 0,
+    stoppedEarly: !!bounds.stoppedEarly,
+    layout,
+  };
+  setPageFieldLabels(layout);
   [from, to].forEach((el) => {
     if (!el) return;
     el.disabled = false;
@@ -336,17 +358,36 @@ function applyPageBounds(bounds) {
   });
   if (from && to && parseInt(to.value, 10) < parseInt(from.value, 10)) to.value = from.value;
   if (hint) {
-    hint.textContent = bounds.stoppedEarly
-      ? "Document is longer than this check's limit. Page numbers above are only the part that can be checked."
-      : `About ${pages} page${pages === 1 ? "" : "s"} in this document (estimate).`;
+    hint.textContent = layout
+      ? `${pages} page${pages === 1 ? "" : "s"} in this document, from Word's layout. A custom number in the footer is ignored.`
+      : bounds.stoppedEarly
+        ? "Document is longer than this check's limit. Page numbers above are only the part that can be checked."
+        : `About ${pages} page${pages === 1 ? "" : "s"} in this document (estimate).`;
   }
 }
 
 function showKnownPageBounds() {
   const b = knownDocumentPageBounds;
   if (!b) return false;
-  applyPageBounds(b.empty ? { empty: true } : { words: b.words || 0, stoppedEarly: !!b.stoppedEarly });
+  if (b.empty) applyPageBounds({ empty: true, layout: !!b.layout });
+  else if (b.layout) applyPageBounds({ layout: true, pages: b.pages });
+  else applyPageBounds({ words: b.words || 0, stoppedEarly: !!b.stoppedEarly });
   return true;
+}
+
+function documentFileKey() {
+  return new Promise((resolve) => {
+    try {
+      const doc = Office.context && Office.context.document;
+      if (!doc || typeof doc.getFilePropertiesAsync !== "function") return resolve("");
+      doc.getFilePropertiesAsync((res) => {
+        if (res && res.status === Office.AsyncResultStatus.Succeeded) resolve(String((res.value && res.value.url) || ""));
+        else resolve("");
+      });
+    } catch (_) {
+      resolve("");
+    }
+  });
 }
 
 function clampKnownPageInputs() {
@@ -388,23 +429,50 @@ function refreshDocumentPageBounds() {
   if (pageBoundsInFlight) return pageBoundsInFlight;
   if (wordReadBlocked()) return Promise.resolve();
   const hint = getEl("scopePageBoundHint");
-  if (hint && !knownDocumentPageBounds) hint.textContent = "Counting this document…";
-  pageBoundsInFlight = wordRun("page-bounds", async (ctx) => {
-    return ProzaEdit.ScopeReader.measureScope(ctx, {
-      mode: "full",
-      maxChars: ProzaEdit.ScopeReader.getLimit("full"),
-    });
-  })
-    .then((result) => {
-      const text = result?.text || "";
-      applyPageBounds({
-        words: ProzaEdit.Metrics?.countWords?.(text) || 0,
-        stoppedEarly: !!result?.stoppedEarly,
-        empty: !text.trim(),
-      });
+  pageBoundsBusy = true;
+  pageBoundsInFlight = documentFileKey()
+    .then(async (key) => {
+      if (key && pageBoundsDocKey && key !== pageBoundsDocKey) knownDocumentPageBounds = null;
+      if (key) pageBoundsDocKey = key;
+      if (showKnownPageBounds()) return;
+      if (hint) hint.textContent = "Counting this document…";
+      const longOp = beginLongOperation({ initialStatus: "Counting pages…" });
+      try {
+        const result = await wordRun("page-bounds", async (ctx) => {
+          longOp.throwIfCancelled();
+          const cancelCheck = () => longOp.throwIfCancelled();
+          const layout = await ProzaEdit.ScopeReader.countLayoutPages(ctx, { cancelCheck });
+          if (layout) return { layoutCount: layout };
+          return ProzaEdit.ScopeReader.measureScope(ctx, {
+            mode: "full",
+            maxChars: ProzaEdit.ScopeReader.getLimit("full"),
+            cancelCheck,
+          });
+        });
+        if (result.layoutCount) {
+          applyPageBounds(
+            result.layoutCount.empty ? { empty: true, layout: true } : { layout: true, pages: result.layoutCount.pages }
+          );
+          return;
+        }
+        const text = result.text || "";
+        applyPageBounds({
+          words: ProzaEdit.Metrics?.countWords?.(text) || 0,
+          stoppedEarly: !!result.stoppedEarly,
+          empty: !text.trim(),
+        });
+      } catch (e) {
+        if (hint) {
+          hint.textContent = ProzaEdit.LongOperationController?.isCancelledError?.(e)
+            ? "Count stopped. You can still type a page range."
+            : "The page count did not finish. You can still type a page range.";
+        }
+      } finally {
+        endLongOperation(longOp);
+      }
     })
-    .catch(() => {})
     .finally(() => {
+      pageBoundsBusy = false;
       pageBoundsInFlight = null;
     });
   return pageBoundsInFlight;
@@ -594,7 +662,9 @@ function wordReadBlocked() {
     citationBusy ||
     chatBusy ||
     rewriteBusy ||
-    batchRunning
+    batchRunning ||
+    pageBoundsBusy ||
+    replaceListBusy
   );
 }
 
@@ -1948,6 +2018,7 @@ function onProzaEditOfficeReady(info) {
   } catch (_) {}
   try {
     loadSavedSettings();
+    loadReplaceListDraft();
     migrateLegacySessionTipsOnInit();
     adaptModules();
     renderDictionaryList();
@@ -2812,11 +2883,15 @@ async function prepareScopeForAudit(retryOpts) {
       return false;
     }
   }
-  showPeStatus("Highlight text in Word, or use Section + audit on the Run tab.", "warn");
+  showPeStatus("Highlight text in Word, or use Select section and Run on the Run tab.", "warn");
   return false;
 }
 
 function runPrimaryAudit() {
+  if (pageBoundsBusy) {
+    showPeStatus("Page count is still running. Press Cancel, or wait.", "warn");
+    return;
+  }
   const ref = getEl("styleGuideRef")?.value;
   if (ref === "custom") {
     const n = ProzaEdit.Settings.getCustomStyleGuide().rules?.length || 0;
@@ -4184,6 +4259,15 @@ function getEditLock() {
   return peEditLock;
 }
 
+function wordDesktopApiSupported(ver) {
+  try {
+    const req = Office.context && Office.context.requirements;
+    return !!(req && typeof req.isSetSupported === "function" && req.isSetSupported("WordApiDesktop", ver));
+  } catch (_) {
+    return false;
+  }
+}
+
 function wordApiSupported(ver) {
   try {
     const req = Office.context && Office.context.requirements;
@@ -4286,7 +4370,7 @@ async function applyDocumentEdit(beforeText, afterText, label, options) {
       const block = ProzaEdit.ContinuityGuard.formatWarningBlock(warnings);
       const proceed = await peConfirm({
         title: "Continuity check",
-        message: `Continuity check (local, 0 tokens):\n\n${block}\n\nApply this change anyway?\n(Cancel = skip; use Dismiss on card to silence similar warnings.)`,
+        message: `This check stays on this computer.\n\n${block}\n\nApply this change anyway?\n(Cancel = skip; use Dismiss on the note to hide similar warnings.)`,
         confirmLabel: "Apply anyway",
         cancelLabel: "Skip",
       });
@@ -5173,7 +5257,7 @@ async function copyFeedbackLetter() {
   try {
     if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
     else if (!fallbackCopyText(text)) throw new Error("copy blocked");
-    showPeStatus("Feedback letter copied (0 tokens).", "ok");
+    showPeStatus("Feedback letter copied.", "ok");
   } catch (_) {
     if (fallbackCopyText(text)) showPeStatus("Feedback letter copied.", "ok");
     else showPeStatus("Copy failed. Select the text and press Ctrl+C.", "warn");
@@ -5674,7 +5758,7 @@ function runExtendedLocalAudit() {
   runAuditInternal({
     extendedLocal: true,
     label: "Deeper local report",
-    status: "Running deeper local report (0 tokens)…",
+    status: "Running the deeper check…",
     btnId: "btnRunAudit",
     btnDone: PE_RUN_REPORT_LABEL,
   });
@@ -5933,7 +6017,7 @@ function runAuditInternalCore(opts) {
         );
       } else {
         showPeStatus(
-          timingSummary ? `${PE_REPORT_FINISHED} (0 tokens). ${timingSummary}` : `${PE_REPORT_FINISHED} (0 tokens).`,
+          timingSummary ? `${PE_REPORT_FINISHED}. ${timingSummary}` : `${PE_REPORT_FINISHED}.`,
           "ok"
         );
       }
@@ -6369,7 +6453,7 @@ function showLocalTipForIssue(item) {
   const reply = ProzaEdit.LocalCoach.forIssue(item, collectUiConfig());
   appendCoachMessage(`Tip for: ${item.module}`, true);
   appendCoachMessage(reply, false);
-  showPeStatus("Local tip (0 tokens).", "ok");
+  showPeStatus("Local tip.", "ok");
 }
 
 async function sendLocalCoachMessage() {
@@ -6394,7 +6478,7 @@ async function sendLocalCoachMessage() {
   const profile = [buildManuscriptProfile({ baseOnly: true }), statusLine].filter(Boolean).join("\n");
   const reply = ProzaEdit.LocalCoach.answer(prompt, snippet ? `${profile}\n\nSelection excerpt:\n${snippet}` : profile, collectUiConfig());
   appendCoachMessage(reply, false);
-  showPeStatus("Local Coach (0 tokens).", "ok");
+  showPeStatus("Local Coach.", "ok");
 }
 
 function getChapterIndex() {
@@ -6721,7 +6805,7 @@ function runCitationScan() {
   }
   const manuscriptType = getEl("manuscriptType")?.value || "";
   if (!ProzaEdit.CitationEngine?.isEligibleManuscript?.(manuscriptType)) {
-    showPeStatus("Citation verify is for Academic, Business, or Technical/Journalism manuscripts. Set Manuscript type on Start.", "warn");
+    showPeStatus("Citation check is for Academic, Business, or Technical/Journalism manuscripts. Set the type on Start.", "warn");
     return;
   }
   if (!isChecked("chkCitationScan", false)) {
@@ -6913,7 +6997,7 @@ async function scanChapterHeatmap() {
   setModuleButtonsDisabled(true);
   let longOp = null;
   try {
-    longOp = beginLongOperation({ initialStatus: "Building chapter heatmap…" });
+    longOp = beginLongOperation({ initialStatus: "Building the chapter chart…" });
     const entries = await wordRun("heatmap", (ctx) => ProzaEdit.ChapterHeatmap.scanDocument(ctx, longOp));
     if (!entries?.length) throw new Error("No chapters found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.");
     const payload = JSON.stringify(entries.slice(0, 40));
@@ -6924,8 +7008,8 @@ async function scanChapterHeatmap() {
     if (isLongOpCancelledError(e)) {
       showPeStatus("Cancelled.", "warn");
     } else {
-      reportActionError(e, "build the chapter heatmap", {
-        retry: { label: "Chapter heatmap", run: () => scanChapterHeatmap() },
+      reportActionError(e, "build the chapter chart", {
+        retry: { label: "Chapter chart", run: () => scanChapterHeatmap() },
       });
     }
   } finally {
@@ -7144,9 +7228,9 @@ async function runDeepAuditAI() {
   }
   if (
     !(await aiConfirmOnce({
-      title: `Deep audit via ${aiLabel()}`,
+      title: `Deep check via ${aiLabel()}`,
       message:
-        `Deep Audit uses 1 ${aiLabel()} API call and sends about ${Math.round(MAX_DEEP / 6).toLocaleString()} words of the scoped text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nTry the deeper local report (0 tokens) or Copy for Copilot first.${geminiIndexDisclosure()}\n\nContinue?`,
+        `Deep check uses 1 ${aiLabel()} call and sends about ${Math.round(MAX_DEEP / 6).toLocaleString()} words of the chosen text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nThe deeper check on this computer, or Copy for Copilot, does not use that key.${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -7312,7 +7396,7 @@ function updateTokenEstimate() {
   if (!el) return;
   const key = getApiKey();
   if (!key) {
-    el.textContent = "Local Coach: 0 tokens (add an API key only for optional AI help)";
+    el.textContent = "Local Coach stays on this computer. Add an AI key only if you want AI help.";
     return;
   }
   const est = ProzaEdit.AIProviders.estimate(aiProviderId(), aiModelId(), chat, 400);
@@ -7461,6 +7545,192 @@ function syncShaperSliderLabels() {
 }
 
 /* Rewrite tab */
+const REPLACE_LIST_STORAGE = "pe-replace-list-v1";
+
+function loadReplaceListDraft() {
+  const el = getEl("replaceListText");
+  if (!el || el.dataset.peBound === "1") return;
+  el.dataset.peBound = "1";
+  try {
+    const saved = localStorage.getItem(REPLACE_LIST_STORAGE);
+    if (saved) el.value = saved;
+  } catch (_) {}
+  el.addEventListener("input", () => {
+    try {
+      localStorage.setItem(REPLACE_LIST_STORAGE, el.value || "");
+    } catch (_) {}
+  });
+}
+
+function saveReplaceListDraft() {
+  const el = getEl("replaceListText");
+  if (!el) return;
+  try {
+    localStorage.setItem(REPLACE_LIST_STORAGE, el.value || "");
+  } catch (_) {}
+}
+
+async function collectReplaceRanges(ctx) {
+  const mode = getScopeMode();
+  if (mode === "full") return [ctx.document.body.getRange()];
+  if (mode === "selection") {
+    const sel = ctx.document.getSelection();
+    sel.load("text");
+    await ctx.sync();
+    if (!String(sel.text || "").trim()) {
+      throw new Error("Highlight the text to change, or set Scope on Start to Pages, Chapters, or Full.");
+    }
+    return [sel];
+  }
+  if (mode === "pages" && ProzaEdit.ScopeReader.layoutPagesAvailable()) {
+    const from = parseInt(getEl("scopePageFrom")?.value, 10) || 1;
+    const to = Math.max(from, parseInt(getEl("scopePageTo")?.value, 10) || from);
+    const pages = ctx.document.body.getRange().pages;
+    pages.load("items/index");
+    await ctx.sync();
+    const wanted = (pages.items || []).filter((p) => p.index >= from && p.index <= to);
+    if (!wanted.length) throw new Error(`No text in pages ${from}–${to}.`);
+    return wanted.map((p) => p.getRange("Whole"));
+  }
+  if (mode === "pages") {
+    const span = await ProzaEdit.ScopeReader.pageParagraphSpan(ctx, getEl("scopePageFrom")?.value, getEl("scopePageTo")?.value);
+    const paras = ctx.document.body.paragraphs;
+    paras.load("items");
+    await ctx.sync();
+    return [paras.items[span.start].getRange("Start").expandTo(paras.items[span.end].getRange("End"))];
+  }
+  if (!scopeChapterListCache.length) throw new Error("Reload the chapter list on Start, then apply the list.");
+  const indices = getSelectedChapterIndicesFromUi();
+  if (!indices.length) throw new Error("Check at least one chapter on Start.");
+  const paras = ctx.document.body.paragraphs;
+  paras.load("items");
+  await ctx.sync();
+  const ranges = [];
+  indices.forEach((n) => {
+    const ch = scopeChapterListCache.find((c) => c.index === n);
+    if (!ch || ch.startPara < 0 || ch.endPara >= paras.items.length) return;
+    ranges.push(paras.items[ch.startPara].getRange("Start").expandTo(paras.items[ch.endPara].getRange("End")));
+  });
+  if (!ranges.length) throw new Error("Chapter list is out of date. Reload it on Start.");
+  return ranges;
+}
+
+async function countReplaceHits(ctx, ranges, pair, matchCase, whole) {
+  const q = ProzaEdit.WordSafeNavigator.sanitizeSearch(pair.find);
+  if (!q) throw new Error(`Line ${pair.line}: Word cannot search for that text.`);
+  const single = !/\s/.test(q);
+  let n = 0;
+  for (let i = 0; i < ranges.length; i++) {
+    const found = ranges[i].search(q, {
+      matchCase: !!matchCase,
+      matchWholeWord: !!(whole && single),
+      matchWildcards: false,
+    });
+    found.load("items");
+    await ctx.sync();
+    n += (found.items || []).length;
+    if (n > ProzaEdit.ReplaceList.MAX_HITS) {
+      throw new Error(`“${q}” appears too many times. Narrow the scope on Start. Nothing was changed.`);
+    }
+  }
+  return n;
+}
+
+async function applyReplaceList() {
+  if (replaceListBusy || wordReadBlocked()) {
+    showPeStatus("Wait for the current operation to finish.", "warn");
+    return;
+  }
+  if (!ProzaEdit.ReplaceList || !ProzaEdit.WordSafeNavigator) {
+    showPeStatus("Replace list failed to load. Reload the task pane.", "warn");
+    return;
+  }
+  saveReplaceListDraft();
+  const parsed = ProzaEdit.ReplaceList.parse(getEl("replaceListText")?.value || "");
+  const status = getEl("replaceListStatus");
+  if (parsed.errors.length) {
+    if (status) status.textContent = parsed.errors[0];
+    showPeStatus(parsed.errors[0], "warn");
+    return;
+  }
+  if (!parsed.pairs.length) {
+    if (status) status.textContent = "Add a line such as colour => color.";
+    showPeStatus("Add a line such as colour => color.", "warn");
+    return;
+  }
+  const matchCase = !!getEl("replaceListCase")?.checked;
+  const whole = getEl("replaceListWhole") ? !!getEl("replaceListWhole").checked : true;
+  const release = getEditLock().tryAcquire();
+  if (!release) {
+    showPeStatus("Another edit is still being applied. Wait a moment, then try again.", "warn");
+    return;
+  }
+  replaceListBusy = true;
+  if (status) status.textContent = "Counting matches…";
+  try {
+    const counts = await wordRun("replace-list-count", async (ctx) => {
+      const ranges = await collectReplaceRanges(ctx);
+      const rows = [];
+      for (let i = 0; i < parsed.pairs.length; i++) {
+        const hits = await countReplaceHits(ctx, ranges, parsed.pairs[i], matchCase, whole);
+        rows.push(hits);
+      }
+      return rows;
+    });
+    const total = counts.reduce((s, n) => s + n, 0);
+    if (!total) {
+      if (status) status.textContent = "No matches in the scope on Start.";
+      showPeStatus("No matches in the scope on Start.", "warn");
+      return;
+    }
+    const deletes = parsed.pairs.some((p, i) => counts[i] > 0 && !p.replace);
+    const ok = await peConfirm({
+      title: "Apply replace list?",
+      message: `Replace ${total} place${total === 1 ? "" : "s"} in the scope on Start?${deletes ? " Some lines delete the found text." : ""} Word's Track Changes setting is left as it is. Use Word's Undo if a line was wrong.`,
+      confirmLabel: "Apply",
+      cancelLabel: "Cancel",
+    });
+    if (!ok) {
+      if (status) status.textContent = "Cancelled. Nothing was changed.";
+      return;
+    }
+    let fixed = 0;
+    await wordRun("replace-list-apply", async (ctx) => {
+      const ranges = await collectReplaceRanges(ctx);
+      for (let p = 0; p < parsed.pairs.length; p++) {
+        const pair = parsed.pairs[p];
+        const q = ProzaEdit.WordSafeNavigator.sanitizeSearch(pair.find);
+        const single = !/\s/.test(q);
+        const hits = [];
+        for (let i = 0; i < ranges.length; i++) {
+          const found = ranges[i].search(q, {
+            matchCase: !!matchCase,
+            matchWholeWord: !!(whole && single),
+            matchWildcards: false,
+          });
+          found.load("items");
+          await ctx.sync();
+          (found.items || []).forEach((item) => hits.push(item));
+        }
+        hits.forEach((item) => item.insertText(pair.replace, Word.InsertLocation.replace));
+        if (hits.length) await ctx.sync();
+        fixed += hits.length;
+      }
+    });
+    markManuscriptContextDirty();
+    const msg = `Replaced ${fixed} place${fixed === 1 ? "" : "s"}. Use Word's Undo to step back.`;
+    if (status) status.textContent = msg;
+    showPeStatus(msg, "ok");
+  } catch (e) {
+    const msg = wordRecoveryMessage(e, "apply the replace list");
+    if (status) status.textContent = msg;
+    showPeStatus(msg, "warn");
+  } finally {
+    replaceListBusy = false;
+    release();
+  }
+}
+
 async function runLocalRewrite() {
   if (rewriteBusy) return;
   if (!window.ProzaEdit?.LocalRewrite?.run) {
@@ -7494,8 +7764,8 @@ async function runLocalRewrite() {
     }
     if (preview) preview.innerText = lastRewritePreview || excerpt;
     const est = getEl("rewriteTokenEstimate");
-    if (est) est.textContent = "Local paraphrase: 0 tokens";
-    showPeStatus("Local paraphrase ready (0 tokens).", "ok");
+    if (est) est.textContent = "Local paraphrase stays on this computer.";
+    showPeStatus("Local paraphrase is ready.", "ok");
   } catch (e) {
     if (preview) preview.innerText = wordRecoveryMessage(e, "paraphrase this selection");
     lastRewritePreview = "";
@@ -7660,6 +7930,16 @@ function setupEnterKeyHandler() {
         else sendChatMessage();
       }
   });
+  const thesaurus = getEl("thesaurusInput");
+  if (thesaurus && thesaurus.dataset.boundEnter !== "1") {
+    thesaurus.dataset.boundEnter = "1";
+    thesaurus.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        runThesaurusLookup();
+      }
+    });
+  }
 }
 
 /* Bind chrome that must work even if Office.onReady is late or missing. */

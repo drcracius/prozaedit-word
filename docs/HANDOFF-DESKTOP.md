@@ -15,8 +15,9 @@ Read this first. It is written for a fresh agent with no chat history. Handoff t
 
 Task-pane add-in for Microsoft Word (Office.js) that gives writers a local-first editorial audit, Coach, and Rewrite, genre-aware (12 profiles), with optional AI help using the user's own API key (Gemini, OpenAI, Claude, OpenRouter). Hosted on GitHub Pages (`https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html`); registered in Word by uploading `manifest.hosted.xml`. No build step, no backend.
 
-## 3. Current state (2.0.0.63)
+## 3. Current state (2.0.0.65)
 
+- **Restore point:** tag `v2.0.0.65` / `pe-97-restore-pre-master-engine`, branch `pre-master-engine-v4`. Master engine **reference only** in `docs/ProzaEdit - Comprehensive Master Engine & Lexical Suite.js`; integration plan in `docs/ProzaEdit-Major Style and Lexical Update.md`. Live pane still uses `audit-engine.js` until that phase ships.
 - Verdict (PE-96): ready for a wider beta, not a public launch. Automated tests are green (`npm test`, wiring, contrast).
 - Welcome tips live under **Help**. **Run** uses a progress ring, names each check, and opens the report on **Fix**. Extra card actions sit under **More**. The old “Continue” banner is off unless Settings → Onboarding asks before long scans.
 - Proofreading catches “should of” → “have”. Business text uses one original jargon list. See [STYLE-GUIDE-SOURCES.md](./STYLE-GUIDE-SOURCES.md).
@@ -51,7 +52,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 512 tests expected, 0 fail
+npm test                          # 515 tests expected, 0 fail
 npm run validate:manifest         # expect "OK: manifest.hosted.xml passes Microsoft production validation."
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"

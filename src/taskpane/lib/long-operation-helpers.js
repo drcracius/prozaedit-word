@@ -124,7 +124,7 @@ ProzaEdit.LongOp = {
       return "This report covers a large scope and may take a minute or more.";
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.CITATION_SCAN) {
-      return "Citation verify walks scoped paragraphs and may take a while on long sections.";
+      return "Citation check reads the scope you chose and can take a while on a long section.";
     }
     if (id === ProzaEdit.LongOp.ACTION_IDS.TIMELINE_SCAN) {
       return "Timeline scan walks scoped paragraphs and may take a while on long sections.";

@@ -187,11 +187,15 @@ test("PE-85: Replace-all double spaces is ambiguity-safe (runs only, indents ski
   assert.deepEqual(doc.paras, ["One two three.", "    indented  line here", "Clean line.", "Tail ", "Quote \"a b\" end."]);
 });
 
-test("PE-85: plain-prose fiction is not told its reading level is too low; non-fiction still is", () => {
+test("PE-85: plain-prose fiction is not told its reading level is too low; a short passage is not graded", () => {
   const P = loadEngine();
   const fic = "She ran. He ran too. The dog sat. It was hot. They had no map. The sun was low. She said no. He said yes.";
-  for (const g of ["Fiction (General)", "Fiction (Romance)"]) assert.ok(!P.Audit.run(fic, ctxFor(g, {})).suggestions.some((s) => s.ruleId === "read:too_simple"), g);
-  assert.ok(P.Audit.run(fic, ctxFor("Non-Fiction / Memoir", {})).suggestions.some((s) => s.ruleId === "read:too_simple"));
+  for (const g of ["Fiction (General)", "Fiction (Romance)", "Non-Fiction / Memoir"]) {
+    assert.ok(!P.Audit.run(fic, ctxFor(g, {})).suggestions.some((s) => s.ruleId === "read:too_simple"), g);
+  }
+  const long = Array.from({ length: 40 }, () => "She ran to the shop and got a bun. He sat on the mat in the sun.").join(" ");
+  assert.ok(P.Audit.run(long, ctxFor("Non-Fiction / Memoir", {})).suggestions.some((s) => s.ruleId === "read:too_simple"));
+  assert.ok(!P.Audit.run(long, ctxFor("Fiction (General)", {})).suggestions.some((s) => s.ruleId === "read:too_simple"));
 });
 
 test("PE-85: edit history - failed undo/redo restores stacks exactly; MAX is enforced; anchors travel with entries", () => {

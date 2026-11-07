@@ -225,12 +225,12 @@ ProzaEdit.Onboarding = {
   },
 
   DARK_APPEARANCE_TIP_COPY:
-    "Dark pane is for long audits; switch to Light or Match system in Settings → Appearance if you prefer Word-like chrome.",
+    "Dark pane is for long audits; switch to Light or Match system in Settings → Essentials if you prefer Word-like chrome.",
 
   WHATS_NEW_RELEASE: {
-    version: "2.0.0.63",
+    version: "2.0.0.65",
     bullet:
-      "The steps at the top are named. A new document starts on Selection. Page boxes say they are estimates.",
+      "Restore point before the planned master engine. Replace list, page UX, and plainer labels from 2.0.0.64 are included.",
     releaseNotesUrl:
       "https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md",
   },

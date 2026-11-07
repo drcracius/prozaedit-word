@@ -88,6 +88,22 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.65 — Restore point before master engine (planning docs only)
+
+- Ships 2.0.0.64 pane work: replace list, desktop page layout where Word allows it, page-count cancel, plainer labels, Essentials theme link.
+- Adds `docs/ProzaEdit-Major Style and Lexical Update.md` (integration plan) and `docs/ProzaEdit - Comprehensive Master Engine & Lexical Suite.js` (reference engine v4 — **not wired**; live checks still use `audit-engine.js`).
+- Annotated tag `v2.0.0.65` / `pe-97-restore-pre-master-engine` and branch `pre-master-engine-v4` for the next phase.
+- Not tried in Word from here.
+
+## 2.0.0.64 — Replace list, and real pages where Word allows them
+
+- Rewrite has a replace list. One line is `find => replace`. It changes the scope chosen on Start, asks first, and leaves Track Changes as Word has it. Use Word's Undo to step back. The list stays on this computer.
+- On a recent desktop Word, Pages uses Word's layout. Word on the web still uses about 250 words per page. The count can be cancelled. If it fails, the boxes stay usable. Opening another saved file forgets the previous file's page count.
+- A passage under about 200 words no longer gets a reading-grade note.
+- The dark-mode tip opens Settings → Essentials, where Light, Dark, and Match system live.
+- An out-of-date book outline sends you to Start. Section and chapter buttons say Run. Local checks no longer say “0 tokens.”
+- Not tried in Word from here.
+
 ## 2.0.0.63 — Clearer steps and one place to start
 
 - The four steps show the words Start, Set checks, Run, and Fix. Set checks opens the Run tab. Run starts the check.

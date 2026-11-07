@@ -78,6 +78,36 @@ ProzaEdit.Audit = {
     return this._find(text, lower, phrase) != null;
   },
 
+  /** Grade formulas swing on a sentence. Wait until the passage is long enough to mean something. */
+  MIN_READING_LEVEL_WORDS: 200,
+
+  _noteReadingLevel(metrics, ctx, fiction, gp, push, text) {
+    if (!metrics || metrics.wordCount < this.MIN_READING_LEVEL_WORDS) return;
+    if (!((fiction && ctx.mPacing) || ctx.chkSpell)) return;
+    const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);
+    const sample = String(text || "").trim().substring(0, 80);
+    if (!fiction && metrics.fleschKincaidGrade < gMin - 2) {
+      push({
+        ruleId: "read:too_simple",
+        module: "Pacing & Readability",
+        type: "preference",
+        explanation: `Reading level (~grade ${metrics.fleschKincaidGrade}) may be below target (${ctx.targetAudience}).`,
+        targetText: sample,
+        replacementText: "(raise lexical complexity)",
+      });
+    }
+    if (metrics.fleschKincaidGrade > gMax + 2 + (gp ? gp.profile.fkSlack : 0)) {
+      push({
+        ruleId: "read:too_complex",
+        module: "Pacing & Readability",
+        type: "preference",
+        explanation: `Reading level (~grade ${metrics.fleschKincaidGrade}) may exceed target (${ctx.targetAudience}).`,
+        targetText: sample,
+        replacementText: "(simplify syntax)",
+      });
+    }
+  },
+
   isMuted(ruleId, mutedSet) {
     return mutedSet.has(ruleId);
   },
@@ -162,29 +192,7 @@ ProzaEdit.Audit = {
     for (const step of steps) step.fn();
 
     const metrics = ProzaEdit.Metrics.analyze(text);
-    const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);
-    if ((fiction && ctx.mPacing) || ctx.chkSpell) {
-      if (!fiction && metrics.fleschKincaidGrade < gMin - 2) {
-        push({
-          ruleId: "read:too_simple",
-          module: "Pacing & Readability",
-          type: "preference",
-          explanation: `Reading level (~grade ${metrics.fleschKincaidGrade}) may be below target (${ctx.targetAudience}).`,
-          targetText: text.trim().substring(0, 80),
-          replacementText: "(raise lexical complexity)",
-        });
-      }
-      if (metrics.fleschKincaidGrade > gMax + 2 + (gp ? gp.profile.fkSlack : 0)) {
-        push({
-          ruleId: "read:too_complex",
-          module: "Pacing & Readability",
-          type: "preference",
-          explanation: `Reading level (~grade ${metrics.fleschKincaidGrade}) may exceed target (${ctx.targetAudience}).`,
-          targetText: text.trim().substring(0, 80),
-          replacementText: "(simplify syntax)",
-        });
-      }
-    }
+    this._noteReadingLevel(metrics, ctx, fiction, gp, push, text);
 
     const maxCards = ProzaEdit.ReportDensity?.maxCards?.(ctx.reportDensity) || 60;
     const deduped = this._dedupe(suggestions).slice(0, maxCards).map((x) => ({ ...x, confidence: this.confidenceFor(x) }));
@@ -243,29 +251,7 @@ ProzaEdit.Audit = {
     const anyCore = ctx.contentNotes || ctx.chkRep || ctx.chkProp || ctx.chkSpell || ctx.chkAI || ctx.extendedLocal || anyFiction;
     const finish = (extra) => {
       const metrics = ProzaEdit.Metrics.analyze(text);
-      const [gMin, gMax] = ProzaEdit.Metrics.targetGradeRange(ctx.targetAudience);
-      if ((fiction && ctx.mPacing) || ctx.chkSpell) {
-        if (!fiction && metrics.fleschKincaidGrade < gMin - 2) {
-          push({
-            ruleId: "read:too_simple",
-            module: "Pacing & Readability",
-            type: "preference",
-            explanation: `Reading level (~grade ${metrics.fleschKincaidGrade}) may be below target (${ctx.targetAudience}).`,
-            targetText: text.trim().substring(0, 80),
-            replacementText: "(raise lexical complexity)",
-          });
-        }
-        if (metrics.fleschKincaidGrade > gMax + 2 + (gp ? gp.profile.fkSlack : 0)) {
-          push({
-            ruleId: "read:too_complex",
-            module: "Pacing & Readability",
-            type: "preference",
-            explanation: `Reading level (~grade ${metrics.fleschKincaidGrade}) may exceed target (${ctx.targetAudience}).`,
-            targetText: text.trim().substring(0, 80),
-            replacementText: "(simplify syntax)",
-          });
-        }
-      }
+      this._noteReadingLevel(metrics, ctx, fiction, gp, push, text);
       const maxCards = ProzaEdit.ReportDensity?.maxCards?.(ctx.reportDensity) || 60;
       const deduped = this._dedupe(suggestions).slice(0, maxCards).map((x) => ({ ...x, confidence: this.confidenceFor(x) }));
       const persona = this.PERSONA_WEIGHTS[ctx.criticPersona] || this.PERSONA_WEIGHTS["Average Reader"];

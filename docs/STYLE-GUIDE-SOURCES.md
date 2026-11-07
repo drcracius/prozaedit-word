@@ -39,4 +39,4 @@ Private testing does not cancel copyright. This add-in is also public, so a nonc
 
 Rules ship with the add-in build. Help → About → **Check for updates** compares this pane with the live manifest. There is no separate download for style packs.
 
-*Aligned with hosted build **2.0.0.63**.*
+*Aligned with hosted build **2.0.0.65**.*

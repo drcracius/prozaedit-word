@@ -302,10 +302,115 @@ ProzaEdit.ScopeReader = {
     return { text: read.text || "", label: "full manuscript", stoppedEarly: !!read.stoppedEarly };
   },
 
+  /** Word's layout pages (desktop WordApiDesktop 1.2). Word on the web does not have this. */
+  layoutPagesAvailable() {
+    try {
+      const req = typeof Office !== "undefined" && Office.context && Office.context.requirements;
+      return !!(req && typeof req.isSetSupported === "function" && req.isSetSupported("WordApiDesktop", "1.2"));
+    } catch (_) {
+      return false;
+    }
+  },
+
+  async countLayoutPages(context, opts) {
+    if (!this.layoutPagesAvailable()) return null;
+    const pages = context.document.body.getRange().pages;
+    pages.load("items/index");
+    await context.sync();
+    this._cancelCheck(opts);
+    const items = pages.items || [];
+    if (!items.length) return { empty: true, pages: 0, layout: true };
+    let max = 0;
+    items.forEach((p) => {
+      if (p.index > max) max = p.index;
+    });
+    return { empty: false, pages: Math.max(items.length, max), layout: true };
+  },
+
+  async readByLayoutPageRange(context, pageFrom, pageTo, opts) {
+    opts = opts || {};
+    const from = Math.max(1, parseInt(pageFrom, 10) || 1);
+    const to = Math.max(from, parseInt(pageTo, 10) || from);
+    const pages = context.document.body.getRange().pages;
+    pages.load("items/index");
+    await context.sync();
+    this._cancelCheck(opts);
+    const wanted = (pages.items || []).filter((p) => p.index >= from && p.index <= to);
+    if (!wanted.length) throw new Error(`No text in pages ${from}–${to}.`);
+    const maxChars = opts.maxChars != null ? Number(opts.maxChars) : this.getLimit("pages");
+    let out = "";
+    let stoppedEarly = false;
+    const STEP = 8;
+    for (let i = 0; i < wanted.length; i += STEP) {
+      this._cancelCheck(opts);
+      const slice = wanted.slice(i, i + STEP);
+      const ranges = slice.map((p) => p.getRange("Whole"));
+      ranges.forEach((r) => r.load("text"));
+      await context.sync();
+      for (let r = 0; r < ranges.length; r++) {
+        out += (ranges[r].text || "") + "\n";
+        if (out.length > maxChars) {
+          out = out.slice(0, maxChars);
+          stoppedEarly = true;
+          break;
+        }
+      }
+      if (stoppedEarly) break;
+    }
+    if (!out.trim()) throw new Error(`No text in pages ${from}–${to}.`);
+    return { text: out, label: `pages ${from}–${to}`, stoppedEarly, layoutPages: true };
+  },
+
+  /** Paragraph indexes for the word-count page estimate. */
+  async pageParagraphSpan(context, pageFrom, pageTo, opts) {
+    opts = opts || {};
+    const from = Math.max(1, parseInt(pageFrom, 10) || 1);
+    const to = Math.max(from, parseInt(pageTo, 10) || from);
+    const startChar = (from - 1) * this.CHARS_PER_PAGE;
+    const endChar = to * this.CHARS_PER_PAGE;
+    const paras = context.document.body.paragraphs;
+    paras.load("items");
+    await context.sync();
+    const total = paras.items.length;
+    if (!total) throw new Error("The document is empty. Add some text first.");
+    let charPos = 0;
+    let start = -1;
+    let end = -1;
+    const CHUNK = 50;
+    for (let blockStart = 0; blockStart < total; blockStart += CHUNK) {
+      this._cancelCheck(opts);
+      const blockEnd = Math.min(blockStart + CHUNK - 1, total - 1);
+      for (let i = blockStart; i <= blockEnd; i++) paras.items[i].load("text");
+      await context.sync();
+      for (let i = blockStart; i <= blockEnd; i++) {
+        const t = paras.items[i].text || "";
+        const chunkLen = t.length + 1;
+        const paraStart = charPos;
+        const paraEnd = charPos + chunkLen;
+        if (paraEnd > startChar && paraStart < endChar) {
+          if (start < 0) start = i;
+          end = i;
+        }
+        charPos = paraEnd;
+        if (charPos >= endChar) break;
+      }
+      if (charPos >= endChar) break;
+    }
+    if (start < 0) throw new Error(`No paragraphs in approximate pages ${from}–${to}.`);
+    return { start, end };
+  },
+
   async readByPageRange(context, pageFrom, pageTo, opts) {
     opts = opts || {};
     const from = Math.max(1, parseInt(pageFrom, 10) || 1);
     const to = Math.max(from, parseInt(pageTo, 10) || from);
+    if (this.layoutPagesAvailable()) {
+      try {
+        return await this.readByLayoutPageRange(context, from, to, opts);
+      } catch (e) {
+        if (e && (e.code === "PE_CANCELLED" || /No text in pages/.test(String(e.message || "")))) throw e;
+      }
+    }
     const startChar = (from - 1) * this.CHARS_PER_PAGE;
     const endChar = to * this.CHARS_PER_PAGE;
     const paras = context.document.body.paragraphs;

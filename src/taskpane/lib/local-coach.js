@@ -47,7 +47,7 @@ ProzaEdit.LocalCoach = {
     ],
     "Editorial consistency": [
       "a/an and duplicate-word flags are heuristics — read in context before Apply.",
-      "For batch find/replace at scale, use Word with your own macros or external editor tools.",
+      "For a list of find-and-replace pairs, use Rewrite. It follows the scope on Start and stays on this computer.",
     ],
     "Genre craft": [
       "Genre flags compare your excerpt with the usual range for the genre you picked (Target tab); change the genre if it does not fit.",
@@ -99,7 +99,7 @@ ProzaEdit.LocalCoach = {
       re: /\b(plot|chapter|structure|arc|midpoint|climax)\b/i,
       tips: [
         "End chapters on unresolved tension; logistics-only endings often flag in the report.",
-        "Check one chapter at a time (Start → Chapters) to keep long manuscripts manageable (0 tokens).",
+        "Check one chapter at a time (Start → Chapters) to keep a long book manageable.",
       ],
     },
     {
@@ -164,7 +164,7 @@ ProzaEdit.LocalCoach = {
 
   answer(question, profileText, ctx) {
     const q = String(question || "").trim();
-    const lines = ["**ProzaEdit Local Coach** (0 tokens)", ""];
+    const lines = ["**ProzaEdit Local Coach**", ""];
     if (profileText) lines.push(profileText, "");
     for (const block of this.INTENT_TIPS) {
       if (block.re.test(q)) {

@@ -1,6 +1,6 @@
 # How to use ProzaEdit
 
-This guide matches build **2.0.0.63**. If Help → About shows an older number, download the add-in file again from the raw link below.
+This guide matches build **2.0.0.65**. If Help → About shows an older number, the live copy has not been updated yet.
 
 ## 1. Install
 
@@ -18,7 +18,7 @@ The steps at the top are **Start**, **Set checks**, **Run**, and **Fix**. **Set 
 **Scope** is the part Run reads. A new document starts on **Selection**. A saved choice is kept.
 
 - **Selection** — text you highlighted. If nothing is highlighted, you see 0 words.
-- **Pages** — about **250 words** per page. The boxes say **estimate**. Word does not give this add-in a real page number. The count runs when you choose Pages. You cannot pick a page past that estimate.
+- **Pages** — on a recent desktop Word, the count is Word's own layout (page 1, page 2, and so on). A custom number in the footer is ignored. On Word for the web, a page is about **250 words**, and the boxes say **estimate**. The count runs when you choose Pages. Press **Cancel** if it takes too long. You can still type a range if the count does not finish.
 - **Chapters** — set **From chapter** and **To chapter**, like pages. Titles must use Word’s **Heading 1**, **Heading 2**, or **Heading 3** style. A Heading 2 or Heading 3 is its own chapter. If none are found, the pane says so and offers **Use pages**. It does not switch by itself.
 - **Full** — the whole document, up to about **75,000 words**. If the book is longer, the pane says the check **stopped**. It does not pretend to have read the rest.
 
@@ -42,13 +42,19 @@ Cards are the notes from the last Run. **Go to** jumps to a note. **Apply** chan
 
 **Run** stays at the top. This tab does not start a second run.
 
-## 5. Coach and optional AI
+## 5. Rewrite
+
+**Replace list** is one change per line: `find => replace`. It changes the scope chosen on Start. A blank replacement deletes the found text. It asks before it writes. Word's Track Changes setting is left as it is. Use Word's Undo to step back.
+
+**Local paraphrase** tightens the highlighted text on this computer.
+
+## 6. Coach and optional AI
 
 **Local Coach** stays on your device. It does not need a key.
 
 **Optional AI help** uses your own API key only when you click **Send via AI**. It sends the text you chose, and your book outline if you built one. Nothing is applied automatically. A ChatGPT Plus, Claude Pro, Gemini, or Copilot subscription is not an API key.
 
-## 6. Settings that change a check
+## 7. Settings that change a check
 
 - **Simple / Advanced** hides extra tabs. It does not change the rules.
 - **Report depth** changes how many cards you see.
@@ -56,16 +62,16 @@ Cards are the notes from the last Run. **Go to** jumps to a note. **Apply** chan
 - **Your dictionary** stops name notes you do not want.
 - **House rules** are the custom style guide.
 
-## 7. When something looks wrong
+## 8. When something looks wrong
 
 - **No chapters found** — the titles are not Heading 1, 2, or 3. Use pages, or apply those styles and reload the chapter list.
 - **Count stays blank** — click **Refresh count**. If another check is running, wait.
 - **Stopped after about N words** — Full reached its limit. Use chapters, pages, or Audit next chapter for the rest.
 - **Upload says the file is not valid** — use the raw GitHub file from section 1, and remove the old add-in first.
 
-## 8. What this add-in does not read
+## 9. What this add-in does not read
 
-Headers, footers, and many text boxes are outside the main story. Notes there may not appear. Pages are estimates, not Word’s printed page numbers.
+Headers, footers, and many text boxes are outside the main story. Notes there may not appear. On Word for the web, pages are estimates. On a recent desktop Word, Pages follows Word's layout order, not a custom number in the footer.
 
 ## Keeping this guide up to date
 
