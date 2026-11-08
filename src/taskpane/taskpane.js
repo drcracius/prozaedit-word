@@ -2466,7 +2466,7 @@ function collectUiConfig() {
     onboardingTourComplete: configOnboardingTourComplete,
     rewriteMode: (() => {
       const v = getEl("rewriteMode")?.value || "fluency";
-      return ["fluency", "formal", "creative", "academic"].includes(v) ? v : "fluency";
+      return ["fluency", "formal", "creative", "academic", "cadence"].includes(v) ? v : "fluency";
     })(),
     ...ProzaEdit.UiPrefs?.normalizeShaperFields?.({
       shaperComplexity: getEl("slider-shaper-complexity")?.value,
@@ -2532,7 +2532,7 @@ function applyUiConfig(p) {
   }
   if (p.rewriteMode) {
     const mode = String(p.rewriteMode);
-    setV("rewriteMode", ["fluency", "formal", "creative", "academic"].includes(mode) ? mode : "fluency");
+    setV("rewriteMode", ["fluency", "formal", "creative", "academic", "cadence"].includes(mode) ? mode : "fluency");
   }
   if (p.auditCardFilter && isAuditFilterMode(p.auditCardFilter)) {
     auditCardFilter = p.auditCardFilter;

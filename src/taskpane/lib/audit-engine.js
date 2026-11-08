@@ -693,9 +693,20 @@ ProzaEdit.Audit = {
         module: "Anti-AI Voice Directive",
         type: "preference",
         confidence: found.length >= 3 ? "medium" : "low",
-        explanation: `AI-voice trope: "${phrase}".`,
+        explanation: `Stock phrase "${phrase}". Say the concrete thing instead. This is a style hint, not proof the text was machine-written.`,
         targetText: hit,
-        replacementText: "(rewrite in human cadence)",
+        replacementText: "(cut or replace with a specific detail)",
+      });
+    });
+    (ProzaEdit.AiProsePatterns?.scan(text, ctx) || []).forEach((row) => {
+      push({
+        ruleId: row.ruleId,
+        module: "Anti-AI Voice Directive",
+        type: "preference",
+        confidence: row.confidence || "low",
+        explanation: row.explanation,
+        targetText: row.targetText,
+        replacementText: "(edit by hand — cadence cut on Rewrite can drop a few stock openers)",
       });
     });
   },

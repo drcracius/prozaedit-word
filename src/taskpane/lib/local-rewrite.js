@@ -111,11 +111,25 @@ ProzaEdit.LocalRewrite = {
     return t.trim();
   },
 
+  /** Drops discourse fillers only. Does not rewrite metaphors or try to change a detector score. */
+  cadence(text) {
+    let t = this.fluency(text);
+    (ProzaEdit.AiProsePatterns?.CUTS || []).forEach((row) => {
+      const find = row[0];
+      const repl = row[1];
+      if (!find) return;
+      if (!repl) t = this._dropPhrase(t, new RegExp(`\\b${find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")},?[ \\t]*`, "gi"));
+      else t = this._replaceWord(t, find, repl);
+    });
+    return t.replace(/[ \t]{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+  },
+
   run(mode, text) {
     const m = String(mode || "fluency").toLowerCase();
     if (m === "formal") return this.formal(text);
     if (m === "academic") return this.academic(text);
     if (m === "creative") return this.creative(text);
+    if (m === "cadence") return this.cadence(text);
     return this.fluency(text);
   },
 };

@@ -364,7 +364,7 @@
       <div class="toggle-row"><span id="chkProp-lbl">Names that don't match (use Dictionary if a name is fine)</span><input type="checkbox" id="chkProp" aria-labelledby="chkProp-lbl" checked></div>
       <div class="toggle-row"><span id="chkSpell-lbl">Proofreading &amp; language (US/UK + style guide packs)</span><input type="checkbox" id="chkSpell" aria-labelledby="chkSpell-lbl" checked></div>
       <div class="toggle-row"><span id="chkAI-lbl">Style resembles common AI phrasing (experimental)</span><input type="checkbox" id="chkAI" aria-labelledby="chkAI-lbl"></div>
-      <p style="font-size:var(--pe-font-size-sm);color:var(--text-muted);margin:4px 0 0;">Experimental pattern check only — it cannot tell who or what wrote a text, and is not proof of AI use or plagiarism.</p>
+      <p style="font-size:var(--pe-font-size-sm);color:var(--text-muted);margin:4px 0 0;">Narration only. Flags a repeated “isn’t just … it’s,” back-to-back three-part lists, bare noun piles (Blood. Glass. Silence.), stock images used together, and essay lines such as “let’s dive in.” Short action sentences are left alone. It cannot tell who wrote the text. On Rewrite, <strong>Cut stock cadence</strong> deletes fillers such as moreover. It does not change a detector score.</p>
     </div>
     </div>
     <details id="peChecksMoreOptional" class="help-box help-muted pe-checks-more-optional">
@@ -732,6 +732,7 @@
         <option value="fluency">Fluency (tighten)</option>
         <option value="formal">Formal (register)</option>
         <option value="creative">Creative (light touch)</option>
+        <option value="cadence">Cut stock cadence</option>
         <option value="academic">Academic (hedge trim)</option>
       </select>
     </div>
@@ -1034,6 +1035,7 @@
   <script src="lib/custom-style-guide.js"></script>
   <script src="lib/style-guide-rules.js"></script>
   <script src="lib/genre-checks.js"></script>
+  <script src="lib/ai-prose-patterns.js"></script>
   <script src="lib/audit-engine.js"></script>
   <script src="lib/doc-analytics.js"></script>
   <script src="lib/chapter-heatmap.js"></script>
