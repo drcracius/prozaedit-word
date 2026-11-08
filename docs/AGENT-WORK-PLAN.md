@@ -103,7 +103,7 @@
 
 | Item | What it is | Why it waits |
 | --- | --- | --- |
-| **Pass 2b lane groups** | Group Audit filter chips into clearer lanes | Optional declutter spike; can break card layout tests |
+| **Pass 2b lane groups** | Group Audit filter chips into clearer lanes | **Done** as the four lane chips (Correctness, Clarity, Consistency, Craft). Do not rebuild that UI. |
 | **Side icon rail** | Extra column of tool icons from the old mock | Easy to crowd a narrow Word pane |
 | **PDF / print as the main export** | Mock had a print button | No agreed export design |
 | **Web fonts** | Mock used downloaded fonts | Project stays offline-friendly |
@@ -119,7 +119,7 @@
 Do these after A–E, still without owner testing sessions:
 
 1. **Content security policy** — add only in a way that can be turned off if Word’s pane blocks the app. Prove with the existing automated pane boot, not with a claim about Word.
-2. **GitHub action versions pinned** — so the test workflow doesn’t drift.
+2. **GitHub action versions pinned** — done (checkout + setup-node SHA pins; tests workflow also runs `check:contrast`).
 3. **Narrow layout pass in code** — styles at about 320px wide in the contrast/layout checks we already run. Don’t claim a phone or Word pane was opened.
 
 ---

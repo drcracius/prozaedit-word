@@ -10,16 +10,18 @@
 |-------|------------|----------------|
 | 0 Word proof | — | Owner Track Changes, keys, real manuscript FPs |
 | 1 Lexicon | Done (banks + inventory) | Owner licence call on Wikipedia/EU/proselint |
-| 2 Master in pane | Done (script + `contributeSupplemental`) | Live path does **not** replace `Audit.run` with `AuditPipeline.audit()`; dialogue blanking still uses `blankQuotedSpeech` (safer for stray quotes) |
+| 2 Master in pane | Done (script + `contributeSupplemental`) | Live path does **not** replace `Audit.run` with `AuditPipeline.audit()` (would double-scan banks). Dialogue blanking still uses `blankQuotedSpeech` (safer for stray quotes). Dialogue tools now read quoted spans. |
 | 3 Lanes | Done (chips, `.lane`, coach) | Owner click-through in Word |
-| 4 Heuristics | Live extra pass = unique master checks (POS, tag-adverbs, similar names, echoes, prefixes). Wordiness/hidden verbs stay on the style-guide path (one scan). Rewrite uses the same banks. | Owner: if Simple still looks quiet on a real book, keep it; extra notes show in Advanced |
+| 4 Heuristics | Live extra pass = unique master checks (POS, tag-adverbs, similar names, echoes, prefixes). Wordiness/hidden verbs stay on the style-guide path (one scan). Rewrite uses the same banks. Extra pass skips bank-hydrated singles. | Owner: if Simple still looks quiet on a real book, keep it; extra notes show in Advanced |
 | 5 Simpler Run | Done: Simple hides core + fiction check lists (`ids` kept); More checks still has timeline/citations | Owner first-run with a non-technical tester |
 | 6 Delete duplicates | Hydrate from banks only | Files not deleted (`audit-engine.js` still the orchestrator) |
 | 7 Launch | USER-GUIDE lanes note | Owner re-test Word, testers, CSP/diagnostics |
 
-**Freeze/crash (agent, 2.0.0.66 working copy):** master scans are capped; empty-regex loops cannot spin; extra master pass cannot crash a report. Name, capitalisation, continuity, timeline, citation, Apply occurrence, and leftover exec loops now have lastIndex + iteration caps. Desktop and web still share one pane and matching manifest versions.
+**Freeze/crash (agent, 2.0.0.66 working copy):** master scans are capped; empty-regex loops cannot spin; extra master pass cannot crash a report. A thrown check no longer aborts the rest of Run — finished cards stay. Hedge scan, name, capitalisation, continuity, timeline, citation, Apply occurrence, and leftover exec loops have lastIndex + iteration caps. Contrast gate runs in CI. Desktop and web still share one pane and matching manifest versions.
 
 **Highest-level core still owner-gated:** Track Changes Apply in real Word; one live key per AI provider; one 80k-word manuscript FP list; 320px/dark/keyboard; three testers.
+
+**Not in the plans (and not built):** a story bible / intended-ending tracker that gates every suggestion. Plot, character, and continuity cards are pattern notes, not a read of the plot you meant.
 
 **Next agent work (only after you try a real book in Word, or an explicit ask):** one-file cleanup (Phase 6). Do not delete `audit-engine.js` yet.  
 **This file wins** over [ProzaEdit-Major Style and Lexical Update.md](./ProzaEdit-Major%20Style%20and%20Lexical%20Update.md) where they disagree. That older file is a **big-bang** sketch. This one is the **ordered** path.

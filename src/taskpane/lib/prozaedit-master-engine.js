@@ -784,6 +784,7 @@
         const rule = singleWordIndex.get(token.lower);
         if (!rule) continue;
         if (skipJargon && jargon.has(token.lower)) continue;
+        if (rule.lane !== "Correctness" && !rule.guard) continue;
         if (rule.guard && !rule.guard(i, taggedTokens)) continue;
         push({
           ruleId: `rule:${token.lower}`,

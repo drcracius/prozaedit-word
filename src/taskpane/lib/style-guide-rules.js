@@ -147,7 +147,15 @@ ProzaEdit.StyleGuideRules = {
     const re = new RegExp(`\\b(${hedges.join("|")})\\b`, "gi");
     const hits = [];
     let m;
-    while ((m = re.exec(text)) !== null && hits.length < 12) hits.push(m[0]);
+    let steps = 0;
+    while ((m = re.exec(text)) !== null && hits.length < 12) {
+      if (!m[0]) {
+        re.lastIndex++;
+        continue;
+      }
+      hits.push(m[0]);
+      if (++steps > 40) break;
+    }
     if (hits.length < 4) return;
     budget.remaining--;
     const shown = [...new Set(hits.map((h) => h.toLowerCase()))].slice(0, 4).join(", ");

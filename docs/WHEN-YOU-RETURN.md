@@ -2,7 +2,7 @@
 
 Steps **1–5** are done (GitHub Pages + hosted manifest). You only need **Step 6** (web upload — use **office.com** if desktop Word has no Upload).
 
-**Build 2.0.0.66** is the working copy. It is not the copy Word opens until it is published. **523** tests. Owner Phase 1 (**PE-47**) open. Word Desktop install: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
+**Build 2.0.0.66** is the working copy. It is not the copy Word opens until it is published. **532** tests. Owner Phase 1 (**PE-47**) open. Word Desktop install: [DESKTOP-INSTALL.md](./DESKTOP-INSTALL.md).
 
 **Next:** re-upload `manifest.hosted.xml` if Help -> About is older, then run [OWNER-CHECKLIST-2.0.0.26.md](./OWNER-CHECKLIST-2.0.0.26.md) (Track Changes first).
 

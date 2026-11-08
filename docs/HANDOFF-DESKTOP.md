@@ -52,7 +52,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 530 tests expected, 0 fail
+npm test                          # 532 tests expected, 0 fail
 npm run validate:manifest         # expect "OK: manifest.hosted.xml passes Microsoft production validation."
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"
@@ -128,7 +128,7 @@ Full text: [PRIVACY-AND-DATA-PE.md](./PRIVACY-AND-DATA-PE.md). Essentials:
 3. Rule precision only on author-written passages; tune from a real manuscript's false positives.
 4. No Content-Security-Policy (needs a trial in desktop Word, web, Mac first).
 5. Done in PE-99: non-fiction long-sentence/passive checks wired; pane-level AI provider x cache x cancel test (`tests/pe-99-ai-cancel-cache.test.mjs`).
-7. Diagnostics worker: not deployed; needs allow-list and rate limit first. GitHub Actions not SHA-pinned (read-only permissions).
+7. Diagnostics worker: not deployed; needs allow-list and rate limit first. GitHub Actions are SHA-pinned (read-only). Contrast now runs in the tests workflow.
 8. `taskpane.css` reviewed by scan only; 320 px and dark look unconfirmed.
 9. Screen-reader behaviour checked only by DOM tests.
 10. Decide whether noisy Advanced rules (`rep:pair`, `ext:*`) stay.

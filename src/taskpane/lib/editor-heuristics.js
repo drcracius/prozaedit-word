@@ -22,11 +22,13 @@ ProzaEdit.EditorHeuristics = {
     const aNeedsAn = /^(hour|honest|hono(?:u)?r|heir)/i;
     const anBeforeConsonantLetter = /^[bcdfghjklmnpqrstvwxyz]/i;
 
+    let steps = 0;
     while ((m = re.exec(text)) !== null && n < limit) {
       if (!m[0]) {
         re.lastIndex++;
         continue;
       }
+      if (++steps > 8000) break;
       const article = m[1].toLowerCase();
       const word = m[2];
       const wLow = word.toLowerCase();
@@ -66,11 +68,13 @@ ProzaEdit.EditorHeuristics = {
     let n = 0;
     const re2 = /\b([\w'-]{1,40})[ \t]+\1\b/gi;
     let m;
+    let steps = 0;
     while ((m = re2.exec(text)) !== null && n < limit) {
       if (!m[0]) {
         re2.lastIndex++;
         continue;
       }
+      if (++steps > 8000) break;
       // Grammatical or lexical doublings ("had had", "that that", "bye bye", "no no") and bare numbers are not typos.
       if (this.LEGIT_DOUBLES.has(m[1].toLowerCase()) || /^\d+$/.test(m[1])) continue;
       const after = text.slice(m.index + m[0].length, m.index + m[0].length + m[1].length + 12).toLowerCase();
@@ -89,11 +93,13 @@ ProzaEdit.EditorHeuristics = {
       });
     }
     const re3 = /\b([\w'-]{1,40}[ \t]+[\w'-]{1,40})[ \t]+\1\b/gi;
+    steps = 0;
     while ((m = re3.exec(text)) !== null && n < limit) {
       if (!m[0]) {
         re3.lastIndex++;
         continue;
       }
+      if (++steps > 8000) break;
       const parts = m[1].toLowerCase().split(/\s+/);
       if (parts[0] === parts[1] || this.LEGIT_DOUBLES.has(parts[0]) || this.LEGIT_DOUBLES.has(parts[1])) continue;
       n++;
@@ -257,6 +263,10 @@ ProzaEdit.EditorHeuristics = {
     let n = 0;
     let m;
     while ((m = re.exec(text)) !== null && n < 4) {
+      if (!m[0]) {
+        re.lastIndex++;
+        continue;
+      }
       n++;
       const modal = m[1];
       push({

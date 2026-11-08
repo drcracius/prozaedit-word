@@ -293,11 +293,13 @@ ProzaEdit.Audit = {
         genre,
         completedPhaseIds: [],
         skippedPhaseIds: [],
+        failedPhaseIds: [],
       };
     }
     const steps = this._checkSteps({ text, lower, ...this._fictionSearch(text, lower, fiction), push, ctx, fiction, gp, roster });
     const completedPhaseIds = [];
     const skippedPhaseIds = [];
+    const failedPhaseIds = [];
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
       if (typeof hooks.cancelled === "function" && hooks.cancelled()) {
@@ -306,6 +308,7 @@ ProzaEdit.Audit = {
           stoppedEarly: completedPhaseIds.length > 0,
           completedPhaseIds: completedPhaseIds.slice(),
           skippedPhaseIds,
+          failedPhaseIds,
         });
         const err = new Error("Cancelled");
         err.code = "PE_CANCELLED";
@@ -317,13 +320,15 @@ ProzaEdit.Audit = {
       try {
         step.fn();
       } catch (e) {
+        if (e && e.code === "PE_CANCELLED") throw e;
+        failedPhaseIds.push(step.id);
         if (typeof hooks.onPhase === "function") hooks.onPhase({ id: step.id, label: step.label, state: "error" });
-        throw e;
+        continue;
       }
       completedPhaseIds.push(step.id);
       if (typeof hooks.onPhase === "function") hooks.onPhase({ id: step.id, label: step.label, state: "done" });
     }
-    return finish({ stoppedEarly: false, completedPhaseIds, skippedPhaseIds: [] });
+    return finish({ stoppedEarly: false, completedPhaseIds, skippedPhaseIds: [], failedPhaseIds });
   },
 
   /** Same length as text. A quote pair is blanked only when it closes before the next line break. A stray opener is left in place, so later lines still count. A curly apostrophe inside a word does not end a quote. Straight apostrophes stay. One pass, so a long run of quote marks cannot stall the check. */
@@ -359,6 +364,44 @@ ProzaEdit.Audit = {
       else if (mode === "\u2018" && ch === "\u2019" && !/[A-Za-z]/.test(s[i + 1] || "")) commit(i);
     }
     return out.join("");
+  },
+
+  /**
+   * Closed quote spans in document order. Same pairing rules as blankQuotedSpeech.
+   * Dialogue tools read these; narrator tools use the blanked copy instead.
+   */
+  quotedSpeechSpans(text) {
+    const s = String(text || "");
+    const spans = [];
+    let mode = "";
+    let open = -1;
+    const close = (to) => {
+      if (open >= 0 && to >= open && spans.length < 200) {
+        spans.push({ start: open, end: to, text: s.slice(open, to + 1) });
+      }
+      mode = "";
+      open = -1;
+    };
+    for (let i = 0; i < s.length && spans.length < 200; i++) {
+      const ch = s[i];
+      if (ch === "\n" || ch === "\r" || ch === "\u000b" || ch === "\u000c" || ch === "\u2028" || ch === "\u2029") {
+        mode = "";
+        open = -1;
+        continue;
+      }
+      if (!mode) {
+        if (ch === '"' || ch === "\u201c" || ch === "\u2018" || ch === "\u00ab") {
+          mode = ch;
+          open = i;
+        }
+        continue;
+      }
+      if (mode === '"' && ch === '"') close(i);
+      else if (mode === "\u201c" && ch === "\u201d") close(i);
+      else if (mode === "\u00ab" && ch === "\u00bb") close(i);
+      else if (mode === "\u2018" && ch === "\u2019" && !/[A-Za-z]/.test(s[i + 1] || "")) close(i);
+    }
+    return spans;
   },
 
   _fictionSearch(text, lower, fiction) {
@@ -767,30 +810,50 @@ ProzaEdit.Audit = {
 
   _dialogue(text, lower, push, ctx) {
     const longChars = (ctx && ctx._genre && ctx._genre.profile.longDialogueChars) || 80;
-    const lines = text.split(/\n/);
+    const spans = this.quotedSpeechSpans(text);
     let longDlg = 0;
-    lines.forEach((line) => {
-      const trimmedLine = line.trim();
-      let spoken = 0;
-      if (/^["\u201c]/.test(trimmedLine)) {
-        const spans = trimmedLine.match(/["\u201c][^"\u201c\u201d]*["\u201d]/g);
-        const closed = spans ? spans.join("").length : 0;
-        const openTail = trimmedLine.slice(closed ? trimmedLine.lastIndexOf(spans[spans.length - 1]) + spans[spans.length - 1].length : 0);
-        spoken = spans ? closed : 0;
-        if (!spans || (/^["\u201c]/.test(openTail.trim()) && !/["\u201d]/.test(openTail))) spoken += openTail.length;
-      }
-      if (spoken >= longChars && longDlg < 3) {
-        longDlg++;
-        push({
-          ruleId: `dlg:long:${longDlg}`,
-          module: "Dialogue & Viewpoint (POV)",
-          type: "preference",
-          confidence: spoken >= longChars * 2 ? "medium" : "low",
-          explanation: "Long dialogue block—possible exposition dump.",
-          targetText: line.trim().substring(0, 100),
-          replacementText: "(break with beats)",
-        });
-      }
+    let bookisms = 0;
+    const BOOKISM = /\b(exclaimed|retorted|interjected|opined|queried|mused|snarled|hissed|bellowed|chortled|intoned)\b/i;
+    const flagLong = (snippet) => {
+      if (longDlg >= 3) return;
+      const spoken = String(snippet || "").length;
+      longDlg++;
+      push({
+        ruleId: `dlg:long:${longDlg}`,
+        module: "Dialogue & Viewpoint (POV)",
+        type: "preference",
+        confidence: spoken >= longChars * 2 ? "medium" : "low",
+        explanation: "Long dialogue block—possible exposition dump.",
+        targetText: String(snippet || "").trim().substring(0, 100),
+        replacementText: "(break with beats)",
+      });
+    };
+    spans.forEach((span) => {
+      if ((span.text || "").length >= longChars) flagLong(span.text);
+      if (bookisms >= 4) return;
+      const after = String(text || "").slice(span.end + 1, span.end + 56);
+      const tag = BOOKISM.exec(after);
+      if (!tag) return;
+      bookisms++;
+      push({
+        ruleId: `dlg:bookism:${tag[0].toLowerCase()}`,
+        module: "Dialogue & Viewpoint (POV)",
+        type: "preference",
+        confidence: "low",
+        explanation: `Heavy dialogue tag “${tag[0]}”. “Said” or an action beat is usually quieter.`,
+        targetText: tag[0],
+        replacementText: "said",
+      });
+    });
+    if (longDlg >= 3) return;
+    String(text || "").split(/\n/).some((line) => {
+      if (longDlg >= 3) return true;
+      const trimmed = line.trim();
+      if (!/^["\u201c\u00ab]/.test(trimmed)) return false;
+      if (/["\u201d\u00bb]/.test(trimmed.slice(1))) return false;
+      if (trimmed.length < longChars) return false;
+      flagLong(trimmed);
+      return false;
     });
   },
 

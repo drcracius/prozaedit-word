@@ -111,6 +111,7 @@ test("live extra pass uses master name-similarity and echo, not a second wordine
     { manuscriptType: "Fiction (General)", chkRep: true, chkProp: true, mDialogue: true }
   );
   assert.ok(!extra.some((f) => String(f.ruleId).startsWith("phrase:")));
+  assert.ok(!extra.some((f) => /^(rule:unique|rule:leverage)/.test(String(f.ruleId))));
   assert.ok(extra.some((f) => String(f.ruleId).startsWith("prop:collision")));
   assert.ok(extra.some((f) => String(f.ruleId).startsWith("rep:echo")));
   assert.ok(extra.every((f) => f.confidence === "low"));

@@ -17,4 +17,5 @@ jobs:
       - run: npm test
       - run: npm run validate:manifest
       - run: npm run verify:wiring
+      - run: npm run check:contrast
       - run: bash scripts/verify-version-sync.sh

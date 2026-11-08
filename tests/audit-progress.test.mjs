@@ -60,6 +60,23 @@ test("Audit.runWithProgress reports enabled checks in order and can stop early",
   assert.deepEqual(seen.slice(0, 2), ["Repetition", "Proofreading"]);
 });
 
+test("runWithProgress keeps finished cards if a later check throws", async () => {
+  const Audit = loadAudit();
+  const orig = Audit._plot;
+  Audit._plot = () => {
+    throw new Error("forced plot failure");
+  };
+  try {
+    const ctxAll = { ...ctx, mPlot: true, chkRep: true, chkSpell: true };
+    const r = await Audit.runWithProgress("He was very tired and the the cat sat.", ctxAll, {});
+    assert.ok(r.suggestions.length >= 1);
+    assert.ok((r.failedPhaseIds || []).includes("mPlot"));
+    assert.equal(r.stoppedEarly, false);
+  } finally {
+    Audit._plot = orig;
+  }
+});
+
 test("Audit.run and runWithProgress agree when nothing is cancelled", async () => {
   const Audit = loadAudit();
   const text = "He was very tired. She said that it was nice.";

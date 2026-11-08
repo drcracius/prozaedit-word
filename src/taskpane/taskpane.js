@@ -6001,7 +6001,7 @@ function runAuditInternalCore(opts) {
           const msg = `Running ${phase.label}…`;
           longOp.setStatus(msg);
           if (sumEl) sumEl.textContent = msg;
-        } else if (phase.state === "done") {
+        } else if (phase.state === "done" || phase.state === "error") {
           setCheckPhaseMark(rowId, "done");
         }
       },
@@ -7329,7 +7329,7 @@ async function runDeepAuditAICore() {
           clearCheckPhaseMarks("now");
           setCheckPhaseMark(rowId, "now");
           longOp.setStatus(`Running ${phase.label}…`);
-        } else if (phase.state === "done") {
+        } else if (phase.state === "done" || phase.state === "error") {
           setCheckPhaseMark(rowId, "done");
         }
       },

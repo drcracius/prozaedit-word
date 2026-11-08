@@ -75,6 +75,20 @@ test("fiction story checks ignore time jumps and long sentences that live only i
   assert.ok(ids(narrTime).includes("cont:time_skips"));
 });
 
+test("dialogue checks still read quoted speech for long lines and heavy tags", () => {
+  const ids = (t) => P.Audit.run(t, ctxFor("Fiction (General)")).suggestions;
+  const long = `"I want you to know that I never meant to hurt you, that I thought about it for months, and that every night I lay awake wondering whether there was a different way to tell you."`;
+  const longHit = ids(long).find((s) => String(s.ruleId).startsWith("dlg:long"));
+  assert.ok(longHit);
+  assert.equal(longHit.confidence, "medium");
+  const heavy = ids(`"Leave now," she exclaimed, and slammed the door.`);
+  const book = heavy.find((s) => String(s.ruleId).startsWith("dlg:bookism"));
+  assert.ok(book);
+  assert.equal(book.confidence, "low");
+  assert.equal(book.targetText.toLowerCase(), "exclaimed");
+  assert.equal(ids(`"Leave now," she said, and slammed the door.`).some((s) => String(s.ruleId).startsWith("dlg:bookism")), false);
+});
+
 test("tense drift ignores a present-tense line that is only inside quotes", () => {
   const past = Array(8).fill("She walked to the hall. He closed the door. They sat.").join(" ");
   const quotedPresent = `${past} "I am going now," she said. ${past}`;
