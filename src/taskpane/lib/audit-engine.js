@@ -427,9 +427,15 @@ ProzaEdit.Audit = {
     if (ctx.chkAI) add("chkAI", "AI-like phrasing", () => this._aiVoice(text, lower, push, ctx));
     if (ctx.chkAIDetection) add("chkAIDetection", "AI-style patterns", () => this._aiDetectionHeuristic(text, lower, push));
     if (fiction) {
-      if (ctx.mPlot) add("mPlot", "Plot", () => this._plot(text, lower, push, ctx));
+      if (ctx.mPlot) {
+        add("mPlot", "Plot", () => this._plot(text, lower, push, ctx));
+        add("passStructure", "Structure notes", () => ProzaEdit.EditPasses?.structureNotes(text, push, ctx));
+      }
       if (ctx.mMotivation) add("mMotivation", "Characters", () => this._motivation(hay, hayLower, push, ctx));
-      if (ctx.mDialogue) add("mDialogue", "Dialogue", () => this._dialogue(text, lower, push, ctx));
+      if (ctx.mDialogue) {
+        add("mDialogue", "Dialogue", () => this._dialogue(text, lower, push, ctx));
+        add("passDialogue", "Dialogue notes", () => ProzaEdit.EditPasses?.dialogueNotes(text, push, ctx));
+      }
       if (ctx.mContinuity) add("mContinuity", "Continuity", () => this._continuity(hay, hayLower, push));
       if (ctx.mPlausibility) add("mPlausibility", "Plausibility", () => this._plausibility(hay, hayLower, push));
       if (ctx.mPacing) add("mPacing", "Pacing", () => this._pacing(hay, hayLower, push, ctx));
@@ -461,6 +467,7 @@ ProzaEdit.Audit = {
     }
     if (ctx.extendedLocal) add("extendedLocal", "Deeper local pass", () => this._extendedLocalPass(text, lower, push, ctx));
     if ((fiction && ctx.mPacing) || ctx.chkRep) add("rhythm", "Rhythm", () => this._rhythmMonotony(fiction ? hay : text, push));
+    if (ctx.chkRep || ctx.chkAI) add("passLine", "Line notes", () => ProzaEdit.EditPasses?.lineNotes(fiction ? hay : text, push, ctx));
     if (ctx.fkLock) add("fkLock", "Reading level", () => this._fkLockFlag(text, push, ctx));
     if (fiction && ctx.mPacing) add("sensory", "Sensory detail", () => this._sensoryWeakSpot(hay, push));
     if (!fiction && gp && ctx.chkSpell) add("nonfiction", "Clarity", () => this._nonfictionClarity(text, push, ctx, gp));
@@ -475,7 +482,7 @@ ProzaEdit.Audit = {
         } catch (_) {}
       });
     }
-    return steps;
+    return ProzaEdit.EditPasses?.sortSteps ? ProzaEdit.EditPasses.sortSteps(steps) : steps;
   },
 
   LOW_CONFIDENCE_PREFIXES: ["rep:pair", "rep:soft", "rep:echo", "plot:", "ai:detect", "gb:", "ext:dash", "ext:emdash", "ext:repeat", "edit:among", "edit:ie_density", "edit:duplsent", "edit:num:", "edit:hyphen:", "edit:prefix", "sg:writegood:", "pov:", "tense:", "content:", "sense:sparse", "genre:filter_words", "genre:adverb_density", "genre:tag_adverbs", "craft:tag_adverb", "craft:rhythm", "rule:", "phrase:", "edit:aan", "edit:cap", "edit:open", "setting:", "read:", "rhythm:", "plaus:", "mot:", "cont:", "fk:"],

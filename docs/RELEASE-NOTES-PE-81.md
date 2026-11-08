@@ -88,6 +88,14 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.67 — Four editing passes, diagnostic Deep check
+
+- Run can follow structure, then dialogue, then line, then copyedit. One pass limits the local checks to that job.
+- Deep check sends that pass's diagnostic prompt (cause and effect, dialogue without tags, line notes, or a strict copyedit). It is told to list problems, not rewrite the chapter.
+- Optional voice sample is included only on that Deep check.
+- Page and chapter scope stay capped to the document. Templated-narration checks ignore quoted speech and short thriller beats.
+- 546 tests. Not tried in real Word from here.
+
 ## 2.0.0.66 — Master engine in the pane (Phases 1–6 of the product roadmap)
 
 - Loads `prozaedit-master-engine.js` (your compiled v4 core): dialogue-safe scanning, Micro-POS, four lanes, extra phrase/grammar.

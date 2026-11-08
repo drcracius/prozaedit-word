@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.66";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.67";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -676,6 +676,17 @@ function markFirstRunCompleteAndPersist() {
   configFirstRunComplete = true;
   persistSettings(false);
   initSimpleModeFirstRunBanner();
+}
+
+function setupAuditPass() {
+  const sel = getEl("auditPass");
+  if (!sel || sel.dataset.peBound) return;
+  sel.dataset.peBound = "1";
+  sel.addEventListener("change", () => {
+    applyAuditPass(sel.value);
+    schedulePersistSettings();
+    updateActiveChecksHint();
+  });
 }
 
 function setupScopeUi() {
@@ -2138,6 +2149,7 @@ function onProzaEditOfficeReady(info) {
     setupUndoRedoShortcuts();
     setupAuditPins();
     setupScopeUi();
+    setupAuditPass();
     setupMainTargetSync();
     setupAutoSaveHandlers();
     setupSettingsModal();
@@ -2406,6 +2418,21 @@ function adaptModules() {
   schedulePersistSettings();
 }
 
+function applyAuditPass(pass) {
+  const value = ["all", "structure", "dialogue", "line", "copyedit"].includes(pass) ? pass : "all";
+  const sel = getEl("auditPass");
+  if (sel && sel.value !== value) sel.value = value;
+  const hint = getEl("auditPassHint");
+  if (hint && ProzaEdit.EditPasses?.hint) hint.textContent = ProzaEdit.EditPasses.hint(value);
+  const preset = ProzaEdit.EditPasses?.presetFlags?.(value, isFictionManuscriptType());
+  if (!preset) return;
+  Object.keys(preset).forEach((id) => {
+    const el = getEl(id);
+    if (!el || el.disabled) return;
+    el.checked = !!preset[id];
+  });
+}
+
 function isModuleEnabled(id) {
   const el = document.getElementById(id);
   return !!(el && el.checked && !el.disabled);
@@ -2435,6 +2462,8 @@ function collectUiConfig() {
     fictionScopeReminder: isChecked("fictionScopeReminder", true),
     continuityWarnLevel: parseInt(getEl("continuityWarnLevel")?.value, 10) || 3,
     scopePageFrom: getEl("scopePageFrom")?.value || "1",
+    auditPass: getEl("auditPass")?.value || "all",
+    voiceSample: String(getEl("voiceSample")?.value || "").slice(0, 1800),
     scopePageTo: getEl("scopePageTo")?.value || "5",
     selectedChapterIndices: getSelectedChapterIndicesFromUi(),
     auditExtended: isAuditExtended(),
@@ -2564,6 +2593,8 @@ function applyUiConfig(p) {
   if (p.continuityWarnLevel) setV("continuityWarnLevel", p.continuityWarnLevel);
   setC("autoRefreshManuscriptContext", !!p.autoRefreshManuscriptContext);
   if (p.scopePageFrom) setV("scopePageFrom", p.scopePageFrom);
+  if (p.auditPass) applyAuditPass(p.auditPass);
+  if (typeof p.voiceSample === "string") setV("voiceSample", p.voiceSample.slice(0, 1800));
   if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
   setC("auditExtended", p.auditExtended);
   if (p.reportDensity) setV("reportDensity", p.reportDensity);
@@ -2846,6 +2877,8 @@ function setupAutoSaveHandlers() {
     "showHoverTips",
     "continuityWarnLevel",
     "scopePageFrom",
+    "auditPass",
+    "voiceSample",
     "scopePageTo",
     "sectionParagraphCount",
     "batchSectionCount",
@@ -4236,7 +4269,7 @@ function buildAuditContext(options) {
   const scopeVal = getEl("scope")?.value || "selection";
   const fiction = isFictionManuscriptType();
   const fictionOn = (id) => fiction && isModuleEnabled(id);
-  return {
+  const ctx = {
     extendedLocal: !!options.extendedLocal,
     fkLock: isChecked("fkLock", false),
     contentNotes: isChecked("contentNotes", false),
@@ -4256,6 +4289,7 @@ function buildAuditContext(options) {
     chkSpell: isChecked("chkSpell", true),
     chkAI: isChecked("chkAI", true),
     chkAIDetection: isChecked("chkAI", true),
+    auditPass: getEl("auditPass")?.value || "all",
     mPlot: fictionOn("mPlot"),
     mMotivation: fictionOn("mMotivation"),
     mDialogue: fictionOn("mDialogue"),
@@ -4267,6 +4301,14 @@ function buildAuditContext(options) {
     manuscriptContextIndex: getManuscriptContextIndex(),
     manuscriptContextFresh: mciIsFresh(),
   };
+  const preset = ProzaEdit.EditPasses?.presetFlags?.(ctx.auditPass, fiction);
+  if (preset) {
+    Object.keys(preset).forEach((key) => {
+      ctx[key] = preset[key];
+    });
+    ctx.chkAIDetection = !!preset.chkAI;
+  }
+  return ctx;
 }
 
 function getReportDensity() {
@@ -7356,7 +7398,7 @@ async function runDeepAuditAI() {
     !(await aiConfirmOnce({
       title: `Deep check via ${aiLabel()}`,
       message:
-        `Deep check uses 1 ${aiLabel()} call and sends about ${Math.round(MAX_DEEP / 6).toLocaleString()} words of the chosen text to ${aiProviderInfo().label}.\n\n${aiEstimateLine(MAX_DEEP + 2500 + aiIndexChars(), 1200)}\n\nThe deeper check on this computer, or Copy for Copilot, does not use that key.${geminiIndexDisclosure()}\n\nContinue?`,
+        `Deep check uses 1 ${aiLabel()} call for “${ProzaEdit.EditPasses?.hint?.(getEl("auditPass")?.value || "all")?.split(".")[0] || "this pass"}”. It sends about ${Math.round(MAX_DEEP / 6).toLocaleString()} words of the chosen text to ${aiProviderInfo().label}, plus your voice sample if you pasted one.\n\nThe prompt asks for a diagnosis, not a rewritten chapter.\n\n${aiEstimateLine(MAX_DEEP + 3500 + aiIndexChars(), 1200)}\n\nThe local report does not use that key.${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -7441,7 +7483,13 @@ async function runDeepAuditAICore() {
       { id: "index", role: "index", text: index },
       {
         id: "instruction",
-        text: `Return ONLY JSON array (max 6). targetText must be copied EXACTLY from the excerpt:\n[{"module":"","type":"confirmed|preference","explanation":"","targetText":"","replacementText":""}]`,
+        text: ProzaEdit.EditPasses?.diagnosisInstruction?.(getEl("auditPass")?.value || "all") || "Diagnose only. Do not rewrite.",
+      },
+      {
+        id: "voice",
+        text: String(getEl("voiceSample")?.value || "").trim().slice(0, 1800)
+          ? `BASELINE VOICE. Match this rhythm and vocabulary. Do not suggest edits that flatten it:\n${String(getEl("voiceSample").value).trim().slice(0, 1800)}`
+          : "",
       },
       { id: "excerpt", role: "excerpt", label: "EXCERPT:", text: ProzaEdit.AISafety.wrapUntrusted(excerpt) },
     ]);

@@ -19,9 +19,9 @@ Principles and authoritative references on GitHub `main`. Project Context may mi
 | Local sideload dev | `manifest.xml` (separate track) |
 | Live UI | GitHub Pages from `main` |
 
-**Current hosted release:** **2.0.0.66** working copy (handoff: [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md)). Testers re-upload `manifest.hosted.xml` once per manifest bump. Word shows it after this copy is published.
+**Current hosted release:** **2.0.0.67** working copy (handoff: [HANDOFF-DESKTOP.md](./HANDOFF-DESKTOP.md)). Testers re-upload `manifest.hosted.xml` once per manifest bump. Word shows it after this copy is published.
 
-Verify: `bash scripts/verify-version-sync.sh` · **542** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
+Verify: `bash scripts/verify-version-sync.sh` · **546** tests: `npm test` (needs `npm ci` once for the jsdom dev dependency) · wiring gate: `npm run verify:wiring`.
 
 ---
 

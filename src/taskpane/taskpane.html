@@ -14,7 +14,7 @@
     <img class="pe-brand-wordmark" src="../../assets/prozaedit-wordmark.jpg" alt="ProzaEdit" width="280" height="56" decoding="async">
   </header>
   <div id="peWhatsNewBanner" class="pe-top-banner help-box hidden" role="region" aria-label="What's new">
-    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.66</span>)</p>
+    <p class="pe-top-banner-lead"><strong>What&apos;s new</strong> (<span id="peWhatsNewVersion">2.0.0.67</span>)</p>
     <p id="peWhatsNewBullet" class="pe-top-banner-body">Run opens the report. Cards keep Go to and Apply up front; other actions are under More. A house rule wins when it names the same phrase as a built-in check.</p>
     <p class="pe-top-banner-links"><a id="peWhatsNewReleaseLink" href="https://github.com/drcracius/prozaedit-word/blob/main/docs/RELEASE-NOTES-PE-81.md" target="_blank" rel="noopener">Release notes</a></p>
     <div class="pe-top-banner-actions">
@@ -350,6 +350,19 @@
       <button type="button" class="btn-linkish pe-btn hidden" id="btnSkipChapter" onclick="skipChapterWalkChapter()">Skip this chapter</button>
       <button type="button" class="btn-linkish pe-btn hidden" id="btnRestartChapterWalk" onclick="restartChapterWalk()">Start over</button>
     </details>
+    <div class="form-group" id="peAuditPassBlock">
+      <label for="auditPass">Editing pass</label>
+      <select id="auditPass">
+        <option value="all" selected>All passes, in order</option>
+        <option value="structure">1. Structure</option>
+        <option value="dialogue">2. Dialogue and character</option>
+        <option value="line">3. Line and prose</option>
+        <option value="copyedit">4. Copyedit</option>
+      </select>
+      <p id="auditPassHint" class="help-inline" style="margin:6px 0 0;">Local Run uses every pass in order. Deep check sends all four diagnostic prompts in that order and must list problems, not rewrite the chapter.</p>
+      <label for="voiceSample" style="margin-top:8px;display:block;">Your voice sample (optional, for Deep check)</label>
+      <textarea id="voiceSample" rows="3" maxlength="1800" placeholder="About 300 words of your own prose. Deep check is told not to flatten this."></textarea>
+    </div>
     <div class="audit-run-hub pe-checks-run-hub">
       <button class="btn-main btn-main-hub pe-btn pe-btn-primary" id="btnRunAudit" onclick="runPrimaryAudit()" data-pe-tip="btn-run-audit" aria-label="Run">Run</button>
       <p id="peChecksRunAuditTagline" class="pe-checks-run-tagline help-muted">ProzaEdit checks when you click Run — it does not underline while you type.</p>
@@ -405,20 +418,21 @@
         <input type="number" id="batchSectionCount" min="1" max="8" value="3">
         <button type="button" class="btn-secondary pe-btn" style="margin-top:4px;" onclick="runBatchSectionAudit()">Run batch</button>
         <button type="button" class="btn-linkish pe-btn" style="margin-top:4px;" onclick="cancelBatchAudit()">Cancel batch</button>
-        <button type="button" class="btn-secondary btn-api-opt" style="margin-top:8px;" onclick="runDeepAuditAI()">Deep check (uses your AI key)</button>
+        <button type="button" class="btn-secondary btn-api-opt" style="margin-top:8px;" onclick="runDeepAuditAI()">Deep check for this pass (uses your AI key)</button>
+        <p class="help-inline" style="margin:4px 0 0;">Sends the diagnostic prompt for the Editing pass above. It lists problems. It does not return a rewritten chapter.</p>
         <button type="button" class="btn-secondary" style="margin-top:6px;" onclick="scanChapterHeatmap()">Chapter chart (on this computer)</button>
       </div>
     </details>
     <div id="peFictionModulesBlock" data-simple-hide>
     <h2 class="pe-section-title">Fiction modules</h2>
     <div class="form-group form-group-flush">
-      <div class="toggle-row"><span id="mPlot-lbl">1. Plot & Chapter Structure</span><input type="checkbox" id="mPlot" aria-labelledby="mPlot-lbl" checked></div>
-      <div class="toggle-row"><span id="mMotivation-lbl">2. Characterization & Motivation</span><input type="checkbox" id="mMotivation" aria-labelledby="mMotivation-lbl" checked></div>
-      <div class="toggle-row"><span id="mDialogue-lbl">3. Dialogue & Viewpoint (POV)</span><input type="checkbox" id="mDialogue" aria-labelledby="mDialogue-lbl" checked></div>
-      <div class="toggle-row"><span id="mContinuity-lbl">4. Continuity & Chronology</span><input type="checkbox" id="mContinuity" aria-labelledby="mContinuity-lbl" checked></div>
-      <div class="toggle-row"><span id="mPlausibility-lbl">5. Plausibility & Evidence</span><input type="checkbox" id="mPlausibility" aria-labelledby="mPlausibility-lbl" checked></div>
-      <div class="toggle-row"><span id="mPacing-lbl">6. Pacing & Readability</span><input type="checkbox" id="mPacing" aria-labelledby="mPacing-lbl" checked></div>
-      <div class="toggle-row"><span id="mSpoiler-lbl">7. Spoiler Control</span><input type="checkbox" id="mSpoiler" aria-labelledby="mSpoiler-lbl" checked></div>
+      <div class="toggle-row"><span id="mPlot-lbl">Pass 1 — Plot and chapter shape</span><input type="checkbox" id="mPlot" aria-labelledby="mPlot-lbl" checked></div>
+      <div class="toggle-row"><span id="mMotivation-lbl">Pass 1 — Choice and motive</span><input type="checkbox" id="mMotivation" aria-labelledby="mMotivation-lbl" checked></div>
+      <div class="toggle-row"><span id="mContinuity-lbl">Pass 1 — Time and place</span><input type="checkbox" id="mContinuity" aria-labelledby="mContinuity-lbl" checked></div>
+      <div class="toggle-row"><span id="mPlausibility-lbl">Pass 1 — Unearned claims</span><input type="checkbox" id="mPlausibility" aria-labelledby="mPlausibility-lbl" checked></div>
+      <div class="toggle-row"><span id="mSpoiler-lbl">Pass 1 — Spoiler phrasing</span><input type="checkbox" id="mSpoiler" aria-labelledby="mSpoiler-lbl" checked></div>
+      <div class="toggle-row"><span id="mDialogue-lbl">Pass 2 — Dialogue and viewpoint</span><input type="checkbox" id="mDialogue" aria-labelledby="mDialogue-lbl" checked></div>
+      <div class="toggle-row"><span id="mPacing-lbl">Pass 3 — Pace, filters, and rhythm</span><input type="checkbox" id="mPacing" aria-labelledby="mPacing-lbl" checked></div>
       <p class="help-inline">Fiction checks run only when the manuscript type is fiction.</p>
     </div>
     </div>
@@ -565,8 +579,8 @@
       <p><strong>ProzaEdit</strong> — local-first manuscript audit, coach, and rewrite for Word (hosted beta).</p>
       <p><strong>Accuracy:</strong> checks are tuned against a labeled test set (precision target 85% or better for what Simple view shows). Tense and viewpoint shifts are hints that ignore dialogue and flashbacks and appear in Simple view only when clearly accidental. <strong>Content notes</strong> (Settings → Safety, off by default) neutrally report strong language and violence; they never change your text or your score.</p>
       <ul class="help-list">
-        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.66</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
-        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.66</code> (<code>manifest.hosted.xml</code>)</li>
+        <li><strong>UI build:</strong> <code id="peAboutBuildVersion">2.0.0.67</code> (<code>PROZAEDIT_BUILD_VERSION</code>)</li>
+        <li><strong>Manifest version:</strong> <code id="peAboutManifestVersion">2.0.0.67</code> (<code>manifest.hosted.xml</code>)</li>
         <li><strong>Add-in ID:</strong> <code id="peAboutAddInId">d1829e3a-4931-4122-b911-37f22941aa99</code></li>
         <li><strong>Repository:</strong> <a href="https://github.com/drcracius/prozaedit-word" target="_blank" rel="noopener">github.com/drcracius/prozaedit-word</a> · Hosted on GitHub Pages</li>
       </ul>
@@ -1035,6 +1049,7 @@
   <script src="lib/custom-style-guide.js"></script>
   <script src="lib/style-guide-rules.js"></script>
   <script src="lib/genre-checks.js"></script>
+  <script src="lib/edit-passes.js"></script>
   <script src="lib/ai-prose-patterns.js"></script>
   <script src="lib/audit-engine.js"></script>
   <script src="lib/doc-analytics.js"></script>
