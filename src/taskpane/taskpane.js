@@ -215,14 +215,47 @@ function getScopeCharLimit(mode) {
   return ProzaEdit.ScopeReader?.getLimit?.(mode || getScopeMode()) || MAX_LOCAL_AUDIT_CHARS;
 }
 
+function getClampedPageFromTo() {
+  const SR = ProzaEdit.ScopeReader;
+  let from = parseInt(getEl("scopePageFrom")?.value, 10) || 1;
+  let to = parseInt(getEl("scopePageTo")?.value, 10) || from;
+  const b = knownDocumentPageBounds;
+  if (b && !b.empty && b.pages && SR?.capPageRange) {
+    const pr = SR.capPageRange(from, to, b.pages);
+    from = pr.from;
+    to = pr.to;
+  }
+  return { from, to };
+}
+
 function getScopeOptions() {
+  const SR = ProzaEdit.ScopeReader;
   const indices = getSelectedChapterIndicesFromUi();
-  const chapterFrom = indices.length ? indices[0] : 1;
-  const chapterTo = indices.length ? indices[indices.length - 1] : 1;
+  const chN = scopeChapterListCache.length;
+  let chapterFrom = indices.length ? indices[0] : parseInt(getEl("scopeChapterFrom")?.value, 10) || 1;
+  let chapterTo = indices.length
+    ? indices[indices.length - 1]
+    : parseInt(getEl("scopeChapterTo")?.value, 10) || chapterFrom;
+  if (chN && SR?.capChapterRange) {
+    const cr = SR.capChapterRange(chapterFrom, chapterTo, chN);
+    chapterFrom = cr.from;
+    chapterTo = cr.to;
+  }
+  let pageFrom = parseInt(getEl("scopePageFrom")?.value, 10) || 1;
+  let pageTo = parseInt(getEl("scopePageTo")?.value, 10) || pageFrom;
+  const b = knownDocumentPageBounds;
+  const contentPageCap = b && !b.empty && b.pages ? b.pages : 0;
+  if (contentPageCap && SR?.capPageRange) {
+    const pr = SR.capPageRange(pageFrom, pageTo, contentPageCap);
+    pageFrom = pr.from;
+    pageTo = pr.to;
+  }
   return {
     mode: getScopeMode(),
-    pageFrom: getEl("scopePageFrom")?.value || 1,
-    pageTo: getEl("scopePageTo")?.value || 5,
+    pageFrom,
+    pageTo,
+    contentPageCap,
+    chapterCount: chN,
     chapterSingle: chapterFrom,
     chapterFrom,
     chapterTo,
@@ -304,6 +337,22 @@ function syncChapterBounds(count) {
     el.value = String(v);
   });
   if (n && from && to && parseInt(to.value, 10) < parseInt(from.value, 10)) to.value = from.value;
+  clampKnownChapterInputs();
+}
+
+function clampKnownChapterInputs() {
+  const n = scopeChapterListCache.length;
+  const from = getEl("scopeChapterFrom");
+  const to = getEl("scopeChapterTo");
+  if (!n) return;
+  [from, to].forEach((el) => {
+    if (!el) return;
+    el.max = String(n);
+    const v = parseInt(el.value, 10);
+    if (v > n) el.value = String(n);
+    if (!v || v < 1) el.value = "1";
+  });
+  if (from && to && (parseInt(to.value, 10) || 1) < (parseInt(from.value, 10) || 1)) to.value = from.value;
 }
 
 let knownDocumentPageBounds = null;
@@ -339,7 +388,10 @@ function applyPageBounds(bounds) {
   }
   const layout = !!bounds.layout;
   const per = ProzaEdit.ScopeReader?.WORDS_PER_PAGE || 250;
-  const pages = layout ? Math.max(1, bounds.pages | 0) : Math.max(1, Math.ceil((bounds.words || 0) / per));
+  const SR = ProzaEdit.ScopeReader;
+  const wordPages = SR?.estimatePagesFromWords ? SR.estimatePagesFromWords(bounds.words || 0) : Math.max(1, Math.ceil((bounds.words || 0) / per));
+  let pages = layout ? Math.max(1, bounds.pages | 0) : wordPages;
+  if (layout && wordPages > 0) pages = Math.min(pages, wordPages);
   knownDocumentPageBounds = {
     empty: false,
     pages,
@@ -405,9 +457,18 @@ function clampKnownPageInputs() {
 }
 
 function applyChapterRangeFromInputs() {
-  const from = parseInt(getEl("scopeChapterFrom")?.value, 10) || 1;
+  const n = scopeChapterListCache.length;
+  let from = parseInt(getEl("scopeChapterFrom")?.value, 10) || 1;
   let to = parseInt(getEl("scopeChapterTo")?.value, 10) || from;
-  if (to < from) {
+  if (n && ProzaEdit.ScopeReader?.capChapterRange) {
+    const cr = ProzaEdit.ScopeReader.capChapterRange(from, to, n);
+    from = cr.from;
+    to = cr.to;
+    const fromEl = getEl("scopeChapterFrom");
+    const toEl = getEl("scopeChapterTo");
+    if (fromEl) fromEl.value = String(from);
+    if (toEl) toEl.value = String(to);
+  } else if (to < from) {
     to = from;
     const toEl = getEl("scopeChapterTo");
     if (toEl) toEl.value = String(to);
@@ -450,9 +511,22 @@ function refreshDocumentPageBounds() {
           });
         });
         if (result.layoutCount) {
-          applyPageBounds(
-            result.layoutCount.empty ? { empty: true, layout: true } : { layout: true, pages: result.layoutCount.pages }
-          );
+          if (result.layoutCount.empty) {
+            applyPageBounds({ empty: true, layout: true });
+            return;
+          }
+          const wordRead = await ProzaEdit.ScopeReader.readBodyTextChunked(ctx, {
+            maxChars: ProzaEdit.ScopeReader.getLimit("full"),
+            cancelCheck,
+          });
+          const words = ProzaEdit.Metrics?.countWords?.(wordRead.text) || 0;
+          applyPageBounds({
+            layout: true,
+            pages: result.layoutCount.pages,
+            words,
+            stoppedEarly: !!wordRead.stoppedEarly,
+            empty: !words && !(wordRead.text || "").trim(),
+          });
           return;
         }
         const text = result.text || "";
@@ -578,6 +652,7 @@ function syncScopePanels() {
   const chapterModes = mode === "selected-chapters" || mode === "chapter" || mode === "chapter-range";
   if (pages) pages.classList.toggle("hidden", mode !== "pages");
   if (ch) ch.classList.toggle("hidden", !chapterModes);
+  if (chapterModes) clampKnownChapterInputs();
   updateScopeChapterEmptyState();
   updateFullManuscriptScopeTip();
 }
@@ -625,6 +700,9 @@ function setupScopeUi() {
       if (id === "scopePageFrom" || id === "scopePageTo") {
         el.addEventListener("input", () => clampKnownPageInputs());
       }
+      if (id === "scopeChapterFrom" || id === "scopeChapterTo") {
+        el.addEventListener("input", () => clampKnownChapterInputs());
+      }
       el.addEventListener("change", () => {
         schedulePersistSettings();
         if (id === "scopeChapterFrom" || id === "scopeChapterTo") applyChapterRangeFromInputs();
@@ -640,6 +718,9 @@ function setupScopeUi() {
   });
   if (getScopeMode() === "selected-chapters" && !scopeChapterListCache.length) {
     refreshChapterScopeLists();
+  }
+  if (getScopeMode() === "pages") {
+    refreshDocumentPageBounds().finally(() => refreshScopeCharPreview());
   }
 }
 
@@ -716,7 +797,12 @@ function updateScopeCharPreviewDisplay(charCount, label, mode, extra) {
     extra.text != null && ProzaEdit.Metrics?.countWords
       ? ProzaEdit.Metrics.countWords(extra.text)
       : Math.round(charCount / (ProzaEdit.ScopeReader?.CHARS_PER_WORD || 6));
-  const safeLabel = label == null || String(label).trim() === "" ? "Scope" : String(label);
+  let safeLabel = label == null || String(label).trim() === "" ? "Scope" : String(label);
+  if (extra.documentBounds) applyPageBounds(extra.documentBounds);
+  if (mode === "pages") {
+    const { from, to } = getClampedPageFromTo();
+    safeLabel = from === to ? `approx. page ${from}` : `approx. pages ${from}–${to}`;
+  }
   const over = !extra.stoppedEarly && words > wordBudget;
   const ok = !over && !extra.stoppedEarly && words > 0;
   el.classList.toggle("over-limit", over || !!extra.stoppedEarly);
@@ -743,16 +829,14 @@ function updateScopeCharPreviewDisplay(charCount, label, mode, extra) {
   lastScopePreviewChars = charCount > 0 ? charCount : 0;
   updateFullManuscriptScopeTip();
   updateWorkflowStatusLine();
-  if (extra.documentBounds) applyPageBounds(extra.documentBounds);
 }
 
 function getScopeModeLabel(mode) {
   const m = mode || getScopeMode();
   if (m === "selection") return "Highlighted selection";
   if (m === "pages") {
-    const from = getEl("scopePageFrom")?.value || "1";
-    const to = getEl("scopePageTo")?.value || "5";
-    return `Pages ${from}–${to} (approx.)`;
+    const { from, to } = getClampedPageFromTo();
+    return from === to ? `Page ${from} (approx.)` : `Pages ${from}–${to} (approx.)`;
   }
   if (m === "selected-chapters" || m === "chapter" || m === "chapter-range") {
     const n = getSelectedChapterIndicesFromUi().length;
@@ -859,10 +943,22 @@ function refreshScopeCharPreview() {
   })
     .then((info) => {
       if (seq !== scopePreviewSeq) return;
+      const words = ProzaEdit.Metrics?.countWords?.(info.text) || 0;
+      let documentBounds = null;
+      if (mode === "full") {
+        documentBounds = { words, stoppedEarly: info.stoppedEarly, empty: !info.len };
+      } else if (mode === "pages" && (!knownDocumentPageBounds || knownDocumentPageBounds.empty)) {
+        documentBounds = {
+          words,
+          stoppedEarly: info.stoppedEarly,
+          empty: !info.len,
+          layout: false,
+        };
+      }
       updateScopeCharPreviewDisplay(info.len, info.label, mode, {
         text: info.text,
         stoppedEarly: info.stoppedEarly,
-        documentBounds: mode === "full" ? { words: ProzaEdit.Metrics?.countWords?.(info.text) || 0, stoppedEarly: info.stoppedEarly, empty: !info.len } : null,
+        documentBounds,
       });
     })
     .catch((e) => {
@@ -7612,9 +7708,16 @@ async function collectReplaceRanges(ctx) {
     }
     return [sel];
   }
+  const pageCap =
+    knownDocumentPageBounds && !knownDocumentPageBounds.empty ? knownDocumentPageBounds.pages : 0;
   if (mode === "pages" && ProzaEdit.ScopeReader.layoutPagesAvailable()) {
-    const from = parseInt(getEl("scopePageFrom")?.value, 10) || 1;
-    const to = Math.max(from, parseInt(getEl("scopePageTo")?.value, 10) || from);
+    const ranged = ProzaEdit.ScopeReader.capPageRange(
+      getEl("scopePageFrom")?.value,
+      getEl("scopePageTo")?.value,
+      pageCap
+    );
+    const from = ranged.from;
+    const to = ranged.to;
     const pages = ctx.document.body.getRange().pages;
     pages.load("items/index");
     await ctx.sync();
@@ -7623,7 +7726,12 @@ async function collectReplaceRanges(ctx) {
     return wanted.map((p) => p.getRange("Whole"));
   }
   if (mode === "pages") {
-    const span = await ProzaEdit.ScopeReader.pageParagraphSpan(ctx, getEl("scopePageFrom")?.value, getEl("scopePageTo")?.value);
+    const span = await ProzaEdit.ScopeReader.pageParagraphSpan(
+      ctx,
+      getEl("scopePageFrom")?.value,
+      getEl("scopePageTo")?.value,
+      { contentPageCap: pageCap }
+    );
     const paras = ctx.document.body.paragraphs;
     paras.load("items");
     await ctx.sync();

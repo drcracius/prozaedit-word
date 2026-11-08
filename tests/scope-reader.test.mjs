@@ -45,6 +45,64 @@ test("ScopeReader.migrateLegacyChapterScope", () => {
   eqArr(kept.selectedChapterIndices, [1, 5]);
 });
 
+test("ScopeReader.lastLayoutPageWithText ignores blank layout pages", () => {
+  const { ScopeReader } = loadLib("src/taskpane/lib/scope-reader.js");
+  const pages = [
+    { index: 1, text: "About one hundred twenty words here." },
+    { index: 2, text: "   " },
+    { index: 18, text: "" },
+  ];
+  assert.equal(ScopeReader.lastLayoutPageWithText(pages), 1);
+});
+
+test("ScopeReader.estimatePagesFromWords", () => {
+  const { ScopeReader } = loadLib("src/taskpane/lib/scope-reader.js");
+  assert.equal(ScopeReader.estimatePagesFromWords(0), 0);
+  assert.equal(ScopeReader.estimatePagesFromWords(120), 1);
+  assert.equal(ScopeReader.estimatePagesFromWords(500), 2);
+});
+
+test("ScopeReader.layoutPagesAvailable is false on Word on the web", () => {
+  const { ScopeReader } = loadLib("src/taskpane/lib/scope-reader.js", {
+    Office: {
+      context: { platform: "OfficeOnline", requirements: { isSetSupported: () => true } },
+      PlatformType: { OfficeOnline: "OfficeOnline" },
+    },
+  });
+  assert.equal(ScopeReader.layoutPagesAvailable(), false);
+});
+
+test("ScopeReader.capPageRange clamps to document max", () => {
+  const { ScopeReader } = loadLib("src/taskpane/lib/scope-reader.js");
+  eqArr(ScopeReader.capPageRange(1, 18, 1), { from: 1, to: 1 });
+  eqArr(ScopeReader.capPageRange(3, 5, 0), { from: 3, to: 5 });
+});
+
+test("ScopeReader.capChapterRange clamps to chapter list", () => {
+  const { ScopeReader } = loadLib("src/taskpane/lib/scope-reader.js");
+  eqArr(ScopeReader.capChapterRange(1, 9, 3), { from: 1, to: 3 });
+});
+
+test("ScopeReader.readByChapter clamps chapter number to chapterCount", async () => {
+  const { ScopeReader } = loadLib("src/taskpane/lib/scope-reader.js", {
+    Word: { Style: { heading1: "H1", heading2: "H2", heading3: "H3" } },
+  });
+  const chapters = [
+    { index: 1, title: "a", startPara: 0, endPara: 0 },
+    { index: 2, title: "b", startPara: 1, endPara: 1 },
+    { index: 3, title: "c", startPara: 2, endPara: 2 },
+  ];
+  const texts = ["a", "b", "c"];
+  const items = texts.map((text) => ({ text, load() {} }));
+  const context = {
+    document: { body: { paragraphs: { items, load() {} } } },
+    sync: async () => {},
+  };
+  const r = await ScopeReader.readByChapter(context, 18, chapters, { chapterCount: 3 });
+  assert.match(r.label, /Ch\. 3: c/);
+  assert.equal(r.text.trim(), "c");
+});
+
 test("ScopeReader.formatSelectedChaptersLabel", () => {
   const { ScopeReader } = loadLib("src/taskpane/lib/scope-reader.js");
   const chapters = [

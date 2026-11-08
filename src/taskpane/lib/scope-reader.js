@@ -26,6 +26,48 @@ ProzaEdit.ScopeReader = {
     full: 450000,
   },
 
+  /** Last 1-based page number that has non-whitespace body text (unit-testable). */
+  lastLayoutPageWithText(pages) {
+    let last = 0;
+    (pages || []).forEach((p, i) => {
+      const t = String(p.text != null ? p.text : "").trim();
+      if (!t.length) return;
+      const idx = p.index;
+      const n = Number.isFinite(idx) && idx >= 1 ? idx : i + 1;
+      if (n > last) last = n;
+    });
+    return last;
+  },
+
+  estimatePagesFromWords(wordCount) {
+    const w = Math.max(0, Number(wordCount) || 0);
+    if (!w) return 0;
+    return Math.max(1, Math.ceil(w / this.WORDS_PER_PAGE));
+  },
+
+  /** Clamp a page range to [1, maxPages]. */
+  capPageRange(pageFrom, pageTo, maxPages) {
+    let from = Math.max(1, parseInt(pageFrom, 10) || 1);
+    let to = Math.max(from, parseInt(pageTo, 10) || from);
+    const max = parseInt(maxPages, 10);
+    if (!Number.isFinite(max) || max <= 0) return { from, to };
+    if (from > max) from = max;
+    if (to > max) to = max;
+    if (to < from) to = from;
+    return { from, to };
+  },
+
+  capChapterRange(chapterFrom, chapterTo, chapterCount) {
+    let from = Math.max(1, parseInt(chapterFrom, 10) || 1);
+    let to = Math.max(from, parseInt(chapterTo, 10) || from);
+    const n = parseInt(chapterCount, 10);
+    if (!Number.isFinite(n) || n <= 0) return { from, to };
+    if (from > n) from = n;
+    if (to > n) to = n;
+    if (to < from) to = from;
+    return { from, to };
+  },
+
   getLimit(mode) {
     return this.LIMITS[mode] || this.LIMITS.selection;
   },
@@ -305,6 +347,8 @@ ProzaEdit.ScopeReader = {
   /** Word's layout pages (desktop WordApiDesktop 1.2). Word on the web does not have this. */
   layoutPagesAvailable() {
     try {
+      const plat = typeof Office !== "undefined" && Office.context && Office.context.platform;
+      if (plat === "OfficeOnline" || plat === Office?.PlatformType?.OfficeOnline) return false;
       const req = typeof Office !== "undefined" && Office.context && Office.context.requirements;
       return !!(req && typeof req.isSetSupported === "function" && req.isSetSupported("WordApiDesktop", "1.2"));
     } catch (_) {
@@ -320,22 +364,47 @@ ProzaEdit.ScopeReader = {
     this._cancelCheck(opts);
     const items = pages.items || [];
     if (!items.length) return { empty: true, pages: 0, layout: true };
-    let max = 0;
-    items.forEach((p) => {
-      if (p.index > max) max = p.index;
-    });
-    return { empty: false, pages: Math.max(items.length, max), layout: true };
+    const withText = [];
+    const STEP = 10;
+    for (let i = 0; i < items.length; i += STEP) {
+      this._cancelCheck(opts);
+      const slice = items.slice(i, i + STEP);
+      const ranges = slice.map((p) => p.getRange("Whole"));
+      ranges.forEach((r) => r.load("text"));
+      await context.sync();
+      for (let j = 0; j < slice.length; j++) {
+        withText.push({ index: slice[j].index, text: ranges[j].text || "" });
+      }
+    }
+    const contentPages = this.lastLayoutPageWithText(withText);
+    if (!contentPages) return { empty: true, pages: 0, layout: true };
+    return { empty: false, pages: contentPages, layout: true };
   },
 
   async readByLayoutPageRange(context, pageFrom, pageTo, opts) {
     opts = opts || {};
-    const from = Math.max(1, parseInt(pageFrom, 10) || 1);
-    const to = Math.max(from, parseInt(pageTo, 10) || from);
+    const cap = parseInt(opts.contentPageCap, 10);
+    const ranged = this.capPageRange(pageFrom, pageTo, cap > 0 ? cap : 0);
+    let from = ranged.from;
+    let to = ranged.to;
     const pages = context.document.body.getRange().pages;
     pages.load("items/index");
     await context.sync();
     this._cancelCheck(opts);
-    const wanted = (pages.items || []).filter((p) => p.index >= from && p.index <= to);
+    let wanted = (pages.items || []).filter((p) => p.index >= from && p.index <= to);
+    if (!wanted.length) throw new Error(`No text in pages ${from}–${to}.`);
+    const nonempty = [];
+    for (let i = 0; i < wanted.length; i += 10) {
+      this._cancelCheck(opts);
+      const slice = wanted.slice(i, i + STEP);
+      const ranges = slice.map((p) => p.getRange("Whole"));
+      ranges.forEach((r) => r.load("text"));
+      await context.sync();
+      for (let j = 0; j < slice.length; j++) {
+        if (String(ranges[j].text || "").trim()) nonempty.push(slice[j]);
+      }
+    }
+    wanted = nonempty.length ? nonempty : wanted;
     if (!wanted.length) throw new Error(`No text in pages ${from}–${to}.`);
     const maxChars = opts.maxChars != null ? Number(opts.maxChars) : this.getLimit("pages");
     let out = "";
@@ -364,8 +433,10 @@ ProzaEdit.ScopeReader = {
   /** Paragraph indexes for the word-count page estimate. */
   async pageParagraphSpan(context, pageFrom, pageTo, opts) {
     opts = opts || {};
-    const from = Math.max(1, parseInt(pageFrom, 10) || 1);
-    const to = Math.max(from, parseInt(pageTo, 10) || from);
+    const cap = parseInt(opts.contentPageCap, 10);
+    const ranged = this.capPageRange(pageFrom, pageTo, cap > 0 ? cap : 0);
+    const from = ranged.from;
+    const to = ranged.to;
     const startChar = (from - 1) * this.CHARS_PER_PAGE;
     const endChar = to * this.CHARS_PER_PAGE;
     const paras = context.document.body.paragraphs;
@@ -402,8 +473,10 @@ ProzaEdit.ScopeReader = {
 
   async readByPageRange(context, pageFrom, pageTo, opts) {
     opts = opts || {};
-    const from = Math.max(1, parseInt(pageFrom, 10) || 1);
-    const to = Math.max(from, parseInt(pageTo, 10) || from);
+    const cap = parseInt(opts.contentPageCap, 10);
+    const ranged = this.capPageRange(pageFrom, pageTo, cap > 0 ? cap : 0);
+    const from = ranged.from;
+    const to = ranged.to;
     if (this.layoutPagesAvailable()) {
       try {
         return await this.readByLayoutPageRange(context, from, to, opts);
@@ -446,7 +519,9 @@ ProzaEdit.ScopeReader = {
   async readByChapter(context, chapterNum, chapters, opts) {
     opts = opts || {};
     const list = chapters || (await this.listChapters(context));
-    const n = parseInt(chapterNum, 10);
+    const cap = parseInt(opts.chapterCount, 10);
+    const ranged = this.capChapterRange(chapterNum, chapterNum, cap > 0 ? cap : list.length);
+    const n = ranged.from;
     const ch = list.find((c) => c.index === n);
     if (!ch) throw new Error(`Chapter ${n} not found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.`);
     const text = await this.textFromParagraphRange(context, ch.startPara, ch.endPara, opts, ch.title);
@@ -456,8 +531,10 @@ ProzaEdit.ScopeReader = {
   async readByChapterRange(context, fromNum, toNum, chapters, opts) {
     opts = opts || {};
     const list = chapters || (await this.listChapters(context));
-    const a = Math.min(parseInt(fromNum, 10) || 1, parseInt(toNum, 10) || 1);
-    const b = Math.max(parseInt(fromNum, 10) || 1, parseInt(toNum, 10) || 1);
+    const cap = parseInt(opts.chapterCount, 10);
+    const ranged = this.capChapterRange(fromNum, toNum, cap > 0 ? cap : list.length);
+    const a = ranged.from;
+    const b = ranged.to;
     const start = list.find((c) => c.index === a);
     const end = list.find((c) => c.index === b);
     if (!start || !end) throw new Error("Chapter range not found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.");
@@ -560,7 +637,9 @@ ProzaEdit.ScopeReader = {
       end = total - 1;
     } else if (mode === "chapter") {
       const list = opts.chapters || (await this.listChapters(context));
-      const n = parseInt(opts.chapterSingle, 10) || 1;
+      const cap = parseInt(opts.chapterCount, 10) || list.length;
+      const ranged = this.capChapterRange(opts.chapterSingle, opts.chapterSingle, cap);
+      const n = ranged.from;
       const ch = list.find((c) => c.index === n);
       if (!ch) throw new Error(`Chapter ${n} not found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.`);
       start = ch.startPara;
@@ -568,8 +647,10 @@ ProzaEdit.ScopeReader = {
       if (!rangeOk(start, end)) throw stale();
     } else if (mode === "chapter-range") {
       const list = opts.chapters || (await this.listChapters(context));
-      const a = Math.min(parseInt(opts.chapterFrom, 10) || 1, parseInt(opts.chapterTo, 10) || 1);
-      const b = Math.max(parseInt(opts.chapterFrom, 10) || 1, parseInt(opts.chapterTo, 10) || 1);
+      const cap = parseInt(opts.chapterCount, 10) || list.length;
+      const ranged = this.capChapterRange(opts.chapterFrom, opts.chapterTo, cap);
+      const a = ranged.from;
+      const b = ranged.to;
       const startCh = list.find((c) => c.index === a);
       const endCh = list.find((c) => c.index === b);
       if (!startCh || !endCh) throw new Error("Chapter range not found. Chapter titles need Word's Heading 1, Heading 2, or Heading 3 style.");
@@ -614,8 +695,10 @@ ProzaEdit.ScopeReader = {
       }
       return out;
     } else if (mode === "pages") {
-      const from = Math.max(1, parseInt(opts.pageFrom, 10) || 1);
-      const to = Math.max(from, parseInt(opts.pageTo, 10) || from);
+      const cap = parseInt(opts.contentPageCap, 10);
+      const ranged = this.capPageRange(opts.pageFrom, opts.pageTo, cap > 0 ? cap : 0);
+      const from = ranged.from;
+      const to = ranged.to;
       const startChar = (from - 1) * this.CHARS_PER_PAGE;
       const endChar = to * this.CHARS_PER_PAGE;
       let charPos = 0;
