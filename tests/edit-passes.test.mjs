@@ -64,3 +64,17 @@ test("structure, dialogue, and line notes quote the page and do not rewrite", ()
   assert.ok(cards.some((c) => c.ruleId === "pass3:weak-adverb"));
   cards.forEach((c) => assert.match(c.replacementText, /your revision/));
 });
+
+test("project rule is a deep-check note and stays empty when blank", () => {
+  const { EditPasses } = load();
+  assert.equal(EditPasses.projectRuleSection("  "), "");
+  assert.equal(EditPasses.diagnosisInstruction("all").includes("PROJECT RULE"), false);
+  const section = EditPasses.projectRuleSection("He is narcoleptic.\nFlag any scene that continues as if he were awake.");
+  assert.match(section, /PROJECT RULE/);
+  assert.match(section, /Do not rewrite/);
+  assert.match(section, /He is narcoleptic\. Flag any scene/);
+  assert.equal(section.includes("\nFlag"), false);
+  const long = EditPasses.projectRuleSection("x".repeat(800));
+  assert.equal(long.endsWith("x".repeat(500)), true);
+  assert.equal(long.includes("x".repeat(501)), false);
+});

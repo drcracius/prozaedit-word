@@ -1,6 +1,6 @@
 # Privacy and data (ProzaEdit Word)
 
-**Build:** 2.0.0.67 hosted task pane · **Owner-editable** summary for Help and Settings.
+**Build:** 2.0.0.68 hosted task pane · **Owner-editable** summary for Help and Settings.
 
 ---
 
@@ -20,7 +20,7 @@
 
 | Service | When | What is sent |
 |---------|------|----------------|
-| **Your chosen AI provider** (Google Gemini, OpenAI, Anthropic Claude or OpenRouter — only if you add your own API key under Settings → AI help) | Coach **Send via AI**, **Deep audit**, **AI rewrite** — each asks first and shows an estimate | Your prompt plus the context ProzaEdit attaches (selection-only by default for Coach). **If you built a manuscript context index, that local heuristic outline — chapter titles, word counts, first/last lines, recurring names, frequent words and time cues — is included in the request too** (flagged if it may be out of date). Over-long prompts are trimmed with a visible note; the instruction, your question and the end of the excerpt are kept. |
+| **Your chosen AI provider** (Google Gemini, OpenAI, Anthropic Claude or OpenRouter — only if you add your own API key under Settings → AI help) | Coach **Send via AI**, **Deep audit**, **AI rewrite** — each asks first and shows an estimate | Your prompt plus the context ProzaEdit attaches (selection-only by default for Coach). Deep check also sends a voice sample and a project rule if you typed them. **If you built a manuscript context index, that local heuristic outline — chapter titles, word counts, first/last lines, recurring names, frequent words and time cues — is included in the request too** (flagged if it may be out of date). Over-long prompts are trimmed with a visible note; the instruction, your question and the end of the excerpt are kept. |
 | **Datamuse** | **Thesaurus** lookup | The single word you search. |
 
 The manuscript context index itself is **not AI-generated** and building it sends nothing anywhere; it is stored in this document's own settings key (`PROZAEDIT_MCI_V2`). Local audit, local Coach and local Rewrite never contact any AI provider. Offline is the default: with no API key, nothing about your manuscript leaves the PC. Three things contact the internet besides your own AI clicks: the **Thesaurus** lookup (only when you click Search), optional **voice dictation** (🎤 on the Coach tab, only when you click it; the browser's built-in speech recognition may send audio to its vendor's service, outside ProzaEdit's control) and an **automatic update check** (once per browser session, about 4 seconds after the pane opens): it downloads the public `manifest.hosted.xml` from GitHub to compare version numbers and sends no document data. Loading the pane itself fetches the add-in files from GitHub Pages and Office.js from Microsoft, as any hosted Office add-in does.
@@ -31,7 +31,7 @@ No ProzaEdit-hosted model training pipeline exists in this build; third-party te
 
 ## Stored on this Word document
 
-- **`PROZAEDIT_CONFIG`** — UI preferences, the genre profile and the AI provider/model/limits choice. **API keys are never stored in the document.**
+- **`PROZAEDIT_CONFIG`** — UI preferences, the genre profile, the optional voice sample, the optional project rule, and the AI provider/model/limits choice. **API keys are never stored in the document.** The voice sample and project rule are sent only when you confirm Deep check.
 - **Custom dictionary** — terms you add in Settings → Dictionary.
 - **Muted rules (document copy)** — rule IDs muted during audits on this file.
 - **Custom style rules**, last audit snapshot, and similar document-scoped keys.

@@ -944,6 +944,107 @@ test("wordRun never has two Word reads open at once", async () => {
   }
 });
 
+test("a queued outline read waits for a click that arrives first", async () => {
+  const t = await boot();
+  try {
+    let release;
+    t.state.syncHook = () => new Promise((resolve) => {
+      release = resolve;
+    });
+    const hold = t.peval(`wordRun("hold", async (ctx) => { await ctx.sync(); return "hold"; })`);
+    await sleep(20);
+    t.peval(`window.__order = []`);
+    const background = t.peval(`wordRun("ms-index", async () => { window.__order.push("outline"); return "outline"; }, { background: true })`);
+    const user = t.peval(`wordRun("goto", async () => { window.__order.push("goto"); return "goto"; })`);
+    release();
+    assert.deepEqual(await Promise.all([hold, user, background]), ["hold", "goto", "outline"]);
+    assert.equal(JSON.stringify(t.peval("window.__order")), JSON.stringify(["goto", "outline"]));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("an outline read that has already started is not pushed aside", async () => {
+  const t = await boot();
+  try {
+    let release;
+    t.state.syncHook = () => new Promise((resolve) => {
+      release = resolve;
+    });
+    t.peval(`window.__order = []`);
+    const background = t.peval(`wordRun("ms-index", async (ctx) => { await ctx.sync(); window.__order.push("outline"); return "outline"; }, { background: true })`);
+    await sleep(20);
+    const user = t.peval(`wordRun("goto", async () => { window.__order.push("goto"); return "goto"; })`);
+    release();
+    assert.deepEqual(await Promise.all([background, user]), ["outline", "goto"]);
+    assert.equal(JSON.stringify(t.peval("window.__order")), JSON.stringify(["outline", "goto"]));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("a click waiting on a book outline read says so once", async () => {
+  const t = await boot();
+  try {
+    let release;
+    t.state.syncHook = () => new Promise((resolve) => {
+      release = resolve;
+    });
+    const background = t.peval(`wordRun("ms-index", async (ctx) => { await ctx.sync(); return "outline"; }, { background: true })`);
+    await sleep(20);
+    const user = t.peval(`wordRun("goto", async () => "goto", { announceWait: true })`);
+    assert.match(t.el("peStatus").textContent, /book outline read is still finishing/);
+    t.peval(`dismissPeStatus()`);
+    const quiet = t.peval(`wordRun("scope-measure", async () => "quiet")`);
+    assert.equal(t.el("peStatus").textContent, "");
+    release();
+    await Promise.all([background, user, quiet]);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("project rule is saved for Deep check and left out of a local run", async () => {
+  const t = await boot();
+  try {
+    assert.equal(t.el("projectRule").getAttribute("maxlength"), "500");
+    t.el("projectRule").value = "He is narcoleptic. Flag any scene that continues as if he were awake.";
+    const saved = t.peval(`collectUiConfig().projectRule`);
+    assert.match(saved, /narcoleptic/);
+    const local = t.peval(`JSON.stringify(buildAuditContext())`);
+    assert.equal(local.includes("narcoleptic"), false);
+    const section = t.peval(`ProzaEdit.EditPasses.projectRuleSection(getEl("projectRule").value)`);
+    assert.match(section, /Do not rewrite/);
+    assert.match(section, /narcoleptic/);
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
+test("a running report keeps scope on the workflow line and progress on the operation bar", async () => {
+  const t = await boot();
+  try {
+    t.peval(`getEl("peWorkflowStatusLine").textContent = "Building book outline: 1/2"; beginLongOperation({ initialStatus: "Reading document" });`);
+    assert.equal(t.el("peOpBar").classList.contains("hidden"), false);
+    assert.match(t.el("peOpBarLabel").textContent, /Reading document/);
+    assert.match(t.el("peWorkflowStatusLine").textContent, /Scope:/);
+    assert.ok(t.el("peWorkflowStatusLine").classList.contains("pe-workflow-status-static"));
+    assert.equal(t.el("btnCancelLongOp").disabled, false);
+    t.peval(`requestLongOpCancel()`);
+    assert.match(t.el("peOpBarLabel").textContent, /Cancelling after the current Word step/);
+    assert.equal(t.el("peStatus").textContent, "");
+    t.peval(`endLongOperation()`);
+    assert.ok(t.el("peOpBar").classList.contains("hidden"));
+    assert.deepEqual(t.errors, []);
+  } finally {
+    t.close();
+  }
+});
+
 test("thesaurus lookup releases Word before the word service answers", async () => {
   const t = await boot({ word: { selection: "happy" } });
   try {

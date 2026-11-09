@@ -2,7 +2,7 @@
  * ProzaEdit Word Task Pane (Phases 1–7 integrated).
  * Release/build semver: PROZAEDIT_BUILD_VERSION — must match manifest.hosted.xml <Version>.
  */
-const PROZAEDIT_BUILD_VERSION = "2.0.0.67";
+const PROZAEDIT_BUILD_VERSION = "2.0.0.68";
 const PROZAEDIT_MANIFEST_URL = "https://raw.githubusercontent.com/drcracius/prozaedit-word/main/manifest.hosted.xml";
 const PROZAEDIT_UI_URL = "https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html";
 const PROZAEDIT_ADDIN_ID = "d1829e3a-4931-4122-b911-37f22941aa99";
@@ -1009,44 +1009,34 @@ function buildManuscriptIndexNow() {
   msIndexBusy = true;
   const statusEl = getEl("peWorkflowStatusLine");
   const scopeMode = getScopeMode();
-  const indexScoped = scopeMode !== "full";
-  wordRun("ms-index", async (ctx) => {
-    const cancelCheck = () => {
-      if (token !== msIndexBuildToken) {
-        const err = new Error("Cancelled.");
-        err.code = "PE_CANCELLED";
-        err.name = "ProzaEditCancelledError";
-        throw err;
+  wordRun(
+    "ms-index",
+    async (ctx) => {
+      const cancelCheck = () => {
+        if (token !== msIndexBuildToken) {
+          const err = new Error("Cancelled.");
+          err.code = "PE_CANCELLED";
+          err.name = "ProzaEditCancelledError";
+          throw err;
+        }
+      };
+      if (scopeMode === "full") {
+        return ProzaEdit.ScopeReader.readBodyTextChunked(ctx, {
+          maxChars: 600000,
+          cancelCheck,
+        }).then((read) => (read && read.text) || "");
       }
-    };
-    const onProgress = (partial) => {
-      if (token !== msIndexBuildToken || activeLongOp) return;
-      if (statusEl) {
-        statusEl.classList.remove("pe-workflow-status-static");
-        statusEl.removeAttribute("aria-hidden");
-        statusEl.textContent = ProzaEdit.ScopeReader.formatReadStatus({
-          phase: indexScoped ? "Building chapter outline" : "Building book outline",
-          ...partial,
-        });
+      const opts = getScopeOptions();
+      if (opts.mode === "selected-chapters" || opts.mode === "chapter" || opts.mode === "chapter-range") {
+        opts.chapters = scopeChapterListCache;
       }
-    };
-    if (scopeMode === "full") {
-      return ProzaEdit.ScopeReader.readBodyTextChunked(ctx, {
-        maxChars: 600000,
-        cancelCheck,
-        onProgress,
-      }).then((read) => (read && read.text) || "");
-    }
-    const opts = getScopeOptions();
-    if (opts.mode === "selected-chapters" || opts.mode === "chapter" || opts.mode === "chapter-range") {
-      opts.chapters = scopeChapterListCache;
-    }
-    opts.cancelCheck = cancelCheck;
-    opts.onProgress = onProgress;
-    opts.maxChars = 600000;
-    const measured = await ProzaEdit.ScopeReader.measureScope(ctx, opts);
-    return measured.text || "";
-  })
+      opts.cancelCheck = cancelCheck;
+      opts.maxChars = 600000;
+      const measured = await ProzaEdit.ScopeReader.measureScope(ctx, opts);
+      return measured.text || "";
+    },
+    { background: true }
+  )
     .then((text) => {
       if (token !== msIndexBuildToken) return;
       if (!text || text.length < 200) return;
@@ -1261,7 +1251,6 @@ async function runBuildFullManuscriptContext(userInitiated, buildOptions) {
   try {
     longOp = beginLongOperation({
       initialStatus: "Reading manuscript for context…",
-      setStatus: (msg) => showPeStatus(msg),
     });
     const previous = getManuscriptContextIndex();
     const index = await wordRun("mci-build", async (ctx) => {
@@ -1857,6 +1846,7 @@ function beginLongOperation(hooks) {
   });
   activeLongOp = controller;
   setLongOpProgressVisible(true, hooks?.initialStatus || "Working…");
+  updateWorkflowStatusLine();
   return controller;
 }
 
@@ -1889,8 +1879,7 @@ function requestLongOpCancel() {
   const button = getEl("btnCancelLongOp");
   const label = getEl("peOpBarLabel");
   if (button) button.disabled = true;
-  if (label) label.textContent = "Cancelling…";
-  showPeStatus("Cancelling after the current Word step…", "warn");
+  if (label) label.textContent = "Cancelling after the current Word step…";
 }
 
 function setupLongOpCancelButtons() {
@@ -2464,6 +2453,7 @@ function collectUiConfig() {
     scopePageFrom: getEl("scopePageFrom")?.value || "1",
     auditPass: getEl("auditPass")?.value || "all",
     voiceSample: String(getEl("voiceSample")?.value || "").slice(0, 1800),
+    projectRule: String(getEl("projectRule")?.value || "").slice(0, 500),
     scopePageTo: getEl("scopePageTo")?.value || "5",
     selectedChapterIndices: getSelectedChapterIndicesFromUi(),
     auditExtended: isAuditExtended(),
@@ -2595,6 +2585,7 @@ function applyUiConfig(p) {
   if (p.scopePageFrom) setV("scopePageFrom", p.scopePageFrom);
   if (p.auditPass) applyAuditPass(p.auditPass);
   if (typeof p.voiceSample === "string") setV("voiceSample", p.voiceSample.slice(0, 1800));
+  if (typeof p.projectRule === "string") setV("projectRule", p.projectRule.slice(0, 500));
   if (p.scopePageTo) setV("scopePageTo", p.scopePageTo);
   setC("auditExtended", p.auditExtended);
   if (p.reportDensity) setV("reportDensity", p.reportDensity);
@@ -2879,6 +2870,7 @@ function setupAutoSaveHandlers() {
     "scopePageFrom",
     "auditPass",
     "voiceSample",
+    "projectRule",
     "scopePageTo",
     "sectionParagraphCount",
     "batchSectionCount",
@@ -4316,16 +4308,52 @@ function getReportDensity() {
 }
 
 let wordTail = Promise.resolve();
+const wordWait = [];
+let wordBusy = false;
 
-function wordRun(label, fn) {
-  const run = wordTail.then(() => Word.run(fn));
+let wordRunningBackground = false;
+
+function wordRun(label, fn, opts) {
+  const background = !!(opts && opts.background);
+  if (!background && opts && opts.announceWait && wordRunningBackground) {
+    showPeStatus("A book outline read is still finishing. This will start when that read ends.");
+  }
+  return new Promise((resolve, reject) => {
+    const job = { label, fn, background, resolve, reject };
+    if (background) wordWait.push(job);
+    else {
+      const firstBackground = wordWait.findIndex((queued) => queued.background);
+      if (firstBackground === -1) wordWait.push(job);
+      else wordWait.splice(firstBackground, 0, job);
+    }
+    pumpWordQueue();
+  });
+}
+
+function pumpWordQueue() {
+  if (wordBusy || !wordWait.length) return;
+  const job = wordWait.shift();
+  wordBusy = true;
+  wordRunningBackground = !!job.background;
+  const run = Promise.resolve()
+    .then(() => Word.run(job.fn))
+    .then(
+      (value) => {
+        job.resolve(value);
+      },
+      (error) => {
+        console.error(job.label, error);
+        job.reject(error);
+      }
+    );
   wordTail = run.then(
     () => {},
     () => {}
   );
-  return run.catch((e) => {
-    console.error(label, e);
-    throw e;
+  run.finally(() => {
+    wordBusy = false;
+    wordRunningBackground = false;
+    pumpWordQueue();
   });
 }
 
@@ -4436,7 +4464,9 @@ function wordApiSupported(ver) {
 }
 
 async function swapTextInScope(fromText, toText, options) {
-  const result = await wordRun("pe-swap", (ctx) =>
+  const result = await wordRun(
+    "pe-swap",
+    (ctx) =>
     ProzaEdit.EditApply.swapText(ctx, fromText, toText, {
       searchInScope: (c, text) =>
         ProzaEdit.WordSafeNavigator.searchInScope(c, text, {
@@ -4447,7 +4477,8 @@ async function swapTextInScope(fromText, toText, options) {
       trackingSupported: wordApiSupported("1.4"),
       replaceLocation: Word.InsertLocation.replace,
       sanitize: (t) => ProzaEdit.WordSafeNavigator.sanitizeSearch(t),
-    })
+    }),
+    { announceWait: true }
   );
   markManuscriptContextDirty();
   return result;
@@ -6075,11 +6106,9 @@ function runAuditInternalCore(opts) {
     const initialRead = ProzaEdit.LongOp?.initialRunReportStatus?.(lastScopePreviewChars, getScopeMode()) || "Reading document…";
     longOp = beginLongOperation({
       initialStatus: initialRead,
-      setStatus: (msg) => showPeStatus(msg),
     });
     if (auditBtn) setRunAuditHubButtonLabel(auditBtn, "Reading…");
     if (extBtn) setRunAuditHubButtonLabel(extBtn, "Reading…");
-    showPeStatus(opts.status || "Reading document…");
     persistSettings(false);
     showTab("tab4");
     currentAuditSuggestions = [];
@@ -6166,7 +6195,7 @@ function runAuditInternalCore(opts) {
     updateWorkflowNextStepHint();
     lastSessionSummaryRanAudit = true;
     scheduleLastSessionSummaryPersist({ ranAudit: true });
-  })
+  }, { announceWait: true })
     .catch(handleFailure)
     .finally(() => {
       finish();
@@ -6494,7 +6523,7 @@ function goToIssue(target) {
   if (!release) return Promise.resolve(false);
   return wordRun("goto", async (ctx) => {
     await ProzaEdit.WordSafeNavigator.selectFirstInBody(ctx, target);
-  })
+  }, { announceWait: true })
     .then(() => {
       clearRetry();
       return true;
@@ -7298,7 +7327,7 @@ async function sendIssueToRewrite(item) {
   try {
     await wordRun("rewrite-from-card", async (ctx) => {
       await ProzaEdit.WordSafeNavigator.selectFirstInBody(ctx, target);
-    });
+    }, { announceWait: true });
     const scopeEl = getEl("scope");
     if (scopeEl && scopeEl.value !== "selection") {
       forceScopeToSelection();
@@ -7398,7 +7427,7 @@ async function runDeepAuditAI() {
     !(await aiConfirmOnce({
       title: `Deep check via ${aiLabel()}`,
       message:
-        `Deep check uses 1 ${aiLabel()} call for “${ProzaEdit.EditPasses?.hint?.(getEl("auditPass")?.value || "all")?.split(".")[0] || "this pass"}”. It sends about ${Math.round(MAX_DEEP / 6).toLocaleString()} words of the chosen text to ${aiProviderInfo().label}, plus your voice sample if you pasted one.\n\nThe prompt asks for a diagnosis, not a rewritten chapter.\n\n${aiEstimateLine(MAX_DEEP + 3500 + aiIndexChars(), 1200)}\n\nThe local report does not use that key.${geminiIndexDisclosure()}\n\nContinue?`,
+        `Deep check uses 1 ${aiLabel()} call for “${ProzaEdit.EditPasses?.hint?.(getEl("auditPass")?.value || "all")?.split(".")[0] || "this pass"}”. It sends about ${Math.round(MAX_DEEP / 6).toLocaleString()} words of the chosen text to ${aiProviderInfo().label}, plus your voice sample if you pasted one.${String(getEl("projectRule")?.value || "").trim() ? " Your project rule is included." : ""}\n\nThe prompt asks for a diagnosis, not a rewritten chapter.\n\n${aiEstimateLine(MAX_DEEP + 3500 + aiIndexChars() + String(getEl("projectRule")?.value || "").trim().length, 1200)}\n\nThe local report does not use that key.${geminiIndexDisclosure()}\n\nContinue?`,
       confirmLabel: "Continue",
       cancelLabel: "Cancel",
     }))
@@ -7441,7 +7470,7 @@ async function runDeepAuditAICore() {
       excerpt = await wordRun("deep-read", async (ctx) => {
         longOp.setStatus("Reading for deep audit…");
         return (await readScopeText(ctx, longOp)).substring(0, MAX_DEEP);
-      });
+      }, { announceWait: true });
     } catch (e) {
       if (isLongOpCancelledError(e)) {
         cancelled = true;
@@ -7490,6 +7519,10 @@ async function runDeepAuditAICore() {
         text: String(getEl("voiceSample")?.value || "").trim().slice(0, 1800)
           ? `BASELINE VOICE. Match this rhythm and vocabulary. Do not suggest edits that flatten it:\n${String(getEl("voiceSample").value).trim().slice(0, 1800)}`
           : "",
+      },
+      {
+        id: "project-rule",
+        text: ProzaEdit.EditPasses?.projectRuleSection?.(getEl("projectRule")?.value) || "",
       },
       { id: "excerpt", role: "excerpt", label: "EXCERPT:", text: ProzaEdit.AISafety.wrapUntrusted(excerpt) },
     ]);
@@ -7902,7 +7935,7 @@ async function applyReplaceList() {
         if (hits.length) await ctx.sync();
         fixed += hits.length;
       }
-    });
+    }, { announceWait: true });
     markManuscriptContextDirty();
     const msg = `Replaced ${fixed} place${fixed === 1 ? "" : "s"}. Use Word's Undo to step back.`;
     if (status) status.textContent = msg;

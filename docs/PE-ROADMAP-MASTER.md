@@ -2,9 +2,9 @@
 
 **Audience:** owner + coding agent.  
 **Start from:** restore point **2.0.0.65** (`v2.0.0.65`, `pre-master-engine-v4`).  
-**Agent implementation through Phase 6:** working copy **2.0.0.67** (`prozaedit-master-engine.js` loaded; `audit-engine.js` still the orchestrator). Phase 0 and Phase 7 stay owner Word checks.
+**Agent implementation through Phase 6:** working copy **2.0.0.68** (`prozaedit-master-engine.js` loaded; `audit-engine.js` still the orchestrator). Phase 0 and Phase 7 stay owner Word checks.
 
-## Status vs this plan (2.0.0.67)
+## Status vs this plan (2.0.0.68)
 
 | Phase | Agent code | Still missing |
 |-------|------------|----------------|

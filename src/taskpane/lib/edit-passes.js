@@ -237,6 +237,22 @@ ProzaEdit.EditPasses = {
     });
   },
 
+  PROJECT_RULE_MAX: 500,
+
+  projectRuleSection(rule) {
+    const text = String(rule || "")
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, this.PROJECT_RULE_MAX);
+    if (!text) return "";
+    return (
+      "PROJECT RULE (from the writer). Check the excerpt against this rule. " +
+      "List only slips that are visible in the excerpt. Do not rewrite the scene. Do not invent facts beyond this rule:\n" +
+      text
+    );
+  },
+
   lineNotes(text, push, ctx) {
     const raw = String(text || "");
     const narration = ProzaEdit.Audit?.blankQuotedSpeech ? ProzaEdit.Audit.blankQuotedSpeech(raw) : raw;

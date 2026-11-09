@@ -88,6 +88,14 @@ Genre switch to non-fiction now remembers your fiction modules and restores them
 - `tests/manifest-desktop.test.mjs` guards resource-id length, resid references, https, and both manifests staying in step. 456 tests.
 - Manifest structure changed (one resource id), so desktop users who already added the add-in should re-add it; Word on the web users should re-upload `manifest.hosted.xml`.
 
+## 2.0.0.68 — Project rule on Deep check
+
+- Optional project rule on Run (one or two sentences). It is saved with the other pane settings and sent only when you confirm Deep check. Local Run does not use it.
+- Deep check is told to list slips against that rule and not to rewrite the scene.
+- A click that has to wait for a book-outline read already in progress says so. Cancel still stops a Run, not that background read.
+- While a Run is in progress, the working message stays on the operation bar.
+- 552 tests. Not tried in real Word from here.
+
 ## 2.0.0.67 — Four editing passes, diagnostic Deep check
 
 - Run can follow structure, then dialogue, then line, then copyedit. One pass limits the local checks to that job.

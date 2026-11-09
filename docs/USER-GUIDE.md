@@ -1,6 +1,6 @@
 # How to use ProzaEdit
 
-This guide matches build **2.0.0.67**. If Help → About shows an older number, the live copy has not been updated yet.
+This guide matches build **2.0.0.68**. If Help → About shows an older number, the live copy has not been updated yet.
 
 ## 1. Install
 
@@ -53,6 +53,8 @@ Cards are the notes from the last Run. Filter chips on Fix: **All**, then **Corr
 **Local Coach** stays on your device. It does not need a key.
 
 **Optional AI help** uses your own API key only when you click **Send via AI**. It sends the text you chose, and your book outline if you built one. Nothing is applied automatically. A ChatGPT Plus, Claude Pro, Gemini, or Copilot subscription is not an API key.
+
+**Deep check** on Run asks before it sends a short excerpt. A voice sample and a project rule, if you typed them, go with that call only. Local Run does not send them. The project rule is one or two sentences of your own, such as a fact the check should watch for.
 
 ## 7. Settings that change a check
 

@@ -15,7 +15,7 @@ Read this first. It is written for a fresh agent with no chat history. Handoff t
 
 Task-pane add-in for Microsoft Word (Office.js) that gives writers a local-first editorial audit, Coach, and Rewrite, genre-aware (12 profiles), with optional AI help using the user's own API key (Gemini, OpenAI, Claude, OpenRouter). Hosted on GitHub Pages (`https://drcracius.github.io/prozaedit-word/src/taskpane/taskpane.html`); registered in Word by uploading `manifest.hosted.xml`. No build step, no backend.
 
-## 3. Current state (2.0.0.67)
+## 3. Current state (2.0.0.68)
 
 - **Engine:** `src/taskpane/lib/prozaedit-master-engine.js` is loaded (dialogue immunity, Micro-POS, lanes, extra phrase/grammar). `audit-engine.js` still orchestrates genre/plot/spell/AI-voice. Pre-engine restore remains tag `v2.0.0.65`. Roadmap: [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md). Do not follow the big-bang deletes in `docs/ProzaEdit-Major Style and Lexical Update.md`.
 - Verdict (PE-96): ready for a wider beta, not a public launch. Automated tests are green (`npm test`, wiring, contrast).
@@ -52,7 +52,7 @@ Node >= 20 (CI uses 22). From repo root:
 
 ```bash
 npm ci
-npm test                          # 546 tests expected, 0 fail
+npm test                          # 552 tests expected, 0 fail
 npm run validate:manifest         # expect "OK: manifest.hosted.xml passes Microsoft production validation."
 npm run verify:wiring             # expect "OK: wiring check passed"
 npm run check:contrast            # expect "failures 0"
@@ -171,7 +171,7 @@ Full rationale per decision: roadmap section "Decisions needed from the owner" (
 
 ## 14. Next steps (ranked, from PE-93/PE-96)
 
-Follow [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md). Phases 1–5 are in **2.0.0.67**. Next is owner Word proof on desktop and web (Track Changes Apply, one real chapter, any notes that fire on writing you consider fine). Do not delete `audit-engine.js`.
+Follow [PE-ROADMAP-MASTER.md](./PE-ROADMAP-MASTER.md). Phases 1–5 are in **2.0.0.68**. Next is owner Word proof on desktop and web (Track Changes Apply, one real chapter, any notes that fire on writing you consider fine). Do not delete `audit-engine.js`.
 
 1. Owner runs checklist items for Track Changes and real keys. If tracked Apply misbehaves, fix before anything else.
 2. Run an audit on one real manuscript, collect false positives, tune rules.
